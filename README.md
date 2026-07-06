@@ -2,6 +2,8 @@
 
 A collection of polished, single-file browser games. No build tools, no frameworks, no dependencies — every game is a single `index.html` you can open straight from the file system or host as a static site.
 
+Open [`index.html`](index.html) at the repo root for a hub page linking to all games (handy for GitHub Pages).
+
 ## Games
 
 | Game | Description | Play |

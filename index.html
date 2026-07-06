@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Browser Games</title>
+<style>
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    background: radial-gradient(circle at 20% 20%, #1a1030, #05050a 60%);
+    color:#f2f2f7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap{
+    max-width: 760px; margin: 0 auto; padding: 64px 20px 40px;
+  }
+  h1{
+    font-size: clamp(32px, 7vw, 52px); font-weight:900; margin:0 0 8px; letter-spacing:1px;
+    background: linear-gradient(90deg,#21e6ff,#a239ff,#ff4d6d,#ffd93d,#5CFF6E,#21e6ff);
+    background-size: 300% 100%;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation: shift 8s linear infinite;
+  }
+  @keyframes shift{ to{ background-position: 300% 0; } }
+  p.tagline{ opacity:0.7; margin:0 0 40px; font-size:15px; }
+  .grid{
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:18px;
+  }
+  a.card{
+    display:block; text-decoration:none; color:inherit;
+    background: rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.14);
+    border-radius:16px; padding:22px;
+    backdrop-filter: blur(14px);
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  a.card:hover, a.card:focus-visible{
+    transform: translateY(-4px);
+    border-color: rgba(255,255,255,0.3);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+  }
+  .card .swatches{ display:flex; gap:6px; margin-bottom:14px; }
+  .card .swatches span{ width:16px; height:16px; border-radius:5px; display:inline-block; }
+  .card h2{ margin:0 0 8px; font-size:19px; }
+  .card p{ margin:0; font-size:13px; opacity:0.7; line-height:1.5; }
+  footer{ margin-top:56px; font-size:12px; opacity:0.4; text-align:center; }
+  footer a{ color:inherit; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>BROWSER GAMES</h1>
+    <p class="tagline">A collection of single-file browser games. No installs, no build step &mdash; just open and play.</p>
+    <div class="grid">
+      <a class="card" href="chroma-blocks/index.html">
+        <div class="swatches">
+          <span style="background:#21e6ff"></span>
+          <span style="background:#a239ff"></span>
+          <span style="background:#ff4d6d"></span>
+          <span style="background:#ffd93d"></span>
+        </div>
+        <h2>Chroma Blocks</h2>
+        <p>A radiant, neon falling-blocks game in the spirit of Tetris &mdash; hold queue, ghost piece, combo effects, and procedural audio.</p>
+      </a>
+    </div>
+    <footer>
+      <a href="https://github.com/sudhir-patavardhan/browser-games">github.com/sudhir-patavardhan/browser-games</a>
+    </footer>
+  </div>
+</body>
+</html>
