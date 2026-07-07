@@ -543,6 +543,7 @@ const tableWrap = document.getElementById('tableWrap');
 const MARGIN = 46;
 let viewScale=1, cssW=0, cssH=0, offX=0, offY=0;
 
+let portraitMode = false;
 function resizeTableCanvas(){
   const rect = tableWrap.getBoundingClientRect();
   const dpr = window.devicePixelRatio||1;
@@ -550,12 +551,18 @@ function resizeTableCanvas(){
   tableCanvas.width=Math.round(rect.width*dpr); tableCanvas.height=Math.round(rect.height*dpr);
   tableCanvas.style.width=rect.width+'px'; tableCanvas.style.height=rect.height+'px';
   tableCtx.setTransform(dpr,0,0,dpr,0,0);
+  portraitMode = rect.height > rect.width;
+  const worldW = portraitMode ? TABLE_H : TABLE_W;
+  const worldH = portraitMode ? TABLE_W : TABLE_H;
   const availW=rect.width-MARGIN*2, availH=rect.height-MARGIN*2;
-  viewScale = Math.min(availW/TABLE_W, availH/TABLE_H);
-  offX = (rect.width-TABLE_W*viewScale)/2;
-  offY = (rect.height-TABLE_H*viewScale)/2;
+  viewScale = Math.min(availW/worldW, availH/worldH);
+  offX = (rect.width-worldW*viewScale)/2;
+  offY = (rect.height-worldH*viewScale)/2;
 }
-function w2s(x,y){ return { x:offX+x*viewScale, y:offY+y*viewScale }; }
+function w2s(x,y){
+  if(portraitMode) return { x:offX+y*viewScale, y:offY+x*viewScale };
+  return { x:offX+x*viewScale, y:offY+y*viewScale };
+}
 
 function drawTable(feltColor){
   const ctx=tableCtx;
@@ -571,13 +578,13 @@ function drawTable(feltColor){
   ctx.fillStyle=feltColor;
   ctx.fillRect(tl.x,tl.y,br.x-tl.x,br.y-tl.y);
   ctx.save();
-  const vign = ctx.createRadialGradient((tl.x+br.x)/2,(tl.y+br.y)/2,10,(tl.x+br.x)/2,(tl.y+br.y)/2,(br.x-tl.x)*0.7);
+  const vign = ctx.createRadialGradient((tl.x+br.x)/2,(tl.y+br.y)/2,10,(tl.x+br.x)/2,(tl.y+br.y)/2,Math.max(br.x-tl.x,br.y-tl.y)*0.7);
   vign.addColorStop(0,'rgba(0,0,0,0)'); vign.addColorStop(1,'rgba(0,0,0,0.35)');
   ctx.fillStyle=vign; ctx.fillRect(tl.x,tl.y,br.x-tl.x,br.y-tl.y);
   ctx.restore();
   ctx.strokeStyle='rgba(255,255,255,0.14)'; ctx.lineWidth=1;
-  const headX = w2s(TABLE_W*0.25,0).x;
-  ctx.beginPath(); ctx.moveTo(headX,tl.y); ctx.lineTo(headX,br.y); ctx.stroke();
+  const headP1=w2s(TABLE_W*0.25,0), headP2=w2s(TABLE_W*0.25,TABLE_H);
+  ctx.beginPath(); ctx.moveTo(headP1.x,headP1.y); ctx.lineTo(headP2.x,headP2.y); ctx.stroke();
   POCKETS.forEach(p=>{
     const s=w2s(p.x,p.y);
     ctx.fillStyle='#0a0704';
@@ -718,17 +725,6 @@ function renderParticles(){
   }
 }
 
-let shake={time:0,dur:0,mag:0};
-function triggerShake(mag,dur){ shake={time:dur,dur,mag}; }
-function updateShake(dt){
-  if(shake.time>0){
-    shake.time-=dt;
-    const t=clamp(shake.time/shake.dur,0,1); const m=shake.mag*t;
-    tableWrap.style.transform=`translate(${rand(-m,m)}px,${rand(-m,m)}px)`;
-    if(shake.time<=0) tableWrap.style.transform='';
-  }
-}
-
 function renderPocketCallMarkers(){
   const ctx=tableCtx;
   if(!game.rules.awaitingPocketCall && game.rules.calledPocket===null) return;
@@ -805,7 +801,6 @@ function executeShot(angle, power, spin, english){
   cb.vx=Math.cos(angle)*speed; cb.vy=Math.sin(angle)*speed;
   cb.spin=spin; cb.english=english;
   AudioEngine.cueStrike(power);
-  if(power>0.55) triggerShake(power*3, 250);
   game.state='SHOOTING';
   game.pendingSpin=0; game.pendingEnglish=0;
 }
@@ -933,7 +928,9 @@ function localPoint(e){
   const rect=tableCanvas.getBoundingClientRect();
   const cx = e.clientX!==undefined?e.clientX:(e.touches?e.touches[0].clientX:0);
   const cy = e.clientY!==undefined?e.clientY:(e.touches?e.touches[0].clientY:0);
-  return { x:(cx-rect.left-offX)/viewScale, y:(cy-rect.top-offY)/viewScale, screenX:cx-rect.left, screenY:cy-rect.top };
+  const sx=cx-rect.left, sy=cy-rect.top;
+  if(portraitMode) return { x:(sy-offY)/viewScale, y:(sx-offX)/viewScale, screenX:sx, screenY:sy };
+  return { x:(sx-offX)/viewScale, y:(sy-offY)/viewScale, screenX:sx, screenY:sy };
 }
 function setupInput(){
   tableCanvas.addEventListener('pointerdown',(e)=>{
@@ -1077,7 +1074,7 @@ function loop(now){
     }
     if(game.state==='AI_THINKING' || game.state==='AI_AIMING'){ updateAiSequence(delta); }
     document.getElementById('spinPad').classList.toggle('hidden', !(game.state==='AIM' && !game.rules.awaitingPocketCall));
-    updateParticles(delta); updateShake(delta/1000);
+    updateParticles(delta);
     renderFrame();
   }
 }
