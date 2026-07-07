@@ -590,6 +590,9 @@ const ctx=canvas.getContext('2d');
 let viewScale=1, offX=0, offY=0, cssW=0, cssH=0;
 let aimScale=1, wideScale=1;
 const cam={ scale:1, ox:0, oy:0, init:false };
+// peek-pan: drag across the field (when not drawing) to look toward Rāvaṇa;
+// eases back to Rāma when released
+const peek={ active:false, startX:0, base:0, value:0 };
 function resizeCanvas(){
   const dpr=window.devicePixelRatio||1;
   cssW=window.innerWidth; cssH=window.innerHeight;
@@ -603,7 +606,7 @@ function resizeCanvas(){
   viewScale=cam.scale; offX=cam.ox; offY=cam.oy;
 }
 function aimView(){
-  return { scale:aimScale, ox:cssW*0.30-RAMA_POS.x*aimScale, oy:cssH*0.78-RAMA_POS.y*aimScale, k:8 };
+  return { scale:aimScale, ox:cssW*0.30-(RAMA_POS.x+peek.value)*aimScale, oy:cssH*0.78-RAMA_POS.y*aimScale, k:8 };
 }
 // Cinematic camera: tight on Rāma's bow while drawing, panning after the arrow in
 // flight across the field, on Rāvaṇa for the finale strike, else anchored at Rāma.
@@ -626,6 +629,8 @@ function cameraTarget(b){
   return aimView();
 }
 function updateCamera(b,dtMs){
+  if(!peek.active && peek.value>0){ peek.value*=Math.exp(-(dtMs/1000)*3.2); if(peek.value<1) peek.value=0; }
+  if(b && (b.drawing || b.phase==='clash')) peek.value=0;
   const t=cameraTarget(b);
   const k=1-Math.exp(-(dtMs/1000)*t.k);
   cam.scale=lerp(cam.scale,t.scale,k); cam.ox=lerp(cam.ox,t.ox,k); cam.oy=lerp(cam.oy,t.oy,k);
@@ -634,55 +639,78 @@ function updateCamera(b,dtMs){
 function w2s(x,y){ return { x:offX+x*viewScale, y:offY+y*viewScale }; }
 
 function drawSky(t, darkness){
-  // bright mid-morning over Laṅkā
+  // warm cream sky with a faint mandala, after the reference vector art
   const g=ctx.createLinearGradient(0,0,0,cssH);
-  g.addColorStop(0,'#4aa8f0'); g.addColorStop(0.42,'#8ed4ff'); g.addColorStop(0.68,'#d8f0ff'); g.addColorStop(0.82,'#fff2c0'); g.addColorStop(1,'#ffe9a8');
+  g.addColorStop(0,'#ffe9c0'); g.addColorStop(0.45,'#fff5de'); g.addColorStop(0.8,'#ffe3ae'); g.addColorStop(1,'#ffd894');
   ctx.fillStyle=g; ctx.fillRect(0,0,cssW,cssH);
-  // high golden sun
+  // golden sun with a soft glow
   const sun=w2s(900,380);
-  const sg=ctx.createRadialGradient(sun.x,sun.y,4,sun.x,sun.y,180*viewScale);
-  sg.addColorStop(0,'rgba(255,252,235,1)'); sg.addColorStop(0.2,'rgba(255,238,170,0.75)'); sg.addColorStop(1,'rgba(255,238,170,0)');
-  ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(sun.x,sun.y,180*viewScale,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='#fffbe8'; ctx.beginPath(); ctx.arc(sun.x,sun.y,34*viewScale,0,Math.PI*2); ctx.fill();
-  // drifting clouds across the long sky
-  ctx.fillStyle='rgba(255,255,255,0.85)';
+  const sg=ctx.createRadialGradient(sun.x,sun.y,4,sun.x,sun.y,190*viewScale);
+  sg.addColorStop(0,'rgba(255,246,214,1)'); sg.addColorStop(0.2,'rgba(255,214,130,0.7)'); sg.addColorStop(1,'rgba(255,214,130,0)');
+  ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(sun.x,sun.y,190*viewScale,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#fff3d2'; ctx.beginPath(); ctx.arc(sun.x,sun.y,36*viewScale,0,Math.PI*2); ctx.fill();
+  // faint mandala rings and petals behind the sun
+  ctx.save();
+  ctx.strokeStyle='rgba(216,150,60,0.16)'; ctx.lineWidth=2*viewScale;
+  ctx.beginPath(); ctx.arc(sun.x,sun.y,130*viewScale,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(sun.x,sun.y,172*viewScale,0,Math.PI*2); ctx.stroke();
+  for(let i=0;i<24;i++){
+    const a=i*(Math.PI*2/24)+t*0.00004;
+    const r1=140*viewScale, r2=162*viewScale;
+    ctx.beginPath(); ctx.moveTo(sun.x+Math.cos(a)*r1,sun.y+Math.sin(a)*r1);
+    ctx.lineTo(sun.x+Math.cos(a)*r2,sun.y+Math.sin(a)*r2); ctx.stroke();
+  }
+  ctx.restore();
+  // stylized cream clouds with warm undersides
   for(let i=0;i<7;i++){
     const cwx=((i*300 + t*0.008) % (WORLD_W+360)) - 180;
-    const cwy=220+((i*97)%210);
+    const cwy=230+((i*97)%210);
     const c=w2s(cwx,cwy); const cs=viewScale*(0.8+((i*31)%40)/60);
+    ctx.fillStyle='rgba(245,186,110,0.4)';
+    ctx.beginPath();
+    ctx.ellipse(c.x,c.y+5*cs,52*cs,15*cs,0,0,Math.PI*2);
+    ctx.ellipse(c.x+34*cs,c.y+9*cs,36*cs,12*cs,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle='rgba(255,248,234,0.95)';
     ctx.beginPath();
     ctx.ellipse(c.x,c.y,52*cs,16*cs,0,0,Math.PI*2);
     ctx.ellipse(c.x+34*cs,c.y+4*cs,36*cs,13*cs,0,0,Math.PI*2);
     ctx.ellipse(c.x-36*cs,c.y+5*cs,32*cs,12*cs,0,0,Math.PI*2);
     ctx.fill();
   }
-  // distant mountain range (far parallax layer, world-anchored)
-  ctx.fillStyle='rgba(140,180,220,0.55)';
-  for(let i=0;i<6;i++){
-    const mx=i*330-80, mw=420+((i*53)%160), mh=(150+((i*71)%110))*viewScale;
-    const a=w2s(mx,830), bmid=w2s(mx+mw/2,830), c2=w2s(mx+mw,830);
-    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(bmid.x,bmid.y-mh); ctx.lineTo(c2.x,c2.y); ctx.closePath(); ctx.fill();
+  // temple-dome skyline (Ayodhyā to Laṅkā), two parallax layers of orange silhouettes
+  function temple(cx,w,h,base,col){
+    const vs=viewScale;
+    const P=(x,y)=>w2s(x,y);
+    const bl=P(cx-w/2,base), br=P(cx+w/2,base);
+    const shL=P(cx-w/2,base-h*0.45), shR=P(cx+w/2,base-h*0.45);
+    const inL=P(cx-w*0.34,base-h*0.55), inR=P(cx+w*0.34,base-h*0.55);
+    const cL=P(cx-w*0.46,base-h*0.92), cR=P(cx+w*0.46,base-h*0.92);
+    const apex=P(cx,base-h);
+    ctx.fillStyle=col;
+    ctx.beginPath();
+    ctx.moveTo(bl.x,bl.y); ctx.lineTo(shL.x,shL.y); ctx.lineTo(inL.x,inL.y);
+    ctx.quadraticCurveTo(cL.x,cL.y,apex.x,apex.y);
+    ctx.quadraticCurveTo(cR.x,cR.y,inR.x,inR.y);
+    ctx.lineTo(shR.x,shR.y); ctx.lineTo(br.x,br.y); ctx.closePath(); ctx.fill();
+    ctx.fillRect(apex.x-1*vs,apex.y-8*vs,2*vs,8*vs);
+    ctx.beginPath(); ctx.arc(apex.x,apex.y-10*vs,2.4*vs,0,Math.PI*2); ctx.fill();
   }
-  // softer mid hills
-  ctx.fillStyle='rgba(120,170,110,0.6)';
-  for(let i=0;i<7;i++){
-    const hx=i*280-60, hr=(190+((i*37)%90));
-    const c3=w2s(hx+hr,850);
-    ctx.beginPath(); ctx.arc(c3.x,c3.y,hr*viewScale,Math.PI,0); ctx.fill();
-  }
-  // Laṅkā fortress on Rāvaṇa's side (world x 1290..1680)
+  for(let i=0;i<7;i++){ temple(i*270-40+((i*37)%60), 150+((i*53)%70), 130+((i*71)%80), 838, 'rgba(242,180,106,0.55)'); }
+  for(let i=0;i<6;i++){ temple(i*320+90+((i*29)%50), 120+((i*41)%60), 100+((i*67)%70), 848, 'rgba(232,150,74,0.85)'); }
+  // Laṅkā fortress wall on Rāvaṇa's side
   const fbase=w2s(0,groundY(1500)-4).y;
   for(let i=0;i<4;i++){
     const wx=1300+i*100, ww=86, wh=(150+((i*61)%120));
     const a=w2s(wx,0), bh2=wh*viewScale;
-    ctx.fillStyle='#d8a860';
+    ctx.fillStyle='#e8a85e';
     ctx.fillRect(a.x,fbase-bh2,ww*viewScale,bh2);
-    ctx.fillStyle='#b8884a';
+    ctx.fillStyle='#cc8848';
     ctx.fillRect(a.x+ww*viewScale*0.66,fbase-bh2,ww*viewScale*0.34,bh2);
-    ctx.fillStyle='#d8a860';
+    ctx.fillStyle='#e8a85e';
     for(let c=0;c<4;c++) ctx.fillRect(a.x+c*ww*viewScale/4, fbase-bh2-8*viewScale, ww*viewScale/7, 8*viewScale);
   }
-  // darkness veil (Tāmasāstra) — dramatic against the daylight
+  // darkness veil (Tāmasāstra)
   if(darkness>0){ ctx.fillStyle=`rgba(8,4,20,${clamp(darkness,0,0.82)})`; ctx.fillRect(0,0,cssW,cssH); }
 }
 
@@ -774,11 +802,11 @@ function drawRama(b, t){
   const GOLD='#f4b52e', GOLD_D='#c8891a', CRIMSON='#d4322a', CRIMSON_D='#a82018';
   const ORANGE='#f08a1e', GREEN='#2e9e5b', sway=Math.sin(t/550)*3;
   ctx.lineCap='round';
-  // small ground shadow well below the feet — he is airborne
-  ctx.fillStyle='rgba(0,0,0,0.22)';
-  ctx.beginPath(); ctx.ellipse(2*s,2*s,30*s,6*s,0,0,Math.PI*2); ctx.fill();
-  const LIFT=-14*s;                      // the leap: whole figure rides above the ground
-  ctx.translate(0,LIFT);
+  // the leap happens only as he looses the arrow: a 0.62s spring, then he lands
+  const jump = b.jumpT>0 ? Math.sin(Math.PI*clamp(1-b.jumpT/0.62,0,1)) : 0;
+  ctx.fillStyle='rgba(0,0,0,'+(0.3-jump*0.1)+')';
+  ctx.beginPath(); ctx.ellipse(2*s,2*s,(36-jump*10)*s,7*s,0,0,Math.PI*2); ctx.fill();
+  ctx.translate(0,-jump*36*s);
   // long indigo hair streaming behind in a wavy mass
   ctx.fillStyle=HAIRC;
   ctx.beginPath();
@@ -790,16 +818,27 @@ function drawRama(b, t){
   ctx.closePath(); ctx.fill();
   ctx.strokeStyle=HAIR_L; ctx.lineWidth=1.6*s;
   ctx.beginPath(); ctx.moveTo(2*s,-132*s); ctx.quadraticCurveTo((-16+sway)*s,-118*s,(-20+sway*1.4)*s,-92*s); ctx.stroke();
-  // back leg kicked out behind (the spring of the leap), crimson pant + green shoe
-  ctx.strokeStyle=CRIMSON; ctx.lineWidth=13*s;
-  ctx.beginPath(); ctx.moveTo(-2*s,-58*s); ctx.quadraticCurveTo(-16*s,-44*s,-28*s,-22*s); ctx.stroke();
-  ctx.strokeStyle=GREEN; ctx.lineWidth=7*s;
-  ctx.beginPath(); ctx.moveTo(-28*s,-22*s); ctx.lineTo(-37*s,-14*s); ctx.stroke();
-  // front leg folded high beneath him, crimson pant + green shoe
-  ctx.strokeStyle=CRIMSON_D; ctx.lineWidth=13*s;
-  ctx.beginPath(); ctx.moveTo(4*s,-58*s); ctx.quadraticCurveTo(20*s,-52*s,16*s,-34*s); ctx.stroke();
-  ctx.strokeStyle=GREEN; ctx.lineWidth=7*s;
-  ctx.beginPath(); ctx.moveTo(16*s,-34*s); ctx.lineTo(10*s,-26*s); ctx.stroke();
+  if(jump>0.2){
+    // airborne: back leg kicked out behind, front leg folded beneath (the reference leap)
+    ctx.strokeStyle=CRIMSON; ctx.lineWidth=13*s;
+    ctx.beginPath(); ctx.moveTo(-2*s,-58*s); ctx.quadraticCurveTo(-16*s,-44*s,-28*s,-22*s); ctx.stroke();
+    ctx.strokeStyle=GREEN; ctx.lineWidth=7*s;
+    ctx.beginPath(); ctx.moveTo(-28*s,-22*s); ctx.lineTo(-37*s,-14*s); ctx.stroke();
+    ctx.strokeStyle=CRIMSON_D; ctx.lineWidth=13*s;
+    ctx.beginPath(); ctx.moveTo(4*s,-58*s); ctx.quadraticCurveTo(20*s,-52*s,16*s,-34*s); ctx.stroke();
+    ctx.strokeStyle=GREEN; ctx.lineWidth=7*s;
+    ctx.beginPath(); ctx.moveTo(16*s,-34*s); ctx.lineTo(10*s,-26*s); ctx.stroke();
+  } else {
+    // grounded archer stance: weight forward, both feet planted
+    ctx.strokeStyle=CRIMSON; ctx.lineWidth=13*s;
+    ctx.beginPath(); ctx.moveTo(-2*s,-58*s); ctx.lineTo(-14*s,-30*s); ctx.lineTo(-18*s,-4*s); ctx.stroke();
+    ctx.strokeStyle=GREEN; ctx.lineWidth=7*s;
+    ctx.beginPath(); ctx.moveTo(-18*s,-4*s); ctx.lineTo(-28*s,-2*s); ctx.stroke();
+    ctx.strokeStyle=CRIMSON_D; ctx.lineWidth=13*s;
+    ctx.beginPath(); ctx.moveTo(4*s,-58*s); ctx.lineTo(14*s,-30*s); ctx.lineTo(16*s,kneel?-14*s:-4*s); ctx.stroke();
+    ctx.strokeStyle=GREEN; ctx.lineWidth=7*s;
+    if(!kneel){ ctx.beginPath(); ctx.moveTo(16*s,-4*s); ctx.lineTo(26*s,-2*s); ctx.stroke(); }
+  }
   // billowing crimson dhoti-pants at the hips
   ctx.fillStyle=CRIMSON;
   ctx.beginPath(); ctx.moveTo(-14*s,-76*s); ctx.lineTo(16*s,-76*s);
@@ -875,24 +914,36 @@ function drawRama(b, t){
   // ===== the Kodaṇḍa, drawn in a tilted frame so it swings with the aim =====
   ctx.save();
   ctx.translate(bowCX,bowCY); ctx.rotate(aimTilt);
-  const flex = drawPull*0.14;
-  const tA=-Math.PI/2.05-flex, tB=Math.PI/2.05+flex;
-  // ornate golden bow with pale inlay, as in the reference
-  ctx.strokeStyle=GOLD; ctx.lineWidth=6.2*s;
-  ctx.beginPath(); ctx.arc(0,0,bowR,tA,tB); ctx.stroke();
-  ctx.strokeStyle='#fdf2d8'; ctx.lineWidth=2.2*s;
-  ctx.beginPath(); ctx.arc(0,0,bowR,tA+0.25,tA+0.75); ctx.stroke();
-  ctx.beginPath(); ctx.arc(0,0,bowR,tB-0.75,tB-0.25); ctx.stroke();
-  if(s>1.1){
-    ctx.strokeStyle='rgba(160,110,20,0.55)'; ctx.lineWidth=1.2*s;
-    ctx.beginPath(); ctx.arc(0,0,bowR-2*s,tA+0.1,tB-0.1); ctx.stroke();
+  // elegant recurve: limbs sweep forward then curl back at the tips; they bend
+  // toward the archer as the string is drawn
+  const bend=drawPull*9*s;
+  const tipX=-6*s-bend, tipY=bowR+2*s;
+  for(const sign of [-1,1]){
+    const path=()=>{ ctx.beginPath();
+      ctx.moveTo(2*s, sign*9*s);
+      ctx.bezierCurveTo(16*s-bend, sign*28*s, 14*s-bend*1.4, sign*(bowR-12*s)/1, tipX, sign*tipY);
+    };
+    ctx.lineCap='round';
+    ctx.strokeStyle='#8a5510'; ctx.lineWidth=7.6*s; path(); ctx.stroke();   // dark outline
+    ctx.strokeStyle=GOLD; ctx.lineWidth=5.6*s; path(); ctx.stroke();        // gold body
+    ctx.save(); ctx.setLineDash([9*s,13*s]); ctx.lineDashOffset=4*s;        // pale inlay segments
+    ctx.strokeStyle='#fdf2d8'; ctx.lineWidth=2.4*s; path(); ctx.stroke();
+    ctx.restore();
+    // scroll tip: golden knob with a forward curl
+    ctx.strokeStyle=GOLD_D; ctx.lineWidth=2.6*s;
+    ctx.beginPath(); ctx.arc(tipX+5*s, sign*(tipY-4*s), 4.5*s, sign>0?Math.PI*0.6:Math.PI*1.1, sign>0?Math.PI*1.9:Math.PI*0.4); ctx.stroke();
+    ctx.fillStyle=GOLD_D;
+    ctx.beginPath(); ctx.arc(tipX, sign*tipY, 3*s, 0, Math.PI*2); ctx.fill();
   }
-  ctx.strokeStyle=GOLD_D; ctx.lineWidth=6.8*s;                       // curled tips
-  ctx.beginPath(); ctx.arc(0,0,bowR,tA,tA+0.2); ctx.stroke();
-  ctx.beginPath(); ctx.arc(0,0,bowR,tB-0.2,tB); ctx.stroke();
-  // string in the tilted frame
-  const ltx=bowR*Math.cos(tA), lty=bowR*Math.sin(tA);
-  const lbx=bowR*Math.cos(tB), lby=bowR*Math.sin(tB);
+  // leather-wrapped grip with gold bands
+  ctx.strokeStyle='#6b3a1e'; ctx.lineWidth=8*s;
+  ctx.beginPath(); ctx.moveTo(2*s,-9*s); ctx.lineTo(2*s,9*s); ctx.stroke();
+  ctx.strokeStyle=GOLD; ctx.lineWidth=2.6*s;
+  ctx.beginPath(); ctx.moveTo(-1.5*s,-11*s); ctx.lineTo(5.5*s,-11*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-1.5*s,11*s); ctx.lineTo(5.5*s,11*s); ctx.stroke();
+  // string endpoints at the recurve tips
+  const ltx=tipX, lty=-tipY;
+  const lbx=tipX, lby=tipY;
   const lnx=-pullLocal+tremble;
   ctx.strokeStyle='rgba(120,90,50,0.95)'; ctx.lineWidth=s>1.1?2.2*s:1.6*s;
   ctx.beginPath(); ctx.moveTo(ltx,lty); ctx.lineTo(lnx,0); ctx.lineTo(lbx,lby); ctx.stroke();
@@ -1232,7 +1283,7 @@ function newBattle(cfgKey, difficulty){
     heads:cfg.heads, headsDestroyed:0, tejas:100, slokas:0,
     phase:'intro', phaseT:0, idleDur:rand(IDLE_MIN,IDLE_MAX),
     telegraph:{ key:null, dur:0, t:0, headIdx:0 },
-    nocked:null, drawing:false, drawPct:0, aimAngle:null, slowmoT:0,
+    nocked:null, drawing:false, drawPct:0, aimAngle:null, slowmoT:0, jumpT:0,
     missiles:[], clashData:null, darkness:0, phantoms:0,
     worship:{ active:false, slokaIdx:0, syls:[], sylIdx:0, beatT:0, misses:0, hits:0 },
     saktiDone:false, endureDone:false, saktiSwiped:false, endureHoldT:0, endureHolding:false,
@@ -1298,6 +1349,7 @@ function fireAstra(b, pct){
   const preTejas=b.tejas;
   b.tejas=clamp(b.tejas-astra.cost,0,100); updateHud(b);
   AudioEngine.bowRelease(pct);
+  b.jumpT=0.62;                                    // Rāma springs into the air as he looses
   const resolution=resolveAstra(b.telegraph.key, b.nocked, preTejas, pct);
   b.clashData={ attack:b.telegraph.key, response:b.nocked, resolution, met:false, done:false };
   const attA=RAVANA_ASTRAS[b.telegraph.key];
@@ -1585,6 +1637,7 @@ function updateBattle(b, dt){
   const dtS=dt/1000;
   b.phaseT+=dtS;
   if(b.kneelT>0) b.kneelT-=dtS;
+  if(b.jumpT>0) b.jumpT-=dtS;
   if(b.darkness>0 && b.phase!=='endure') b.darkness=Math.max(0,b.darkness-dtS*0.06);
   if(b.phantoms>0) b.phantoms=Math.max(0,b.phantoms-dtS*0.25);
   if(b.worship.active) advanceChantBeat(b,dtS);
@@ -1817,12 +1870,19 @@ function setupInput(){
       battle.drawing=true; battle.drawPct=0; battle.aimAngle=null;
       document.getElementById('drawMeter').style.display='block';
       AudioEngine.startBowStretch();
+    } else if(battle.phase==='idle' || battle.phase==='telegraph'){
+      // no arrow nocked: drag to peek across the field toward Rāvaṇa
+      peek.active=true; peek.startX=e.clientX; peek.base=peek.value;
     }
   });
   window.addEventListener('pointermove',(e)=>{
     if(!battle) return;
     if(battle.phase==='sakti' && swipeStart){
       if(Math.abs(e.clientX-swipeStart.x)>60 && performance.now()-swipeStart.t<400){ battle.saktiSwiped=true; swipeStart=null; }
+      return;
+    }
+    if(peek.active){
+      peek.value=clamp(peek.base+(peek.startX-e.clientX)*2.6/cam.scale, 0, RAVANA_POS.x-RAMA_POS.x+40);
       return;
     }
     if(battle.drawing && drawStart){
@@ -1838,6 +1898,7 @@ function setupInput(){
     }
   });
   window.addEventListener('pointerup',()=>{
+    peek.active=false;
     if(!battle) return;
     if(battle.drawing){
       battle.drawing=false;
