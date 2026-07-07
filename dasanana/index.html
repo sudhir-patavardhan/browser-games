@@ -8,120 +8,128 @@
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
   html,body{
     margin:0; padding:0; width:100%; height:100%; overflow:hidden;
-    background:#120a1e; color:#f5ead2;
+    background:#8ed4ff; color:#3a2208;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Roboto, sans-serif;
     touch-action:none;
   }
   .screen{ position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:18px; overflow-y:auto; z-index:10;
-    background: radial-gradient(circle at 50% 15%, #3a2410, #120a1e 70%); }
+    background: linear-gradient(180deg, #6ec6ff 0%, #b8e6ff 45%, #ffe9a8 78%, #ffd27a 100%); }
   .screen.hidden{ display:none; }
   .title{
     font-size: clamp(34px,10vw,60px); font-weight:900; margin:0; letter-spacing:3px; text-align:center;
-    background: linear-gradient(90deg,#ffd76b,#ff9a3d,#ff5e3a,#ffd76b);
+    background: linear-gradient(90deg,#c8600a,#e8360a,#a8322a,#c8600a);
     background-size:300% 100%; -webkit-background-clip:text; background-clip:text; color:transparent;
     animation: shift 7s linear infinite;
+    text-shadow: 0 2px 0 rgba(255,255,255,0.3);
   }
   @keyframes shift{ to{ background-position:300% 0; } }
-  .sans{ font-size: clamp(20px,6vw,32px); line-height:1.5; text-align:center; color:#ffd76b; }
-  .iast{ font-style:italic; opacity:0.85; font-size:13px; text-align:center; }
-  .gloss{ opacity:0.6; font-size:12px; text-align:center; }
-  .subtitle{ opacity:0.75; margin:8px 0 0; font-size:14px; text-align:center; max-width:340px; line-height:1.6; }
-  .blink{ font-size:13px; font-weight:700; margin-top:24px; animation: blinkA 1.3s ease-in-out infinite; }
+  .sans{ font-size: clamp(20px,6vw,32px); line-height:1.5; text-align:center; color:#8a4a06; }
+  .iast{ font-style:italic; opacity:0.85; font-size:13px; text-align:center; color:#5a3a14; }
+  .gloss{ opacity:0.75; font-size:12px; text-align:center; color:#5a3a14; }
+  .subtitle{ opacity:0.85; margin:8px 0 0; font-size:14px; text-align:center; max-width:340px; line-height:1.6; color:#4a2c10; }
+  .blink{ font-size:13px; font-weight:700; margin-top:24px; animation: blinkA 1.3s ease-in-out infinite; color:#8a4a06; }
   @keyframes blinkA{ 50%{ opacity:0.2; } }
-  .panel{ background:rgba(255,215,107,0.06); border:1px solid rgba(255,215,107,0.25); border-radius:16px; backdrop-filter:blur(12px); }
-  .btn{ background: linear-gradient(90deg,#ffd76b,#ff9a3d); border:none; color:#2a1608; font-weight:800; letter-spacing:1px;
-    padding:14px 28px; border-radius:26px; font-size:15px; cursor:pointer; margin:8px; }
+  .panel{ background:rgba(255,250,238,0.85); border:1.5px solid rgba(178,122,32,0.55); border-radius:16px; backdrop-filter:blur(10px);
+    box-shadow:0 3px 12px rgba(90,58,20,0.18); }
+  .btn{ background: linear-gradient(90deg,#ffb62e,#ff8a1e); border:none; color:#3a2208; font-weight:800; letter-spacing:1px;
+    padding:14px 28px; border-radius:26px; font-size:15px; cursor:pointer; margin:8px; box-shadow:0 3px 10px rgba(160,90,10,0.35); }
   .btn:active{ transform:scale(0.96); }
-  .btn.secondary{ background:rgba(255,215,107,0.1); color:#f5ead2; border:1px solid rgba(255,215,107,0.35); }
+  .btn.secondary{ background:rgba(255,250,238,0.9); color:#5a3a14; border:1.5px solid rgba(178,122,32,0.55); box-shadow:none; }
   .row{ display:flex; flex-wrap:wrap; justify-content:center; }
   .choice-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; max-width:560px; width:100%; margin-top:18px; }
   .choice-card{ padding:16px; text-align:center; cursor:pointer; }
   .choice-card:active{ transform:scale(0.96); }
-  .choice-card h3{ margin:4px 0; font-size:15px; color:#ffd76b; }
-  .choice-card p{ margin:0; font-size:11px; opacity:0.65; line-height:1.5; }
+  .choice-card h3{ margin:4px 0; font-size:15px; color:#b8600a; }
+  .choice-card p{ margin:0; font-size:11px; opacity:0.75; line-height:1.5; color:#4a2c10; }
 
   #screen-battle{ padding:0; background:none; z-index:1; }
   #battleCanvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
 
   #hud{ position:absolute; top:0; left:0; right:0; z-index:6; display:flex; align-items:center; gap:6px; padding:8px; }
-  #tejasWrap{ flex:1; max-width:230px; height:22px; border-radius:12px 12px 12px 12px; background:rgba(0,0,0,0.45);
-    border:1px solid rgba(255,215,107,0.4); overflow:hidden; position:relative; }
+  #tejasWrap{ flex:1; max-width:230px; height:22px; border-radius:12px; background:rgba(255,250,238,0.85);
+    border:1.5px solid rgba(178,122,32,0.6); overflow:hidden; position:relative; box-shadow:0 2px 8px rgba(90,58,20,0.2); }
   #tejasBar{ position:absolute; inset:2px auto 2px 2px; width:100%; border-radius:9px;
-    background:linear-gradient(90deg,#ff9a3d,#ffd76b,#fff3c8); transition:width 0.35s ease; }
-  #tejasLabel{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; color:#2a1608; z-index:2; }
+    background:linear-gradient(90deg,#ff8a1e,#ffb62e,#ffd76b); transition:width 0.35s ease; }
+  #tejasLabel{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; color:#3a2208; z-index:2; }
   #headRow{ display:flex; gap:2px; padding:4px 8px; font-size:13px; letter-spacing:1px; }
-  #sunCounter{ padding:4px 10px; font-size:12px; font-weight:700; color:#ffd76b; }
-  .iconBtn{ background:rgba(0,0,0,0.4); border:1px solid rgba(255,215,107,0.35); color:#f5ead2; border-radius:10px;
+  #sunCounter{ padding:4px 10px; font-size:12px; font-weight:700; color:#b8600a; }
+  .iconBtn{ background:rgba(255,250,238,0.85); border:1.5px solid rgba(178,122,32,0.55); color:#5a3a14; border-radius:10px;
     width:36px; height:36px; font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 
   #bannerLayer{ position:absolute; left:0; right:0; top:16%; z-index:7; display:flex; flex-direction:column; align-items:center; pointer-events:none; gap:4px; padding:0 14px; }
-  .banner{ background:rgba(18,10,30,0.82); border:1px solid rgba(255,215,107,0.4); border-radius:14px; padding:10px 20px;
-    text-align:center; animation:bannerPop 0.35s ease-out; max-width:92vw; }
+  .banner{ background:rgba(255,250,238,0.92); border:1.5px solid rgba(178,122,32,0.6); border-radius:14px; padding:10px 20px;
+    text-align:center; animation:bannerPop 0.35s ease-out; max-width:92vw; box-shadow:0 4px 16px rgba(90,58,20,0.25); }
   .banner .sans{ font-size:20px; }
   @keyframes bannerPop{ from{ transform:scale(0.7); opacity:0; } to{ transform:scale(1); opacity:1; } }
 
   #telegraphBox{ position:absolute; top:64px; right:10px; z-index:6; text-align:center; padding:8px 14px; display:none; max-width:200px; }
   #telegraphBox .sigil{ font-size:30px; }
   #telegraphBox .sans{ font-size:16px; }
-  #telegraphMeter{ height:6px; border-radius:3px; background:rgba(255,255,255,0.15); overflow:hidden; margin-top:6px; }
-  #telegraphFill{ height:100%; width:0%; background:linear-gradient(90deg,#ff5e3a,#ffd76b); }
+  #telegraphMeter{ height:6px; border-radius:3px; background:rgba(90,58,20,0.2); overflow:hidden; margin-top:6px; }
+  #telegraphFill{ height:100%; width:0%; background:linear-gradient(90deg,#e8360a,#ff8a1e); }
 
   #quiverBtn{ position:absolute; right:14px; bottom:120px; z-index:8; width:64px; height:64px; border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, #6b4a1e, #3a2410); border:2px solid rgba(255,215,107,0.6);
-    color:#ffd76b; font-size:26px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    background:radial-gradient(circle at 35% 30%, #a8742e, #6b4a1e); border:2.5px solid #ffb62e;
+    color:#fff3c8; font-size:26px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    box-shadow:0 4px 14px rgba(90,58,20,0.4); }
   #worshipBtn{ position:absolute; left:14px; bottom:120px; z-index:8; width:64px; height:64px; border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, #a86114, #5a340b); border:2px solid rgba(255,215,107,0.7);
-    color:#fff3c8; font-size:26px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    background:radial-gradient(circle at 35% 30%, #ffcf4a, #e8860c); border:2.5px solid #fff3c8;
+    color:#7a3a06; font-size:26px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    box-shadow:0 4px 14px rgba(160,90,10,0.45); }
   #quiverBtn:active, #worshipBtn:active{ transform:scale(0.92); }
   #nockedSigil{ position:absolute; right:20px; bottom:196px; z-index:8; font-size:22px; text-align:center; min-width:52px;
-    background:rgba(18,10,30,0.7); border:1px solid rgba(255,215,107,0.4); border-radius:10px; padding:4px 8px; display:none; }
-  #nockedSigil .n{ font-size:9px; display:block; opacity:0.75; }
+    background:rgba(255,250,238,0.92); border:1.5px solid rgba(178,122,32,0.6); border-radius:10px; padding:4px 8px; display:none; color:#3a2208; }
+  #nockedSigil .n{ font-size:9px; display:block; opacity:0.8; }
 
-  #astraWheel{ position:absolute; inset:0; z-index:9; display:none; background:rgba(10,6,18,0.55); }
+  #astraWheel{ position:absolute; inset:0; z-index:9; display:none; background:rgba(60,40,10,0.35); backdrop-filter:blur(2px); }
   #astraWheel.open{ display:block; }
-  .astraBtn{ position:absolute; width:64px; height:64px; border-radius:50%; background:rgba(24,14,40,0.92);
-    border:2px solid rgba(255,215,107,0.5); color:#f5ead2; cursor:pointer;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:20px; line-height:1; }
-  .astraBtn small{ font-size:8px; margin-top:2px; opacity:0.8; }
-  .astraBtn .cost{ font-size:8px; color:#ffd76b; }
-  .astraBtn:disabled{ opacity:0.35; }
-  .astraBtn.locked{ border-color:#666; }
+  .astraBtn{ position:absolute; width:64px; height:64px; border-radius:50%; background:rgba(255,250,238,0.95);
+    border:2px solid rgba(178,122,32,0.7); color:#3a2208; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:20px; line-height:1;
+    box-shadow:0 4px 12px rgba(90,58,20,0.3); }
+  .astraBtn small{ font-size:8px; margin-top:2px; opacity:0.85; font-weight:700; }
+  .astraBtn .cost{ font-size:8px; color:#b8600a; font-weight:800; }
+  .astraBtn:disabled{ opacity:0.4; }
+  .astraBtn.locked{ border-color:#999; }
   .astraBtn:active{ transform:scale(0.92); }
-  #wheelHint{ position:absolute; bottom:40px; left:0; right:0; text-align:center; font-size:12px; opacity:0.8; pointer-events:none; }
+  #wheelHint{ position:absolute; bottom:40px; left:0; right:0; text-align:center; font-size:12px; pointer-events:none;
+    color:#fff3c8; text-shadow:0 1px 4px rgba(60,40,10,0.8); font-weight:700; }
 
   #drawMeter{ position:absolute; left:14px; bottom:200px; z-index:8; width:12px; height:130px; border-radius:6px;
-    background:rgba(0,0,0,0.45); border:1px solid rgba(255,215,107,0.4); overflow:hidden; display:none; }
-  #drawFill{ position:absolute; bottom:0; left:0; right:0; height:0%; background:linear-gradient(0deg,#ff9a3d,#ffd76b); }
+    background:rgba(255,250,238,0.85); border:1.5px solid rgba(178,122,32,0.6); overflow:hidden; display:none; }
+  #drawFill{ position:absolute; bottom:0; left:0; right:0; height:0%; background:linear-gradient(0deg,#e8360a,#ffb62e); }
 
-  #worshipOverlay{ position:absolute; left:0; right:0; bottom:0; z-index:9; background:linear-gradient(0deg, rgba(58,36,16,0.96), rgba(58,36,16,0.7));
-    border-top:2px solid rgba(255,215,107,0.5); padding:14px 12px 20px; display:none; text-align:center; }
+  #worshipOverlay{ position:absolute; left:0; right:0; bottom:0; z-index:9; background:linear-gradient(0deg, rgba(255,244,214,0.97), rgba(255,244,214,0.82));
+    border-top:2.5px solid rgba(232,134,12,0.8); padding:14px 12px 20px; display:none; text-align:center;
+    box-shadow:0 -6px 24px rgba(160,90,10,0.25); }
   #worshipOverlay .sans{ font-size:17px; }
   #worshipOverlay .iast{ font-size:11px; margin-top:2px; }
   #chantRow{ display:flex; justify-content:center; gap:7px; margin-top:12px; flex-wrap:wrap; }
-  .chantDot{ width:48px; height:48px; border-radius:50%; border:2px solid rgba(255,215,107,0.5);
-    background:rgba(0,0,0,0.35); color:#ffd76b; font-size:9px; font-weight:700; overflow:hidden;
+  .chantDot{ width:48px; height:48px; border-radius:50%; border:2px solid rgba(178,122,32,0.6);
+    background:rgba(255,255,255,0.7); color:#8a4a06; font-size:9px; font-weight:700; overflow:hidden;
     display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.1s;
     text-overflow:ellipsis; white-space:nowrap; padding:0 3px; }
-  .chantDot.active{ background:#ffd76b; color:#2a1608; transform:scale(1.18); box-shadow:0 0 18px #ffd76b; }
-  .chantDot.done{ background:rgba(255,215,107,0.35); border-color:#ffd76b; }
+  .chantDot.active{ background:#ff9a1e; color:#fff; transform:scale(1.18); box-shadow:0 0 18px #ffb62e; border-color:#e8860c; }
+  .chantDot.done{ background:rgba(255,182,46,0.5); border-color:#e8860c; }
   .chantDot.missed{ opacity:0.35; }
   #worshipClose{ margin-top:10px; }
 
   #endureBtn{ position:absolute; left:50%; bottom:150px; transform:translateX(-50%); z-index:9;
-    width:170px; height:66px; border-radius:33px; border:2px solid #ffd76b; background:rgba(24,14,40,0.9);
-    color:#ffd76b; font-weight:800; font-size:13px; display:none; }
-  #endureBtn:active{ background:rgba(255,215,107,0.25); }
-  #endureFill{ position:absolute; left:0; top:0; bottom:0; width:0%; background:rgba(255,215,107,0.3); border-radius:33px; }
+    width:170px; height:66px; border-radius:33px; border:2.5px solid #e8860c; background:rgba(255,250,238,0.95);
+    color:#8a4a06; font-weight:800; font-size:13px; display:none; box-shadow:0 4px 16px rgba(160,90,10,0.4); }
+  #endureBtn:active{ background:rgba(255,182,46,0.4); }
+  #endureFill{ position:absolute; left:0; top:0; bottom:0; width:0%; background:rgba(255,154,30,0.45); border-radius:33px; }
 
   #qteHint{ position:absolute; left:0; right:0; bottom:220px; z-index:9; text-align:center; font-size:26px; font-weight:900;
-    color:#ff5e3a; display:none; animation: blinkA 0.4s linear infinite; }
+    color:#e8360a; text-shadow:0 2px 6px rgba(255,255,255,0.7); display:none; animation: blinkA 0.4s linear infinite; }
 
   #pauseOverlay,#endOverlay,#loreOverlay{ position:fixed; inset:0; z-index:20; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; text-align:center; gap:10px; background:rgba(12,7,20,0.9); backdrop-filter:blur(6px); padding:16px; overflow-y:auto; }
+    justify-content:center; text-align:center; gap:10px; background:rgba(255,240,208,0.94); backdrop-filter:blur(8px); padding:16px; overflow-y:auto;
+    color:#3a2208; }
   #matrixScroll{ max-width:420px; max-height:44vh; overflow-y:auto; font-size:11px; line-height:1.7; text-align:left;
-    padding:12px 16px; opacity:0.9; }
-  #matrixScroll b{ color:#ffd76b; }
-  #endStats{ font-size:14px; line-height:1.9; max-width:340px; }
+    padding:12px 16px; color:#4a2c10; }
+  #matrixScroll b{ color:#b8600a; }
+  #endStats{ font-size:14px; line-height:1.9; max-width:340px; color:#4a2c10; }
   .hidden{ display:none !important; }
   @media (max-width:400px){ .astraBtn{ width:56px; height:56px; font-size:17px; } }
 </style>
@@ -477,18 +485,60 @@ const AudioEngine = {
     o.connect(g).connect(this.master); o.start(t0); o.stop(t0+2.5);
     this.tone(348,2.0,'sine',0.05,0.1); this.noise(1.8,0.04,900,0.6,0.15);
   },
-  bowCreak(){ this.noise(0.35,0.05,420,3); },
-  bowRelease(pct){ this.noise(0.06,0.12+pct*0.15,180,6); this.noise(0.28,0.08+pct*0.1,2600,0.7,0.03); },
-  clash(elA,elB){
-    this.noise(0.4,0.22,1200,0.8);
-    const pair=[elA,elB];
-    if(pair.includes('water')&&pair.includes('fire')) this.noise(0.9,0.14,3200,0.6,0.1);       // steam hiss
-    if(pair.includes('vajra')||pair.includes('rudra')){ this.tone(55,0.7,'sine',0.25,0.05); this.noise(0.6,0.18,300,0.5,0.05); } // thunder
-    if(pair.includes('serpent')) this.noise(0.7,0.1,5200,1.2,0.08);                            // serpent hiss
-    if(pair.includes('light')||pair.includes('truth')) this.tone(1567,0.6,'sine',0.07,0.1);    // shimmer
+  bowCreak(){ this.noise(0.3,0.04,380,3); },
+  // Sustained bow-stretch: looped noise through a resonant bandpass whose pitch and
+  // level rise with the draw, plus wood-fiber creak ticks as the limbs bend further.
+  bowNodes:null, _lastCreakPct:0,
+  startBowStretch(){
+    if(!this.ctx) return;
+    this.stopBowStretch();
+    const n=Math.floor(this.ctx.sampleRate*0.6);
+    const buf=this.ctx.createBuffer(1,n,this.ctx.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<n;i++) d[i]=(Math.random()*2-1);
+    const src=this.ctx.createBufferSource(); src.buffer=buf; src.loop=true;
+    const f=this.ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=140; f.Q.value=4.5;
+    const g=this.ctx.createGain(); g.gain.value=0.0001;
+    src.connect(f).connect(g).connect(this.master); src.start();
+    this.bowNodes={src,f,g}; this._lastCreakPct=0;
   },
-  headBurst(){ this.conch(); this.noise(0.5,0.2,700,0.7); this.tone(880,0.8,'sine',0.08,0.2); },
-  ramaHit(){ this.tone(140,0.5,'sawtooth',0.16); this.noise(0.4,0.12,500,0.8); },
+  updateBowStretch(pct){
+    if(!this.bowNodes) return;
+    this.bowNodes.f.frequency.value=140+pct*540;
+    this.bowNodes.g.gain.value=0.012+pct*0.09;
+    if(pct-this._lastCreakPct>0.09){ this._lastCreakPct=pct; this.tone(66+pct*90,0.07,'square',0.03); }
+  },
+  stopBowStretch(){
+    if(!this.bowNodes) return;
+    const t=this.ctx.currentTime;
+    this.bowNodes.g.gain.linearRampToValueAtTime(0.0001,t+0.05);
+    this.bowNodes.src.stop(t+0.12);
+    this.bowNodes=null;
+  },
+  // Deep string twang — layered low tones with an air whoosh, not a crack.
+  bowRelease(pct){
+    this.tone(82,0.5,'triangle',0.2+pct*0.14);
+    this.tone(123,0.32,'triangle',0.09+pct*0.07,0.005);
+    this.tone(62,0.62,'sine',0.16+pct*0.1,0.012);
+    this.noise(0.22,0.04+pct*0.05,900,0.5,0.025);
+  },
+  clash(elA,elB){
+    this.tone(56,0.75,'sine',0.26);                                 // deep boom body
+    this.tone(94,0.5,'triangle',0.13,0.02);
+    this.noise(0.45,0.09,650,0.6);
+    const pair=[elA,elB];
+    if(pair.includes('water')&&pair.includes('fire')) this.noise(1.1,0.1,3000,0.5,0.12);        // steam hiss
+    if(pair.includes('vajra')||pair.includes('rudra')){ this.tone(44,1.0,'sine',0.28,0.05); this.noise(0.7,0.12,280,0.5,0.05); } // rolling thunder
+    if(pair.includes('serpent')) this.noise(0.9,0.07,5200,1.2,0.1);                             // serpent hiss
+    if(pair.includes('light')||pair.includes('truth')){ this.tone(1567,0.9,'sine',0.06,0.1); this.tone(2093,0.7,'sine',0.04,0.16); }
+  },
+  headBurst(){
+    this.conch();
+    this.tone(48,1.0,'sine',0.24); this.tone(72,0.7,'triangle',0.12,0.04);
+    this.noise(0.4,0.08,550,0.7);
+    [660,880,1108].forEach((f,i)=>this.tone(f,0.9,'sine',0.05,0.25+i*0.09));                    // rising shimmer
+  },
+  ramaHit(){ this.tone(108,0.6,'triangle',0.2); this.tone(101,0.55,'triangle',0.11,0.02); this.noise(0.28,0.05,380,0.8); },
   brahmastra(){
     if(!this.ctx) return;
     const t0=this.ctx.currentTime;
@@ -528,48 +578,94 @@ function updateParticles(dt){
 const canvas=document.getElementById('battleCanvas');
 const ctx=canvas.getContext('2d');
 let viewScale=1, offX=0, offY=0, cssW=0, cssH=0;
+let wideScale=1, wideOx=0, wideOy=0;
+const cam={ scale:1, ox:0, oy:0, init:false };
 function resizeCanvas(){
   const dpr=window.devicePixelRatio||1;
   cssW=window.innerWidth; cssH=window.innerHeight;
   canvas.width=Math.round(cssW*dpr); canvas.height=Math.round(cssH*dpr);
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  // Camera framing: use the LARGEST scale that still keeps both duelists on screen,
-  // then anchor the ground line near the bottom. The sky/ground painters fill the whole
-  // canvas regardless, so this maximises how big the action reads on any aspect ratio.
-  const SPAN = 700;                                    // world width that must stay visible (both fighters + margins)
+  // Wide framing: the LARGEST scale that still keeps both duelists on screen,
+  // ground anchored near the bottom. The sky/ground painters fill the whole canvas.
+  const SPAN = 700;
   const cover = Math.max(cssW/WORLD_W, cssH/WORLD_H);
-  viewScale = Math.min(cover, cssW/SPAN);
-  viewScale = Math.max(viewScale, cssW/WORLD_W);       // never below width-fit
-  offX = cssW/2 - CLASH_X*viewScale;                   // center on the mid-field
-  offY = cssH*0.88 - RAMA_POS.y*viewScale;             // feet of the fighters ~88% down the screen
+  wideScale = Math.min(cover, cssW/SPAN);
+  wideScale = Math.max(wideScale, cssW/WORLD_W);
+  wideOx = cssW/2 - CLASH_X*wideScale;
+  wideOy = cssH*0.88 - RAMA_POS.y*wideScale;
+  if(!cam.init){ cam.scale=wideScale; cam.ox=wideOx; cam.oy=wideOy; cam.init=true; }
+  viewScale=cam.scale; offX=cam.ox; offY=cam.oy;
+}
+// Cinematic camera: push in tight on Rāma's bow while he draws (and during the
+// Brahmāstra charge), pull back to the wide battlefield the moment the arrow flies,
+// with a slight lean toward mid-field during the clash itself.
+function cameraTarget(b){
+  if(b && (b.drawing || (b.phase==='finale' && b.phaseT<3.2))){
+    const sc=wideScale*2.2, fx=RAMA_POS.x+70, fy=RAMA_POS.y-160;
+    return { scale:sc, ox:cssW*0.42-fx*sc, oy:cssH*0.54-fy*sc, k:5 };
+  }
+  if(b && b.phase==='clash'){
+    const sc=wideScale*1.12;
+    return { scale:sc, ox:cssW*0.5-CLASH_X*sc, oy:cssH*0.6-CLASH_Y*sc, k:8 };
+  }
+  return { scale:wideScale, ox:wideOx, oy:wideOy, k:9 };
+}
+function updateCamera(b,dtMs){
+  const t=cameraTarget(b);
+  const k=1-Math.exp(-(dtMs/1000)*t.k);
+  cam.scale=lerp(cam.scale,t.scale,k); cam.ox=lerp(cam.ox,t.ox,k); cam.oy=lerp(cam.oy,t.oy,k);
+  viewScale=cam.scale; offX=cam.ox; offY=cam.oy;
 }
 function w2s(x,y){ return { x:offX+x*viewScale, y:offY+y*viewScale }; }
 
 function drawSky(t, darkness){
+  // bright mid-morning over Laṅkā
   const g=ctx.createLinearGradient(0,0,0,cssH);
-  g.addColorStop(0,'#2a1030'); g.addColorStop(0.35,'#6b2a28'); g.addColorStop(0.62,'#c96a2a'); g.addColorStop(0.78,'#f5a54a'); g.addColorStop(1,'#3a2410');
+  g.addColorStop(0,'#4aa8f0'); g.addColorStop(0.42,'#8ed4ff'); g.addColorStop(0.68,'#d8f0ff'); g.addColorStop(0.82,'#fff2c0'); g.addColorStop(1,'#ffe9a8');
   ctx.fillStyle=g; ctx.fillRect(0,0,cssW,cssH);
-  // sun low on the horizon
-  const sun=w2s(405,760);
-  const sg=ctx.createRadialGradient(sun.x,sun.y,4,sun.x,sun.y,150*viewScale);
-  sg.addColorStop(0,'rgba(255,240,190,0.95)'); sg.addColorStop(0.25,'rgba(255,190,90,0.6)'); sg.addColorStop(1,'rgba(255,190,90,0)');
-  ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(sun.x,sun.y,150*viewScale,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='#ffe9b8'; ctx.beginPath(); ctx.arc(sun.x,sun.y,42*viewScale,0,Math.PI*2); ctx.fill();
-  // Laṅkā ramparts silhouettes
-  ctx.fillStyle='rgba(30,12,26,0.85)';
+  // high golden sun
+  const sun=w2s(560,420);
+  const sg=ctx.createRadialGradient(sun.x,sun.y,4,sun.x,sun.y,180*viewScale);
+  sg.addColorStop(0,'rgba(255,252,235,1)'); sg.addColorStop(0.2,'rgba(255,238,170,0.75)'); sg.addColorStop(1,'rgba(255,238,170,0)');
+  ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(sun.x,sun.y,180*viewScale,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#fffbe8'; ctx.beginPath(); ctx.arc(sun.x,sun.y,34*viewScale,0,Math.PI*2); ctx.fill();
+  // drifting clouds
+  ctx.fillStyle='rgba(255,255,255,0.85)';
+  for(let i=0;i<4;i++){
+    const cwx=((i*260 + t*0.008) % (WORLD_W+320)) - 160;
+    const cwy=250+((i*97)%180);
+    const c=w2s(cwx,cwy); const cs=viewScale*(0.8+((i*31)%40)/60);
+    ctx.beginPath();
+    ctx.ellipse(c.x,c.y,52*cs,16*cs,0,0,Math.PI*2);
+    ctx.ellipse(c.x+34*cs,c.y+4*cs,36*cs,13*cs,0,0,Math.PI*2);
+    ctx.ellipse(c.x-36*cs,c.y+5*cs,32*cs,12*cs,0,0,Math.PI*2);
+    ctx.fill();
+  }
+  // Laṅkā ramparts — golden sandstone in daylight
   const horizon=w2s(0,820).y;
   for(let i=0;i<7;i++){
     const bx=offX+(i*130-40)*viewScale, bw=(70+((i*37)%50))*viewScale, bh=(90+((i*53)%110))*viewScale;
+    ctx.fillStyle='#d8a860';
     ctx.fillRect(bx,horizon-bh,bw,bh);
+    ctx.fillStyle='#b8884a';                                     // shadow side
+    ctx.fillRect(bx+bw*0.68,horizon-bh,bw*0.32,bh);
+    ctx.fillStyle='#d8a860';
     for(let c=0;c<4;c++) ctx.fillRect(bx+c*bw/4, horizon-bh-8*viewScale, bw/7, 8*viewScale);
+    ctx.fillStyle='rgba(90,58,20,0.5)';                          // gate arch on the tall ones
+    if(bh>140*viewScale){ ctx.beginPath(); ctx.arc(bx+bw*0.35,horizon,bw*0.16,Math.PI,0); ctx.fill(); }
   }
-  // ground
+  // green field
   const gg=ctx.createLinearGradient(0,horizon,0,cssH);
-  gg.addColorStop(0,'#4a2c14'); gg.addColorStop(1,'#241207');
+  gg.addColorStop(0,'#8cc45a'); gg.addColorStop(0.5,'#6aab42'); gg.addColorStop(1,'#4e8f2f');
   ctx.fillStyle=gg; ctx.fillRect(0,horizon,cssW,cssH-horizon);
-  ctx.strokeStyle='rgba(255,215,107,0.08)'; ctx.lineWidth=1;
-  for(let i=0;i<5;i++){ const y=horizon+(i+1)*(cssH-horizon)/6; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cssW,y); ctx.stroke(); }
-  // darkness veil (Tāmasāstra)
+  // mowing stripes + worn earth duel path
+  ctx.fillStyle='rgba(255,255,255,0.06)';
+  for(let i=0;i<5;i+=2){ const y1=horizon+i*(cssH-horizon)/5; ctx.fillRect(0,y1,cssW,(cssH-horizon)/5); }
+  const pathY=w2s(0,RAMA_POS.y).y;
+  const pg=ctx.createLinearGradient(0,pathY-30*viewScale,0,pathY+26*viewScale);
+  pg.addColorStop(0,'rgba(190,150,90,0)'); pg.addColorStop(0.5,'rgba(190,150,90,0.5)'); pg.addColorStop(1,'rgba(190,150,90,0)');
+  ctx.fillStyle=pg; ctx.fillRect(0,pathY-30*viewScale,cssW,56*viewScale);
+  // darkness veil (Tāmasāstra) — dramatic against the daylight
   if(darkness>0){ ctx.fillStyle=`rgba(8,4,20,${clamp(darkness,0,0.82)})`; ctx.fillRect(0,0,cssW,cssH); }
 }
 
@@ -632,7 +728,9 @@ function drawRama(b, t){
   ctx.restore();
   // rear arm: drawn back to the cheek with the string
   const bowX=34*s, bowY=-100*s, bowR=58*s;
-  const nockX=bowX-drawPull*34*s, nockY=bowY;
+  // full-draw tremble: the hand shakes at the limit of the pull
+  const tremble = drawPull>0.75 ? Math.sin(t/26)*1.4*s*(drawPull-0.75)*4 : 0;
+  const nockX=bowX-drawPull*34*s+tremble, nockY=bowY+tremble*0.6;
   ctx.strokeStyle=SKIN_D; ctx.lineWidth=9*s;
   ctx.beginPath(); ctx.moveTo(4*s,-108*s); ctx.lineTo(nockX-6*s,nockY); ctx.stroke();
   // front arm: extended, gripping the bow
@@ -649,18 +747,30 @@ function drawRama(b, t){
   // tilaka
   ctx.strokeStyle=GOLD; ctx.lineWidth=1.4*s;
   ctx.beginPath(); ctx.moveTo(16*s,-138*s); ctx.lineTo(16*s,-132*s); ctx.stroke();
-  // the Kodaṇḍa — tall recurve bow with golden tips
+  // the Kodaṇḍa — tall recurve bow; the limbs flex wider as the string is drawn
+  const flex = drawPull*0.14;
+  const tA=-Math.PI/2.05-flex, tB=Math.PI/2.05+flex;
   ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=6*s;
-  ctx.beginPath(); ctx.arc(bowX,bowY,bowR,-Math.PI/2.05,Math.PI/2.05); ctx.stroke();
+  ctx.beginPath(); ctx.arc(bowX,bowY,bowR,tA,tB); ctx.stroke();
+  // wood grain visible when the camera pushes in
+  if(s>1.1){
+    ctx.strokeStyle='rgba(90,58,20,0.5)'; ctx.lineWidth=1.2*s;
+    ctx.beginPath(); ctx.arc(bowX,bowY,bowR-2*s,tA+0.1,tB-0.1); ctx.stroke();
+    ctx.strokeStyle='rgba(255,230,180,0.35)'; ctx.lineWidth=1*s;
+    ctx.beginPath(); ctx.arc(bowX,bowY,bowR+2*s,tA+0.15,tB-0.15); ctx.stroke();
+  }
   ctx.strokeStyle=GOLD; ctx.lineWidth=6.5*s;
-  const tA=-Math.PI/2.05, tB=Math.PI/2.05;
   const topX=bowX+bowR*Math.cos(tA), topY=bowY+bowR*Math.sin(tA);
   const botX=bowX+bowR*Math.cos(tB), botY=bowY+bowR*Math.sin(tB);
   ctx.beginPath(); ctx.arc(bowX,bowY,bowR,tA,tA+0.22); ctx.stroke();
   ctx.beginPath(); ctx.arc(bowX,bowY,bowR,tB-0.22,tB); ctx.stroke();
-  // string
-  ctx.strokeStyle='rgba(255,243,200,0.9)'; ctx.lineWidth=1.6*s;
+  // string — doubled fibers up close
+  ctx.strokeStyle='rgba(120,90,50,0.95)'; ctx.lineWidth=s>1.1?2.2*s:1.6*s;
   ctx.beginPath(); ctx.moveTo(topX,topY); ctx.lineTo(nockX,nockY); ctx.lineTo(botX,botY); ctx.stroke();
+  if(s>1.1){
+    ctx.strokeStyle='rgba(255,243,200,0.7)'; ctx.lineWidth=0.8*s;
+    ctx.beginPath(); ctx.moveTo(topX,topY); ctx.lineTo(nockX,nockY-1.2*s); ctx.lineTo(botX,botY); ctx.stroke();
+  }
   // nocked astra — glowing arrow
   if(b.nocked){
     const col=RAMA_ASTRAS[b.nocked].color;
@@ -798,18 +908,20 @@ function drawMissiles(b){
     if(Math.random()<0.9){
       const dir = m.tx>m.sx?1:-1;
       const trailCol = m.element==='serpent' ? (Math.random()<0.5?'#58c04a':'#2d7a28') : m.color;
-      particles.push({ x:p.x, y:p.y, vx:rand(-30,30)-dir*60, vy:rand(-30,30), color:trailCol,
+      particles.push({ x:m.x, y:m.y, vx:rand(-30,30)-dir*60, vy:rand(-30,30), color:trailCol,
         size:rand(2, m.element==='fire'?7:5), life:0, maxLife:rand(300,650), g:m.element==='water'?160:20, glow:true });
     }
   }
 }
 function drawParticles(){
+  const zoomK=viewScale/wideScale;
   for(const p of particles){
     const a=clamp(1-p.life/p.maxLife,0,1);
+    const sp=w2s(p.x,p.y);
     ctx.save(); ctx.globalAlpha=a;
     if(p.glow){ ctx.shadowColor=p.color; ctx.shadowBlur=8; }
     ctx.fillStyle=p.color;
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*a+0.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(sp.x,sp.y,(p.size*a+0.5)*zoomK,0,Math.PI*2); ctx.fill();
     ctx.restore();
   }
 }
@@ -824,7 +936,7 @@ function drawSakti(b){
   ctx.beginPath(); ctx.moveTo(-30*s,0); ctx.lineTo(30*s,0); ctx.stroke();
   ctx.fillStyle='#ff3b3b'; ctx.beginPath(); ctx.moveTo(30*s,0); ctx.lineTo(16*s,-7*s); ctx.lineTo(16*s,7*s); ctx.closePath(); ctx.fill();
   ctx.restore();
-  particles.push({x:p.x,y:p.y,vx:rand(-40,40),vy:rand(-40,40),color:'#ff3b3b',size:3,life:0,maxLife:300,g:0,glow:true});
+  particles.push({x:x,y:y,vx:rand(-40,40),vy:rand(-40,40),color:'#ff3b3b',size:3,life:0,maxLife:300,g:0,glow:true});
 }
 function drawWorshipGlow(b,t){
   if(!b.worship.active) return;
@@ -851,7 +963,7 @@ function drawFinale(b){
     const g=ctx.createRadialGradient(p.x,p.y,2,p.x,p.y,r+30);
     g.addColorStop(0,'rgba(255,242,200,0.9)'); g.addColorStop(1,'rgba(255,242,200,0)');
     ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,r+30,0,Math.PI*2); ctx.fill();
-    if(Math.random()<0.6) burst(p.x,p.y,'#fff2c8',2,{speed:80,g:0,life:600,size:3});
+    if(Math.random()<0.6) burst(RAMA_POS.x+70,RAMA_POS.y-155,'#fff2c8',2,{speed:80,g:0,life:600,size:3});
   } else if(t<4.6){ // supernova sweep
     const prog=(t-3.2)/1.4;
     ctx.fillStyle=`rgba(255,248,225,${prog<0.5?prog*2:2-prog*2})`;
@@ -964,8 +1076,7 @@ function applyOutcome(b){
     ramaStruck(b, RAVANA_ASTRAS[cd.attack].tier);
     b.fumbles[cd.attack]=(b.fumbles[cd.attack]||0)+1;    // Rāvaṇa remembers what you fumbled
   } else {
-    const cp=w2s(CLASH_X,CLASH_Y);
-    burst(cp.x,cp.y,'#fff2c8',26,{speed:300,g:60,life:700});
+    burst(CLASH_X,CLASH_Y,'#fff2c8',26,{speed:300,g:60,life:700});
   }
   b.missiles=[]; b.clashData=null;
   if(b.over) return;
@@ -975,12 +1086,11 @@ function applyOutcome(b){
 function headDestroyed(b){
   const remaining=b.enemy.heads-b.headsDestroyed;
   const hp=headWorldPos(b, b.headsDestroyed);
-  const sp=w2s(hp.x,hp.y);
   if(b.enemy.key==='ravana' && remaining===1){
     // The 10th head cannot fall to any ordinary astra (Yuddha Kāṇḍa 108)
     b.staggered++;
-    burst(sp.x,sp.y,'#ff9a3d',30,{speed:260});
-    burst(sp.x,sp.y,ELEMENT_COLORS.blood,14,{speed:200,g:420,life:800,size:4});
+    burst(hp.x,hp.y,'#ff9a3d',30,{speed:260});
+    burst(hp.x,hp.y,ELEMENT_COLORS.blood,14,{speed:200,g:420,life:800,size:4});
     showBanner('शिरो दग्धं पुनरुत्थितम्','The head burns… and regrows!',2200);
     AudioEngine.noise(0.6,0.15,600,0.8);
     checkBrahmaUnlock(b);
@@ -989,9 +1099,9 @@ function headDestroyed(b){
   b.headsDestroyed++;
   b.lastKillTime=performance.now(); b.elapsedSinceKill=0;
   // visceral burst: crimson spray + ember dissolve + tumbling light
-  burst(sp.x,sp.y,ELEMENT_COLORS.blood,34,{speed:330,g:430,life:1000,size:5});
-  burst(sp.x,sp.y,'#ff9a3d',26,{speed:220,g:120,life:1300});
-  burst(sp.x,sp.y,'#fff2c8',16,{speed:150,g:-30,life:1500,size:3});
+  burst(hp.x,hp.y,ELEMENT_COLORS.blood,34,{speed:330,g:430,life:1000,size:5});
+  burst(hp.x,hp.y,'#ff9a3d',26,{speed:220,g:120,life:1300});
+  burst(hp.x,hp.y,'#fff2c8',16,{speed:150,g:-30,life:1500,size:3});
   AudioEngine.headBurst();
   updateHud(b);
   const rem=b.enemy.heads-b.headsDestroyed;
@@ -1009,9 +1119,8 @@ function headWorldPos(b, i){
 function ramaStruck(b, tier){
   const cost=HIT_COST[tier]||15;
   b.tejas=clamp(b.tejas-cost,0,100);
-  const p=w2s(RAMA_POS.x,RAMA_POS.y-110);
-  burst(p.x,p.y,'#ff5e3a',22,{speed:260});
-  burst(p.x,p.y,ELEMENT_COLORS.blood,10,{speed:180,g:400,life:700,size:4});
+  burst(RAMA_POS.x,RAMA_POS.y-110,'#ff5e3a',22,{speed:260});
+  burst(RAMA_POS.x,RAMA_POS.y-110,ELEMENT_COLORS.blood,10,{speed:180,g:400,life:700,size:4});
   AudioEngine.ramaHit();
   updateHud(b);
   if(b.tejas<=0){ battleLost(b); }
@@ -1038,14 +1147,12 @@ function resolveSakti(b, dodged){
   document.getElementById('qteHint').style.display='none';
   if(dodged){
     showBanner('मुक्तः','Rāma slips aside — the spear buries itself in the earth.',1900);
-    const p=w2s(RAMA_POS.x-60,RAMA_POS.y);
-    burst(p.x,p.y,'#a98456',18,{speed:200});
+    burst(RAMA_POS.x-60,RAMA_POS.y,'#a98456',18,{speed:200});
   } else {
     b.tejas=clamp(b.tejas-40,0,100);
     b.kneelT=1.6;
-    const p=w2s(RAMA_POS.x,RAMA_POS.y-100);
-    burst(p.x,p.y,'#ff3b3b',30,{speed:300});
-    burst(p.x,p.y,ELEMENT_COLORS.blood,16,{speed:220,g:420,life:900,size:5});
+    burst(RAMA_POS.x,RAMA_POS.y-100,'#ff3b3b',30,{speed:300});
+    burst(RAMA_POS.x,RAMA_POS.y-100,ELEMENT_COLORS.blood,16,{speed:220,g:420,life:900,size:5});
     showBanner('रामो जानुभ्यां पतितः','The spear strikes — Rāma kneels, as Lakṣmaṇa once fell.',2400);
     AudioEngine.ramaHit();
     updateHud(b);
@@ -1088,10 +1195,9 @@ function startFinale(b){
   AudioEngine.brahmastra();
 }
 function finishFinale(b){
-  const p=w2s(RAVANA_POS.x,RAVANA_POS.y-80);
-  burst(p.x,p.y,'#fff2c8',80,{speed:420,g:40,life:1800});
-  burst(p.x,p.y,ELEMENT_COLORS.blood,30,{speed:300,g:400,life:1200,size:6});
-  burst(p.x,p.y,'#ffd76b',50,{speed:250,g:-20,life:2200});
+  burst(RAVANA_POS.x,RAVANA_POS.y-80,'#fff2c8',80,{speed:420,g:40,life:1800});
+  burst(RAVANA_POS.x,RAVANA_POS.y-80,ELEMENT_COLORS.blood,30,{speed:300,g:400,life:1200,size:6});
+  burst(RAVANA_POS.x,RAVANA_POS.y-80,'#ffd76b',50,{speed:250,g:-20,life:2200});
   b.headsDestroyed=b.enemy.heads;
   battleWon(b);
 }
@@ -1219,8 +1325,8 @@ function updateBattle(b, dt){
     if(b.elapsedSinceKill>REGROW_SECONDS){
       b.elapsedSinceKill=0;
       b.headsDestroyed--;
-      const hp=headWorldPos(b,b.headsDestroyed), sp=w2s(hp.x,hp.y);
-      burst(sp.x,sp.y,'#ff6b2e',30,{speed:240,g:-40});
+      const hp=headWorldPos(b,b.headsDestroyed);
+      burst(hp.x,hp.y,'#ff6b2e',30,{speed:240,g:-40});
       showBanner('शिरः पुनर्जातम्','A head regrows in flame — ordinary effort cannot keep them down!',2400);
       updateHud(b);
       checkBrahmaUnlock(b);
@@ -1256,10 +1362,9 @@ function updateBattle(b, dt){
         if(all){
           cd.met=true; b.phaseT=0;
           if(cd.response!==null){
-            const cp=w2s(CLASH_X,CLASH_Y);
             const attA=RAVANA_ASTRAS[cd.attack], resA=RAMA_ASTRAS[cd.response];
-            burst(cp.x,cp.y,attA.color,26,{speed:320});
-            burst(cp.x,cp.y,resA.color,26,{speed:320});
+            burst(CLASH_X,CLASH_Y,attA.color,26,{speed:320});
+            burst(CLASH_X,CLASH_Y,resA.color,26,{speed:320});
             AudioEngine.clash(resA.element,attA.element);
             const out=cd.resolution.outcome;
             b.missiles = [];
@@ -1396,7 +1501,7 @@ function setupInput(){
       drawStart={x:e.clientX,y:e.clientY};
       battle.drawing=true; battle.drawPct=0;
       document.getElementById('drawMeter').style.display='block';
-      AudioEngine.bowCreak();
+      AudioEngine.startBowStretch();
     }
   });
   window.addEventListener('pointermove',(e)=>{
@@ -1408,6 +1513,7 @@ function setupInput(){
     if(battle.drawing && drawStart){
       const d=Math.hypot(e.clientX-drawStart.x, e.clientY-drawStart.y);
       battle.drawPct=clamp(d/210,0,1);
+      AudioEngine.updateBowStretch(battle.drawPct);
       document.getElementById('drawFill').style.height=(battle.drawPct*100)+'%';
     }
   });
@@ -1415,6 +1521,7 @@ function setupInput(){
     if(!battle) return;
     if(battle.drawing){
       battle.drawing=false;
+      AudioEngine.stopBowStretch();
       document.getElementById('drawMeter').style.display='none';
       if(battle.drawPct>=0.12){ fireAstra(battle, battle.drawPct); }
       battle.drawPct=0;
@@ -1543,6 +1650,7 @@ function loop(now){
   if(delta>250) delta=250;
   if(battle && !paused){
     updateBattle(battle, delta);
+    updateCamera(battle, delta);
     updateParticles(delta);
     drawSky(now, battle.darkness);
     drawWorshipGlow(battle, now);
