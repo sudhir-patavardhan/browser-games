@@ -226,9 +226,12 @@ const RAMA_POS = { x:150, y:1000 };
 const RAVANA_POS = { x:640, y:985 };
 const CLASH_X = 400, CLASH_Y = 845;
 const FIG = 1.55;                       // figure scale multiplier — Rāma & Rāvaṇa drawn large
-const MISSILE_LEG1 = 0.95;              // seconds: launch → mid-field clash
-const MISSILE_LEG2 = 0.8;               // seconds: clash → target
-const MISSILE_SOLO = 1.05;              // seconds: unanswered astra, launch → Rāma
+const ARROW_GRAVITY = 760;              // world units/s² — ballistic drop on Rāma's arrows
+const ARROW_SPEED_MIN = 640, ARROW_SPEED_MAX = 1280;   // launch speed by draw %
+const ENEMY_FLIGHT_T = 1.7;             // seconds for Rāvaṇa's astra to reach Rāma
+const ENEMY_GRAVITY = 300;              // gentler arc on the incoming astra
+const CLASH_RADIUS = 48;                // interception radius — generous, aim still matters
+const SEEK_SPEED = 980;                 // auto-aim (keyboard) and post-clash homing speed
 const IDLE_MIN = 2.2, IDLE_MAX = 4.0;
 const REGROW_SECONDS = 60;
 const WORSHIP_BEAT = 0.75;
@@ -285,7 +288,8 @@ const RULE_LINES = {
   merit:'तुल्ययोः शस्त्रयोर्धर्मो जयति — Among equal weapons, the wielder’s merit decides.',
   like:'समं समेन शाम्यति — Like meets like; both dissolve.',
   consumed:'The lesser missile is consumed.',
-  falter:'मन्त्रः स्खलति — The mantra falters…'
+  falter:'मन्त्रः स्खलति — The mantra falters…',
+  missed:'लक्ष्यभ्रष्टः शरः — The counter flies wide!'
 };
 // Āditya-Hṛdayam — Yuddha Kāṇḍa, canto 105. Taught to Rāma by Agastya between the armies.
 const SLOKAS = [
@@ -605,8 +609,11 @@ function cameraTarget(b){
     return { scale:sc, ox:cssW*0.42-fx*sc, oy:cssH*0.54-fy*sc, k:5 };
   }
   if(b && b.phase==='clash'){
-    const sc=wideScale*1.12;
-    return { scale:sc, ox:cssW*0.5-CLASH_X*sc, oy:cssH*0.6-CLASH_Y*sc, k:8 };
+    // follow the live missile like the bird in flight
+    const live=b.missiles.find(m=>!m.dead);
+    const fx=live?clamp(live.x,240,660):CLASH_X, fy=live?clamp(live.y,560,960):CLASH_Y;
+    const sc=wideScale*1.18;
+    return { scale:sc, ox:cssW*0.5-fx*sc, oy:cssH*0.58-fy*sc, k:6 };
   }
   return { scale:wideScale, ox:wideOx, oy:wideOy, k:9 };
 }
@@ -771,17 +778,28 @@ function drawRama(b, t){
     ctx.strokeStyle='rgba(255,243,200,0.7)'; ctx.lineWidth=0.8*s;
     ctx.beginPath(); ctx.moveTo(topX,topY); ctx.lineTo(nockX,nockY-1.2*s); ctx.lineTo(botX,botY); ctx.stroke();
   }
-  // nocked astra — glowing arrow
+  // nocked astra — a real arrow on the string, tilted to the live aim angle
   if(b.nocked){
     const col=RAMA_ASTRAS[b.nocked].color;
+    const aim=(b.drawing && b.aimAngle!==null && b.aimAngle!==undefined)? b.aimAngle : -0.1;
+    ctx.save();
+    ctx.translate(nockX,nockY); ctx.rotate(aim);
+    ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=2.6*s; ctx.lineCap='round';    // wooden shaft
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(72*s,0); ctx.stroke();
     ctx.save(); ctx.shadowColor=col; ctx.shadowBlur=14;
-    ctx.strokeStyle=col; ctx.lineWidth=3*s;
-    ctx.beginPath(); ctx.moveTo(nockX,nockY); ctx.lineTo(nockX+72*s,nockY); ctx.stroke();
-    ctx.fillStyle=col;
-    ctx.beginPath(); ctx.moveTo(nockX+80*s,nockY); ctx.lineTo(nockX+68*s,nockY-5*s); ctx.lineTo(nockX+68*s,nockY+5*s); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#e8c33a';                                                // golden head, astra-sheathed
+    ctx.beginPath(); ctx.moveTo(82*s,0); ctx.lineTo(68*s,-5.5*s); ctx.lineTo(68*s,5.5*s); ctx.closePath(); ctx.fill();
+    const hg=ctx.createRadialGradient(76*s,0,1,76*s,0,14*s);
+    hg.addColorStop(0,col); hg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.globalAlpha=0.75; ctx.fillStyle=hg;
+    ctx.beginPath(); ctx.arc(76*s,0,14*s,0,Math.PI*2); ctx.fill();
     ctx.restore();
-    ctx.strokeStyle='#f5ead2'; ctx.lineWidth=1.6*s;                        // fletching
-    ctx.beginPath(); ctx.moveTo(nockX+3*s,nockY-4*s); ctx.lineTo(nockX+11*s,nockY); ctx.lineTo(nockX+3*s,nockY+4*s); ctx.stroke();
+    ctx.strokeStyle='#f5ead2'; ctx.lineWidth=1.8*s;                         // feather fletching
+    ctx.beginPath(); ctx.moveTo(2*s,0); ctx.lineTo(-7*s,-5*s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(6*s,0); ctx.lineTo(-3*s,-5*s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(2*s,0); ctx.lineTo(-7*s,5*s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(6*s,0); ctx.lineTo(-3*s,5*s); ctx.stroke();
+    ctx.restore();
   }
   ctx.restore();
 }
@@ -898,20 +916,68 @@ function drawEnemy(b, t){
 
 function drawMissiles(b){
   for(const m of b.missiles){
+    if(m.dead) continue;
     const p=w2s(m.x,m.y); const s=viewScale;
-    ctx.save();
-    ctx.shadowColor=m.color; ctx.shadowBlur=16;
-    ctx.fillStyle=m.color;
-    ctx.beginPath(); ctx.arc(p.x,p.y,7*s,0,Math.PI*2); ctx.fill();
-    ctx.restore();
+    const ang=Math.atan2(m.vy,m.vx);
+    if(m.side==='rama'){
+      // a real arrow: shaft, golden head, feather fletching — rotated along its flight tangent
+      ctx.save();
+      ctx.translate(p.x,p.y); ctx.rotate(ang);
+      ctx.shadowColor=m.color; ctx.shadowBlur=14;
+      ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=3.4*s; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-40*s,0); ctx.lineTo(8*s,0); ctx.stroke();
+      ctx.fillStyle='#e8c33a';
+      ctx.beginPath(); ctx.moveTo(16*s,0); ctx.lineTo(4*s,-5*s); ctx.lineTo(4*s,5*s); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='#f5ead2'; ctx.lineWidth=2*s;
+      ctx.beginPath(); ctx.moveTo(-40*s,0); ctx.lineTo(-48*s,-6*s); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-36*s,0); ctx.lineTo(-44*s,-6*s); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-40*s,0); ctx.lineTo(-48*s,6*s); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-36*s,0); ctx.lineTo(-44*s,6*s); ctx.stroke();
+      // the astra's power sheathes the arrowhead
+      const ag=ctx.createRadialGradient(12*s,0,1,12*s,0,16*s);
+      ag.addColorStop(0,m.color); ag.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.globalAlpha=0.7; ctx.fillStyle=ag;
+      ctx.beginPath(); ctx.arc(12*s,0,16*s,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    } else {
+      // Rāvaṇa's astra: a burning elemental orb with a bright core
+      const og=ctx.createRadialGradient(p.x,p.y,1,p.x,p.y,13*s);
+      og.addColorStop(0,'#fff'); og.addColorStop(0.35,m.color); og.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.save();
+      ctx.shadowColor=m.color; ctx.shadowBlur=20;
+      ctx.fillStyle=og;
+      ctx.beginPath(); ctx.arc(p.x,p.y,13*s,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
     // element-specific trail
-    if(Math.random()<0.9){
-      const dir = m.tx>m.sx?1:-1;
+    if(Math.random()<0.95){
+      const dir = m.vx>=0?1:-1;
       const trailCol = m.element==='serpent' ? (Math.random()<0.5?'#58c04a':'#2d7a28') : m.color;
       particles.push({ x:m.x, y:m.y, vx:rand(-30,30)-dir*60, vy:rand(-30,30), color:trailCol,
         size:rand(2, m.element==='fire'?7:5), life:0, maxLife:rand(300,650), g:m.element==='water'?160:20, glow:true });
     }
   }
+}
+
+// Angry-Birds-style aim preview: dotted ballistic arc simulated from the live draw
+function drawAimPreview(b){
+  if(!b.drawing || b.aimAngle===null || b.aimAngle===undefined || b.drawPct<0.05) return;
+  const spd = ARROW_SPEED_MIN + (ARROW_SPEED_MAX-ARROW_SPEED_MIN)*b.drawPct;
+  let px=RAMA_POS.x+85, py=RAMA_POS.y-155;
+  let vx=Math.cos(b.aimAngle)*spd, vy=Math.sin(b.aimAngle)*spd;
+  const step=0.055;
+  ctx.save();
+  for(let i=0;i<20;i++){
+    vy+=ARROW_GRAVITY*step; px+=vx*step; py+=vy*step;
+    if(py>RAMA_POS.y+10 || px>WORLD_W+40) break;
+    const sp=w2s(px,py);
+    const a=1-i/22;
+    ctx.globalAlpha=a*0.85;
+    ctx.fillStyle='#fff';
+    ctx.strokeStyle='rgba(90,58,20,0.8)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(sp.x,sp.y,Math.max(2.2,(5-i*0.16)*viewScale),0,Math.PI*2); ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
 }
 function drawParticles(){
   const zoomK=viewScale/wideScale;
@@ -979,7 +1045,7 @@ function newBattle(cfgKey, difficulty){
     heads:cfg.heads, headsDestroyed:0, tejas:100, slokas:0,
     phase:'intro', phaseT:0, idleDur:rand(IDLE_MIN,IDLE_MAX),
     telegraph:{ key:null, dur:0, t:0, headIdx:0 },
-    nocked:null, drawing:false, drawPct:0,
+    nocked:null, drawing:false, drawPct:0, aimAngle:null, slowmoT:0,
     missiles:[], clashData:null, darkness:0, phantoms:0,
     worship:{ active:false, slokaIdx:0, syls:[], sylIdx:0, beatT:0, misses:0, hits:0 },
     saktiDone:false, endureDone:false, saktiSwiped:false, endureHoldT:0, endureHolding:false,
@@ -1028,8 +1094,14 @@ function startTelegraph(b){
 function hideTelegraph(){ document.getElementById('telegraphBox').style.display='none'; }
 
 /* ---------------- firing & resolution ---------------- */
-function makeMissile(sx,sy,tx,ty,dur,color,element,side,arc){
-  return { sx,sy,tx,ty, x:sx,y:sy, t:0, dur, color, element, side, arc:arc===undefined?70:arc };
+// Ballistic missile: integrated under gravity each tick. seek='enemy' homes on the
+// opposing missile (keyboard auto-aim); seek='point' homes on a fixed target (post-clash).
+function makeBallistic(x,y,vx,vy,g,color,element,side){
+  return { x,y,vx,vy,g, color, element, side, dead:false, seek:null, target:null, speed:0 };
+}
+// solve launch velocity to carry a projectile from (sx,sy) to (tx,ty) in T seconds under gravity g
+function solveArc(sx,sy,tx,ty,T,g){
+  return { vx:(tx-sx)/T, vy:(ty-sy-0.5*g*T*T)/T };
 }
 function fireAstra(b, pct){
   if(!b.nocked) return false;
@@ -1043,10 +1115,21 @@ function fireAstra(b, pct){
   b.clashData={ attack:b.telegraph.key, response:b.nocked, resolution, met:false, done:false };
   const attA=RAVANA_ASTRAS[b.telegraph.key];
   const launchHead = headWorldPos(b, b.telegraph.headIdx);
-  b.missiles=[
-    makeMissile(RAMA_POS.x+85, RAMA_POS.y-155, CLASH_X, CLASH_Y, MISSILE_LEG1, astra.color, astra.element, 'rama', 70),
-    makeMissile(launchHead.x, launchHead.y, CLASH_X, CLASH_Y, MISSILE_LEG1, attA.color, attA.element, 'ravana', 70)
-  ];
+  const tipX=RAMA_POS.x+85, tipY=RAMA_POS.y-155;
+  const ev = solveArc(launchHead.x, launchHead.y, RAMA_POS.x+20, RAMA_POS.y-110, ENEMY_FLIGHT_T, ENEMY_GRAVITY);
+  const enemyM = makeBallistic(launchHead.x, launchHead.y, ev.vx, ev.vy, ENEMY_GRAVITY, attA.color, attA.element, 'ravana');
+  let ramaM;
+  if(b.aimAngle!==null && b.aimAngle!==undefined){
+    // slingshot aim: player's drag set the launch angle; draw % sets the speed
+    const spd = ARROW_SPEED_MIN + (ARROW_SPEED_MAX-ARROW_SPEED_MIN)*pct;
+    ramaM = makeBallistic(tipX, tipY, Math.cos(b.aimAngle)*spd, Math.sin(b.aimAngle)*spd, ARROW_GRAVITY, astra.color, astra.element, 'rama');
+  } else {
+    // keyboard / auto fire: the astra seeks the incoming missile
+    ramaM = makeBallistic(tipX, tipY, SEEK_SPEED, 0, 0, astra.color, astra.element, 'rama');
+    ramaM.seek='enemy'; ramaM.speed=SEEK_SPEED;
+  }
+  b.missiles=[ ramaM, enemyM ];
+  b.aimAngle=null;
   hideTelegraph(); closeWheel();
   b.nocked=null; updateNockedUI(b);
   b.phase='clash'; b.phaseT=0;
@@ -1058,7 +1141,8 @@ function telegraphExpired(b){
   const attA=RAVANA_ASTRAS[b.telegraph.key];
   b.clashData={ attack:b.telegraph.key, response:null, resolution:{outcome:'ravana',rule:'noShot'}, met:true, done:false };
   const soloHead = headWorldPos(b, b.telegraph.headIdx);
-  b.missiles=[ makeMissile(soloHead.x, soloHead.y, RAMA_POS.x+20, RAMA_POS.y-110, MISSILE_SOLO, attA.color, attA.element, 'ravana', 90) ];
+  const sv = solveArc(soloHead.x, soloHead.y, RAMA_POS.x+20, RAMA_POS.y-110, ENEMY_FLIGHT_T*0.85, ENEMY_GRAVITY);
+  b.missiles=[ makeBallistic(soloHead.x, soloHead.y, sv.vx, sv.vy, ENEMY_GRAVITY, attA.color, attA.element, 'ravana') ];
   hideTelegraph(); closeWheel();
   b.phase='clash'; b.phaseT=0;
 }
@@ -1312,6 +1396,7 @@ function exitWorship(b, why){
 
 /* ---------------- update loop ---------------- */
 function updateBattle(b, dt){
+  if(b.slowmoT>0){ b.slowmoT-=dt/1000; dt*=0.35; }   // brief slow-motion at the interception
   const dtS=dt/1000;
   b.phaseT+=dtS;
   if(b.kneelT>0) b.kneelT-=dtS;
@@ -1351,37 +1436,74 @@ function updateBattle(b, dt){
     }
     case 'clash': {
       const cd=b.clashData;
-      // parametric arcing flight: t 0→1 over dur seconds, with a bow-shot arc
+      // ballistic integration; seeking missiles steer at constant speed
       for(const m of b.missiles){
-        m.t=Math.min(1, m.t+dtS/m.dur);
-        m.x=lerp(m.sx,m.tx,m.t);
-        m.y=lerp(m.sy,m.ty,m.t) - Math.sin(m.t*Math.PI)*m.arc;
-      }
-      if(!cd.met){
-        const all = b.missiles.every(m=>m.t>=1);
-        if(all){
-          cd.met=true; b.phaseT=0;
-          if(cd.response!==null){
-            const attA=RAVANA_ASTRAS[cd.attack], resA=RAMA_ASTRAS[cd.response];
-            burst(CLASH_X,CLASH_Y,attA.color,26,{speed:320});
-            burst(CLASH_X,CLASH_Y,resA.color,26,{speed:320});
-            AudioEngine.clash(resA.element,attA.element);
-            const out=cd.resolution.outcome;
-            b.missiles = [];
-            if(out==='rama'){
-              const hp=headWorldPos(b, Math.min(b.headsDestroyed, b.enemy.heads-1));
-              b.missiles=[ makeMissile(CLASH_X, CLASH_Y, hp.x, hp.y, MISSILE_LEG2, resA.color, resA.element, 'rama', 45) ];
-            } else if(out==='ravana'){
-              b.missiles=[ makeMissile(CLASH_X, CLASH_Y, RAMA_POS.x+20, RAMA_POS.y-110, MISSILE_LEG2, attA.color, attA.element, 'ravana', 45) ];
-            }
+        if(m.dead) continue;
+        if(m.seek){
+          let tx,ty;
+          if(m.seek==='enemy'){
+            const e=b.missiles.find(o=>o.side!==m.side && !o.dead);
+            if(e){ tx=e.x; ty=e.y; } else { m.seek=null; }
+          } else if(m.target){ tx=m.target.x; ty=m.target.y; }
+          if(tx!==undefined){
+            const d=Math.hypot(tx-m.x,ty-m.y)||1;
+            m.vx=(tx-m.x)/d*m.speed; m.vy=(ty-m.y)/d*m.speed;
           }
+        } else {
+          m.vy+=m.g*dtS;
         }
-      } else {
-        if(b.missiles.length===0){ if(b.phaseT>0.35 && !cd.done){ cd.done=true; applyOutcome(b); } }
-        else {
-          if(b.missiles[0].t>=1 && !cd.done){ cd.done=true; applyOutcome(b); }
+        m.x+=m.vx*dtS; m.y+=m.vy*dtS;
+      }
+      const ra=b.missiles.find(m=>m.side==='rama' && !m.dead);
+      const rv=b.missiles.find(m=>m.side==='ravana' && !m.dead);
+      // interception: the counter must actually MEET the incoming astra
+      if(!cd.met && ra && rv && Math.hypot(ra.x-rv.x, ra.y-rv.y) < CLASH_RADIUS){
+        cd.met=true; b.phaseT=0; b.slowmoT=0.30;
+        const cx=(ra.x+rv.x)/2, cy=(ra.y+rv.y)/2;
+        const attA=RAVANA_ASTRAS[cd.attack], resA=RAMA_ASTRAS[cd.response];
+        burst(cx,cy,attA.color,28,{speed:340});
+        burst(cx,cy,resA.color,28,{speed:340});
+        AudioEngine.clash(resA.element, attA.element);
+        const out=cd.resolution.outcome;
+        if(out==='rama'){
+          rv.dead=true;
+          ra.seek='point'; ra.speed=SEEK_SPEED;
+          ra.target=headWorldPos(b, Math.min(b.headsDestroyed, b.enemy.heads-1));
+        } else if(out==='ravana'){
+          ra.dead=true;
+          rv.seek='point'; rv.speed=SEEK_SPEED;
+          rv.target={x:RAMA_POS.x+20, y:RAMA_POS.y-110};
+        } else {
+          ra.dead=true; rv.dead=true;
+          burst(cx,cy,'#fff2c8',26,{speed:300,g:60,life:700});
         }
       }
+      // Rāma's arrow missing: ground, out of bounds, or thudding into Rāvaṇa without interception
+      if(ra && !ra.dead && !ra.seek){
+        if(ra.y > RAMA_POS.y+12 || ra.x > WORLD_W+80 || ra.x < -80 || ra.y < -500){
+          ra.dead=true;
+          if(ra.y > RAMA_POS.y+12) burst(ra.x, RAMA_POS.y+6, '#a98456', 10, {speed:120,life:500,g:300});
+          if(!cd.met && rv) showBanner('लक्ष्यभ्रष्टः','The counter flies wide!',1400);
+        } else if(!cd.met && Math.hypot(ra.x-RAVANA_POS.x, ra.y-(RAVANA_POS.y-140)) < 95){
+          ra.dead=true;
+          burst(ra.x, ra.y, '#ff9a3d', 14, {speed:180,life:600});
+        }
+      }
+      // homing arrival: winner's astra strikes home
+      if(ra && !ra.dead && ra.seek==='point' && ra.target && Math.hypot(ra.target.x-ra.x, ra.target.y-ra.y)<28 && !cd.done){
+        cd.done=true; applyOutcome(b); break;
+      }
+      if(rv && !rv.dead && Math.hypot(rv.x-(RAMA_POS.x+20), rv.y-(RAMA_POS.y-110))<36 && !cd.done){
+        cd.done=true;
+        if(!cd.met) cd.resolution={ outcome:'ravana', rule: cd.response? 'missed' : 'noShot' };
+        applyOutcome(b); break;
+      }
+      // draw: both astras annihilated mid-air
+      if(cd.met && !cd.done && !b.missiles.some(m=>!m.dead) && b.phaseT>0.35){
+        cd.done=true; applyOutcome(b); break;
+      }
+      // safety net: never stall the duel
+      if(!cd.done && b.phaseT>7){ cd.done=true; if(!cd.met) cd.resolution={outcome:'ravana',rule:'noShot'}; applyOutcome(b); }
       break;
     }
     case 'sakti': {
@@ -1499,7 +1621,7 @@ function setupInput(){
     if(battle.phase==='sakti'){ swipeStart={x:e.clientX,t:performance.now()}; return; }
     if(battle.nocked && battle.phase==='telegraph'){
       drawStart={x:e.clientX,y:e.clientY};
-      battle.drawing=true; battle.drawPct=0;
+      battle.drawing=true; battle.drawPct=0; battle.aimAngle=null;
       document.getElementById('drawMeter').style.display='block';
       AudioEngine.startBowStretch();
     }
@@ -1511,8 +1633,13 @@ function setupInput(){
       return;
     }
     if(battle.drawing && drawStart){
-      const d=Math.hypot(e.clientX-drawStart.x, e.clientY-drawStart.y);
+      const dxp=e.clientX-drawStart.x, dyp=e.clientY-drawStart.y;
+      const d=Math.hypot(dxp,dyp);
       battle.drawPct=clamp(d/210,0,1);
+      if(d>16){
+        // slingshot: launch opposite to the pull, clamped to a forward arc
+        battle.aimAngle=clamp(Math.atan2(-dyp,-dxp), -1.35, 0.5);
+      }
       AudioEngine.updateBowStretch(battle.drawPct);
       document.getElementById('drawFill').style.height=(battle.drawPct*100)+'%';
     }
@@ -1658,6 +1785,7 @@ function loop(now){
     drawRama(battle, now);
     drawSakti(battle);
     drawMissiles(battle);
+    drawAimPreview(battle);
     drawParticles();
     drawFinale(battle);
   }
