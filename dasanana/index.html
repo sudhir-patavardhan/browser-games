@@ -68,38 +68,37 @@
   #telegraphMeter{ height:6px; border-radius:3px; background:rgba(90,58,20,0.2); overflow:hidden; margin-top:6px; }
   #telegraphFill{ height:100%; width:0%; background:linear-gradient(90deg,#e8360a,#ff8a1e); }
 
-  #quiverBtn{ position:absolute; right:14px; bottom:120px; z-index:8; width:64px; height:64px; border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, #a8742e, #6b4a1e); border:2.5px solid #ffb62e;
-    color:#fff3c8; font-size:26px; display:flex; align-items:center; justify-content:center; cursor:pointer;
-    box-shadow:0 4px 14px rgba(90,58,20,0.4); }
-  #worshipBtn{ position:absolute; left:14px; bottom:120px; z-index:8; width:64px; height:64px; border-radius:50%;
+  #worshipBtn{ position:absolute; left:14px; bottom:158px; z-index:8; width:60px; height:60px; border-radius:50%;
     background:radial-gradient(circle at 35% 30%, #ffcf4a, #e8860c); border:2.5px solid #fff3c8;
-    color:#7a3a06; font-size:26px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    color:#7a3a06; font-size:24px; display:flex; align-items:center; justify-content:center; cursor:pointer;
     box-shadow:0 4px 14px rgba(160,90,10,0.45); }
-  #quiverBtn:active, #worshipBtn:active{ transform:scale(0.92); }
-  #nockedSigil{ position:absolute; right:20px; bottom:196px; z-index:8; font-size:22px; text-align:center; min-width:52px;
+  #worshipBtn:active{ transform:scale(0.92); }
+  #nockedSigil{ position:absolute; right:14px; bottom:158px; z-index:8; font-size:22px; text-align:center; min-width:52px;
     background:rgba(255,250,238,0.92); border:1.5px solid rgba(178,122,32,0.6); border-radius:10px; padding:4px 8px; display:none; color:#3a2208; }
   #nockedSigil .n{ font-size:9px; display:block; opacity:0.8; }
 
-  #astraWheel{ position:absolute; inset:0; z-index:9; display:none; background:rgba(60,40,10,0.35); backdrop-filter:blur(2px); }
-  #astraWheel.open{ display:block; }
-  .astraBtn{ position:absolute; width:64px; height:64px; border-radius:50%; background:rgba(255,250,238,0.95);
-    border:2px solid rgba(178,122,32,0.7); color:#3a2208; cursor:pointer;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:20px; line-height:1;
-    box-shadow:0 4px 12px rgba(90,58,20,0.3); }
-  .astraBtn small{ font-size:8px; margin-top:2px; opacity:0.85; font-weight:700; }
+  /* one-tap astra bar: always at hand along the bottom — tap to nock, then drag to shoot */
+  #astraBar{ position:absolute; left:0; right:0; bottom:0; z-index:8; padding:6px 8px 10px;
+    display:grid; grid-template-columns:repeat(5,1fr); gap:6px;
+    background:linear-gradient(0deg, rgba(255,244,214,0.92), rgba(255,244,214,0.6));
+    border-top:2px solid rgba(232,134,12,0.55); transition:opacity 0.2s; }
+  #astraBar.dim{ opacity:0.2; pointer-events:none; }
+  .astraBtn{ height:58px; border-radius:12px; background:rgba(255,250,238,0.95);
+    border:2px solid rgba(178,122,32,0.55); color:#3a2208; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:18px; line-height:1;
+    box-shadow:0 2px 6px rgba(90,58,20,0.2); padding:2px; }
+  .astraBtn small{ font-size:8px; margin-top:2px; opacity:0.85; font-weight:700; white-space:nowrap; overflow:hidden; max-width:100%; }
   .astraBtn .cost{ font-size:8px; color:#b8600a; font-weight:800; }
   .astraBtn:disabled{ opacity:0.4; }
   .astraBtn.locked{ border-color:#999; }
-  .astraBtn:active{ transform:scale(0.92); }
-  #wheelHint{ position:absolute; bottom:40px; left:0; right:0; text-align:center; font-size:12px; pointer-events:none;
-    color:#fff3c8; text-shadow:0 1px 4px rgba(60,40,10,0.8); font-weight:700; }
+  .astraBtn.sel{ border-color:#e8860c; background:#ffe2a8; box-shadow:0 0 12px rgba(232,134,12,0.7); }
+  .astraBtn:active{ transform:scale(0.94); }
 
-  #drawMeter{ position:absolute; left:14px; bottom:200px; z-index:8; width:12px; height:130px; border-radius:6px;
+  #drawMeter{ position:absolute; left:14px; bottom:236px; z-index:8; width:12px; height:130px; border-radius:6px;
     background:rgba(255,250,238,0.85); border:1.5px solid rgba(178,122,32,0.6); overflow:hidden; display:none; }
   #drawFill{ position:absolute; bottom:0; left:0; right:0; height:0%; background:linear-gradient(0deg,#e8360a,#ffb62e); }
 
-  #worshipOverlay{ position:absolute; left:0; right:0; bottom:0; z-index:9; background:linear-gradient(0deg, rgba(255,244,214,0.97), rgba(255,244,214,0.82));
+  #worshipOverlay{ position:absolute; left:0; right:0; bottom:0; z-index:10; background:linear-gradient(0deg, rgba(255,244,214,0.97), rgba(255,244,214,0.82));
     border-top:2.5px solid rgba(232,134,12,0.8); padding:14px 12px 20px; display:none; text-align:center;
     box-shadow:0 -6px 24px rgba(160,90,10,0.25); }
   #worshipOverlay .sans{ font-size:17px; }
@@ -114,13 +113,13 @@
   .chantDot.missed{ opacity:0.35; }
   #worshipClose{ margin-top:10px; }
 
-  #endureBtn{ position:absolute; left:50%; bottom:150px; transform:translateX(-50%); z-index:9;
+  #endureBtn{ position:absolute; left:50%; bottom:170px; transform:translateX(-50%); z-index:9;
     width:170px; height:66px; border-radius:33px; border:2.5px solid #e8860c; background:rgba(255,250,238,0.95);
     color:#8a4a06; font-weight:800; font-size:13px; display:none; box-shadow:0 4px 16px rgba(160,90,10,0.4); }
   #endureBtn:active{ background:rgba(255,182,46,0.4); }
   #endureFill{ position:absolute; left:0; top:0; bottom:0; width:0%; background:rgba(255,154,30,0.45); border-radius:33px; }
 
-  #qteHint{ position:absolute; left:0; right:0; bottom:220px; z-index:9; text-align:center; font-size:26px; font-weight:900;
+  #qteHint{ position:absolute; left:0; right:0; bottom:250px; z-index:9; text-align:center; font-size:26px; font-weight:900;
     color:#e8360a; text-shadow:0 2px 6px rgba(255,255,255,0.7); display:none; animation: blinkA 0.4s linear infinite; }
 
   #pauseOverlay,#endOverlay,#loreOverlay{ position:fixed; inset:0; z-index:20; display:flex; flex-direction:column; align-items:center;
@@ -138,9 +137,8 @@
 <div id="app">
 
   <div id="screen-title" class="screen">
-    <div class="sans" style="font-size:16px;opacity:0.8;">॥ श्रीरामाय नमः ॥</div>
-    <h1 class="title">दशानन</h1>
-    <div class="iast" style="font-size:16px;">DAŚĀNANA</div>
+    <h1 class="title">DAŚĀNANA</h1>
+    <div class="iast" style="font-size:16px;">The Ten-Headed</div>
     <p class="subtitle">A Rāmāyaṇa astra-duel. Rāvaṇa invokes a divine missile — answer with the true counter before both loose. Ten heads stand between you and dharma.</p>
     <p class="blink">Tap or press any key</p>
   </div>
@@ -172,10 +170,9 @@
     </div>
     <div id="bannerLayer"></div>
     <button id="worshipBtn" title="Worship Sūrya (W)">🌅</button>
-    <button id="quiverBtn" title="Astra wheel (Q)">🏹</button>
     <div id="nockedSigil"><span id="nockedEmoji"></span><span class="n" id="nockedName"></span></div>
     <div id="drawMeter"><div id="drawFill"></div></div>
-    <div id="astraWheel"><div id="wheelHint">Choose thy astra — then drag down on the field and release to loose</div></div>
+    <div id="astraBar" class="hidden"></div>
     <div id="worshipOverlay">
       <div class="sans" id="wSans"></div>
       <div class="iast" id="wIast"></div>
@@ -269,87 +266,80 @@ function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 /* ================================================================ SANSKRIT / DATA ================================================================ */
 // Rāma's arsenal. counters[] lists the enemy astras this weapon truly answers (Bāla Kāṇḍa's astra-catalogue framing).
 const RAMA_ASTRAS = {
-  agneya:   { dev:'आग्नेयास्त्र', iast:'Āgneyāstra', gloss:'the fire missile', sigil:'🔥', tier:3, cost:8,  element:'fire',     counters:['sisira'], color:'#ff6b2e' },
-  varuna:   { dev:'वारुणास्त्र', iast:'Vāruṇāstra', gloss:'the flood missile', sigil:'🌊', tier:3, cost:8,  element:'water',    counters:['agneya'], color:'#2e9fff' },
-  vayavya:  { dev:'वायव्यास्त्र', iast:'Vāyavyāstra', gloss:'the gale missile', sigil:'🌀', tier:3, cost:8,  element:'wind',     counters:['varuna'], color:'#bfe8d2' },
-  parvata:  { dev:'पर्वतास्त्र', iast:'Parvatāstra', gloss:'the mountain missile', sigil:'⛰', tier:3, cost:8, element:'mountain', counters:['vayavya'], color:'#a98456' },
-  santapana:{ dev:'सन्तापन', iast:'Santāpana', gloss:'the scorcher', sigil:'♨', tier:3, cost:8, element:'heat',     counters:['sisira'], color:'#ff9a3d' },
-  saura:    { dev:'सौरास्त्र', iast:'Saurāstra', gloss:'light dispels darkness', sigil:'🌞', tier:3, cost:8, element:'light',   counters:['tamasa'], color:'#ffd76b' },
-  garuda:   { dev:'गारुडास्त्र', iast:'Garuḍāstra', gloss:'serpents flee Garuḍa', sigil:'🦅', tier:4, cost:12, element:'garuda', counters:['naga'],   color:'#ffd700' },
-  satya:    { dev:'सत्यास्त्र', iast:'Satyāstra', gloss:'truth destroys illusion', sigil:'👁', tier:5, cost:10, element:'truth', counters:['mohana'], color:'#ffffff' },
-  aindra:   { dev:'ऐन्द्रास्त्र', iast:'Aindrāstra', gloss:"Indra's vajra — overrides the elements", sigil:'⚡', tier:2, cost:25, element:'vajra', counters:[], color:'#ffe94a' },
-  brahma:   { dev:'ब्रह्मास्त्र', iast:'Brahmāstra', gloss:"Brahmā's arrow — wind in its feathers, sun at its tip", sigil:'✴', tier:1, cost:0, element:'brahma', counters:[], color:'#fff2c8', locked:true }
+  agneya:   { iast:'Āgneyāstra', gloss:'the fire missile', sigil:'🔥', tier:3, cost:8,  element:'fire',     counters:['sisira'], color:'#ff6b2e' },
+  varuna:   { iast:'Vāruṇāstra', gloss:'the flood missile', sigil:'🌊', tier:3, cost:8,  element:'water',    counters:['agneya'], color:'#2e9fff' },
+  vayavya:  { iast:'Vāyavyāstra', gloss:'the gale missile', sigil:'🌀', tier:3, cost:8,  element:'wind',     counters:['varuna'], color:'#bfe8d2' },
+  parvata:  { iast:'Parvatāstra', gloss:'the mountain missile', sigil:'⛰', tier:3, cost:8, element:'mountain', counters:['vayavya'], color:'#a98456' },
+  santapana:{ iast:'Santāpana', gloss:'the scorcher', sigil:'♨', tier:3, cost:8, element:'heat',     counters:['sisira'], color:'#ff9a3d' },
+  saura:    { iast:'Saurāstra', gloss:'light dispels darkness', sigil:'🌞', tier:3, cost:8, element:'light',   counters:['tamasa'], color:'#ffd76b' },
+  garuda:   { iast:'Garuḍāstra', gloss:'serpents flee Garuḍa', sigil:'🦅', tier:4, cost:12, element:'garuda', counters:['naga'],   color:'#ffd700' },
+  satya:    { iast:'Satyāstra', gloss:'truth destroys illusion', sigil:'👁', tier:5, cost:10, element:'truth', counters:['mohana'], color:'#ffffff' },
+  aindra:   { iast:'Aindrāstra', gloss:"Indra's vajra — overrides the elements", sigil:'⚡', tier:2, cost:25, element:'vajra', counters:[], color:'#ffe94a' },
+  brahma:   { iast:'Brahmāstra', gloss:"Brahmā's arrow — wind in its feathers, sun at its tip", sigil:'✴', tier:1, cost:0, element:'brahma', counters:[], color:'#fff2c8', locked:true }
 };
 const RAVANA_ASTRAS = {
-  agneya: { dev:'आग्नेयास्त्र', iast:'Āgneyāstra', tier:3, element:'fire',     sigil:'🔥', color:'#ff6b2e' },
-  varuna: { dev:'वारुणास्त्र', iast:'Vāruṇāstra', tier:3, element:'water',    sigil:'🌊', color:'#2e9fff' },
-  vayavya:{ dev:'वायव्यास्त्र', iast:'Vāyavyāstra', tier:3, element:'wind',   sigil:'🌀', color:'#bfe8d2' },
-  sisira: { dev:'शिशिरास्त्र', iast:'Śiśirāstra', tier:3, element:'frost',    sigil:'❄', color:'#cfeaff' },
-  tamasa: { dev:'तामसास्त्र', iast:'Tāmasāstra', tier:3, element:'darkness',  sigil:'🌑', color:'#4a3566' },
-  naga:   { dev:'नागास्त्र', iast:'Nāgāstra', tier:4, element:'serpent',      sigil:'🐍', color:'#58c04a' },
-  mohana: { dev:'मोहनास्त्र', iast:'Mohanāstra', tier:5, element:'maya',      sigil:'🌫', color:'#b08fd8' },
-  raudra: { dev:'रौद्रास्त्र', iast:'Raudrāstra', tier:2, element:'rudra',    sigil:'🔱', color:'#ff3b3b' }
+  agneya: { iast:'Āgneyāstra', tier:3, element:'fire',     sigil:'🔥', color:'#ff6b2e' },
+  varuna: { iast:'Vāruṇāstra', tier:3, element:'water',    sigil:'🌊', color:'#2e9fff' },
+  vayavya:{ iast:'Vāyavyāstra', tier:3, element:'wind',   sigil:'🌀', color:'#bfe8d2' },
+  sisira: { iast:'Śiśirāstra', tier:3, element:'frost',    sigil:'❄', color:'#cfeaff' },
+  tamasa: { iast:'Tāmasāstra', tier:3, element:'darkness',  sigil:'🌑', color:'#4a3566' },
+  naga:   { iast:'Nāgāstra', tier:4, element:'serpent',      sigil:'🐍', color:'#58c04a' },
+  mohana: { iast:'Mohanāstra', tier:5, element:'maya',      sigil:'🌫', color:'#b08fd8' },
+  raudra: { iast:'Raudrāstra', tier:2, element:'rudra',    sigil:'🔱', color:'#ff3b3b' }
 };
 // Lore lines shown in the battle log when a rule fires.
 const RULE_LINES = {
-  'varuna>agneya':'जलं दहनं शमयति — Water quenches fire.',
-  'agneya>sisira':'अग्निर्हिमं द्रावयति — Flame melts the frost.',
-  'santapana>sisira':'अग्निर्हिमं द्रावयति — Heat melts the frost.',
-  'vayavya>varuna':'वायुर्जलं क्षिपति — The gale scatters the flood.',
-  'parvata>vayavya':'पर्वतो वायुं स्तम्भयति — The mountain stills the wind.',
-  'saura>tamasa':'ज्योतिस्तमो हन्ति — Light dispels darkness.',
-  'garuda>naga':'गरुडं दृष्ट्वा नागाः पलायन्ते — The serpents flee before Garuḍa.',
-  'satya>mohana':'सत्यं मायां भिनत्ति — Truth shatters illusion.',
-  aindra:'वज्रं सर्वाणि भूतास्त्राणि जयति — The vajra overrides the elements.',
-  merit:'तुल्ययोः शस्त्रयोर्धर्मो जयति — Among equal weapons, the wielder’s merit decides.',
-  like:'समं समेन शाम्यति — Like meets like; both dissolve.',
+  'varuna>agneya':'Water quenches fire.',
+  'agneya>sisira':'Flame melts the frost.',
+  'santapana>sisira':'Heat melts the frost.',
+  'vayavya>varuna':'The gale scatters the flood.',
+  'parvata>vayavya':'The mountain stills the wind.',
+  'saura>tamasa':'Light dispels darkness.',
+  'garuda>naga':'The serpents flee before Garuḍa.',
+  'satya>mohana':'Truth shatters illusion.',
+  aindra:'The vajra overrides the elements.',
+  merit:'Among equal weapons, the wielder’s merit decides.',
+  like:'Like meets like; both dissolve.',
   consumed:'The lesser missile is consumed.',
-  falter:'मन्त्रः स्खलति — The mantra falters…',
-  missed:'लक्ष्यभ्रष्टः शरः — The counter flies wide!'
+  falter:'The mantra falters…',
+  missed:'The counter flies wide!'
 };
 // Āditya-Hṛdayam — Yuddha Kāṇḍa, canto 105. Taught to Rāma by Agastya between the armies.
 const SLOKAS = [
-  { dev:'आदित्यहृदयं पुण्यं सर्वशत्रुविनाशनम् । जयावहं जपेन्नित्यम् अक्षय्यं परमं शिवम् ॥',
-    iast:'ādityahṛdayaṁ puṇyaṁ sarva-śatru-vināśanam | jayāvahaṁ japen nityam akṣayyaṁ paramaṁ śivam ||',
+  { iast:'ādityahṛdayaṁ puṇyaṁ sarva-śatru-vināśanam | jayāvahaṁ japen nityam akṣayyaṁ paramaṁ śivam ||',
     gloss:'This holy hymn to the Sun destroys all enemies and brings victory.' },
-  { dev:'सर्वमङ्गलमाङ्गल्यं सर्वपापप्रणाशनम् । चिन्ताशोकप्रशमनम् आयुर्वर्धनमुत्तमम् ॥',
-    iast:'sarva-maṅgala-māṅgalyaṁ sarva-pāpa-praṇāśanam | cintā-śoka-praśamanam āyur-vardhanam uttamam ||',
+  { iast:'sarva-maṅgala-māṅgalyaṁ sarva-pāpa-praṇāśanam | cintā-śoka-praśamanam āyur-vardhanam uttamam ||',
     gloss:'Auspicious among the auspicious, it dispels grief and lengthens life.' },
-  { dev:'जयाय जयभद्राय हर्यश्वाय नमो नमः । नमो नमः सहस्रांशो आदित्याय नमो नमः ॥',
-    iast:'jayāya jaya-bhadrāya haryaśvāya namo namaḥ | namo namaḥ sahasrāṁśo ādityāya namo namaḥ ||',
+  { iast:'jayāya jaya-bhadrāya haryaśvāya namo namaḥ | namo namaḥ sahasrāṁśo ādityāya namo namaḥ ||',
     gloss:'Salutations to the bringer of victory, the thousand-rayed Āditya.' },
-  { dev:'रश्मिमन्तं समुद्यन्तं देवासुरनमस्कृतम् । पूजयस्व विवस्वन्तं भास्करं भुवनेश्वरम् ॥',
-    iast:'raśmimantaṁ samudyantaṁ devāsura-namaskṛtam | pūjayasva vivasvantaṁ bhāskaraṁ bhuvaneśvaram ||',
+  { iast:'raśmimantaṁ samudyantaṁ devāsura-namaskṛtam | pūjayasva vivasvantaṁ bhāskaraṁ bhuvaneśvaram ||',
     gloss:'Worship the rising, ray-garlanded Sun, lord of the worlds.' },
-  { dev:'आदित्यः सविता सूर्यः खगः पूषा गभस्तिमान् । सुवर्णसदृशो भानुर्हिरण्यरेता दिवाकरः ॥',
-    iast:'ādityaḥ savitā sūryaḥ khagaḥ pūṣā gabhastimān | suvarṇa-sadṛśo bhānur hiraṇya-retā divākaraḥ ||',
+  { iast:'ādityaḥ savitā sūryaḥ khagaḥ pūṣā gabhastimān | suvarṇa-sadṛśo bhānur hiraṇya-retā divākaraḥ ||',
     gloss:'He is Āditya, Savitā, Sūrya — golden, radiant maker of the day.' },
-  { dev:'नमः पूर्वाय गिरये पश्चिमायाद्रये नमः । ज्योतिर्गणानां पतये दिनाधिपतये नमः ॥',
-    iast:'namaḥ pūrvāya giraye paścimāyādraye namaḥ | jyotir-gaṇānāṁ pataye dinādhipataye namaḥ ||',
+  { iast:'namaḥ pūrvāya giraye paścimāyādraye namaḥ | jyotir-gaṇānāṁ pataye dinādhipataye namaḥ ||',
     gloss:'Salutations to the eastern and western mountains, to the lord of lights.' },
-  { dev:'एतत् त्रिगुणितं जप्त्वा युद्धेषु विजयिष्यसि । अस्मिन् क्षणे महाबाहो रावणं त्वं वधिष्यसि ॥',
-    iast:'etat triguṇitaṁ japtvā yuddheṣu vijayiṣyasi | asmin kṣaṇe mahābāho rāvaṇaṁ tvaṁ vadhiṣyasi ||',
+  { iast:'etat triguṇitaṁ japtvā yuddheṣu vijayiṣyasi | asmin kṣaṇe mahābāho rāvaṇaṁ tvaṁ vadhiṣyasi ||',
     gloss:'Chant this thrice and you shall conquer — this very hour you will slay Rāvaṇa.' }
 ];
 const BATTLES = {
   khara: {
-    key:'khara', name:'Khara', dev:'खरः', heads:2,
+    key:'khara', name:'Khara', heads:2,
     astras:['agneya','varuna','vayavya','sisira'],
-    lore:{ sans:'जनस्थाने खरः', iast:'janasthāne kharaḥ',
+    lore:{ iast:'janasthāne kharaḥ',
       text:'Janasthāna, the forest. Fourteen thousand rākṣasas have fallen; their captain Khara wheels his chariot toward the lone archer. (Araṇya Kāṇḍa) — Elemental astras only. Learn the counters.' },
     telegraphMul:1.25
   },
   indrajit: {
-    key:'indrajit', name:'Indrajit', dev:'इन्द्रजित्', heads:4,
+    key:'indrajit', name:'Indrajit', heads:4,
     astras:['agneya','varuna','vayavya','sisira','tamasa','naga','mohana'],
-    lore:{ sans:'मेघनादो मायावी', iast:'meghanādo māyāvī',
+    lore:{ iast:'meghanādo māyāvī',
       text:'Rāvaṇa’s son, conqueror of Indra, fights veiled in illusion. His serpent-arrows once bound both brothers. (Yuddha Kāṇḍa) — Beware the Nāgāstra and the Mohana veil.' },
     telegraphMul:1.1, endureAt:2
   },
   ravana: {
-    key:'ravana', name:'Rāvaṇa', dev:'रावणः', heads:10,
+    key:'ravana', name:'Rāvaṇa', heads:10,
     astras:['agneya','varuna','vayavya','sisira','tamasa','naga','mohana','raudra'],
-    lore:{ sans:'दशग्रीवो रथमास्थाय', iast:'daśagrīvo ratham āsthāya',
+    lore:{ iast:'daśagrīvo ratham āsthāya',
       text:'The ten-necked lord of Laṅkā mounts his chariot. The devas gather in the sky to watch. (Yuddha Kāṇḍa) — Every head must fall, and the last only to Brahmā’s arrow.' },
     telegraphMul:1.0, saktiAt:5, endureAt:3
   }
@@ -1182,8 +1172,8 @@ function startTelegraph(b){
   b.phase='telegraph'; b.phaseT=0;
   const a=RAVANA_ASTRAS[key];
   document.getElementById('tgSigil').textContent=a.sigil;
-  document.getElementById('tgSans').textContent=a.dev;
-  document.getElementById('tgIast').textContent=a.iast;
+  document.getElementById('tgSans').textContent=a.iast;
+  document.getElementById('tgIast').textContent=a.element.charAt(0).toUpperCase()+a.element.slice(1)+' astra — counter it!';
   document.getElementById('telegraphBox').style.display='block';
   if(key==='mohana') b.phantoms=1;
   openWheel();               // auto-open the astra wheel — the invocation is the cue
@@ -1246,7 +1236,7 @@ function telegraphExpired(b){
 function applyOutcome(b){
   const cd=b.clashData; const out=cd.resolution.outcome;
   const rl=RULE_LINES[cd.resolution.rule];
-  if(rl) showBanner(rl.split(' — ')[0], rl.split(' — ')[1]||'', 1900);
+  if(rl) showBanner(rl, '', 1900);
   if(cd.attack==='tamasa' && out!=='rama') b.darkness=Math.min(0.75, b.darkness+0.55);
   if(cd.attack==='mohana' && out!=='rama') b.phantoms=1;
   if(out==='rama'){
@@ -1270,7 +1260,7 @@ function headDestroyed(b){
     b.staggered++;
     burst(hp.x,hp.y,'#ff9a3d',30,{speed:260});
     burst(hp.x,hp.y,ELEMENT_COLORS.blood,14,{speed:200,g:420,life:800,size:4});
-    showBanner('शिरो दग्धं पुनरुत्थितम्','The head burns… and regrows!',2200);
+    showBanner('The head burns… and regrows!','The last head falls only to the Brahmāstra.',2200);
     AudioEngine.noise(0.6,0.15,600,0.8);
     checkBrahmaUnlock(b);
     return;
@@ -1285,7 +1275,7 @@ function headDestroyed(b){
   updateHud(b);
   const rem=b.enemy.heads-b.headsDestroyed;
   if(rem===0){ battleWon(b); return; }
-  showBanner(b.enemy.dev+' — '+rem+' शिरांसि','heads remain: '+rem,1600);
+  showBanner(rem+(rem===1?' head remains':' heads remain'),'',1600);
   // scripted specials
   if(b.enemy.key==='ravana' && rem===b.enemy.saktiAt && !b.saktiDone){ startSakti(b); return; }
   if(b.enemy.endureAt && rem===b.enemy.endureAt && !b.endureDone){ startEndure(b); return; }
@@ -1309,7 +1299,7 @@ function checkBrahmaUnlock(b){
   const was=b.brahmaUnlocked;
   b.brahmaUnlocked = (b.headsDestroyed>=9) && (b.tejas>=90) && (b.slokas>=5);
   if(b.brahmaUnlocked && !was){
-    showBanner('ब्रह्मास्त्रं सिद्धम्','The Brahmāstra answers your call. Open the wheel.',2600);
+    showBanner('The Brahmāstra answers your call','Select it from the astra bar.',2600);
     AudioEngine.chord();
   }
 }
@@ -1318,21 +1308,21 @@ function checkBrahmaUnlock(b){
 function startSakti(b){
   b.saktiDone=true; b.phase='sakti'; b.phaseT=0; b.saktiSwiped=false;
   hideTelegraph(); closeWheel();
-  showBanner('शक्तिः','The Śakti spear, gift of Maya Dānava — no astra can stop it. DODGE!',2000);
+  showBanner('The Śakti spear!','Gift of Maya Dānava — no astra can stop it. DODGE!',2000);
   document.getElementById('qteHint').style.display='block';
   AudioEngine.noise(1.4,0.12,300,0.5);
 }
 function resolveSakti(b, dodged){
   document.getElementById('qteHint').style.display='none';
   if(dodged){
-    showBanner('मुक्तः','Rāma slips aside — the spear buries itself in the earth.',1900);
+    showBanner('Dodged!','Rāma slips aside — the spear buries itself in the earth.',1900);
     burst(RAMA_POS.x-60,RAMA_POS.y,'#a98456',18,{speed:200});
   } else {
     b.tejas=clamp(b.tejas-40,0,100);
     b.kneelT=1.6;
     burst(RAMA_POS.x,RAMA_POS.y-100,'#ff3b3b',30,{speed:300});
     burst(RAMA_POS.x,RAMA_POS.y-100,ELEMENT_COLORS.blood,16,{speed:220,g:420,life:900,size:5});
-    showBanner('रामो जानुभ्यां पतितः','The spear strikes — Rāma kneels, as Lakṣmaṇa once fell.',2400);
+    showBanner('The spear strikes','Rāma kneels, as Lakṣmaṇa once fell.',2400);
     AudioEngine.ramaHit();
     updateHud(b);
     if(b.tejas<=0){ battleLost(b); return; }
@@ -1343,7 +1333,7 @@ function startEndure(b){
   b.endureDone=true; b.phase='endure'; b.phaseT=0; b.endureHoldT=0; b.endureHolding=false;
   hideTelegraph(); closeWheel();
   b.darkness=Math.min(0.7,b.darkness+0.5);
-  showBanner('ब्रह्मास्त्रम् आयाति','The sky darkens — a Brahmāstra! It cannot be countered, only honored.',2600);
+  showBanner('A Brahmāstra comes!','It cannot be countered — only honored.',2600);
   document.getElementById('endureBtn').style.display='block';
   AudioEngine.noise(2.2,0.1,150,0.4);
 }
@@ -1352,12 +1342,12 @@ function resolveEndure(b, bowed){
   b.darkness=Math.max(0,b.darkness-0.5);
   if(bowed){
     b.tejas=clamp(b.tejas-25,0,100);
-    showBanner('नमो ब्रह्मणे','Rāma bows to Brahmā’s power and endures, as the brothers did. (−25 tejas)',2400);
+    showBanner('Rāma bows to Brahmā’s power','…and endures, as the brothers did. (−25 tejas)',2400);
     AudioEngine.chord();
   } else {
     b.tejas=clamp(b.tejas-50,0,100);
     b.kneelT=1.4;
-    showBanner('दग्धः','Pride against Brahmā’s weapon is ash. (−50 tejas)',2200);
+    showBanner('Scorched!','Pride against Brahmā’s weapon is ash. (−50 tejas)',2200);
     AudioEngine.ramaHit();
   }
   updateHud(b);
@@ -1370,7 +1360,7 @@ function startFinale(b){
   b.phase='finale'; b.phaseT=0;
   hideTelegraph(); closeWheel();
   b.nocked=null; updateNockedUI(b);
-  showBanner('पवनः पत्रयोः सूर्यो मुखे','Wind in its feathers, sun and fire at its tip, the weight of Meru in its shaft…',3000);
+  showBanner('The final arrow','Wind in its feathers, sun and fire at its tip, the weight of Meru in its shaft…',3000);
   AudioEngine.brahmastra();
 }
 function finishFinale(b){
@@ -1388,8 +1378,8 @@ function battleWon(b){
   setTimeout(()=>{
     const isRavana=b.enemy.key==='ravana';
     document.getElementById('endTitle').textContent='VICTORY';
-    document.getElementById('endSans').textContent= isRavana?'धर्मो रक्षति रक्षितः':'जयः';
-    document.getElementById('endIast').textContent= isRavana?'dharmo rakṣati rakṣitaḥ — dharma protects those who protect it.':'jayaḥ — victory.';
+    document.getElementById('endSans').textContent= isRavana?'dharmo rakṣati rakṣitaḥ':'Victory';
+    document.getElementById('endIast').textContent= isRavana?'Dharma protects those who protect it.':'The way to Laṅkā is open.';
     document.getElementById('endStats').innerHTML =
       `${b.enemy.name} is defeated.<br>Tejas remaining: <b>${Math.round(b.tejas)}</b> · Ślokas chanted: <b>${b.slokas}</b>` +
       (isRavana?'<br><br>The arrow returns to Rāma’s quiver.':'');
@@ -1405,8 +1395,8 @@ function battleLost(b){
   AudioEngine.tone(220,0.5,'sawtooth',0.12); AudioEngine.tone(180,0.6,'sawtooth',0.12,0.3); AudioEngine.tone(140,0.9,'sawtooth',0.12,0.6);
   setTimeout(()=>{
     document.getElementById('endTitle').textContent='RĀMA FALLS';
-    document.getElementById('endSans').textContent='उत्तिष्ठ भरतश्रेष्ठ';
-    document.getElementById('endIast').textContent='uttiṣṭha — rise again, best of Bharatas.';
+    document.getElementById('endSans').textContent='Rise again';
+    document.getElementById('endIast').textContent='The heroes of the epic fall — and rise.';
     document.getElementById('endStats').innerHTML=`Heads felled: <b>${b.headsDestroyed}</b> / ${b.enemy.heads}<br>The heroes of the epic fall — and rise.`;
     document.getElementById('endPrimaryBtn').textContent='RISE AGAIN';
     document.getElementById('endOverlay').classList.remove('hidden');
@@ -1426,11 +1416,11 @@ function enterWorship(b){
   w.sylIdx=0; w.beatT=0; w.misses=0; w.hits=0;
   if(!enterWorship._taught){
     enterWorship._taught=true;
-    showBanner('अगस्त्यवचनम्','Between the armies, the sage Agastya taught Rāma this hymn to the Sun. (Yuddha Kāṇḍa)',2800);
+    showBanner('Agastya’s teaching','Between the armies, the sage taught Rāma this hymn to the Sun.',2800);
   }
-  document.getElementById('wSans').textContent=sl.dev;
-  document.getElementById('wIast').textContent=sl.iast;
-  document.getElementById('wGloss').textContent=sl.gloss;
+  document.getElementById('wSans').textContent=sl.iast;
+  document.getElementById('wIast').textContent=sl.gloss;
+  document.getElementById('wGloss').textContent='Tap the glowing syllables in rhythm';
   const row=document.getElementById('chantRow');
   row.innerHTML='';
   w.syls.forEach((s,i)=>{
@@ -1476,7 +1466,7 @@ function completeSloka(b){
   b.slokas++;
   b.tejas=clamp(b.tejas+15,0,100);
   AudioEngine.chord();
-  showBanner('श्लोकः पूर्णः','+15 tejas — a ray joins the sun-halo. ('+b.slokas+' ślokas)',1700);
+  showBanner('Śloka complete','+15 tejas — a ray joins the sun-halo. ('+b.slokas+' ślokas)',1700);
   updateHud(b);
   checkBrahmaUnlock(b);
   exitWorship(b,'done');
@@ -1485,8 +1475,8 @@ function exitWorship(b, why){
   b.worship.active=false;
   document.getElementById('worshipOverlay').style.display='none';
   AudioEngine.startDrone('battle');
-  if(why==='broken') showBanner('भग्नो जपः','The chant is broken — the astra strikes unguarded!',1800);
-  if(why==='failed') showBanner('स्खलितम्','The rhythm falters. No merit gained.',1500);
+  if(why==='broken') showBanner('The chant is broken!','The astra strikes unguarded!',1800);
+  if(why==='failed') showBanner('The rhythm falters','No merit gained.',1500);
 }
 
 /* ---------------- update loop ---------------- */
@@ -1507,7 +1497,7 @@ function updateBattle(b, dt){
       b.headsDestroyed--;
       const hp=headWorldPos(b,b.headsDestroyed);
       burst(hp.x,hp.y,'#ff6b2e',30,{speed:240,g:-40});
-      showBanner('शिरः पुनर्जातम्','A head regrows in flame — ordinary effort cannot keep them down!',2400);
+      showBanner('A head regrows in flame!','Ordinary effort cannot keep them down.',2400);
       updateHud(b);
       checkBrahmaUnlock(b);
     }
@@ -1588,7 +1578,7 @@ function updateBattle(b, dt){
         if(ra.y > groundY(ra.x)-4 || ra.x > WORLD_W+80 || ra.x < -80 || ra.y < -500){
           ra.dead=true;
           if(ra.y > groundY(ra.x)-4) burst(ra.x, groundY(ra.x)-4, '#a98456', 10, {speed:120,life:500,g:300});
-          if(!cd.met && rv) showBanner('लक्ष्यभ्रष्टः','The counter flies wide!',1400);
+          if(!cd.met && rv) showBanner('The counter flies wide!','',1400);
         } else if(!cd.met && Math.hypot(ra.x-RAVANA_POS.x, ra.y-(RAVANA_POS.y-140)) < 110){
           ra.dead=true;
           burst(ra.x, ra.y, '#ff9a3d', 14, {speed:180,life:600});
@@ -1663,44 +1653,42 @@ function showBanner(sans, iast, ms){
 }
 
 /* ---------------- astra wheel ---------------- */
-let wheelOpen=false;
+// One-tap astra bar: a fixed 5x2 grid along the bottom. Tap once to nock, then drag
+// anywhere on the field to draw and release. No menus to open.
 function buildWheel(b){
-  const wheel=document.getElementById('astraWheel');
-  wheel.querySelectorAll('.astraBtn').forEach(el=>el.remove());
-  const keys=Object.keys(RAMA_ASTRAS);
-  const cx=cssW/2, cy=cssH-330;
-  const R=Math.min(150, cssW*0.38);
-  keys.forEach((k,i)=>{
+  const bar=document.getElementById('astraBar');
+  bar.innerHTML='';
+  Object.keys(RAMA_ASTRAS).forEach((k)=>{
     const a=RAMA_ASTRAS[k];
-    const ang=-Math.PI/2 + i*(Math.PI*2/keys.length);
     const btn=document.createElement('button');
     btn.className='astraBtn';
     const locked = k==='brahma' && !b.brahmaUnlocked;
     const cantAfford = b.tejas<a.cost;
     if(locked) btn.classList.add('locked');
+    if(b.nocked===k) btn.classList.add('sel');
     btn.disabled = locked || cantAfford;
-    btn.style.left=(cx+Math.cos(ang)*R-32)+'px';
-    btn.style.top=(cy+Math.sin(ang)*R-32)+'px';
-    btn.innerHTML=`${locked?'🔒':a.sigil}<small>${a.iast.slice(0,9)}</small><span class="cost">${k==='brahma'?(locked?'9 heads · 90 tejas · 5 ślokas':'THE END'):('−'+a.cost)}</span>`;
+    const shortName=a.iast.replace('āstra','').replace('stra','').slice(0,9);
+    btn.innerHTML=`${locked?'🔒':a.sigil}<small>${shortName}</small><span class="cost">${k==='brahma'?(locked?'locked':'THE END'):('−'+a.cost)}</span>`;
     btn.addEventListener('pointerdown',(e)=>{
       e.stopPropagation();
       AudioEngine.init();
       battle.nocked=k;
       AudioEngine.bowCreak();
       updateNockedUI(battle);
-      closeWheel();
+      bar.querySelectorAll('.astraBtn').forEach(el=>el.classList.remove('sel'));
+      btn.classList.add('sel');
       if(k==='brahma') fireAstra(battle,1);
     });
-    wheel.appendChild(btn);
+    bar.appendChild(btn);
   });
 }
-function openWheel(){ if(battle&&!battle.over){ buildWheel(battle); document.getElementById('astraWheel').classList.add('open'); wheelOpen=true; } }
-function closeWheel(){ document.getElementById('astraWheel').classList.remove('open'); wheelOpen=false; }
+function openWheel(){ if(battle&&!battle.over){ buildWheel(battle); document.getElementById('astraBar').classList.remove('hidden'); } }
+function closeWheel(){ document.getElementById('astraBar').classList.add('hidden'); }
 
 /* ---------------- counter-matrix reference scroll ---------------- */
 function buildMatrixScroll(){
   const el=document.getElementById('matrixScroll');
-  let html='<b>अस्त्रविद्या — the science of the counter</b><br><br>';
+  let html='<b>Astra-vidyā — the science of the counter</b><br><br>';
   html+='• <b>Vāruṇa</b> quenches <b>Āgneya</b> — water quenches fire<br>';
   html+='• <b>Āgneya / Santāpana</b> melt <b>Śiśira</b> — flame melts frost<br>';
   html+='• <b>Vāyavya</b> scatters <b>Vāruṇa</b> — the gale scatters the flood<br>';
@@ -1765,8 +1753,6 @@ function setupInput(){
   endureBtn.addEventListener('pointerdown',(e)=>{ e.stopPropagation(); if(battle) battle.endureHolding=true; });
   window.addEventListener('pointerup',()=>{ if(battle) battle.endureHolding=false; });
 
-  document.getElementById('quiverBtn').addEventListener('pointerdown',(e)=>{ e.stopPropagation(); AudioEngine.init(); wheelOpen?closeWheel():openWheel(); });
-  document.getElementById('astraWheel').addEventListener('pointerdown',()=>closeWheel());
   document.getElementById('worshipBtn').addEventListener('pointerdown',(e)=>{ e.stopPropagation(); AudioEngine.init(); if(battle) enterWorship(battle); });
   document.getElementById('worshipClose').addEventListener('pointerdown',(e)=>{ e.stopPropagation(); if(battle) exitWorship(battle,'closed'); });
 
@@ -1784,7 +1770,7 @@ function setupInput(){
     }
     if(e.key==='0' && battle.brahmaUnlocked){ battle.nocked='brahma'; fireAstra(battle,1); }
     if(e.key==='w'||e.key==='W') enterWorship(battle);
-    if(e.key==='q'||e.key==='Q') wheelOpen?closeWheel():openWheel();
+
     if(e.key==='m'||e.key==='M') toggleMute();
     if(e.key==='p'||e.key==='P') togglePause();
     if((e.key==='ArrowLeft'||e.key==='ArrowRight') && battle.phase==='sakti') battle.saktiSwiped=true;
@@ -1810,7 +1796,7 @@ document.querySelectorAll('.choice-card[data-start]').forEach(card=>{
 });
 function startBattleWithLore(cfgKey, diff){
   const cfg=BATTLES[cfgKey];
-  document.getElementById('loreSans').textContent=cfg.lore.sans;
+  document.getElementById('loreSans').textContent=cfg.name;
   document.getElementById('loreIast').textContent=cfg.lore.iast;
   document.getElementById('loreText').textContent=cfg.lore.text;
   document.getElementById('loreOverlay').classList.remove('hidden');
@@ -1826,10 +1812,11 @@ function startBattle(cfgKey, diff){
   resizeCanvas();
   updateHud(battle);
   updateNockedUI(battle);
+  openWheel();
   hideTelegraph();
   particles=[];
   AudioEngine.conch();
-  showBanner(battle.enemy.dev,'The conch sounds — the duel begins.',2200);
+  showBanner(battle.enemy.name,'The conch sounds — the duel begins.',2200);
 }
 let paused=false;
 function togglePause(){
@@ -1857,7 +1844,7 @@ document.getElementById('endPrimaryBtn').addEventListener('pointerdown',()=>{
     const b=battle;
     b.over=false; b.result=null; b.tejas=50; b.phase='idle'; b.phaseT=0; b.idleDur=3;
     updateHud(b); AudioEngine.startDrone('battle'); AudioEngine.conch();
-    showBanner('उत्तिष्ठ','Rāma rises. The duel resumes.',1800);
+    showBanner('Rāma rises','The duel resumes.',1800);
     return;
   }
   if(storyIdx>=0 && storyIdx<STORY_ORDER.length-1){
@@ -1883,6 +1870,9 @@ function loop(now){
   if(battle && !paused){
     updateBattle(battle, delta);
     updateCamera(battle, delta);
+    const bar=document.getElementById('astraBar');
+    bar.classList.toggle('dim', battle.drawing || battle.worship.active);
+    if((battle.phase==='idle'||battle.phase==='telegraph') && !battle.over) bar.classList.remove('hidden');
     updateParticles(delta);
     drawSky(now, battle.darkness);
     drawTerrain();
@@ -1906,7 +1896,7 @@ window.__game={
   get battle(){ return battle; },
   resolveAstra, RAMA_ASTRAS, RAVANA_ASTRAS, SLOKAS, BATTLES,
   startBattle, startTelegraph:(k)=>{ if(battle){ battle.phase='idle'; startTelegraph(battle); if(k){ battle.telegraph.key=k; const a=RAVANA_ASTRAS[k];
-    document.getElementById('tgSigil').textContent=a.sigil; document.getElementById('tgSans').textContent=a.dev; document.getElementById('tgIast').textContent=a.iast; } } },
+    document.getElementById('tgSigil').textContent=a.sigil; document.getElementById('tgSans').textContent=a.iast; document.getElementById('tgIast').textContent=a.element; } } },
   nock:(k)=>{ if(battle){ battle.nocked=k; updateNockedUI(battle); } },
   fire:(pct)=>fireAstra(battle,pct===undefined?1:pct),
   enterWorship:()=>enterWorship(battle),
