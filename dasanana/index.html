@@ -746,234 +746,334 @@ function drawTerrain(){
 // Shared head-fan geometry (world units relative to RAVANA_POS) — the renderer and the
 // missile-targeting code must agree on where each head sits.
 function headOffset(b,i){
-  // Iconic pyramid crown: rows of 4-3-2-1 (exactly ten for Rāvaṇa); fewer heads fill bottom-up.
+  // The classic horizontal fan: one great central head with the others winging out to
+  // both sides, drooping slightly as they go. Destruction order runs outermost-first
+  // (index 0 = farthest wing), so the last head standing is always the great central
+  // one — the head only the Brahmāstra can fell.
   const n=b.enemy.heads;
-  const sizes=[]; let rem=n;
-  for(const c of [4,3,2,1]){ if(rem<=0) break; const take=Math.min(c,rem); sizes.push(take); rem-=take; }
-  let row=0, idx=i;
-  while(row<sizes.length-1 && idx>=sizes[row]){ idx-=sizes[row]; row++; }
-  const m=sizes[row];
-  return { x:(idx-(m-1)/2)*53, y:-217 - row*44 };
+  if(i===n-1) return { x:0, y:-256, center:true };
+  const r=Math.ceil((n-1-i)/2);            // distance rank from the center
+  const side=(i%2===0)?-1:1;
+  return { x:side*r*46, y:-242+r*13 };
 }
 
 function drawRama(b, t){
+  // Vector-art Rāma after the reference: vivid royal-blue skin, long indigo hair
+  // streaming, crimson flowing pants with a saffron sash, gold armor, green shoes —
+  // caught mid-leap, bow swept high. The whole bow tilts with the live aim.
   const p=w2s(RAMA_POS.x,RAMA_POS.y);
   const s=viewScale*FIG;
   const kneel = b.kneelT>0;
-  const bob=Math.sin(t/700)*1.6*s;
+  const bob=Math.sin(t/650)*2*s;
   const drawPull = b.drawing? b.drawPct : 0;
+  const aimTilt = (b.drawing && b.aimAngle!==null && b.aimAngle!==undefined)? b.aimAngle : -0.38;
   ctx.save();
-  ctx.translate(p.x,p.y+(kneel?20*s:0)+bob);
-  // ground shadow
-  ctx.fillStyle='rgba(0,0,0,0.3)';
-  ctx.beginPath(); ctx.ellipse(6*s,2*s,42*s,8*s,0,0,Math.PI*2); ctx.fill();
-  // divine aura
-  const ag=ctx.createRadialGradient(0,-70*s,5,0,-70*s,120*s);
-  ag.addColorStop(0,'rgba(140,200,255,0.20)'); ag.addColorStop(1,'rgba(140,200,255,0)');
-  ctx.fillStyle=ag; ctx.beginPath(); ctx.arc(0,-70*s,120*s,0,Math.PI*2); ctx.fill();
-  const SKIN='#3d63c9', SKIN_D='#2c4aa3', GOLD='#e8c33a', GOLD_D='#b8912a';
+  ctx.translate(p.x,p.y+(kneel?16*s:0)+bob);
+  const SKIN='#2d6ce0', SKIN_D='#1e4fb0', SKIN_L='#5a8ff0';
+  const HAIRC='#1c3bb0', HAIR_L='#2f52d8';
+  const GOLD='#f4b52e', GOLD_D='#c8891a', CRIMSON='#d4322a', CRIMSON_D='#a82018';
+  const ORANGE='#f08a1e', GREEN='#2e9e5b', sway=Math.sin(t/550)*3;
   ctx.lineCap='round';
-  // back leg (far, darker) + front leg — archer's stance
-  ctx.strokeStyle=SKIN_D; ctx.lineWidth=11*s;
-  ctx.beginPath(); ctx.moveTo(-4*s,-46*s); ctx.lineTo(-20*s,-22*s); ctx.lineTo(-24*s,0); ctx.stroke();
-  ctx.strokeStyle=SKIN; ctx.lineWidth=12*s;
-  ctx.beginPath(); ctx.moveTo(2*s,-46*s); ctx.lineTo(16*s,-24*s); ctx.lineTo(20*s,kneel?-10*s:0); ctx.stroke();
-  // dhoti — golden with red border, pleats
-  ctx.fillStyle=GOLD;
-  ctx.beginPath(); ctx.moveTo(-16*s,-72*s); ctx.lineTo(18*s,-72*s); ctx.lineTo(24*s,-40*s); ctx.lineTo(-22*s,-40*s); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle='#c0392b'; ctx.lineWidth=2.4*s;
-  ctx.beginPath(); ctx.moveTo(-22*s,-41*s); ctx.lineTo(24*s,-41*s); ctx.stroke();
+  // small ground shadow well below the feet — he is airborne
+  ctx.fillStyle='rgba(0,0,0,0.22)';
+  ctx.beginPath(); ctx.ellipse(2*s,2*s,30*s,6*s,0,0,Math.PI*2); ctx.fill();
+  const LIFT=-14*s;                      // the leap: whole figure rides above the ground
+  ctx.translate(0,LIFT);
+  // long indigo hair streaming behind in a wavy mass
+  ctx.fillStyle=HAIRC;
+  ctx.beginPath();
+  ctx.moveTo(8*s,-138*s);
+  ctx.quadraticCurveTo((-16+sway)*s,-136*s,(-26+sway*1.6)*s,-116*s);
+  ctx.quadraticCurveTo((-34+sway*2)*s,-96*s,(-24+sway*1.2)*s,-78*s);
+  ctx.quadraticCurveTo((-14+sway)*s,-92*s,(-12+sway*0.6)*s,-108*s);
+  ctx.quadraticCurveTo(-6*s,-124*s,10*s,-130*s);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle=HAIR_L; ctx.lineWidth=1.6*s;
+  ctx.beginPath(); ctx.moveTo(2*s,-132*s); ctx.quadraticCurveTo((-16+sway)*s,-118*s,(-20+sway*1.4)*s,-92*s); ctx.stroke();
+  // back leg kicked out behind (the spring of the leap), crimson pant + green shoe
+  ctx.strokeStyle=CRIMSON; ctx.lineWidth=13*s;
+  ctx.beginPath(); ctx.moveTo(-2*s,-58*s); ctx.quadraticCurveTo(-16*s,-44*s,-28*s,-22*s); ctx.stroke();
+  ctx.strokeStyle=GREEN; ctx.lineWidth=7*s;
+  ctx.beginPath(); ctx.moveTo(-28*s,-22*s); ctx.lineTo(-37*s,-14*s); ctx.stroke();
+  // front leg folded high beneath him, crimson pant + green shoe
+  ctx.strokeStyle=CRIMSON_D; ctx.lineWidth=13*s;
+  ctx.beginPath(); ctx.moveTo(4*s,-58*s); ctx.quadraticCurveTo(20*s,-52*s,16*s,-34*s); ctx.stroke();
+  ctx.strokeStyle=GREEN; ctx.lineWidth=7*s;
+  ctx.beginPath(); ctx.moveTo(16*s,-34*s); ctx.lineTo(10*s,-26*s); ctx.stroke();
+  // billowing crimson dhoti-pants at the hips
+  ctx.fillStyle=CRIMSON;
+  ctx.beginPath(); ctx.moveTo(-14*s,-76*s); ctx.lineTo(16*s,-76*s);
+  ctx.quadraticCurveTo(24*s,-64*s,18*s,-52*s); ctx.quadraticCurveTo(0,-46*s,-16*s,-54*s);
+  ctx.quadraticCurveTo(-22*s,-66*s,-14*s,-76*s); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle=CRIMSON_D; ctx.lineWidth=1.4*s;
+  ctx.beginPath(); ctx.moveTo(-8*s,-72*s); ctx.quadraticCurveTo(-4*s,-60*s,-8*s,-52*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(6*s,-72*s); ctx.quadraticCurveTo(10*s,-62*s,7*s,-52*s); ctx.stroke();
+  // saffron sash: waist wrap + two flying tails
+  ctx.fillStyle=ORANGE;
+  ctx.fillRect(-15*s,-80*s,32*s,6*s);
+  ctx.beginPath(); ctx.moveTo(-12*s,-76*s);
+  ctx.quadraticCurveTo((-30+sway*2)*s,-70*s,(-40+sway*2.6)*s,-52*s);
+  ctx.quadraticCurveTo((-26+sway*1.5)*s,-60*s,-10*s,-68*s); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-10*s,-70*s);
+  ctx.quadraticCurveTo((-22-sway*1.5)*s,-56*s,(-26-sway*2)*s,-38*s);
+  ctx.quadraticCurveTo((-14-sway)*s,-52*s,-6*s,-62*s); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=GOLD;                                       // sash clasp
+  ctx.beginPath(); ctx.arc(1*s,-77*s,3.4*s,0,Math.PI*2); ctx.fill();
+  // torso arched forward into the shot — royal blue with highlight
+  ctx.fillStyle=SKIN;
+  ctx.beginPath();
+  ctx.moveTo(-8*s,-76*s); ctx.quadraticCurveTo(-9*s,-102*s,2*s,-116*s);
+  ctx.quadraticCurveTo(12*s,-124*s,20*s,-114*s); ctx.quadraticCurveTo(20*s,-94*s,14*s,-78*s); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=SKIN_L;
+  ctx.beginPath(); ctx.ellipse(12*s,-102*s,4.4*s,12*s,0.18,0,Math.PI*2); ctx.fill();
+  // gold chest strap (armor band across the torso) + shoulder pauldron
+  ctx.strokeStyle=GOLD; ctx.lineWidth=4.6*s;
+  ctx.beginPath(); ctx.moveTo(16*s,-114*s); ctx.quadraticCurveTo(2*s,-98*s,-6*s,-80*s); ctx.stroke();
   ctx.strokeStyle=GOLD_D; ctx.lineWidth=1.2*s;
-  for(let i=-1;i<=1;i++){ ctx.beginPath(); ctx.moveTo(i*8*s,-70*s); ctx.lineTo(i*10*s,-42*s); ctx.stroke(); }
-  // torso, leaning into the shot
-  ctx.strokeStyle=SKIN; ctx.lineWidth=17*s;
-  ctx.beginPath(); ctx.moveTo(0,-70*s); ctx.lineTo(7*s,-112*s); ctx.stroke();
-  // chest armor + yajñopavīta (sacred thread)
-  ctx.fillStyle=GOLD; ctx.beginPath(); ctx.ellipse(5*s,-104*s,12*s,9*s,0.2,0,Math.PI*2); ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,0.85)'; ctx.lineWidth=1.4*s;
-  ctx.beginPath(); ctx.moveTo(12*s,-114*s); ctx.lineTo(-8*s,-78*s); ctx.stroke();
-  // quiver on the back with fletchings
-  ctx.save(); ctx.rotate(-0.28);
-  ctx.fillStyle='#6b3a1e'; ctx.fillRect(-30*s,-128*s,10*s,34*s);
-  for(let i=0;i<3;i++){
-    ctx.strokeStyle=i===1?'#c0392b':'#f5ead2'; ctx.lineWidth=2*s;
-    ctx.beginPath(); ctx.moveTo((-27+i*3.4)*s,-128*s); ctx.lineTo((-25+i*3.4)*s,-138*s); ctx.stroke();
-  }
-  ctx.restore();
-  // rear arm: drawn back to the cheek with the string
-  const bowX=34*s, bowY=-100*s, bowR=58*s;
-  // full-draw tremble: the hand shakes at the limit of the pull
-  const tremble = drawPull>0.75 ? Math.sin(t/26)*1.4*s*(drawPull-0.75)*4 : 0;
-  const nockX=bowX-drawPull*34*s+tremble, nockY=bowY+tremble*0.6;
-  ctx.strokeStyle=SKIN_D; ctx.lineWidth=9*s;
-  ctx.beginPath(); ctx.moveTo(4*s,-108*s); ctx.lineTo(nockX-6*s,nockY); ctx.stroke();
-  // front arm: extended, gripping the bow
-  ctx.strokeStyle=SKIN; ctx.lineWidth=10*s;
-  ctx.beginPath(); ctx.moveTo(8*s,-110*s); ctx.lineTo(bowX,bowY+4*s); ctx.stroke();
-  // head in profile, facing the foe
-  ctx.fillStyle=SKIN; ctx.beginPath(); ctx.arc(12*s,-130*s,13*s,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle=SKIN_D; ctx.beginPath(); ctx.arc(4*s,-136*s,9*s,0,Math.PI*2); ctx.fill();   // hair bun
-  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(19*s,-132*s,1.8*s,0,Math.PI*2); ctx.fill(); // eye
-  // mukuṭa — golden crown with jewel
+  ctx.beginPath(); ctx.moveTo(15*s,-112*s); ctx.quadraticCurveTo(2*s,-97*s,-5*s,-82*s); ctx.stroke();
   ctx.fillStyle=GOLD;
-  ctx.beginPath(); ctx.moveTo(2*s,-140*s); ctx.lineTo(12*s,-158*s); ctx.lineTo(22*s,-140*s); ctx.closePath(); ctx.fill();
-  ctx.fillStyle='#c0392b'; ctx.beginPath(); ctx.arc(12*s,-146*s,2.4*s,0,Math.PI*2); ctx.fill();
-  // tilaka
-  ctx.strokeStyle=GOLD; ctx.lineWidth=1.4*s;
-  ctx.beginPath(); ctx.moveTo(16*s,-138*s); ctx.lineTo(16*s,-132*s); ctx.stroke();
-  // the Kodaṇḍa — tall recurve bow; the limbs flex wider as the string is drawn
+  ctx.beginPath(); ctx.ellipse(8*s,-115*s,8.5*s,5.5*s,-0.35,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=CRIMSON; ctx.beginPath(); ctx.arc(8*s,-115*s,2*s,0,Math.PI*2); ctx.fill();
+  // the bow, swept high and tilted to the live aim
+  const bowCX=32*s, bowCY=-118*s, bowR=60*s;
+  const tremble = drawPull>0.75 ? Math.sin(t/26)*1.4*s*(drawPull-0.75)*4 : 0;
+  const pullLocal = drawPull*34*s;
+  const cosT=Math.cos(aimTilt), sinT=Math.sin(aimTilt);
+  const nockX = bowCX - pullLocal*cosT + tremble;
+  const nockY = bowCY - pullLocal*sinT + tremble*0.6;
+  // rear arm to the string with gold arm-guard
+  ctx.strokeStyle=SKIN_D; ctx.lineWidth=9*s;
+  ctx.beginPath(); ctx.moveTo(6*s,-108*s); ctx.lineTo(nockX-6*s,nockY+2*s); ctx.stroke();
+  ctx.strokeStyle=GOLD; ctx.lineWidth=2.6*s;
+  ctx.beginPath(); ctx.moveTo(nockX-13*s,nockY-3*s); ctx.lineTo(nockX-11*s,nockY+5*s); ctx.stroke();
+  // front arm up to the grip with arm-guard
+  ctx.strokeStyle=SKIN; ctx.lineWidth=10*s;
+  ctx.beginPath(); ctx.moveTo(12*s,-112*s); ctx.lineTo(bowCX,bowCY+4*s); ctx.stroke();
+  ctx.strokeStyle=GOLD; ctx.lineWidth=2.6*s;
+  ctx.beginPath(); ctx.moveTo(bowCX-8*s,bowCY-2*s); ctx.lineTo(bowCX-7*s,bowCY+9*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(20*s,-110*s); ctx.lineTo(22*s,-103*s); ctx.stroke();
+  // head in profile: nose, bright eye, brow
+  ctx.fillStyle=SKIN;
+  ctx.beginPath(); ctx.arc(16*s,-132*s,12.5*s,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(27.5*s,-134*s); ctx.lineTo(31.5*s,-129*s); ctx.lineTo(26.5*s,-127*s); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.ellipse(22.5*s,-134*s,2.3*s,1.6*s,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#141026'; ctx.beginPath(); ctx.arc(23.4*s,-134*s,1*s,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#141026'; ctx.lineWidth=1.2*s;
+  ctx.beginPath(); ctx.moveTo(19*s,-138.5*s); ctx.quadraticCurveTo(22.5*s,-140*s,26*s,-138*s); ctx.stroke();
+  // red tilaka + gold earring
+  ctx.strokeStyle=CRIMSON; ctx.lineWidth=1.3*s;
+  ctx.beginPath(); ctx.moveTo(20*s,-141*s); ctx.lineTo(20*s,-135.5*s); ctx.stroke();
+  ctx.fillStyle=GOLD; ctx.beginPath(); ctx.arc(13*s,-124*s,1.8*s,0,Math.PI*2); ctx.fill();
+  // hair over the crown of the head + top bun + small golden crown peak
+  ctx.fillStyle=HAIRC;
+  ctx.beginPath(); ctx.arc(12*s,-138*s,11.5*s,Math.PI*0.72,Math.PI*1.98); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(8*s,-149*s,6.4*s,5.2*s,-0.2,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=GOLD;
+  ctx.fillRect(3.5*s,-150*s,9*s,2.4*s);
+  ctx.beginPath(); ctx.moveTo(5*s,-150*s); ctx.lineTo(8*s,-160*s); ctx.lineTo(11*s,-150*s); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=CRIMSON; ctx.beginPath(); ctx.arc(8*s,-155*s,1.3*s,0,Math.PI*2); ctx.fill();
+  // ===== the Kodaṇḍa, drawn in a tilted frame so it swings with the aim =====
+  ctx.save();
+  ctx.translate(bowCX,bowCY); ctx.rotate(aimTilt);
   const flex = drawPull*0.14;
   const tA=-Math.PI/2.05-flex, tB=Math.PI/2.05+flex;
-  ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=6*s;
-  ctx.beginPath(); ctx.arc(bowX,bowY,bowR,tA,tB); ctx.stroke();
-  // wood grain visible when the camera pushes in
+  // ornate golden bow with pale inlay, as in the reference
+  ctx.strokeStyle=GOLD; ctx.lineWidth=6.2*s;
+  ctx.beginPath(); ctx.arc(0,0,bowR,tA,tB); ctx.stroke();
+  ctx.strokeStyle='#fdf2d8'; ctx.lineWidth=2.2*s;
+  ctx.beginPath(); ctx.arc(0,0,bowR,tA+0.25,tA+0.75); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0,0,bowR,tB-0.75,tB-0.25); ctx.stroke();
   if(s>1.1){
-    ctx.strokeStyle='rgba(90,58,20,0.5)'; ctx.lineWidth=1.2*s;
-    ctx.beginPath(); ctx.arc(bowX,bowY,bowR-2*s,tA+0.1,tB-0.1); ctx.stroke();
-    ctx.strokeStyle='rgba(255,230,180,0.35)'; ctx.lineWidth=1*s;
-    ctx.beginPath(); ctx.arc(bowX,bowY,bowR+2*s,tA+0.15,tB-0.15); ctx.stroke();
+    ctx.strokeStyle='rgba(160,110,20,0.55)'; ctx.lineWidth=1.2*s;
+    ctx.beginPath(); ctx.arc(0,0,bowR-2*s,tA+0.1,tB-0.1); ctx.stroke();
   }
-  ctx.strokeStyle=GOLD; ctx.lineWidth=6.5*s;
-  const topX=bowX+bowR*Math.cos(tA), topY=bowY+bowR*Math.sin(tA);
-  const botX=bowX+bowR*Math.cos(tB), botY=bowY+bowR*Math.sin(tB);
-  ctx.beginPath(); ctx.arc(bowX,bowY,bowR,tA,tA+0.22); ctx.stroke();
-  ctx.beginPath(); ctx.arc(bowX,bowY,bowR,tB-0.22,tB); ctx.stroke();
-  // string — doubled fibers up close
+  ctx.strokeStyle=GOLD_D; ctx.lineWidth=6.8*s;                       // curled tips
+  ctx.beginPath(); ctx.arc(0,0,bowR,tA,tA+0.2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0,0,bowR,tB-0.2,tB); ctx.stroke();
+  // string in the tilted frame
+  const ltx=bowR*Math.cos(tA), lty=bowR*Math.sin(tA);
+  const lbx=bowR*Math.cos(tB), lby=bowR*Math.sin(tB);
+  const lnx=-pullLocal+tremble;
   ctx.strokeStyle='rgba(120,90,50,0.95)'; ctx.lineWidth=s>1.1?2.2*s:1.6*s;
-  ctx.beginPath(); ctx.moveTo(topX,topY); ctx.lineTo(nockX,nockY); ctx.lineTo(botX,botY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ltx,lty); ctx.lineTo(lnx,0); ctx.lineTo(lbx,lby); ctx.stroke();
   if(s>1.1){
     ctx.strokeStyle='rgba(255,243,200,0.7)'; ctx.lineWidth=0.8*s;
-    ctx.beginPath(); ctx.moveTo(topX,topY); ctx.lineTo(nockX,nockY-1.2*s); ctx.lineTo(botX,botY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ltx,lty); ctx.lineTo(lnx,-1.2*s); ctx.lineTo(lbx,lby); ctx.stroke();
   }
-  // nocked astra — a real arrow on the string, tilted to the live aim angle
+  // nocked astra lies along the tilted frame's x-axis
   if(b.nocked){
     const col=RAMA_ASTRAS[b.nocked].color;
-    const aim=(b.drawing && b.aimAngle!==null && b.aimAngle!==undefined)? b.aimAngle : -0.1;
-    ctx.save();
-    ctx.translate(nockX,nockY); ctx.rotate(aim);
-    ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=2.6*s; ctx.lineCap='round';    // wooden shaft
-    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(72*s,0); ctx.stroke();
+    ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=2.6*s;
+    ctx.beginPath(); ctx.moveTo(lnx,0); ctx.lineTo(lnx+72*s,0); ctx.stroke();
     ctx.save(); ctx.shadowColor=col; ctx.shadowBlur=14;
-    ctx.fillStyle='#e8c33a';                                                // golden head, astra-sheathed
-    ctx.beginPath(); ctx.moveTo(82*s,0); ctx.lineTo(68*s,-5.5*s); ctx.lineTo(68*s,5.5*s); ctx.closePath(); ctx.fill();
-    const hg=ctx.createRadialGradient(76*s,0,1,76*s,0,14*s);
+    ctx.fillStyle='#e8c33a';
+    ctx.beginPath(); ctx.moveTo(lnx+82*s,0); ctx.lineTo(lnx+68*s,-5.5*s); ctx.lineTo(lnx+68*s,5.5*s); ctx.closePath(); ctx.fill();
+    const hg=ctx.createRadialGradient(lnx+76*s,0,1,lnx+76*s,0,14*s);
     hg.addColorStop(0,col); hg.addColorStop(1,'rgba(255,255,255,0)');
     ctx.globalAlpha=0.75; ctx.fillStyle=hg;
-    ctx.beginPath(); ctx.arc(76*s,0,14*s,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(lnx+76*s,0,14*s,0,Math.PI*2); ctx.fill();
     ctx.restore();
-    ctx.strokeStyle='#f5ead2'; ctx.lineWidth=1.8*s;                         // feather fletching
-    ctx.beginPath(); ctx.moveTo(2*s,0); ctx.lineTo(-7*s,-5*s); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(6*s,0); ctx.lineTo(-3*s,-5*s); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(2*s,0); ctx.lineTo(-7*s,5*s); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(6*s,0); ctx.lineTo(-3*s,5*s); ctx.stroke();
-    ctx.restore();
+    ctx.strokeStyle='#f08a1e'; ctx.lineWidth=1.8*s;                  // saffron fletching
+    ctx.beginPath(); ctx.moveTo(lnx+2*s,0); ctx.lineTo(lnx-7*s,-5*s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(lnx+6*s,0); ctx.lineTo(lnx-3*s,-5*s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(lnx+2*s,0); ctx.lineTo(lnx-7*s,5*s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(lnx+6*s,0); ctx.lineTo(lnx-3*s,5*s); ctx.stroke();
   }
+  ctx.restore();
+  // quiver slung tight on the back with saffron fletchings
+  ctx.save(); ctx.translate(-4*s,-96*s); ctx.rotate(-0.38);
+  ctx.fillStyle='#8a4a1e'; ctx.fillRect(-5*s,-22*s,10*s,30*s);
+  ctx.fillStyle=GOLD; ctx.fillRect(-5*s,-18*s,10*s,2.6*s);
+  for(let i=0;i<3;i++){
+    ctx.fillStyle= i%2===0 ? '#f08a1e' : '#ffc46b';
+    ctx.beginPath(); ctx.moveTo((-2+i*3.2)*s,-32*s); ctx.lineTo((-4.5+i*3.2)*s,-24*s); ctx.lineTo((0.5+i*3.2)*s,-24*s); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
   ctx.restore();
 }
 
 function drawEnemy(b, t){
+  // Rāvaṇa after the reference: bronze skin, laughing faces with thick mustaches and
+  // brows, tall golden domed crowns set with jewels, and a broad jeweled collar.
   const p=w2s(RAVANA_POS.x,RAVANA_POS.y); const s=viewScale*FIG;
   const wob=Math.sin(t/800)*1.6*s;
-  const DK='#241428', DK_L='#3a2140', GOLD='#e8c33a', GOLD_D='#b8912a';
+  const ARMOR='#3a2140', BRONZE='#c8854f', BRONZE_D='#a5683a', GOLD='#e8b52e', GOLD_D='#b8891a', RED='#c0392b', HAIRC='#1c1226';
   ctx.save(); ctx.translate(p.x,p.y);
   // ground shadow
   ctx.fillStyle='rgba(0,0,0,0.35)';
   ctx.beginPath(); ctx.ellipse(0,10*s,86*s,10*s,0,0,Math.PI*2); ctx.fill();
-  // menacing crimson aura so Rāvaṇa reads against the dark ramparts
-  const ra=ctx.createRadialGradient(0,-110*s,10,0,-110*s,150*s);
-  ra.addColorStop(0,'rgba(255,80,60,0.16)'); ra.addColorStop(0.6,'rgba(160,30,40,0.10)'); ra.addColorStop(1,'rgba(160,30,40,0)');
-  ctx.fillStyle=ra; ctx.beginPath(); ctx.arc(0,-110*s,150*s,0,Math.PI*2); ctx.fill();
+  // menacing crimson aura so Rāvaṇa reads against the fortress
+  const ra=ctx.createRadialGradient(0,-130*s,10,0,-130*s,170*s);
+  ra.addColorStop(0,'rgba(255,80,60,0.15)'); ra.addColorStop(0.6,'rgba(160,30,40,0.09)'); ra.addColorStop(1,'rgba(160,30,40,0)');
+  ctx.fillStyle=ra; ctx.beginPath(); ctx.arc(0,-130*s,170*s,0,Math.PI*2); ctx.fill();
   // chariot: platform, railing, banner, spoked wheels
   ctx.fillStyle='#4a2c14'; ctx.fillRect(-78*s,-18*s,160*s,20*s);
   ctx.fillStyle=GOLD_D; ctx.fillRect(-78*s,-22*s,160*s,5*s);
-  ctx.strokeStyle=GOLD_D; ctx.lineWidth=2.4*s;                                  // railing
+  ctx.strokeStyle=GOLD_D; ctx.lineWidth=2.4*s;
   ctx.beginPath(); ctx.moveTo(-74*s,-22*s); ctx.lineTo(-74*s,-46*s); ctx.lineTo(-30*s,-46*s); ctx.stroke();
-  ctx.strokeStyle='#6b3a1e'; ctx.lineWidth=3*s;                                 // banner pole + pennant
+  ctx.strokeStyle='#6b3a1e'; ctx.lineWidth=3*s;
   ctx.beginPath(); ctx.moveTo(72*s,-18*s); ctx.lineTo(72*s,-150*s); ctx.stroke();
-  ctx.fillStyle='#c0392b';
+  ctx.fillStyle=RED;
   ctx.beginPath(); ctx.moveTo(72*s,-150*s); ctx.lineTo(102*s,-142*s); ctx.lineTo(72*s,-134*s); ctx.closePath(); ctx.fill();
-  [[-46,'#3a2410'],[46,'#3a2410']].forEach(([wx])=>{                            // wheels with spokes
+  [[-46],[46]].forEach(([wx])=>{
     ctx.fillStyle='#2a1808'; ctx.beginPath(); ctx.arc(wx*s,10*s,19*s,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle=GOLD_D; ctx.lineWidth=2.6*s;
     ctx.beginPath(); ctx.arc(wx*s,10*s,19*s,0,Math.PI*2); ctx.stroke();
     for(let k=0;k<4;k++){ const a=t/900+k*Math.PI/4;
       ctx.beginPath(); ctx.moveTo(wx*s-Math.cos(a)*17*s,10*s-Math.sin(a)*17*s); ctx.lineTo(wx*s+Math.cos(a)*17*s,10*s+Math.sin(a)*17*s); ctx.stroke(); }
   });
-  // legs planted wide
-  ctx.strokeStyle=DK; ctx.lineCap='round'; ctx.lineWidth=15*s;
+  // legs planted wide (bronze)
+  ctx.strokeStyle=BRONZE_D; ctx.lineCap='round'; ctx.lineWidth=15*s;
   ctx.beginPath(); ctx.moveTo(-12*s,-60*s+wob); ctx.lineTo(-20*s,-20*s); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(12*s,-60*s+wob); ctx.lineTo(20*s,-20*s); ctx.stroke();
-  // rear pair of arms, spread wide (the many-armed silhouette)
-  ctx.strokeStyle=DK_L; ctx.lineWidth=10*s;
-  ctx.beginPath(); ctx.moveTo(-24*s,-118*s+wob); ctx.lineTo(-62*s,-140*s+wob); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(24*s,-118*s+wob); ctx.lineTo(62*s,-140*s+wob); ctx.stroke();
-  // broad torso with armor bands + sunset rim-light on the sun-facing side
-  ctx.fillStyle=DK;
-  ctx.beginPath(); ctx.ellipse(0,-96*s+wob,44*s,62*s,0,0,Math.PI*2); ctx.fill();
+  // rear pair of arms, spread wide
+  ctx.strokeStyle=BRONZE_D; ctx.lineWidth=10*s;
+  ctx.beginPath(); ctx.moveTo(-24*s,-124*s+wob); ctx.lineTo(-62*s,-146*s+wob); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(24*s,-124*s+wob); ctx.lineTo(62*s,-146*s+wob); ctx.stroke();
+  // broad armored torso with sunset rim light
+  ctx.fillStyle=ARMOR;
+  ctx.beginPath(); ctx.ellipse(0,-102*s+wob,46*s,64*s,0,0,Math.PI*2); ctx.fill();
   ctx.strokeStyle='rgba(255,190,90,0.5)'; ctx.lineWidth=2.5*s;
-  ctx.beginPath(); ctx.ellipse(0,-96*s+wob,44*s,62*s,0,Math.PI*0.65,Math.PI*1.4); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(0,-102*s+wob,46*s,64*s,0,Math.PI*0.65,Math.PI*1.4); ctx.stroke();
   ctx.fillStyle=GOLD;
-  [[-118,7],[-98,6],[-78,5]].forEach(([y,h])=>{ ctx.fillRect(-38*s,y*s+wob,76*s,h*s); });
-  ctx.fillStyle='#c0392b'; ctx.beginPath(); ctx.arc(0,-108*s+wob,5*s,0,Math.PI*2); ctx.fill();  // chest jewel
+  [[-124,7],[-104,6],[-84,5]].forEach(([y,h])=>{ ctx.fillRect(-40*s,y*s+wob,80*s,h*s); });
   // pauldrons
   ctx.fillStyle=GOLD_D;
-  ctx.beginPath(); ctx.ellipse(-40*s,-124*s+wob,14*s,9*s,-0.4,0,Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(40*s,-124*s+wob,14*s,9*s,0.4,0,Math.PI*2); ctx.fill();
-  // front arms crossed, one gripping the gadā (mace)
-  ctx.strokeStyle=DK; ctx.lineWidth=13*s;
-  ctx.beginPath(); ctx.moveTo(-32*s,-116*s+wob); ctx.lineTo(18*s,-84*s+wob); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(32*s,-116*s+wob); ctx.lineTo(-18*s,-84*s+wob); ctx.stroke();
-  ctx.strokeStyle='#6b3a1e'; ctx.lineWidth=4*s;                                 // mace shaft + head
-  ctx.beginPath(); ctx.moveTo(-20*s,-84*s+wob); ctx.lineTo(-44*s,-52*s+wob); ctx.stroke();
-  ctx.fillStyle=GOLD_D; ctx.beginPath(); ctx.arc(-48*s,-46*s+wob,9*s,0,Math.PI*2); ctx.fill();
-  // neck ruff below the fan of heads
-  ctx.fillStyle=DK_L; ctx.beginPath(); ctx.ellipse(0,-150*s+wob,30*s,12*s,0,0,Math.PI*2); ctx.fill();
-  // ten heads — fanned crown, each with face and diadem
-  const n=b.enemy.heads, c=(n-1)/2;
+  ctx.beginPath(); ctx.ellipse(-42*s,-130*s+wob,14*s,9*s,-0.4,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(42*s,-130*s+wob,14*s,9*s,0.4,0,Math.PI*2); ctx.fill();
+  // front arms crossed (bronze), one gripping the gadā
+  ctx.strokeStyle=BRONZE; ctx.lineWidth=13*s;
+  ctx.beginPath(); ctx.moveTo(-34*s,-122*s+wob); ctx.lineTo(18*s,-88*s+wob); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(34*s,-122*s+wob); ctx.lineTo(-18*s,-88*s+wob); ctx.stroke();
+  ctx.strokeStyle='#6b3a1e'; ctx.lineWidth=4*s;
+  ctx.beginPath(); ctx.moveTo(-20*s,-88*s+wob); ctx.lineTo(-44*s,-54*s+wob); ctx.stroke();
+  ctx.fillStyle=GOLD_D; ctx.beginPath(); ctx.arc(-48*s,-48*s+wob,9*s,0,Math.PI*2); ctx.fill();
+  // broad jeweled golden collar below the central head (scalloped, as in the reference)
+  ctx.fillStyle=GOLD;
+  ctx.beginPath(); ctx.moveTo(-26*s,-162*s+wob);
+  ctx.quadraticCurveTo(0,-146*s+wob,26*s,-162*s+wob);
+  ctx.lineTo(20*s,-172*s+wob); ctx.lineTo(-20*s,-172*s+wob); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=GOLD_D;
+  for(let k=-2;k<=2;k++){ ctx.beginPath(); ctx.arc(k*10*s,-152*s+wob,2.6*s,0,Math.PI*2); ctx.fill(); }
+  ctx.fillStyle=RED; ctx.beginPath(); ctx.arc(0,-158*s+wob,3*s,0,Math.PI*2); ctx.fill();
+  // ===== the ten heads: great central head, wings fanning to both sides =====
+  const n=b.enemy.heads;
   for(let i=0;i<n;i++){
     const alive = i >= b.headsDestroyed;
     const o=headOffset(b,i);
-    const hx=o.x*viewScale/1, hy=o.y*viewScale/1;                 // headOffset is in world units
-    const HX=hx, HY=hy+wob;
-    const hr=(i===Math.floor(c)?15:12.5)*s;
+    const HX=o.x*viewScale, HY=o.y*viewScale+wob;
+    const center=!!o.center;
+    const hr=(center?17:13)*s;
     if(!alive){
-      const eg=ctx.createRadialGradient(HX,HY,1,HX,HY,hr*1.2);
+      const eg=ctx.createRadialGradient(HX,HY,1,HX,HY,hr*1.15);
       eg.addColorStop(0,'rgba(255,154,61,0.35)'); eg.addColorStop(1,'rgba(255,154,61,0)');
-      ctx.fillStyle=eg; ctx.beginPath(); ctx.arc(HX,HY,hr*1.2,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle=eg; ctx.beginPath(); ctx.arc(HX,HY,hr*1.15,0,Math.PI*2); ctx.fill();
       continue;
     }
     const invoking = b.phase==='telegraph' && b.telegraph.headIdx===i;
-    const idle=Math.sin(t/500+i*1.7)*1.4*s;
+    const idle=Math.sin(t/500+i*1.7)*1.3*s;
+    const Y=HY+idle;
+    if(invoking){ ctx.save(); ctx.shadowColor='#ff5e3a'; ctx.shadowBlur=22+10*Math.sin(t/120); }
+    // black hair behind the face
+    ctx.fillStyle=HAIRC;
+    ctx.beginPath(); ctx.arc(HX,Y+hr*0.25,hr*1.02,0,Math.PI); ctx.fill();
+    // bronze face
+    ctx.fillStyle=invoking?'#e09a5e':BRONZE;
+    ctx.beginPath(); ctx.ellipse(HX,Y,hr*0.88,hr,0,0,Math.PI*2); ctx.fill();
+    if(invoking) ctx.restore();
+    // laughing mouth: dark opening with white teeth band
+    ctx.fillStyle='#5a1410';
+    ctx.beginPath(); ctx.ellipse(HX,Y+hr*0.45,hr*0.42,hr*0.3,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fdf6e3';
+    ctx.fillRect(HX-hr*0.36,Y+hr*0.26,hr*0.72,hr*0.16);
+    // thick curling mustache
+    ctx.strokeStyle=HAIRC; ctx.lineWidth=Math.max(1.5,hr*0.16); ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(HX,Y+hr*0.22); ctx.quadraticCurveTo(HX-hr*0.55,Y+hr*0.1,HX-hr*0.75,Y+hr*0.45); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(HX,Y+hr*0.22); ctx.quadraticCurveTo(HX+hr*0.55,Y+hr*0.1,HX+hr*0.75,Y+hr*0.45); ctx.stroke();
+    // laughing eyes (closed arcs) — glowing when invoking
     if(invoking){
-      const glow=0.5+0.5*Math.sin(t/120);
-      ctx.save(); ctx.shadowColor='#ff5e3a'; ctx.shadowBlur=20+glow*16;
-      ctx.fillStyle='#3d1f33'; ctx.beginPath(); ctx.arc(HX,HY+idle,hr,0,Math.PI*2); ctx.fill(); ctx.restore();
+      ctx.fillStyle='#ff5e3a';
+      ctx.beginPath(); ctx.arc(HX-hr*0.32,Y-hr*0.12,hr*0.12,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(HX+hr*0.32,Y-hr*0.12,hr*0.12,0,Math.PI*2); ctx.fill();
     } else {
-      ctx.fillStyle='#311a34'; ctx.beginPath(); ctx.arc(HX,HY+idle,hr,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle=HAIRC; ctx.lineWidth=Math.max(1.2,hr*0.1);
+      ctx.beginPath(); ctx.arc(HX-hr*0.32,Y-hr*0.08,hr*0.18,Math.PI*1.15,Math.PI*1.85); ctx.stroke();
+      ctx.beginPath(); ctx.arc(HX+hr*0.32,Y-hr*0.08,hr*0.18,Math.PI*1.15,Math.PI*1.85); ctx.stroke();
     }
-    // face: brows, glowing eyes, mustache
-    const ec = invoking ? '#ff5e3a' : '#ff9a3d';
-    ctx.fillStyle=ec;
-    ctx.beginPath(); ctx.arc(HX-4*s,HY+idle-2*s,1.8*s,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(HX+4*s,HY+idle-2*s,1.8*s,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle='#12081a'; ctx.lineWidth=1.5*s;
-    ctx.beginPath(); ctx.moveTo(HX-7*s,HY+idle-6*s); ctx.lineTo(HX-2*s,HY+idle-5*s); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(HX+7*s,HY+idle-6*s); ctx.lineTo(HX+2*s,HY+idle-5*s); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(HX-5*s,HY+idle+4*s); ctx.quadraticCurveTo(HX,HY+idle+6.5*s,HX+5*s,HY+idle+4*s); ctx.stroke();
-    // diadem: gold band + three points + jewel
+    // heavy brows
+    ctx.strokeStyle=HAIRC; ctx.lineWidth=Math.max(1.6,hr*0.14);
+    ctx.beginPath(); ctx.moveTo(HX-hr*0.52,Y-hr*0.28); ctx.quadraticCurveTo(HX-hr*0.3,Y-hr*0.42,HX-hr*0.1,Y-hr*0.3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(HX+hr*0.52,Y-hr*0.28); ctx.quadraticCurveTo(HX+hr*0.3,Y-hr*0.42,HX+hr*0.1,Y-hr*0.3); ctx.stroke();
+    // red tilaka
+    ctx.strokeStyle=RED; ctx.lineWidth=Math.max(1.2,hr*0.1);
+    ctx.beginPath(); ctx.moveTo(HX,Y-hr*0.72); ctx.lineTo(HX,Y-hr*0.5); ctx.stroke();
+    // gold earrings on the central head
+    if(center){
+      ctx.fillStyle=GOLD;
+      ctx.beginPath(); ctx.arc(HX-hr*0.92,Y+hr*0.3,hr*0.14,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(HX+hr*0.92,Y+hr*0.3,hr*0.14,0,Math.PI*2); ctx.fill();
+    }
+    // tall golden domed crown: band with jewels, dome, finial knob
+    const cw=hr*1.05, bandY=Y-hr*0.82;
     ctx.fillStyle=GOLD;
-    ctx.fillRect(HX-hr*0.85,HY+idle-hr-2*s,hr*1.7,3*s);
-    ctx.beginPath(); ctx.moveTo(HX-hr*0.7,HY+idle-hr-2*s); ctx.lineTo(HX-hr*0.45,HY+idle-hr-8*s); ctx.lineTo(HX-hr*0.2,HY+idle-hr-2*s); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(HX-hr*0.25,HY+idle-hr-2*s); ctx.lineTo(HX,HY+idle-hr-11*s); ctx.lineTo(HX+hr*0.25,HY+idle-hr-2*s); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(HX+hr*0.2,HY+idle-hr-2*s); ctx.lineTo(HX+hr*0.45,HY+idle-hr-8*s); ctx.lineTo(HX+hr*0.7,HY+idle-hr-2*s); ctx.closePath(); ctx.fill();
-    ctx.fillStyle='#c0392b'; ctx.beginPath(); ctx.arc(HX,HY+idle-hr-6*s,1.6*s,0,Math.PI*2); ctx.fill();
+    ctx.fillRect(HX-cw,bandY-hr*0.34,cw*2,hr*0.36);
+    ctx.beginPath(); ctx.ellipse(HX,bandY-hr*0.5,cw*0.78,hr*0.62,0,Math.PI,0); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(HX,bandY-hr*1.05,cw*0.34,hr*0.3,0,Math.PI,0); ctx.fill();
+    ctx.fillStyle=GOLD_D;
+    ctx.beginPath(); ctx.arc(HX,bandY-hr*1.32,hr*0.14,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=RED;
+    ctx.beginPath(); ctx.arc(HX,bandY-hr*0.16,hr*0.15,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#2e7d4f';
+    ctx.beginPath(); ctx.arc(HX-cw*0.55,bandY-hr*0.16,hr*0.1,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#2d6ce0';
+    ctx.beginPath(); ctx.arc(HX+cw*0.55,bandY-hr*0.16,hr*0.1,0,Math.PI*2); ctx.fill();
   }
   // phantom Rāvaṇas during Mohana
   if(b.phantoms>0){
     ctx.globalAlpha=0.25*b.phantoms;
     for(let k=0;k<3;k++){
       ctx.save(); ctx.translate((k-1)*150*viewScale, Math.sin(t/300+k)*12*viewScale);
-      ctx.fillStyle='#b08fd8'; ctx.beginPath(); ctx.ellipse(0,-96*s,40*s,58*s,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#b08fd8'; ctx.beginPath(); ctx.ellipse(0,-102*s,42*s,60*s,0,0,Math.PI*2); ctx.fill();
       ctx.restore();
     }
     ctx.globalAlpha=1;
@@ -1030,7 +1130,7 @@ function drawMissiles(b){
 function drawAimPreview(b){
   if(!b.drawing || b.aimAngle===null || b.aimAngle===undefined || b.drawPct<0.05) return;
   const spd = ARROW_SPEED_MIN + (ARROW_SPEED_MAX-ARROW_SPEED_MIN)*b.drawPct;
-  let px=RAMA_POS.x+85, py=RAMA_POS.y-155;
+  let px=RAMA_POS.x+80, py=RAMA_POS.y-190;
   let vx=Math.cos(b.aimAngle)*spd, vy=Math.sin(b.aimAngle)*spd;
   const step=0.06;
   ctx.save();
@@ -1111,12 +1211,12 @@ function drawFinale(b){
   if(b.phase!=='finale') return;
   const t=b.phaseT;
   if(t<3.2){ // charge: radiance gathers on the arrow
-    const p=w2s(RAMA_POS.x+70,RAMA_POS.y-155);
+    const p=w2s(RAMA_POS.x+75,RAMA_POS.y-190);
     const r=(t/3.2)*120*viewScale;
     const g=ctx.createRadialGradient(p.x,p.y,2,p.x,p.y,r+30);
     g.addColorStop(0,'rgba(255,242,200,0.9)'); g.addColorStop(1,'rgba(255,242,200,0)');
     ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,r+30,0,Math.PI*2); ctx.fill();
-    if(Math.random()<0.6) burst(RAMA_POS.x+70,RAMA_POS.y-155,'#fff2c8',2,{speed:80,g:0,life:600,size:3});
+    if(Math.random()<0.6) burst(RAMA_POS.x+75,RAMA_POS.y-190,'#fff2c8',2,{speed:80,g:0,life:600,size:3});
   } else if(t<4.6){ // supernova sweep
     const prog=(t-3.2)/1.4;
     ctx.fillStyle=`rgba(255,248,225,${prog<0.5?prog*2:2-prog*2})`;
@@ -1202,7 +1302,7 @@ function fireAstra(b, pct){
   b.clashData={ attack:b.telegraph.key, response:b.nocked, resolution, met:false, done:false };
   const attA=RAVANA_ASTRAS[b.telegraph.key];
   const launchHead = headWorldPos(b, b.telegraph.headIdx);
-  const tipX=RAMA_POS.x+85, tipY=RAMA_POS.y-155;
+  const tipX=RAMA_POS.x+80, tipY=RAMA_POS.y-190;
   const ev = solveArc(launchHead.x, launchHead.y, RAMA_POS.x+20, RAMA_POS.y-110, ENEMY_FLIGHT_T, ENEMY_GRAVITY);
   const enemyM = makeBallistic(launchHead.x, launchHead.y, ev.vx, ev.vy, ENEMY_GRAVITY, attA.color, attA.element, 'ravana');
   let ramaM;
