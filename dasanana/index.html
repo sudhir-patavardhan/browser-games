@@ -221,17 +221,33 @@
 "use strict";
 
 /* ================================================================ CONFIG ================================================================ */
-const WORLD_W = 810, WORLD_H = 1260;
-const RAMA_POS = { x:150, y:1000 };
-const RAVANA_POS = { x:640, y:985 };
-const CLASH_X = 400, CLASH_Y = 845;
+const WORLD_W = 1680, WORLD_H = 1260;
+const RAMA_POS = { x:170, y:980 };
+const RAVANA_POS = { x:1500, y:940 };
+const CLASH_X = 820, CLASH_Y = 800;     // mid-field reference (camera fallback)
 const FIG = 1.55;                       // figure scale multiplier — Rāma & Rāvaṇa drawn large
-const ARROW_GRAVITY = 760;              // world units/s² — ballistic drop on Rāma's arrows
-const ARROW_SPEED_MIN = 640, ARROW_SPEED_MAX = 1280;   // launch speed by draw %
-const ENEMY_FLIGHT_T = 1.7;             // seconds for Rāvaṇa's astra to reach Rāma
-const ENEMY_GRAVITY = 300;              // gentler arc on the incoming astra
-const CLASH_RADIUS = 48;                // interception radius — generous, aim still matters
-const SEEK_SPEED = 980;                 // auto-aim (keyboard) and post-clash homing speed
+const ARROW_GRAVITY = 700;              // world units/s² — ballistic drop on Rāma's arrows
+const ARROW_SPEED_MIN = 620, ARROW_SPEED_MAX = 1260;   // launch speed by draw %
+const ENEMY_FLIGHT_T = 2.4;             // seconds for Rāvaṇa's astra to cross the long field
+const ENEMY_GRAVITY = 260;              // gentle arc on the incoming astra
+const CLASH_RADIUS = 52;                // contact radius once the astras meet
+const MAGNET_R = 200;                   // "astras seek their opposites" — passing near, they curve together
+const SEEK_SPEED = 1050;                // auto-aim (keyboard) and post-clash homing speed
+// Rolling battlefield: control points (x, groundY) smoothly interpolated — two facing
+// plateaus with a valley between, Bowmasters-style.
+const TERRAIN=[[0,980],[300,980],[440,1035],[580,1085],[720,1075],[840,1015],[960,1055],[1130,1085],[1290,1010],[1400,940],[1680,940]];
+function groundY(x){
+  const T=TERRAIN;
+  if(x<=T[0][0]) return T[0][1];
+  for(let i=0;i<T.length-1;i++){
+    const x1=T[i][0], y1=T[i][1], x2=T[i+1][0], y2=T[i+1][1];
+    if(x<=x2){ const t=(x-x1)/(x2-x1); const tt=t*t*(3-2*t); return y1+(y2-y1)*tt; }
+  }
+  return T[T.length-1][1];
+}
+// static terrain props: rocks, grass tufts, pennant poles
+const PROPS=[{x:340,t:'tuft'},{x:470,t:'rock'},{x:640,t:'tuft'},{x:760,t:'rock'},{x:900,t:'banner'},
+  {x:1010,t:'tuft'},{x:1170,t:'rock'},{x:1250,t:'tuft'},{x:530,t:'tuft'},{x:1080,t:'rock'}];
 const IDLE_MIN = 2.2, IDLE_MAX = 4.0;
 const REGROW_SECONDS = 60;
 const WORSHIP_BEAT = 0.75;
@@ -582,40 +598,42 @@ function updateParticles(dt){
 const canvas=document.getElementById('battleCanvas');
 const ctx=canvas.getContext('2d');
 let viewScale=1, offX=0, offY=0, cssW=0, cssH=0;
-let wideScale=1, wideOx=0, wideOy=0;
+let aimScale=1, wideScale=1;
 const cam={ scale:1, ox:0, oy:0, init:false };
 function resizeCanvas(){
   const dpr=window.devicePixelRatio||1;
   cssW=window.innerWidth; cssH=window.innerHeight;
   canvas.width=Math.round(cssW*dpr); canvas.height=Math.round(cssH*dpr);
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  // Wide framing: the LARGEST scale that still keeps both duelists on screen,
-  // ground anchored near the bottom. The sky/ground painters fill the whole canvas.
-  const SPAN = 700;
-  const cover = Math.max(cssW/WORLD_W, cssH/WORLD_H);
-  wideScale = Math.min(cover, cssW/SPAN);
-  wideScale = Math.max(wideScale, cssW/WORLD_W);
-  wideOx = cssW/2 - CLASH_X*wideScale;
-  wideOy = cssH*0.88 - RAMA_POS.y*wideScale;
-  if(!cam.init){ cam.scale=wideScale; cam.ox=wideOx; cam.oy=wideOy; cam.init=true; }
+  // Bowmasters framing: the camera lives near Rāma (~640 world units visible),
+  // pans across the long field with the shot. wideScale kept for zoom ratios.
+  aimScale = Math.min(cssW/640, cssH/700);
+  wideScale = aimScale;
+  if(!cam.init){ const t=aimView(); cam.scale=t.scale; cam.ox=t.ox; cam.oy=t.oy; cam.init=true; }
   viewScale=cam.scale; offX=cam.ox; offY=cam.oy;
 }
-// Cinematic camera: push in tight on Rāma's bow while he draws (and during the
-// Brahmāstra charge), pull back to the wide battlefield the moment the arrow flies,
-// with a slight lean toward mid-field during the clash itself.
+function aimView(){
+  return { scale:aimScale, ox:cssW*0.30-RAMA_POS.x*aimScale, oy:cssH*0.78-RAMA_POS.y*aimScale, k:8 };
+}
+// Cinematic camera: tight on Rāma's bow while drawing, panning after the arrow in
+// flight across the field, on Rāvaṇa for the finale strike, else anchored at Rāma.
 function cameraTarget(b){
   if(b && (b.drawing || (b.phase==='finale' && b.phaseT<3.2))){
-    const sc=wideScale*2.2, fx=RAMA_POS.x+70, fy=RAMA_POS.y-160;
-    return { scale:sc, ox:cssW*0.42-fx*sc, oy:cssH*0.54-fy*sc, k:5 };
+    const sc=aimScale*1.7, fx=RAMA_POS.x+85, fy=RAMA_POS.y-160;
+    return { scale:sc, ox:cssW*0.40-fx*sc, oy:cssH*0.55-fy*sc, k:5 };
+  }
+  if(b && b.phase==='finale'){
+    const sc=aimScale*0.9;
+    return { scale:sc, ox:cssW*0.55-RAVANA_POS.x*sc, oy:cssH*0.72-RAVANA_POS.y*sc, k:6 };
   }
   if(b && b.phase==='clash'){
-    // follow the live missile like the bird in flight
     const live=b.missiles.find(m=>!m.dead);
-    const fx=live?clamp(live.x,240,660):CLASH_X, fy=live?clamp(live.y,560,960):CLASH_Y;
-    const sc=wideScale*1.18;
+    const sc=aimScale*0.85;
+    const fx=live?clamp(live.x, 340, WORLD_W-340):CLASH_X;
+    const fy=live?clamp(live.y, 480, 1000):CLASH_Y;
     return { scale:sc, ox:cssW*0.5-fx*sc, oy:cssH*0.58-fy*sc, k:6 };
   }
-  return { scale:wideScale, ox:wideOx, oy:wideOy, k:9 };
+  return aimView();
 }
 function updateCamera(b,dtMs){
   const t=cameraTarget(b);
@@ -631,16 +649,16 @@ function drawSky(t, darkness){
   g.addColorStop(0,'#4aa8f0'); g.addColorStop(0.42,'#8ed4ff'); g.addColorStop(0.68,'#d8f0ff'); g.addColorStop(0.82,'#fff2c0'); g.addColorStop(1,'#ffe9a8');
   ctx.fillStyle=g; ctx.fillRect(0,0,cssW,cssH);
   // high golden sun
-  const sun=w2s(560,420);
+  const sun=w2s(900,380);
   const sg=ctx.createRadialGradient(sun.x,sun.y,4,sun.x,sun.y,180*viewScale);
   sg.addColorStop(0,'rgba(255,252,235,1)'); sg.addColorStop(0.2,'rgba(255,238,170,0.75)'); sg.addColorStop(1,'rgba(255,238,170,0)');
   ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(sun.x,sun.y,180*viewScale,0,Math.PI*2); ctx.fill();
   ctx.fillStyle='#fffbe8'; ctx.beginPath(); ctx.arc(sun.x,sun.y,34*viewScale,0,Math.PI*2); ctx.fill();
-  // drifting clouds
+  // drifting clouds across the long sky
   ctx.fillStyle='rgba(255,255,255,0.85)';
-  for(let i=0;i<4;i++){
-    const cwx=((i*260 + t*0.008) % (WORLD_W+320)) - 160;
-    const cwy=250+((i*97)%180);
+  for(let i=0;i<7;i++){
+    const cwx=((i*300 + t*0.008) % (WORLD_W+360)) - 180;
+    const cwy=220+((i*97)%210);
     const c=w2s(cwx,cwy); const cs=viewScale*(0.8+((i*31)%40)/60);
     ctx.beginPath();
     ctx.ellipse(c.x,c.y,52*cs,16*cs,0,0,Math.PI*2);
@@ -648,32 +666,91 @@ function drawSky(t, darkness){
     ctx.ellipse(c.x-36*cs,c.y+5*cs,32*cs,12*cs,0,0,Math.PI*2);
     ctx.fill();
   }
-  // Laṅkā ramparts — golden sandstone in daylight
-  const horizon=w2s(0,820).y;
-  for(let i=0;i<7;i++){
-    const bx=offX+(i*130-40)*viewScale, bw=(70+((i*37)%50))*viewScale, bh=(90+((i*53)%110))*viewScale;
-    ctx.fillStyle='#d8a860';
-    ctx.fillRect(bx,horizon-bh,bw,bh);
-    ctx.fillStyle='#b8884a';                                     // shadow side
-    ctx.fillRect(bx+bw*0.68,horizon-bh,bw*0.32,bh);
-    ctx.fillStyle='#d8a860';
-    for(let c=0;c<4;c++) ctx.fillRect(bx+c*bw/4, horizon-bh-8*viewScale, bw/7, 8*viewScale);
-    ctx.fillStyle='rgba(90,58,20,0.5)';                          // gate arch on the tall ones
-    if(bh>140*viewScale){ ctx.beginPath(); ctx.arc(bx+bw*0.35,horizon,bw*0.16,Math.PI,0); ctx.fill(); }
+  // distant mountain range (far parallax layer, world-anchored)
+  ctx.fillStyle='rgba(140,180,220,0.55)';
+  for(let i=0;i<6;i++){
+    const mx=i*330-80, mw=420+((i*53)%160), mh=(150+((i*71)%110))*viewScale;
+    const a=w2s(mx,830), bmid=w2s(mx+mw/2,830), c2=w2s(mx+mw,830);
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(bmid.x,bmid.y-mh); ctx.lineTo(c2.x,c2.y); ctx.closePath(); ctx.fill();
   }
-  // green field
-  const gg=ctx.createLinearGradient(0,horizon,0,cssH);
-  gg.addColorStop(0,'#8cc45a'); gg.addColorStop(0.5,'#6aab42'); gg.addColorStop(1,'#4e8f2f');
-  ctx.fillStyle=gg; ctx.fillRect(0,horizon,cssW,cssH-horizon);
-  // mowing stripes + worn earth duel path
-  ctx.fillStyle='rgba(255,255,255,0.06)';
-  for(let i=0;i<5;i+=2){ const y1=horizon+i*(cssH-horizon)/5; ctx.fillRect(0,y1,cssW,(cssH-horizon)/5); }
-  const pathY=w2s(0,RAMA_POS.y).y;
-  const pg=ctx.createLinearGradient(0,pathY-30*viewScale,0,pathY+26*viewScale);
-  pg.addColorStop(0,'rgba(190,150,90,0)'); pg.addColorStop(0.5,'rgba(190,150,90,0.5)'); pg.addColorStop(1,'rgba(190,150,90,0)');
-  ctx.fillStyle=pg; ctx.fillRect(0,pathY-30*viewScale,cssW,56*viewScale);
+  // softer mid hills
+  ctx.fillStyle='rgba(120,170,110,0.6)';
+  for(let i=0;i<7;i++){
+    const hx=i*280-60, hr=(190+((i*37)%90));
+    const c3=w2s(hx+hr,850);
+    ctx.beginPath(); ctx.arc(c3.x,c3.y,hr*viewScale,Math.PI,0); ctx.fill();
+  }
+  // Laṅkā fortress on Rāvaṇa's side (world x 1290..1680)
+  const fbase=w2s(0,groundY(1500)-4).y;
+  for(let i=0;i<4;i++){
+    const wx=1300+i*100, ww=86, wh=(150+((i*61)%120));
+    const a=w2s(wx,0), bh2=wh*viewScale;
+    ctx.fillStyle='#d8a860';
+    ctx.fillRect(a.x,fbase-bh2,ww*viewScale,bh2);
+    ctx.fillStyle='#b8884a';
+    ctx.fillRect(a.x+ww*viewScale*0.66,fbase-bh2,ww*viewScale*0.34,bh2);
+    ctx.fillStyle='#d8a860';
+    for(let c=0;c<4;c++) ctx.fillRect(a.x+c*ww*viewScale/4, fbase-bh2-8*viewScale, ww*viewScale/7, 8*viewScale);
+  }
   // darkness veil (Tāmasāstra) — dramatic against the daylight
   if(darkness>0){ ctx.fillStyle=`rgba(8,4,20,${clamp(darkness,0,0.82)})`; ctx.fillRect(0,0,cssW,cssH); }
+}
+
+// Rolling terrain: dirt body + grass crown sampled from groundY, plus little props.
+function drawTerrain(){
+  const step=26;
+  const x0=Math.max(0,(0-offX)/viewScale-60), x1=Math.min(WORLD_W,(cssW-offX)/viewScale+60);
+  ctx.beginPath();
+  let first=true;
+  for(let x=x0; x<=x1+step; x+=step){
+    const xx=Math.min(x,x1);
+    const p=w2s(xx,groundY(xx));
+    if(first){ ctx.moveTo(p.x,p.y); first=false; } else ctx.lineTo(p.x,p.y);
+  }
+  const pr=w2s(x1,groundY(x1)), pl=w2s(x0,groundY(x0));
+  ctx.lineTo(pr.x,cssH+60); ctx.lineTo(pl.x,cssH+60); ctx.closePath();
+  const dg=ctx.createLinearGradient(0,w2s(0,960).y,0,cssH);
+  dg.addColorStop(0,'#8a6134'); dg.addColorStop(0.35,'#75512c'); dg.addColorStop(1,'#5a3d20');
+  ctx.fillStyle=dg; ctx.fill();
+  // grass crown following the surface
+  ctx.lineWidth=13*viewScale; ctx.lineCap='round'; ctx.strokeStyle='#6aab42';
+  ctx.beginPath(); first=true;
+  for(let x=x0; x<=x1+step; x+=step){
+    const xx=Math.min(x,x1);
+    const p=w2s(xx,groundY(xx)-3);
+    if(first){ ctx.moveTo(p.x,p.y); first=false; } else ctx.lineTo(p.x,p.y);
+  }
+  ctx.stroke();
+  ctx.lineWidth=4*viewScale; ctx.strokeStyle='#8cc45a';
+  ctx.beginPath(); first=true;
+  for(let x=x0; x<=x1+step; x+=step){
+    const xx=Math.min(x,x1);
+    const p=w2s(xx,groundY(xx)-9);
+    if(first){ ctx.moveTo(p.x,p.y); first=false; } else ctx.lineTo(p.x,p.y);
+  }
+  ctx.stroke();
+  // props
+  for(const pr2 of PROPS){
+    if(pr2.x<x0-40||pr2.x>x1+40) continue;
+    const gp=w2s(pr2.x,groundY(pr2.x));
+    const vs=viewScale;
+    if(pr2.t==='rock'){
+      ctx.fillStyle='#9a9a92';
+      ctx.beginPath(); ctx.ellipse(gp.x,gp.y-5*vs,14*vs,9*vs,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#b8b8b0';
+      ctx.beginPath(); ctx.ellipse(gp.x-5*vs,gp.y-9*vs,7*vs,5*vs,0,0,Math.PI*2); ctx.fill();
+    } else if(pr2.t==='tuft'){
+      ctx.strokeStyle='#4e8f2f'; ctx.lineWidth=2.2*vs; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(gp.x,gp.y); ctx.lineTo(gp.x-5*vs,gp.y-13*vs); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(gp.x,gp.y); ctx.lineTo(gp.x,gp.y-16*vs); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(gp.x,gp.y); ctx.lineTo(gp.x+5*vs,gp.y-12*vs); ctx.stroke();
+    } else if(pr2.t==='banner'){
+      ctx.strokeStyle='#6b3a1e'; ctx.lineWidth=3*vs;
+      ctx.beginPath(); ctx.moveTo(gp.x,gp.y); ctx.lineTo(gp.x,gp.y-58*vs); ctx.stroke();
+      ctx.fillStyle='#e8860c';
+      ctx.beginPath(); ctx.moveTo(gp.x,gp.y-58*vs); ctx.lineTo(gp.x+26*vs,gp.y-51*vs); ctx.lineTo(gp.x,gp.y-44*vs); ctx.closePath(); ctx.fill();
+    }
+  }
 }
 
 // Shared head-fan geometry (world units relative to RAVANA_POS) — the renderer and the
@@ -965,17 +1042,37 @@ function drawAimPreview(b){
   const spd = ARROW_SPEED_MIN + (ARROW_SPEED_MAX-ARROW_SPEED_MIN)*b.drawPct;
   let px=RAMA_POS.x+85, py=RAMA_POS.y-155;
   let vx=Math.cos(b.aimAngle)*spd, vy=Math.sin(b.aimAngle)*spd;
-  const step=0.055;
+  const step=0.06;
   ctx.save();
-  for(let i=0;i<20;i++){
+  for(let i=0;i<36;i++){
     vy+=ARROW_GRAVITY*step; px+=vx*step; py+=vy*step;
-    if(py>RAMA_POS.y+10 || px>WORLD_W+40) break;
+    if(py>groundY(px)-4 || px>WORLD_W+40) break;
     const sp=w2s(px,py);
-    const a=1-i/22;
+    const a=1-i/40;
     ctx.globalAlpha=a*0.85;
     ctx.fillStyle='#fff';
     ctx.strokeStyle='rgba(90,58,20,0.8)'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.arc(sp.x,sp.y,Math.max(2.2,(5-i*0.16)*viewScale),0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(sp.x,sp.y,Math.max(2.2,(5-i*0.1)*viewScale),0,Math.PI*2); ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
+}
+// Rāma perceives the astra's coming path — a faint forecast of the enemy missile's arc
+// during the invocation, so the player can aim to cross it.
+function drawEnemyPathHint(b){
+  if(b.phase!=='telegraph') return;
+  const head=headWorldPos(b, b.telegraph.headIdx);
+  const v=solveArc(head.x, head.y, RAMA_POS.x+20, RAMA_POS.y-110, ENEMY_FLIGHT_T, ENEMY_GRAVITY);
+  let px=head.x, py=head.y, vx=v.vx, vy=v.vy;
+  const col=RAVANA_ASTRAS[b.telegraph.key].color;
+  const step=0.12;
+  ctx.save();
+  for(let i=0;i<22;i++){
+    vy+=ENEMY_GRAVITY*step; px+=vx*step; py+=vy*step;
+    if(px<RAMA_POS.x) break;
+    const sp=w2s(px,py);
+    ctx.globalAlpha=0.32+0.12*Math.sin(performance.now()/200+i);
+    ctx.fillStyle=col;
+    ctx.beginPath(); ctx.arc(sp.x,sp.y,3.4*viewScale,0,Math.PI*2); ctx.fill();
   }
   ctx.restore();
 }
@@ -1141,7 +1238,7 @@ function telegraphExpired(b){
   const attA=RAVANA_ASTRAS[b.telegraph.key];
   b.clashData={ attack:b.telegraph.key, response:null, resolution:{outcome:'ravana',rule:'noShot'}, met:true, done:false };
   const soloHead = headWorldPos(b, b.telegraph.headIdx);
-  const sv = solveArc(soloHead.x, soloHead.y, RAMA_POS.x+20, RAMA_POS.y-110, ENEMY_FLIGHT_T*0.85, ENEMY_GRAVITY);
+  const sv = solveArc(soloHead.x, soloHead.y, RAMA_POS.x+20, RAMA_POS.y-110, ENEMY_FLIGHT_T*0.8, ENEMY_GRAVITY);
   b.missiles=[ makeBallistic(soloHead.x, soloHead.y, sv.vx, sv.vy, ENEMY_GRAVITY, attA.color, attA.element, 'ravana') ];
   hideTelegraph(); closeWheel();
   b.phase='clash'; b.phaseT=0;
@@ -1159,8 +1256,6 @@ function applyOutcome(b){
   } else if(out==='ravana'){
     ramaStruck(b, RAVANA_ASTRAS[cd.attack].tier);
     b.fumbles[cd.attack]=(b.fumbles[cd.attack]||0)+1;    // Rāvaṇa remembers what you fumbled
-  } else {
-    burst(CLASH_X,CLASH_Y,'#fff2c8',26,{speed:300,g:60,life:700});
   }
   b.missiles=[]; b.clashData=null;
   if(b.over) return;
@@ -1456,6 +1551,16 @@ function updateBattle(b, dt){
       }
       const ra=b.missiles.find(m=>m.side==='rama' && !m.dead);
       const rv=b.missiles.find(m=>m.side==='ravana' && !m.dead);
+      // "astras seek their opposites": passing within MAGNET_R, the two powers curve
+      // toward each other — crossing his arc is the skill, not millisecond timing
+      if(!cd.met && ra && rv && !ra.seek){
+        const dd=Math.hypot(ra.x-rv.x, ra.y-rv.y);
+        if(dd < MAGNET_R){
+          const raSpd=Math.hypot(ra.vx,ra.vy)||1, rvSpd=Math.hypot(rv.vx,rv.vy)||1;
+          ra.seek='enemy'; ra.speed=raSpd;
+          rv.seek='enemy'; rv.speed=rvSpd;
+        }
+      }
       // interception: the counter must actually MEET the incoming astra
       if(!cd.met && ra && rv && Math.hypot(ra.x-rv.x, ra.y-rv.y) < CLASH_RADIUS){
         cd.met=true; b.phaseT=0; b.slowmoT=0.30;
@@ -1467,24 +1572,24 @@ function updateBattle(b, dt){
         const out=cd.resolution.outcome;
         if(out==='rama'){
           rv.dead=true;
-          ra.seek='point'; ra.speed=SEEK_SPEED;
+          ra.seek='point'; ra.speed=SEEK_SPEED; ra.g=0;
           ra.target=headWorldPos(b, Math.min(b.headsDestroyed, b.enemy.heads-1));
         } else if(out==='ravana'){
           ra.dead=true;
-          rv.seek='point'; rv.speed=SEEK_SPEED;
+          rv.seek='point'; rv.speed=SEEK_SPEED; rv.g=0;
           rv.target={x:RAMA_POS.x+20, y:RAMA_POS.y-110};
         } else {
           ra.dead=true; rv.dead=true;
           burst(cx,cy,'#fff2c8',26,{speed:300,g:60,life:700});
         }
       }
-      // Rāma's arrow missing: ground, out of bounds, or thudding into Rāvaṇa without interception
+      // Rāma's arrow missing: terrain, out of bounds, or thudding into Rāvaṇa without interception
       if(ra && !ra.dead && !ra.seek){
-        if(ra.y > RAMA_POS.y+12 || ra.x > WORLD_W+80 || ra.x < -80 || ra.y < -500){
+        if(ra.y > groundY(ra.x)-4 || ra.x > WORLD_W+80 || ra.x < -80 || ra.y < -500){
           ra.dead=true;
-          if(ra.y > RAMA_POS.y+12) burst(ra.x, RAMA_POS.y+6, '#a98456', 10, {speed:120,life:500,g:300});
+          if(ra.y > groundY(ra.x)-4) burst(ra.x, groundY(ra.x)-4, '#a98456', 10, {speed:120,life:500,g:300});
           if(!cd.met && rv) showBanner('लक्ष्यभ्रष्टः','The counter flies wide!',1400);
-        } else if(!cd.met && Math.hypot(ra.x-RAVANA_POS.x, ra.y-(RAVANA_POS.y-140)) < 95){
+        } else if(!cd.met && Math.hypot(ra.x-RAVANA_POS.x, ra.y-(RAVANA_POS.y-140)) < 110){
           ra.dead=true;
           burst(ra.x, ra.y, '#ff9a3d', 14, {speed:180,life:600});
         }
@@ -1780,11 +1885,13 @@ function loop(now){
     updateCamera(battle, delta);
     updateParticles(delta);
     drawSky(now, battle.darkness);
+    drawTerrain();
     drawWorshipGlow(battle, now);
     drawEnemy(battle, now);
     drawRama(battle, now);
     drawSakti(battle);
     drawMissiles(battle);
+    drawEnemyPathHint(battle);
     drawAimPreview(battle);
     drawParticles();
     drawFinale(battle);
