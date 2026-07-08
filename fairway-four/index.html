@@ -2,13 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Fairway Four</title>
 <style>
   *{ box-sizing:border-box; margin:0; padding:0; }
   html,body{ width:100%; height:100%; overflow:hidden; background:#0a1410;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:#eef4ee; }
-  #gl{ position:fixed; inset:0; display:block; }
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:#eef4ee;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+    -webkit-tap-highlight-color:transparent; }
+  #gl{ position:fixed; inset:0; display:block; touch-action:none; }
   .panel{ position:fixed; background:rgba(10,18,14,0.62); border:1px solid rgba(255,255,255,0.14);
     border-radius:10px; padding:10px 14px; backdrop-filter:blur(6px); font-size:13px; line-height:1.5; z-index:5; }
   #hudTL{ top:12px; left:12px; min-width:150px; }
@@ -17,10 +19,35 @@
   #windArrow{ display:inline-block; width:22px; height:22px; vertical-align:middle; margin-right:6px;
     transition:transform 0.4s; }
   #windArrow svg{ width:100%; height:100%; }
-  #hudBC{ bottom:16px; left:50%; transform:translateX(-50%); text-align:center; display:none; }
+  #hudBC{ bottom:82px; left:50%; transform:translateX(-50%); text-align:center; display:none; }
   #hudMsg{ top:18%; left:50%; transform:translateX(-50%); font-size:16px; font-weight:600; display:none;
     padding:12px 22px; text-align:center; }
   #hint{ bottom:14px; left:12px; font-size:11px; opacity:0.75; max-width:300px; }
+  /* on-screen touch controls (also clickable with a mouse) */
+  .tbtn{ -webkit-appearance:none; appearance:none; font-family:inherit; color:#eef4ee;
+    background:rgba(10,18,14,0.62); border:1px solid rgba(255,255,255,0.22); border-radius:12px;
+    backdrop-filter:blur(6px); cursor:pointer; touch-action:manipulation; user-select:none;
+    -webkit-user-select:none; font-size:15px; line-height:1; padding:11px 13px; }
+  .tbtn:active{ background:rgba(92,184,110,0.55); color:#08120c; }
+  #ctlBar{ position:fixed; z-index:7; left:12px; bottom:22px; display:flex; gap:7px; align-items:stretch; }
+  #ctlClub{ min-width:70px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:5px 8px; background:rgba(10,18,14,0.62); border:1px solid rgba(255,255,255,0.18); border-radius:12px; }
+  #ctlClub .cn{ font-weight:700; font-size:14px; }
+  #ctlClub .cc{ font-size:10px; opacity:0.75; margin-top:1px; }
+  #btnView{ position:fixed; z-index:7; right:12px; top:72px; }
+  #btnMute{ position:fixed; z-index:7; right:12px; top:120px; min-width:44px; text-align:center; }
+  #actionBtn{ position:fixed; z-index:8; right:12px; bottom:22px;
+    background:#5cb86e; color:#08120c; font-weight:800; font-size:16px; letter-spacing:0.4px;
+    border:none; border-radius:26px; padding:15px 26px; box-shadow:0 5px 18px rgba(0,0,0,0.45);
+    cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none; display:none; }
+  #actionBtn:active{ background:#6fd282; }
+  @media (max-width:760px){
+    #hint{ display:none; }
+    .panel{ font-size:12px; padding:8px 11px; }
+    #hudTL{ min-width:0; } #hudTR{ min-width:0; }
+    #hudTL .big{ font-size:14px; }
+    #meterWrap{ right:12px; bottom:96px; }
+  }
   /* swing meter */
   #meterWrap{ position:fixed; right:8%; bottom:14%; width:26px; height:240px; z-index:6;
     background:rgba(10,18,14,0.55); border:1px solid rgba(255,255,255,0.25); border-radius:13px; display:none; }
@@ -65,7 +92,16 @@
   <div style="font-size:11px;opacity:0.8;" id="hudCarry">230 m carry · Q/E change club</div>
 </div>
 <div id="hudMsg" class="panel"></div>
-<div id="hint" class="panel">Drag orbit · Scroll zoom · ←/→ aim · Q/E club · Space address/swing · Tab view · M mute</div>
+<div id="hint" class="panel">Drag orbit · Scroll / pinch zoom · ←/→ or drag to aim · Q/E club · Space or tap to address/swing · Tab view · M mute</div>
+
+<div id="ctlBar">
+  <button class="tbtn" id="btnClubPrev" aria-label="Previous club">‹</button>
+  <div id="ctlClub"><span class="cn" id="ctlClubName">Driver</span><span class="cc" id="ctlClubCarry">230 m</span></div>
+  <button class="tbtn" id="btnClubNext" aria-label="Next club">›</button>
+</div>
+<button class="tbtn" id="btnView">View</button>
+<button class="tbtn" id="btnMute" aria-label="Mute">♪</button>
+<button id="actionBtn">Address</button>
 
 <div id="meterWrap">
   <div id="meterPower"></div>
@@ -921,8 +957,24 @@ function updateHUD(){
     const c=CLUBS[game.club];
     el('hudClub').textContent=c.n;
     let carry=c.n==='Putter'? 'full bar ≈ 20 m' : Math.round(c.carry*(ball.lie==='rough'?0.85:(ball.lie==='sand'?0.75:1)))+' m carry';
-    el('hudCarry').textContent=carry+' · lie: '+ball.lie+' · Q/E club';
+    el('hudCarry').textContent=carry+' · lie: '+ball.lie+' · Q/E or ‹ › club';
   }
+  // on-screen club readout + contextual action button
+  const cc=CLUBS[game.club];
+  el('ctlClubName').textContent=cc.n;
+  el('ctlClubCarry').textContent= cc.n==='Putter' ? 'putt' : Math.round(cc.carry*(ball.lie==='rough'?0.85:(ball.lie==='sand'?0.75:1)))+' m';
+  const playing=(game.state!=='TITLE');
+  el('ctlBar').style.display=playing?'flex':'none';
+  el('btnView').style.display=(game.state==='BIRDS'||game.state==='PLAYERS')?'block':'none';
+  el('btnMute').style.display=playing?'block':'none';
+  let act='';
+  if(game.state==='INTRO') act='Skip';
+  else if(game.state==='BIRDS') act= ball.lie==='green' ? 'Read Putt' : 'Address';
+  else if(game.state==='PLAYERS') act='Swing';
+  else if(game.state==='GREEN') act='Putt';
+  else if(game.state==='SWING') act='Tap!';
+  const ab=el('actionBtn');
+  if(act){ ab.textContent=act; ab.style.display='block'; } else ab.style.display='none';
 }
 function scoreLabel(strokes,par){
   const d=strokes-par;
@@ -999,15 +1051,54 @@ function resetRound(){
 
 /* ============================== INPUT ============================== */
 let dragging=false, lastPX=0, lastPY=0;
-canvas.addEventListener('pointerdown',(e)=>{ dragging=true; lastPX=e.clientX; lastPY=e.clientY; AudioE.init(); });
+// active touch/mouse pointers, for tap-detection and pinch-to-zoom
+const pointers=new Map();
+let downX=0, downY=0, downT=0, moved=0, pinching=false, pinchDist0=0, pinchZoom0=0;
+canvas.addEventListener('pointerdown',(e)=>{
+  AudioE.init();
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pointers.size===2){
+    // second finger down → start pinch, cancel any pending tap/drag
+    dragging=false;
+    const p=[...pointers.values()];
+    pinching=true;
+    pinchDist0=Math.hypot(p[0].x-p[1].x, p[0].y-p[1].y);
+    pinchZoom0=(game.state==='GREEN')?rig.greenDist:rig.orbitDist;
+  }else{
+    dragging=true; lastPX=e.clientX; lastPY=e.clientY;
+    downX=e.clientX; downY=e.clientY; downT=performance.now(); moved=0;
+  }
+});
 window.addEventListener('pointermove',(e)=>{
+  if(pointers.has(e.pointerId)) pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pinching && pointers.size>=2){
+    const p=[...pointers.values()];
+    const d=Math.hypot(p[0].x-p[1].x, p[0].y-p[1].y);
+    const z=clamp(pinchZoom0*(pinchDist0/Math.max(d,1)), 0, 999);   // fingers apart → zoom in
+    if(game.state==='BIRDS') rig.orbitDist=clamp(z, 40, 160);
+    else if(game.state==='GREEN') rig.greenDist=clamp(z, 12, 26);
+    return;
+  }
   if(!dragging) return;
   const dx=e.clientX-lastPX, dy=e.clientY-lastPY; lastPX=e.clientX; lastPY=e.clientY;
+  moved+=Math.abs(dx)+Math.abs(dy);
   if(game.state==='BIRDS'){ rig.orbitYaw-=dx*0.005; rig.orbitPitch=clamp(rig.orbitPitch+dy*0.003, 35*DEG, 72*DEG); }
   else if(game.state==='GREEN'){ rig.greenYaw-=dx*0.005; }
   else if(game.state==='PLAYERS'){ game.aim-=dx*0.0012; game.aimDirty=true; }
 });
-window.addEventListener('pointerup',()=>{ dragging=false; });
+function endPointer(e){
+  const wasPinch=pinching;
+  pointers.delete(e.pointerId);
+  if(pointers.size<2) pinching=false;
+  if(wasPinch){ dragging=false; return; }
+  if(dragging){
+    dragging=false;
+    // a quick, near-stationary press is a tap → same as pressing Space
+    if(moved<12 && performance.now()-downT<400) onSpace();
+  }
+}
+window.addEventListener('pointerup',endPointer);
+window.addEventListener('pointercancel',(e)=>{ pointers.delete(e.pointerId); if(pointers.size<2) pinching=false; dragging=false; });
 canvas.addEventListener('wheel',(e)=>{
   if(game.state==='BIRDS'){ rig.orbitDist=clamp(rig.orbitDist+e.deltaY*0.08, 40, 160); }
   if(game.state==='GREEN'){ rig.greenDist=clamp(rig.greenDist+e.deltaY*0.02, 12, 26); }
@@ -1052,6 +1143,17 @@ document.getElementById('playBtn').addEventListener('click',()=>{
   AudioE.init();
   document.getElementById('titleModal').classList.remove('open');
   startHole(0);
+});
+
+// on-screen controls (equivalent to keyboard; usable by touch or mouse)
+el('btnClubPrev').addEventListener('click',()=>{ AudioE.init(); if(allowedClub(game.club)) cycleClub(-1); });
+el('btnClubNext').addEventListener('click',()=>{ AudioE.init(); if(allowedClub(game.club)) cycleClub(1); });
+el('btnView').addEventListener('click',()=>{ AudioE.init(); toggleView(); });
+el('actionBtn').addEventListener('click',()=>{ AudioE.init(); onSpace(); });
+el('btnMute').addEventListener('click',()=>{
+  AudioE.init(); AudioE.setMuted(!AudioE.muted);
+  el('btnMute').textContent=AudioE.muted?'♪̸':'♪';
+  showMsg(AudioE.muted?'Muted':'Sound on',900);
 });
 
 // held keys: aim + birdseye nudge (processed per frame)
