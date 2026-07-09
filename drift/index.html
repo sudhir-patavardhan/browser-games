@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Drift • Browser Games</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Playfair+Display:wght@700&amp;display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: #0a1f0a;
+            font-family: 'Inter', system_ui, sans-serif;
+            color: #e8f5e8;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 100vw;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            background: #0f2a0f;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+            image-rendering: crisp-edges;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            padding: 16px;
+            pointer-events: none;
+        }
+        
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: auto;
+        }
+        
+        .score {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .multiplier {
+            background: rgba(234, 179, 8, 0.9);
+            color: #1a1200;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            margin-top: 6px;
+            display: inline-block;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: none;
+        }
+        
+        .touch-zone {
+            width: 48%;
+            height: 180px;
+            background: transparent;
+            pointer-events: auto;
+            border-radius: 20px;
+        }
+        
+        #handbrake-btn {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 92px;
+            height: 92px;
+            background: linear-gradient(145deg, #f59e0b, #d97706);
+            border: 4px solid #fef3c7;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: #431407;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4),
+                        inset 0 2px 0 rgba(255,255,255,0.4);
+            pointer-events: auto;
+            user-select: none;
+            transition: transform 0.1s;
+        }
+        
+        #handbrake-btn:active {
+            transform: translateX(-50%) scale(0.92);
+        }
+        
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            padding: 24px 40px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 30;
+            display: none;
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
+        
+        .message.show {
+            display: block;
+        }
+        
+        .message h2 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            color: #fef3c7;
+        }
+        
+        button {
+            background: #eab308;
+            color: #1a1200;
+            border: none;
+            padding: 14px 32px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border-radius: 9999px;
+            margin-top: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .speed {
+            position: absolute;
+            bottom: 120px;
+            right: 20px;
+            background: rgba(0,0,0,0.5);
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game"></canvas>
+        
+        <!-- Top UI -->
+        <div id="ui">
+            <div class="top-bar">
+                <div>
+                    <div class="score">SCORE <span id="score">0</span></div>
+                    <div class="multiplier" id="multiplier">×1.0</div>
+                </div>
+                <div class="score" style="text-align: right; font-size: 0.9rem;">
+                    BEST<br>
+                    <span id="best-score">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Touch Controls -->
+        <div id="controls">
+            <div id="left-zone" class="touch-zone"></div>
+            <div id="right-zone" class="touch-zone"></div>
+            
+            <!-- Handbrake Button -->
+            <div id="handbrake-btn">
+                <div style="text-align: center; line-height: 1;">
+                    <div style="font-size: 1.1rem; font-weight: 900;">HAND</div>
+                    <div style="font-size: 0.75rem; margin-top: -3px; font-weight: 700;">BRAKE</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Over Message -->
+        <div id="message" class="message">
+            <h2 id="message-title">CRASHED</h2>
+            <p id="final-score" style="font-size: 1.3rem; margin: 8px 0 4px; color: #fef3c7;"></p>
+            <button id="restart-btn">TRY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d', { alpha: true });
+        
+        let width, height, scale;
+        
+        function resize() {
+            const container = document.getElementById('game-container');
+            width = container.clientWidth;
+            height = container.clientHeight;
+            
+            canvas.width = width * window.devicePixelRatio;
+            canvas.height = height * window.devicePixelRatio;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            scale = Math.min(width, height) / 400;
+        }
+        
+        window.addEventListener('resize', resize);
+        
+        // Game variables
+        let car = {
+            x: 0,
+            y: 0,
+            angle: 0,
+            speed: 0,
+            velocityX: 0,
+            velocityY: 0
+        };
+        
+        let roadPoints = [];
+        let skidMarks = [];
+        let particles = [];
+        let score = 0;
+        let multiplier = 1.0;
+        let driftTime = 0;
+        let gameOver = false;
+        let lastTime = 0;
+        
+        let keys = {};
+        let touchLeft = false;
+        let touchRight = false;
+        let handbrakePressed = false;
+        
+        let bestScore = localStorage.getItem('drift_best') || 0;
+        document.getElementById('best-score').textContent = Math.floor(bestScore);
+        
+        // Input handling
+        function setupInput() {
+            // Keyboard
+            window.addEventListener('keydown', e => keys[e.key] = true);
+            window.addEventListener('keyup', e => keys[e.key] = false);
+            
+            // Touch zones
+            const leftZone = document.getElementById('left-zone');
+            const rightZone = document.getElementById('right-zone');
+            const handbrakeBtn = document.getElementById('handbrake-btn');
+            
+            // Left zone
+            leftZone.addEventListener('touchstart', e => { e.preventDefault(); touchLeft = true; });
+            leftZone.addEventListener('touchend', e => { e.preventDefault(); touchLeft = false; });
+            leftZone.addEventListener('touchcancel', e => { e.preventDefault(); touchLeft = false; });
+            
+            // Right zone
+            rightZone.addEventListener('touchstart', e => { e.preventDefault(); touchRight = true; });
+            rightZone.addEventListener('touchend', e => { e.preventDefault(); touchRight = false; });
+            rightZone.addEventListener('touchcancel', e => { e.preventDefault(); touchRight = false; });
+            
+            // Handbrake
+            handbrakeBtn.addEventListener('touchstart', e => { e.preventDefault(); handbrakePressed = true; });
+            handbrakeBtn.addEventListener('touchend', e => { e.preventDefault(); handbrakePressed = false; });
+            handbrakeBtn.addEventListener('touchcancel', e => { e.preventDefault(); handbrakePressed = false; });
+            
+            // Mouse fallback for desktop testing
+            leftZone.addEventListener('mousedown', () => touchLeft = true);
+            rightZone.addEventListener('mousedown', () => touchRight = true);
+            handbrakeBtn.addEventListener('mousedown', () => handbrakePressed = true);
+            
+            window.addEventListener('mouseup', () => {
+                touchLeft = false;
+                touchRight = false;
+                handbrakePressed = false;
+            });
+            
+            // Restart button
+            document.getElementById('restart-btn').addEventListener('click', restartGame);
+        }
+        
+        function initGame() {
+            resize();
+            setupInput();
+            
+            // Starting position
+            car.x = width * 0.5;
+            car.y = height * 0.65;
+            car.angle = -Math.PI / 2;
+            car.speed = 2.8;
+            car.velocityX = 0;
+            car.velocityY = 0;
+            
+            roadPoints = [];
+            skidMarks = [];
+            particles = [];
+            score = 0;
+            multiplier = 1.0;
+            driftTime = 0;
+            gameOver = false;
+            
+            // Generate initial road
+            for (let i = 0; i < 60; i++) {
+                roadPoints.push({
+                    x: width * 0.5,
+                    y: height * 0.7 - i * 28
+                });
+            }
+            
+            document.getElementById('message').classList.remove('show');
+            document.getElementById('score').textContent = '0';
+            document.getElementById('multiplier').textContent = '×1.0';
+            
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function updateRoad() {
+            // Move road down
+            for (let p of roadPoints) {
+                p.y += car.speed * 0.85;
+            }
+            
+            // Remove points that are off screen
+            while (roadPoints.length > 0 && roadPoints[0].y > height + 100) {
+                roadPoints.shift();
+            }
+            
+            // Add new points at the top with gentle curves
+            while (roadPoints.length < 70) {
+                const last = roadPoints[roadPoints.length - 1];
+                
+                // Gradually increasing curve difficulty
+                const progress = Math.min(score / 8000, 1);
+                const curveStrength = 1.2 + progress * 2.8;
+                
+                const newX = last.x + (Math.random() - 0.5) * curveStrength * 18;
+                
+                // Keep road on screen
+                const clampedX = Math.max(80, Math.min(width - 80, newX));
+                
+                roadPoints.push({
+                    x: clampedX,
+                    y: last.y - 28
+                });
+            }
+        }
+        
+        function updateCar() {
+            if (gameOver) return;
+            
+            const steering = 0.028;
+            let turnAmount = 0;
+            
+            // Input
+            if (keys['ArrowLeft'] || keys['a'] || keys['A'] || touchLeft) turnAmount -= 1;
+            if (keys['ArrowRight'] || keys['d'] || keys['D'] || touchRight) turnAmount += 1;
+            
+            const isDrifting = handbrakePressed || (Math.abs(turnAmount) > 0.6 && car.speed > 2.2);
+            
+            // Apply turning
+            if (turnAmount !== 0) {
+                const turnSpeed = isDrifting ? steering * 1.35 : steering;
+                car.angle += turnAmount * turnSpeed * (car.speed / 3.5);
+            }
+            
+            // Handbrake effect
+            let grip = 0.92;
+            if (handbrakePressed) {
+                grip = 0.68;
+                car.speed *= 0.985;
+            }
+            
+            // Forward movement
+            const forwardX = Math.cos(car.angle) * car.speed;
+            const forwardY = Math.sin(car.angle) * car.speed;
+            
+            // Apply some lateral friction (drifting)
+            car.velocityX = car.velocityX * grip + forwardX * (1 - grip);
+            car.velocityY = car.velocityY * grip + forwardY * (1 - grip);
+            
+            car.x += car.velocityX;
+            car.y += car.velocityY;
+            
+            // Speed management
+            if (!handbrakePressed) {
+                car.speed = Math.max(1.8, Math.min(5.8, car.speed + 0.012));
+            }
+            
+            // Drift detection
+            const lateralSpeed = Math.abs(car.velocityX * Math.sin(car.angle) - car.velocityY * Math.cos(car.angle));
+            const isActuallyDrifting = lateralSpeed > 0.8 && car.speed > 2.5;
+            
+            if (isActuallyDrifting) {
+                driftTime += 1;
+                multiplier = Math.min(4.5, 1 + driftTime / 55);
+                
+                // Spawn skid marks
+                if (Math.random() < 0.65) {
+                    skidMarks.push({
+                        x: car.x - Math.cos(car.angle) * 12,
+                        y: car.y - Math.sin(car.angle) * 12,
+                        angle: car.angle,
+                        life: 42
+                    });
+                }
+                
+                // Tire smoke particles
+                if (Math.random() < 0.75) {
+                    particles.push({
+                        x: car.x - Math.cos(car.angle) * 14 + (Math.random() - 0.5) * 9,
+                        y: car.y - Math.sin(car.angle) * 14 + (Math.random() - 0.5) * 9,
+                        vx: (Math.random() - 0.5) * 1.6,
+                        vy: (Math.random() - 0.5) * 1.6 - 0.4,
+                        life: 22 + Math.random() * 14,
+                        size: 3.5 + Math.random() * 2.5
+                    });
+                }
+            } else {
+                driftTime = Math.max(0, driftTime - 2.5);
+                multiplier = Math.max(1.0, multiplier - 0.035);
+            }
+            
+            // Score
+            if (isActuallyDrifting) {
+                score += (car.speed * 0.6 + multiplier * 0.8) * 0.65;
+            } else {
+                score += car.speed * 0.12;
+            }
+            
+            // Keep car on screen
+            if (car.x < 55) { car.x = 55; car.angle += 0.04; }
+            if (car.x > width - 55) { car.x = width - 55; car.angle -= 0.04; }
+            
+            // Game over conditions
+            if (car.y < 60 || car.y > height - 30) {
+                endGame();
+            }
+            
+            // Update skid marks
+            for (let i = skidMarks.length - 1; i >= 0; i--) {
+                skidMarks[i].life--;
+                if (skidMarks[i].life <= 0) skidMarks.splice(i, 1);
+            }
+            
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.06; // gravity
+                p.life--;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+            
+            // Update UI
+            document.getElementById('score').textContent = Math.floor(score);
+            document.getElementById('multiplier').textContent = '×' + multiplier.toFixed(1);
+        }
+        
+        function drawRoad() {
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 82;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            
+            ctx.shadowColor = 'rgba(0,0,0,0.25)';
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetY = 6;
+            
+            ctx.beginPath();
+            ctx.moveTo(roadPoints[0].x, roadPoints[0].y);
+            for (let i = 1; i < roadPoints.length; i++) {
+                ctx.lineTo(roadPoints[i].x, roadPoints[i].y);
+            }
+            ctx.stroke();
+            
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+            
+            // Road edges
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(roadPoints[0].x, roadPoints[0].y);
+            for (let i = 1; i < roadPoints.length; i++) {
+                ctx.lineTo(roadPoints[i].x, roadPoints[i].y);
+            }
+            ctx.stroke();
+            
+            // Center dashed line
+            ctx.strokeStyle = '#f1e7c6';
+            ctx.lineWidth = 3.5;
+            ctx.setLineDash([26, 32]);
+            ctx.beginPath();
+            ctx.moveTo(roadPoints[0].x, roadPoints[0].y);
+            for (let i = 1; i < roadPoints.length; i++) {
+                ctx.lineTo(roadPoints[i].x, roadPoints[i].y);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        function drawSkidMarks() {
+            ctx.strokeStyle = 'rgba(180, 175, 160, 0.55)';
+            ctx.lineWidth = 5.5;
+            ctx.lineCap = 'round';
+            
+            for (const mark of skidMarks) {
+                const alpha = Math.max(0.15, mark.life / 42);
+                ctx.globalAlpha = alpha;
+                
+                ctx.beginPath();
+                ctx.moveTo(
+                    mark.x + Math.cos(mark.angle + 0.5) * 7,
+                    mark.y + Math.sin(mark.angle + 0.5) * 7
+                );
+                ctx.lineTo(
+                    mark.x - Math.cos(mark.angle + 0.5) * 7,
+                    mark.y - Math.sin(mark.angle + 0.5) * 7
+                );
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        }
+        
+        function drawParticles() {
+            for (const p of particles) {
+                const alpha = p.life / 32;
+                ctx.fillStyle = `rgba(234, 179, 8, ${alpha * 0.75})`;
+                
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * (p.life / 28), 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawCar() {
+            ctx.save();
+            ctx.translate(car.x, car.y);
+            ctx.rotate(car.angle);
+            
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.35)';
+            ctx.fillRect(-13, 18, 26, 9);
+            
+            // Car body
+            ctx.fillStyle = '#1e3a8a';
+            ctx.fillRect(-14, -22, 28, 48);
+            
+            // Windows
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(-9, -14, 18, 20);
+            
+            // Roof highlight
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(-10, -18, 20, 8);
+            
+            // Taillights
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(-11, 18, 7, 5);
+            ctx.fillRect(4, 18, 7, 5);
+            
+            ctx.restore();
+        }
+        
+        function draw() {
+            ctx.fillStyle = '#166534';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Simple grass texture
+            ctx.fillStyle = '#14532d';
+            for (let i = 0; i < 18; i++) {
+                ctx.fillRect(0, (i * 47) % height, width, 26);
+            }
+            
+            drawRoad();
+            drawSkidMarks();
+            drawParticles();
+            drawCar();
+            
+            // Speed indicator
+            const speedKmh = Math.floor(car.speed * 22);
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(width - 92, height - 58, 80, 32);
+            ctx.fillStyle = '#fef3c7';
+            ctx.font = '700 15px Inter';
+            ctx.fillText(speedKmh + ' km/h', width - 85, height - 38);
+        }
+        
+        function gameLoop(timestamp = 0) {
+            if (!lastTime) lastTime = timestamp;
+            const delta = Math.min((timestamp - lastTime) / 16, 2);
+            lastTime = timestamp;
+            
+            if (!gameOver) {
+                updateRoad();
+                updateCar();
+            }
+            
+            draw();
+            
+            if (!gameOver) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+        
+        function endGame() {
+            gameOver = true;
+            
+            if (score > bestScore) {
+                bestScore = Math.floor(score);
+                localStorage.setItem('drift_best', bestScore);
+                document.getElementById('best-score').textContent = bestScore;
+            }
+            
+            const msg = document.getElementById('message');
+            document.getElementById('message-title').textContent = 'CRASHED';
+            document.getElementById('final-score').innerHTML = 
+                `Score: <strong>${Math.floor(score)}</strong><br>Best: ${Math.floor(bestScore)}`;
+            
+            msg.classList.add('show');
+        }
+        
+        function restartGame() {
+            initGame();
+        }
+        
+        // Start the game
+        window.onload = () => {
+            initGame();
+        };
+        
+        // Prevent scrolling on mobile
+        document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+    </script>
+</body>
+</html>
