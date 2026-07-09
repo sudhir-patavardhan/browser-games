@@ -402,6 +402,54 @@
         <p>Configurable tic-tac-toe &mdash; play Classic on any board from 3&times;3 up to 9&times;9 gomoku, or Ultimate: nine nested sub-boards where each move sends your opponent onward. Local 2-player or a three-level AI.</p>
       </a>
 
+      <a class="card" href="deadpoint/index.html">
+        <span class="thumb">
+          <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A climber on a rock wall at golden hour">
+            <defs>
+              <linearGradient id="dp-sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#243357"/><stop offset="0.55" stop-color="#7d5c74"/><stop offset="1" stop-color="#e39a5c"/>
+              </linearGradient>
+              <radialGradient id="dp-sun" cx="50%" cy="50%" r="50%">
+                <stop offset="0" stop-color="#fff0c8"/><stop offset="1" stop-color="#ffdc96" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <rect width="320" height="120" fill="url(#dp-sky)"/>
+            <circle cx="52" cy="34" r="46" fill="url(#dp-sun)"/>
+            <!-- rock wall on the right -->
+            <path d="M150 0 L320 0 L320 120 L172 120 Q150 70 150 0 Z" fill="#9c7a58"/>
+            <path d="M150 0 Q168 60 176 120 L150 120 Z" fill="#7c5f45" opacity="0.7"/>
+            <!-- cracks -->
+            <g stroke="#4a3524" stroke-width="1.4" fill="none" opacity="0.5">
+              <path d="M210 4 l8 22 -6 20 10 26"/><path d="M280 10 l-6 28 8 24"/>
+            </g>
+            <!-- holds -->
+            <g stroke="#20140c" stroke-width="1">
+              <ellipse cx="212" cy="30" rx="9" ry="7" fill="#8fd18a"/>
+              <path d="M244 58 a10 10 0 0 1 20 0 z" fill="#c98bff"/>
+              <rect x="286" y="74" width="18" height="7" rx="2" fill="#e6b45a"/>
+              <ellipse cx="212" cy="96" rx="9" ry="7" fill="#8fd18a"/>
+            </g>
+            <!-- climber reaching up (left hand to the sloper) -->
+            <g stroke-linecap="round" fill="none">
+              <!-- legs -->
+              <g stroke="#3a4a63" stroke-width="6">
+                <path d="M226 86 L214 100 L206 96"/><path d="M226 86 L240 102 L250 100"/>
+              </g>
+              <!-- torso -->
+              <line x1="226" y1="56" x2="226" y2="86" stroke="#c85a3c" stroke-width="11"/>
+              <!-- arms: right hand on jug, left reaching to sloper -->
+              <path d="M226 58 L232 44 L212 30" stroke="#d98a52" stroke-width="5"/>
+              <path d="M226 58 L216 74 L212 96" stroke="#d98a52" stroke-width="5"/>
+            </g>
+            <circle cx="226" cy="46" r="7" fill="#e8c9a0"/>
+            <!-- latch ring on the target sloper -->
+            <circle cx="254" cy="52" r="13" fill="none" stroke="#8fffaa" stroke-width="2.5" opacity="0.9"/>
+          </svg>
+        </span>
+        <h2>Deadpoint</h2>
+        <p>A side-on rock-climbing game about the commit &mdash; reach a hold, time the latch, then trust it with your weight while the pump clock burns. Fight the barn-door, chalk up, stick the dyno in slow-mo, and top out. Six boulder grades V0&ndash;V5.</p>
+      </a>
+
     </div>
     <footer>
       <a href="https://github.com/sudhir-patavardhan/browser-games">github.com/sudhir-patavardhan/browser-games</a>

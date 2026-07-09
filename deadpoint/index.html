@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Deadpoint — Climbing</title>
+<style>
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body{ width:100%; height:100%; overflow:hidden; background:#0c0f16; touch-action:none;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:#f0ece2;
+    user-select:none; }
+  #c{ position:fixed; inset:0; display:block; }
+  .panel{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:10;
+    background:radial-gradient(circle at 50% 30%, rgba(40,30,20,.5), rgba(8,10,16,.86)); backdrop-filter:blur(3px); }
+  .panel.hidden{ display:none; }
+  .card{ background:rgba(20,18,26,.92); border:1px solid rgba(255,255,255,.14); border-radius:18px;
+    padding:26px 30px; max-width:460px; width:calc(100% - 36px); box-shadow:0 20px 60px rgba(0,0,0,.5); text-align:center; }
+  h1{ font-size:clamp(30px,9vw,46px); font-weight:900; letter-spacing:3px; margin-bottom:2px;
+    background:linear-gradient(90deg,#ffb454,#ff6a6a,#c98bff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .sub{ letter-spacing:4px; font-size:11px; color:#b3aa98; margin-bottom:16px; }
+  p.lead{ color:#cfc7b6; font-size:14px; line-height:1.55; margin-bottom:18px; }
+  .btn{ display:block; width:100%; margin:8px 0 0; padding:13px; border:none; border-radius:13px; cursor:pointer;
+    font-weight:800; font-size:15px; letter-spacing:.5px; color:#1a140c;
+    background:linear-gradient(90deg,#ffb454,#ff8a5b); box-shadow:0 8px 22px rgba(255,140,70,.25); }
+  .btn.alt{ background:rgba(255,255,255,.08); color:#f0ece2; border:1px solid rgba(255,255,255,.16); box-shadow:none; }
+  .btn:active{ transform:translateY(1px); }
+  .routes{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:8px 0 4px; }
+  .route{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); border-radius:12px;
+    padding:12px 10px; cursor:pointer; text-align:left; }
+  .route:active{ transform:translateY(1px); }
+  .route .g{ font-weight:900; font-size:20px; color:#ffb454; }
+  .route .n{ font-size:12.5px; color:#d8d0c0; margin-top:2px; }
+  .route .b{ font-size:10.5px; color:#8f877a; margin-top:4px; }
+  .keys{ font-size:11.5px; color:#9a9284; line-height:1.7; text-align:left; margin-top:8px;
+    background:rgba(0,0,0,.25); border-radius:10px; padding:10px 12px; }
+  .keys b{ color:#ffcf8f; }
+  .toast{ position:fixed; left:50%; top:16%; transform:translateX(-50%); z-index:8; pointer-events:none;
+    background:rgba(15,12,20,.72); border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:9px 16px;
+    font-weight:700; font-size:14px; opacity:0; transition:opacity .2s; }
+  .toast.show{ opacity:1; }
+  #hint{ position:fixed; left:0; right:0; bottom:14px; text-align:center; z-index:6; pointer-events:none;
+    font-size:12px; color:#cbc3b3; text-shadow:0 1px 4px #000; }
+  .big{ font-size:30px; font-weight:900; margin-bottom:4px; }
+  .stat{ display:flex; justify-content:space-between; font-size:13px; color:#cfc7b6; padding:5px 2px;
+    border-bottom:1px solid rgba(255,255,255,.08); }
+  .stat b{ color:#ffcf8f; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint"></div>
+<div class="toast" id="toast"></div>
+
+<div class="panel" id="titlePanel">
+  <div class="card">
+    <h1>DEADPOINT</h1>
+    <div class="sub">THE COMMIT · THE PUMP · THE SEND</div>
+    <p class="lead">Read the wall. Reach a hold, time the latch, then trust it with your weight while the pump clock burns. Stick the dyno. Top out.</p>
+    <button class="btn" id="playBtn">Climb</button>
+    <button class="btn alt" id="howBtn">How to play</button>
+    <div class="keys" id="howKeys" style="display:none">
+      <b>Click a hold</b> to reach it with the nearest free hand.<br>
+      When the <b>latch ring</b> flashes, <b>click / Space</b> at the bright moment to stick it.<br>
+      <b>A / D</b> flag a foot left / right to fight the barn-door.<br>
+      <b>C</b> chalk up (resets slip, boosts grip). &nbsp; <b>R</b> hold to rest &amp; recover.<br>
+      <b>Space</b> hold to load a <b>dyno</b>, release to launch — latch at the apex.<br>
+      Keep at least one hand on. Reach the top to send.
+    </div>
+  </div>
+</div>
+
+<div class="panel hidden" id="routePanel">
+  <div class="card">
+    <h1 style="font-size:30px">Choose a route</h1>
+    <div class="sub">SUNKISSED CRAG · GOLDEN HOUR</div>
+    <div class="routes" id="routeList"></div>
+    <button class="btn alt" id="backBtn" style="margin-top:12px">Back</button>
+  </div>
+</div>
+
+<div class="panel hidden" id="resultPanel">
+  <div class="card">
+    <div class="big" id="resTitle">Sent!</div>
+    <div class="sub" id="resStyle">FLASH</div>
+    <div id="resStats" style="margin:14px 0"></div>
+    <button class="btn" id="againBtn">Climb again</button>
+    <button class="btn alt" id="menuBtn">Choose route</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================== util ============================== */
+const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
+const lerp=(a,b,t)=>a+(b-a)*t;
+const dist=(ax,ay,bx,by)=>Math.hypot(ax-bx,ay-by);
+const now=()=>performance.now();
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+const TAU=Math.PI*2;
+
+/* ============================== hold types ============================== */
+const HOLD={
+  jug:      { drain:1.0, latch:0.02, dyno:0.0,  color:'#8fd18a', label:'Jug',   rest:true },
+  crimp:    { drain:4.0, latch:0.55, dyno:0.5,  color:'#e6b45a', label:'Crimp' },
+  sloper:   { drain:3.0, latch:0.6,  dyno:0.75, color:'#c98bff', label:'Sloper', comDep:true },
+  pinch:    { drain:3.5, latch:0.4,  dyno:0.45, color:'#6ab6e6', label:'Pinch' },
+  pocket:   { drain:5.0, latch:0.6,  dyno:0.55, color:'#e67a7a', label:'Pocket' },
+  gaston:   { drain:3.8, latch:0.45, dyno:0.5,  color:'#e6906a', label:'Gaston', barn:true },
+  undercling:{drain:3.2, latch:0.4,  dyno:0.4,  color:'#b6c96a', label:'Undercling' }
+};
+const HTYPES=Object.keys(HOLD);
+
+/* ============================== route generation ============================== */
+const GRADES=[
+  {name:'V0', seed:1011, height:820,  slopers:0,   crux:0, dyno:0, quality:[0.85,1.0]},
+  {name:'V1', seed:2027, height:980,  slopers:0.1, crux:0, dyno:0, quality:[0.75,0.95]},
+  {name:'V2', seed:3041, height:1120, slopers:0.2, crux:1, dyno:0, quality:[0.62,0.9]},
+  {name:'V3', seed:4099, height:1280, slopers:0.3, crux:1, dyno:1, quality:[0.5,0.85]},
+  {name:'V4', seed:5077, height:1450, slopers:0.4, crux:2, dyno:1, quality:[0.42,0.8]},
+  {name:'V5', seed:6089, height:1600, slopers:0.5, crux:2, dyno:2, quality:[0.34,0.74]}
+];
+const NAMES=['Sunkissed Arete','First Light','Chalk & Sand','The Golden Rung','Warm Rock','Crux of Dawn'];
+const WALL_W=560, MARGIN=70;
+
+function genRoute(gi){
+  const G=GRADES[gi], rng=mulberry32(G.seed);
+  const rand=(a,b)=>a+rng()*(b-a);
+  const H=G.height;
+  const holds=[], feet=[];
+  let id=0, fid=0;
+  // start: two low jugs
+  let y=H-90;
+  const cx=WALL_W/2;
+  let lx=cx-70, rx=cx+70;
+  holds.push({id:id++,x:lx,y,type:'jug',size:1,quality:0.95});
+  holds.push({id:id++,x:rx,y,type:'jug',size:1,quality:0.95});
+  feet.push({id:fid++,x:cx-26,y:y+104,type:'edge',quality:0.8});
+  feet.push({id:fid++,x:cx+26,y:y+104,type:'edge',quality:0.8});
+  let side=rng()<0.5?-1:1;
+  let curY=y;
+  let prevX=cx, prevY=y;             // last placed hold — the next must be within reach of it
+  const REACH_G=170, DYNO_G=300;
+  let dynoBudget=G.dyno, cruxBudget=G.crux;
+  // walk upward, keeping every step within reach of the previous hold
+  while(curY>150){
+    const isDyno = dynoBudget>0 && curY<H*0.75 && rng()<0.16;
+    const isCrux = !isDyno && cruxBudget>0 && rng()<0.18;
+    const maxD = (isDyno?DYNO_G:REACH_G)*0.82;
+    const stepUp = isDyno? rand(135,Math.min(190,maxD*0.85)) : rand(78, Math.min(120,maxD*0.82));
+    curY = prevY - stepUp;
+    if(curY<120) curY=120;
+    // horizontal budget so the straight-line distance stays within reach
+    const hb = Math.sqrt(Math.max(maxD*maxD - (prevY-curY)*(prevY-curY), 0));
+    side=-side;
+    let x = clamp(prevX + side*rand(18, Math.max(20,hb*0.9)), MARGIN, WALL_W-MARGIN);
+    // clamp again to guarantee reach from the previous hold
+    if(dist(x,curY,prevX,prevY)>maxD){ const dx=x-prevX,dy=curY-prevY,dd=Math.hypot(dx,dy)||1; x=prevX+dx/dd*maxD; }
+    prevX=x; prevY=curY;
+    // type
+    let type='jug';
+    const roll=rng();
+    if(isDyno){ type = rng()<0.5?'sloper':'jug'; }
+    else if(isCrux){ type = rng()<G.slopers?'sloper':(rng()<0.5?'crimp':'pocket'); }
+    else {
+      if(roll<0.30) type='jug';
+      else if(roll<0.30+G.slopers*0.5) type='sloper';
+      else if(roll<0.6) type='crimp';
+      else if(roll<0.75) type='pinch';
+      else if(roll<0.86) type='gaston';
+      else if(roll<0.95) type='pocket';
+      else type='undercling';
+    }
+    const q = isCrux? clamp(rand(G.quality[0]-0.08,G.quality[0]+0.05),0.25,1) : rand(G.quality[0],G.quality[1]);
+    const h={id:id++,x,y:curY,type,size:type==='crimp'?rand(0.5,0.9):1,quality:q, dyno:isDyno};
+    holds.push(h);
+    if(isDyno) dynoBudget--; if(isCrux) cruxBudget--;
+    // add a foothold below-ish
+    if(rng()<0.85){ feet.push({id:fid++, x:clamp(x+rand(-40,40),MARGIN-10,WALL_W-MARGIN+10), y:curY+rand(70,120), type:rng()<0.7?'edge':'smear', quality:rand(0.5,0.85)}); }
+  }
+  // top-out jug (kept within reach of the last hold)
+  const topH={id:id++, x:clamp(prevX+rand(-30,30),MARGIN,WALL_W-MARGIN), y:Math.min(100,prevY-70), type:'jug', size:1, quality:0.98, top:true};
+  holds.push(topH);
+  const topout={x:topH.x, y:60};
+  return { grade:G.name, gi, name:NAMES[gi], height:H, holds, feet, topout, chalk:6 };
+}
+const ROUTES=GRADES.map((_,i)=>genRoute(i));
+
+/* ============================== audio ============================== */
+const Audio_={
+  ctx:null, on:true,
+  init(){ if(!this.ctx){ try{ this.ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } },
+  blip(f,d,type,vol,slideTo){ if(!this.on||!this.ctx) return; const t=this.ctx.currentTime;
+    const o=this.ctx.createOscillator(), g=this.ctx.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,t+d);
+    g.gain.setValueAtTime(vol||0.14,t); g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+    o.connect(g); g.connect(this.ctx.destination); o.start(t); o.stop(t+d+0.02); },
+  noise(d,vol){ if(!this.on||!this.ctx) return; const t=this.ctx.currentTime; const n=this.ctx.createBufferSource();
+    const buf=this.ctx.createBuffer(1,this.ctx.sampleRate*d,this.ctx.sampleRate); const dat=buf.getChannelData(0);
+    for(let i=0;i<dat.length;i++) dat[i]=(Math.random()*2-1)*Math.pow(1-i/dat.length,2); n.buffer=buf;
+    const g=this.ctx.createGain(); g.gain.value=vol||0.12; n.connect(g); g.connect(this.ctx.destination); n.start(); },
+  latchSolid(){ this.blip(180,0.12,'square',0.18,90); },
+  latchSlip(){ this.noise(0.18,0.14); },
+  chalk(){ this.noise(0.12,0.1); this.blip(520,0.05,'sine',0.05); },
+  fall(){ this.blip(300,0.6,'sawtooth',0.16,60); this.noise(0.5,0.1); },
+  top(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>this.blip(f,0.3,'triangle',0.15),i*120)); },
+  launch(){ this.blip(240,0.2,'sine',0.14,480); }
+};
+
+/* ============================== game state ============================== */
+let cv, ctx, W, H, DPR;
+let game=null;
+let flash={msg:'',t:0};
+
+function toast(m){ const el=document.getElementById('toast'); el.textContent=m; el.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('show'),1300); }
+
+function newClimb(route){
+  const h=route.holds;
+  // stand on first two jugs
+  const LH=h[0], RH=h[1];
+  game={
+    route, mode:'climb',
+    time:0, attempts:1, falls:0, chalkLeft:route.chalk, chalkUsed:false, restUsed:false, cleanDyno:true,
+    slowmo:1, camY: LH.y-200, camX: WALL_W/2, zoom:1,
+    hands:{
+      L:{ hold:LH, x:LH.x, y:LH.y, gx:LH.x, gy:LH.y, gripped:true, pump:0, creep:0, chalk:0 },
+      R:{ hold:RH, x:RH.x, y:RH.y, gx:RH.x, gy:RH.y, gripped:true, pump:0, creep:0, chalk:0 }
+    },
+    feet:{
+      L:{ hold:route.feet[0], x:route.feet[0].x, y:route.feet[0].y, planted:true },
+      R:{ hold:route.feet[1], x:route.feet[1].x, y:route.feet[1].y, planted:true }
+    },
+    com:{ x:WALL_W/2, y:(LH.y+route.feet[0].y)/2, vx:0, vy:0 },
+    stamina:100, heat:0, barn:0, flag:0, flagT:0,
+    reaching:null,           // {hand, from, to, hold, t, dur, dyno}
+    latch:null,              // {hand, hold, t, dur, window, best, dyno}
+    dynoLoad:0, dynoActive:false,
+    fallV:0, fallX:0,
+    particles:[], sweat:0, breath:0,
+    lastHold: RH, height:0, maxHeight:0,
+    started:false
+  };
+  camSnap();
+}
+
+/* ============================== camera ============================== */
+function camSnap(){ const g=game; const t=camTarget(); g.camX=t.x; g.camY=t.y; g.zoom=t.z; }
+function camTarget(){
+  const g=game;
+  const climbed = (g.route.height-90 - g.com.y); // px climbed
+  const z = clamp(1.02 - climbed/g.route.height*0.32, 0.7, 1.05);
+  return { x: lerp(WALL_W/2, g.com.x, 0.4), y: g.com.y-40, z };
+}
+function worldToScreen(wx,wy){ const g=game; return { x:(wx-g.camX)*g.zoom + W/2, y:(wy-g.camY)*g.zoom + H*0.52 }; }
+function screenToWorld(sx,sy){ const g=game; return { x:(sx-W/2)/g.zoom + g.camX, y:(sy-H*0.52)/g.zoom + g.camY }; }
+
+/* ============================== balance / physics ============================== */
+const REACH=170, DYNO_REACH=300;
+
+function supportPoints(){
+  const g=game, pts=[];
+  for(const k of ['L','R']){ const hd=g.hands[k]; if(hd.gripped) pts.push({x:hd.x,y:hd.y,w:1.0}); }
+  for(const k of ['L','R']){ const f=g.feet[k]; if(f.planted) pts.push({x:f.x,y:f.y,w:1.6}); }
+  return pts;
+}
+function baseSpan(){
+  const pts=supportPoints(); if(!pts.length) return {cx:game.com.x, half:0, min:game.com.x,max:game.com.x};
+  let min=1e9,max=-1e9,sx=0,sw=0;
+  for(const p of pts){ min=Math.min(min,p.x); max=Math.max(max,p.x); sx+=p.x*p.w; sw+=p.w; }
+  // flag widens base to the flagged side
+  if(game.flag<0) min-=42*game.flagT; if(game.flag>0) max+=42*game.flagT;
+  return { cx:sw?sx/sw:game.com.x, half:(max-min)/2, min, max };
+}
+function weightShare(handKey){
+  // fraction of body weight on this hand
+  const g=game; const hd=g.hands[handKey]; if(!hd.gripped) return 0;
+  const otherH=g.hands[handKey==='L'?'R':'L'];
+  const feetPlanted=(g.feet.L.planted?1:0)+(g.feet.R.planted?1:0);
+  let base = otherH.gripped? 0.5 : 1.0;         // split between hands
+  // feet offload
+  const offload = feetPlanted===2?0.55:(feetPlanted===1?0.32:0.0);
+  base *= (1-offload);
+  // COM under this hand → less strain; pulling sideways → more
+  const dx=Math.abs(g.com.x-hd.x);
+  base *= clamp(1 + (dx-40)/120, 0.7, 1.8);
+  // gaston / sloper off-balance
+  if(hd.hold){ if(HOLD[hd.hold.type].barn) base*=1.2; if(HOLD[hd.hold.type].comDep && dx>50) base*=1.3; }
+  return clamp(base,0,2);
+}
+
+function updatePhysics(dt){
+  const g=game;
+  // --- COM integrate toward base center, gravity pulls down slightly when unbalanced ---
+  const bs=baseSpan();
+  const targetX = bs.cx + g.flag*10*g.flagT;
+  g.com.vx += (targetX-g.com.x)*22*dt;
+  g.com.vx *= Math.pow(0.02,dt);
+  g.com.x += g.com.vx*dt;
+  // the climber hangs from the highest gripped hand; the torso sits just below it, feet follow up
+  let topY=1e9, gripN=0; for(const k of ['L','R']){ if(g.hands[k].gripped){ topY=Math.min(topY,g.hands[k].y); gripN++; } }
+  if(gripN===0) topY=g.com.y-96;
+  const targetY = topY + 96;                 // shoulders ~arm's length below the top hand
+  g.com.y = lerp(g.com.y, targetY, clamp(dt*7,0,1));
+  autoFeet(dt);
+
+  // --- barn-door: narrow base + COM offset ---
+  const offset=Math.abs(g.com.x-bs.cx);
+  const excess=offset-Math.max(bs.half,20);
+  const nHands=(g.hands.L.gripped?1:0)+(g.hands.R.gripped?1:0);
+  if(excess>6 && bs.half<55){
+    g.barn=clamp(g.barn + excess*dt*0.05*(nHands<2?1.5:0.6), 0, 1);
+  } else {
+    g.barn=clamp(g.barn - dt*1.6, 0, 1);
+  }
+  if(g.barn>=1){ // swing off the offside hand
+    const off = g.com.x>bs.cx?'L':'R';   // hand on the far side from lean peels
+    const far = g.com.x>bs.cx? (g.hands.L.x<g.hands.R.x?'L':'R') : (g.hands.L.x>g.hands.R.x?'L':'R');
+    loseHand(far); g.barn=0.4;
+  }
+
+  // --- flag decay ---
+  if(g.flag!==0){ g.flagT=clamp(g.flagT+dt*4,0,1); } else { g.flagT=clamp(g.flagT-dt*3,0,1); }
+
+  // --- pump per hand ---
+  let anyGrip=false;
+  for(const k of ['L','R']){
+    const hd=g.hands[k];
+    if(hd.reachingOut) continue;
+    if(hd.gripped){
+      anyGrip=true;
+      const ht=hd.hold?HOLD[hd.hold.type]:HOLD.jug;
+      const share=weightShare(k);
+      const chalkB=hd.chalk>0?0.2:0;
+      const q=hd.hold?hd.hold.quality:1;
+      const drain=ht.drain*(0.6+ (1-q)*1.1)*share*(1-chalkB)*(1+g.heat*0.8);
+      hd.pump=clamp(hd.pump+drain*dt,0,100);
+      // slip-creep grows while static (jugs are secure and barely creep)
+      const secure=ht.rest?0.3:1;
+      hd.creep=clamp(hd.creep + dt*(0.5+ (1-q)*0.9 + (ht.comDep&&Math.abs(g.com.x-hd.x)>55?0.8:0))*(1-chalkB)*secure, 0, 3);
+      hd.chalk=Math.max(0,hd.chalk-dt);
+      // involuntary open at max pump, or random slip from creep
+      if(hd.pump>=100){ loseHand(k); toast('Pumped out!'); }
+      else {
+        const slipRate=(hd.creep*0.025 + (hd.pump/100)*0.035)*(1-chalkB);
+        if(Math.random() < slipRate*dt){ loseHand(k); toast('Slipped!'); }
+      }
+    } else {
+      hd.pump=clamp(hd.pump - dt*14, 0, 100);   // recover when off
+      hd.creep=Math.max(0,hd.creep-dt*2);
+    }
+  }
+  // heat rises with total pump, cools slowly
+  const avgP=(g.hands.L.pump+g.hands.R.pump)/200;
+  g.heat=clamp(lerp(g.heat, avgP, dt*0.5),0,1);
+  g.sweat=avgP;
+  // stamina
+  g.stamina=clamp(g.stamina + (anyGrip?-dt*0.6:dt*2), 0, 100);
+
+  if(!anyGrip && !g.reaching && g.mode==='climb'){ startFall(); }
+}
+
+function loseHand(k){
+  const g=game; const hd=g.hands[k];
+  if(!hd.gripped) return;
+  hd.gripped=false; hd.hold=null; hd.pump=Math.min(hd.pump,60); hd.creep=0;
+  Audio_.latchSlip();
+  spawnPuff(hd.x,hd.y,'#d9cfc0');
+  const other=g.hands[k==='L'?'R':'L'];
+  if(!other.gripped){ startFall(); }
+  else { g.cleanDyno=false; }
+}
+
+/* ============================== moves ============================== */
+function handForHold(hold){
+  const g=game;
+  // pick the gripped hand whose release keeps balance & that can reach
+  let best=null,bestScore=-1e9;
+  for(const k of ['L','R']){
+    const hd=g.hands[k];
+    const reachFrom = hd.gripped? hd : g.hands[k==='L'?'R':'L'];
+    const d=dist(hd.x,hd.y,hold.x,hold.y);
+    // prefer moving the hand on the same side as the target and the lower hand
+    let score = -d;
+    if((k==='L'&&hold.x<g.com.x)||(k==='R'&&hold.x>=g.com.x)) score+=60;
+    if(hd.y>g.hands[k==='L'?'R':'L'].y) score+=30; // lower hand moves
+    score += hd.pump*0.6; // move the more pumped hand
+    if(score>bestScore){ bestScore=score; best=k; }
+  }
+  return best;
+}
+function canReach(hand, hold){
+  const g=game; const other=g.hands[hand==='L'?'R':'L'];
+  const anchor = other.gripped? other : g.hands[hand];
+  const d=dist(anchor.x,anchor.y,hold.x,hold.y);
+  return { ok:d<=DYNO_REACH, dyno:d>REACH, d };
+}
+function tryReach(hold, forceHand){
+  const g=game;
+  if(g.mode!=='climb'||g.reaching||g.latch) return false;
+  if(hold===g.hands.L.hold||hold===g.hands.R.hold) return false;
+  // pick a hand that keeps one on and can actually reach the hold
+  const pref=forceHand||handForHold(hold);
+  const order = forceHand? [forceHand] : [pref, pref==='L'?'R':'L'];
+  let hand=null, cr=null, dynoCr=null, dynoHand=null;
+  for(const c of order){
+    const other=g.hands[c==='L'?'R':'L']; if(!other.gripped) continue;
+    const r=canReach(c,hold);
+    if(!r.ok) continue;
+    if(!r.dyno){ hand=c; cr=r; break; }          // prefer a static hand
+    if(!dynoHand){ dynoHand=c; dynoCr=r; }
+  }
+  if(!hand && dynoHand){ hand=dynoHand; cr=dynoCr; }
+  if(!hand){ toast('Too far'); return false; }
+  if(cr.dyno && !g.dynoArmed){ toast('Hold Space to dyno'); return false; }
+  const hd=g.hands[hand];
+  hd.gripped=false; hd.hold_prev=hd.hold; hd.hold=null; hd.reachingOut=true;
+  g.reaching={ hand, from:{x:hd.x,y:hd.y}, to:{x:hold.x,y:hold.y}, hold, t:0, dur:cr.dyno?0.34:0.30, dyno:cr.dyno };
+  if(cr.dyno){ Audio_.launch(); g.stamina=clamp(g.stamina-12,0,100); }
+  g.dynoArmed=false;
+  return true;
+}
+function updateReach(dt){
+  const g=game; const r=g.reaching; if(!r) return;
+  r.t+=dt/r.dur;
+  const hd=g.hands[r.hand];
+  const t=clamp(r.t,0,1);
+  const ease=r.dyno? (t) : (t*t*(3-2*t));
+  hd.x=lerp(r.from.x,r.to.x,ease);
+  hd.y=lerp(r.from.y,r.to.y, r.dyno? (t) : ease) - (r.dyno? Math.sin(t*Math.PI)*24:0);
+  if(r.t>=1){
+    // begin latch
+    hd.x=r.to.x; hd.y=r.to.y;
+    const ht=HOLD[r.hold.type];
+    const diff = ht.latch + (r.dyno? r.hold ? HOLD[r.hold.type].dyno*0.5:0.3 : 0);
+    if(ht.latch<=0.05 && !r.dyno){ // jug auto
+      finishLatch(r.hand, r.hold, 1.0, r.dyno);
+    } else {
+      // body position bonus: COM under hold
+      const bodyBonus = clamp(1 - Math.abs(g.com.x-r.hold.x)/120, 0, 1);
+      g.latch={ hand:r.hand, hold:r.hold, t:0, dur:r.dyno?0.9:0.7, diff, bodyBonus, dyno:r.dyno, resolved:false, quality:0 };
+      if(r.dyno) g.slowmoTarget=0.32;
+    }
+    g.reaching=null;
+  }
+}
+function updateLatch(dt){
+  const g=game; const L=g.latch; if(!L) return;
+  L.t+=dt/L.dur;
+  if(L.t>=1 && !L.resolved){
+    // player didn't press → auto weak resolve
+    resolveLatch(0.0);
+  }
+}
+// ring position: window brightens near center (t≈0.5)
+function latchPress(){
+  const g=game; const L=g.latch; if(!L||L.resolved) return;
+  const center=0.55, w=0.16 + (1-L.diff)*0.14 + L.bodyBonus*0.08;
+  const off=Math.abs(L.t-center);
+  let quality = clamp(1 - off/w, 0, 1);      // 1 = perfect
+  resolveLatch(quality);
+}
+function resolveLatch(q){
+  const g=game; const L=g.latch; if(!L||L.resolved) return;
+  L.resolved=true;
+  const eff = clamp(q*0.7 + L.bodyBonus*0.3 + (g.hands[L.hand].chalk>0?0.1:0), 0, 1.2);
+  g.slowmoTarget=1;
+  if(eff>0.5){ finishLatch(L.hand, L.hold, eff, L.dyno); }        // solid / half
+  else {
+    // slip — hand fails to stick
+    Audio_.latchSlip(); spawnPuff(L.hold.x,L.hold.y,'#d9cfc0');
+    g.cleanDyno=false;
+    const hd=g.hands[L.hand];
+    if(L.dyno){ g.latch=null; startFall(); return; }             // dyno miss = airtime
+    // static miss: hand returns to previous hold if still valid, else you're on one hand briefly
+    if(hd.hold_prev){ hd.gripped=true; hd.hold=hd.hold_prev; hd.x=hd.hold.x; hd.y=hd.hold.y; hd.reachingOut=false; toast('Didn\'t stick'); }
+    else { hd.reachingOut=false; }
+    g.latch=null;
+    const other=g.hands[L.hand==='L'?'R':'L'];
+    if(!hd.gripped && !other.gripped) startFall();
+  }
+}
+function finishLatch(hand, hold, eff, dyno){
+  const g=game; const hd=g.hands[hand];
+  hd.gripped=true; hd.hold=hold; hd.x=hold.x; hd.y=hold.y; hd.reachingOut=false;
+  hd.creep=0; hd.hold_prev=null;
+  hd.pump=clamp(hd.pump - (eff>0.85?6:0), 0, 100);    // solid latch relaxes a touch
+  if(eff<0.75){ hd.pump=clamp(hd.pump+14,0,100); toast('Half latch'); }   // sketchy
+  else { Audio_.latchSolid(); }
+  spawnPuff(hold.x,hold.y,'#efe7d8');
+  g.latch=null;
+  g.lastHold=hold;
+  g.height=Math.max(g.height, (g.route.height-90)-hold.y);
+  if(eff>=0.85 && dyno) {} else if(dyno) g.cleanDyno=false;
+  // auto-place feet upward toward good footholds
+  autoFeet(0.4);
+  // top-out?
+  if(hold.top || hold.y<=g.route.topout.y+30){ topOut(); }
+}
+function autoFeet(dt){
+  const g=game; const fs=g.route.feet; const kf=clamp((dt||1/120)*6,0,1);
+  const hipY=g.com.y+26;
+  for(const k of ['L','R']){
+    const f=g.feet[k];
+    // pick the highest usable foothold below the body on this side, within leg reach
+    let best=null,bestScore=-1e9;
+    for(const fh of fs){
+      if(fh.y < g.com.y+6) continue;                          // foot must be below the torso
+      const sideOk = (k==='L'? fh.x<=g.com.x+45 : fh.x>=g.com.x-45);
+      const d=dist(fh.x,fh.y,g.com.x,hipY);
+      if(d>150) continue;
+      const score = -fh.y - d*0.4 + (sideOk?60:0);            // prefer higher, near, correct side
+      if(score>bestScore){ bestScore=score; best=fh; }
+    }
+    if(best){ f.hold=best; f.x=lerp(f.x,best.x,kf); f.y=lerp(f.y,best.y,kf); f.planted=true; }
+    else { // no reachable foothold → dangle just below the hip
+      f.planted=false; f.x=lerp(f.x, g.com.x+(k==='L'?-16:16), kf); f.y=lerp(f.y, hipY+70, kf);
+    }
+  }
+}
+
+/* ============================== dyno ============================== */
+function updateDyno(dt){
+  const g=game;
+  if(g.dynoHeld){ g.dynoLoad=clamp(g.dynoLoad+dt*1.6,0,1); }
+  else if(g.dynoLoad>0 && !g.dynoArmed){ g.dynoLoad=clamp(g.dynoLoad-dt*3,0,1); }
+}
+
+/* ============================== fall / topout ============================== */
+function startFall(){
+  const g=game; if(g.mode!=='climb') return;
+  g.mode='fall'; g.fallV=40; g.falls++; g.cleanDyno=false;
+  g.hands.L.gripped=g.hands.R.gripped=false;
+  g.reaching=null; g.latch=null; g.slowmoTarget=1;
+  Audio_.fall();
+}
+function updateFall(dt){
+  const g=game; g.fallV+=900*dt; g.com.y+=g.fallV*dt; g.com.vx*=0.98;
+  // shake
+  if(g.com.y > g.route.height-40){
+    // hit pad
+    setTimeout(()=>{ resetToStart(); }, 500);
+    g.mode='fell';
+  }
+}
+function resetToStart(){
+  const g=game; const r=g.route; g.attempts++;
+  const keep={attempts:g.attempts, falls:g.falls, time:g.time, chalkUsed:g.chalkUsed, restUsed:g.restUsed};
+  newClimb(r);
+  game.attempts=keep.attempts; game.falls=keep.falls; game.time=keep.time;
+  game.chalkUsed=keep.chalkUsed; game.restUsed=keep.restUsed; game.cleanDyno=true;
+  toast('Reset — attempt '+game.attempts);
+}
+function topOut(){
+  const g=game; if(g.mode!=='climb') return;
+  g.mode='topout'; g.topT=0; Audio_.top();
+}
+function updateTopOut(dt){
+  const g=game; g.topT=(g.topT||0)+dt;
+  g.com.y=lerp(g.com.y, g.route.topout.y-40, clamp(dt*3,0,1));
+  g.com.x=lerp(g.com.x, g.route.topout.x, clamp(dt*3,0,1));
+  if(g.topT>1.6){ showResults(); g.mode='done'; }
+}
+
+/* ============================== particles ============================== */
+function spawnPuff(x,y,color){
+  const g=game; if(!g) return;
+  for(let i=0;i<8;i++){ const a=Math.random()*TAU, s=Math.random()*40+10;
+    g.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-10,life:1,color}); }
+}
+function updateParticles(dt){
+  const g=game;
+  for(let i=g.particles.length-1;i>=0;i--){ const p=g.particles[i];
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=60*dt; p.vx*=0.94; p.life-=dt*1.6;
+    if(p.life<=0) g.particles.splice(i,1); }
+}
+
+/* ============================== main update ============================== */
+function update(dt){
+  const g=game; if(!g) return;
+  // slow-mo
+  g.slowmoTarget=g.slowmoTarget||1;
+  g.slowmo=lerp(g.slowmo, g.slowmoTarget, clamp(dt*6,0,1));
+  const sdt=dt*g.slowmo;
+  if(g.mode==='climb'||g.mode==='fall'){ g.time+=dt; }
+  if(g.mode==='climb'){
+    updateDyno(sdt);
+    if(g.reaching) updateReach(sdt);
+    if(g.latch) updateLatch(sdt);
+    updatePhysics(sdt);
+    // camera
+    const t=camTarget();
+    g.camX=lerp(g.camX,t.x,clamp(dt*3,0,1)); g.camY=lerp(g.camY,t.y,clamp(dt*3,0,1)); g.zoom=lerp(g.zoom,t.z,clamp(dt*2,0,1));
+  } else if(g.mode==='fall'){ updateFall(sdt); g.camY=lerp(g.camY,g.com.y-20,clamp(dt*4,0,1)); }
+  else if(g.mode==='topout'){ updateTopOut(dt); const t=camTarget(); g.camY=lerp(g.camY,g.com.y-30,clamp(dt*2,0,1)); }
+  updateParticles(dt);
+  g.breath+=dt*(1+g.sweat*3);
+}
+
+/* ============================== rendering ============================== */
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=window.innerWidth; H=window.innerHeight;
+  cv.width=W*DPR; cv.height=H*DPR; cv.style.width=W+'px'; cv.style.height=H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+function drawBackground(){
+  const g=game;
+  // golden-hour sky
+  const sky=ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#243357'); sky.addColorStop(0.5,'#7d5c74'); sky.addColorStop(0.8,'#e39a5c'); sky.addColorStop(1,'#f0b56a');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+  // sun
+  const sunS=worldToScreen(WALL_W+260, 120);
+  const sg=ctx.createRadialGradient(sunS.x,sunS.y,4,sunS.x,sunS.y,120);
+  sg.addColorStop(0,'rgba(255,240,200,.9)'); sg.addColorStop(1,'rgba(255,220,150,0)');
+  ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(sunS.x,sunS.y,120,0,TAU); ctx.fill();
+  // parallax mountains (3 layers)
+  const layers=[{p:0.15,c:'#5b4a63',o:0.6,base:0.7},{p:0.3,c:'#6e4e55',o:0.7,base:0.8},{p:0.5,c:'#3f3040',o:0.85,base:0.92}];
+  for(const L of layers){
+    ctx.fillStyle=L.c; ctx.globalAlpha=L.o; ctx.beginPath();
+    const yb=H*L.base - g.camY*L.p*g.zoom*0.3 + g.route.height*L.p*0.2;
+    ctx.moveTo(0,H);
+    for(let x=0;x<=W;x+=40){ const n=Math.sin((x*0.008)+(L.p*10))*30+Math.sin(x*0.02+L.p*5)*16;
+      ctx.lineTo(x, yb + n); }
+    ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+}
+let wallCanvas=null, wallKey='';
+function buildWallTexture(){
+  const c=document.createElement('canvas'); c.width=WALL_W; c.height=game.route.height;
+  const x=c.getContext('2d');
+  const grd=x.createLinearGradient(0,0,WALL_W,0); grd.addColorStop(0,'#8a6b4f'); grd.addColorStop(0.5,'#9c7a58'); grd.addColorStop(1,'#7c5f45');
+  x.fillStyle=grd; x.fillRect(0,0,WALL_W,c.height);
+  const rng=mulberry32(game.route.gi*7+3);
+  // speckle + cracks
+  for(let i=0;i<c.height*2.2;i++){ const px=rng()*WALL_W, py=rng()*c.height, r=rng()*2+0.4;
+    x.fillStyle=`rgba(${rng()<0.5?60:220},${40+rng()*40},${30},${0.06+rng()*0.08})`; x.beginPath(); x.arc(px,py,r,0,TAU); x.fill(); }
+  x.strokeStyle='rgba(40,28,20,.25)'; x.lineWidth=1.4;
+  for(let i=0;i<24;i++){ x.beginPath(); let cx=rng()*WALL_W, cy=rng()*c.height; x.moveTo(cx,cy);
+    for(let j=0;j<5;j++){ cx+=(rng()-0.5)*60; cy+=rng()*50; x.lineTo(cx,cy); } x.stroke(); }
+  // shading vignette on edges
+  const vg=x.createLinearGradient(0,0,WALL_W,0); vg.addColorStop(0,'rgba(0,0,0,.25)'); vg.addColorStop(0.5,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.28)');
+  x.fillStyle=vg; x.fillRect(0,0,WALL_W,c.height);
+  wallCanvas=c; wallKey=game.route.gi+'x'+game.route.height;
+}
+function drawWall(){
+  const g=game;
+  if(!wallCanvas||wallKey!==g.route.gi+'x'+g.route.height) buildWallTexture();
+  const tl=worldToScreen(0,0), br=worldToScreen(WALL_W,g.route.height);
+  ctx.save();
+  ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=30; ctx.shadowOffsetX=-8;
+  ctx.drawImage(wallCanvas, tl.x, tl.y, br.x-tl.x, br.y-tl.y);
+  ctx.restore();
+  // ground / pad at bottom
+  const gr=worldToScreen(0,g.route.height);
+  ctx.fillStyle='#3b4a2e'; ctx.fillRect(tl.x-40, gr.y, br.x-tl.x+80, H);
+  ctx.fillStyle='#6b5bd0'; ctx.globalAlpha=0.5; ctx.fillRect(tl.x, gr.y, br.x-tl.x, 16*g.zoom); ctx.globalAlpha=1;
+}
+function drawHolds(){
+  const g=game;
+  for(const h of g.route.holds){
+    const s=worldToScreen(h.x,h.y); const r=(h.size*11+7)*g.zoom;
+    const t=HOLD[h.type]; ctx.save(); ctx.translate(s.x,s.y);
+    // shadow
+    ctx.fillStyle='rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(2,3,r,r*0.7,0,0,TAU); ctx.fill();
+    ctx.fillStyle=t.color; ctx.strokeStyle='rgba(20,12,8,.6)'; ctx.lineWidth=1.5*g.zoom;
+    ctx.beginPath();
+    if(h.type==='jug'){ ctx.ellipse(0,0,r,r*0.8,0,0,TAU); }
+    else if(h.type==='crimp'){ ctx.roundRect(-r,-r*0.35,r*2,r*0.7,3); }
+    else if(h.type==='sloper'){ ctx.arc(0,2,r,Math.PI,0); }
+    else if(h.type==='pinch'){ ctx.ellipse(-r*0.5,0,r*0.5,r*0.8,0,0,TAU); ctx.ellipse(r*0.5,0,r*0.5,r*0.8,0,0,TAU); }
+    else if(h.type==='pocket'){ ctx.arc(0,0,r*0.85,0,TAU); }
+    else if(h.type==='gaston'){ ctx.roundRect(-r*0.35,-r,r*0.7,r*2,3); }
+    else { ctx.arc(0,0,r,0,Math.PI); }
+    ctx.fill(); ctx.stroke();
+    if(h.type==='pocket'){ ctx.fillStyle='rgba(20,10,8,.8)'; ctx.beginPath(); ctx.arc(0,0,r*0.4,0,TAU); ctx.fill(); }
+    // quality tick (lighter = better)
+    ctx.restore();
+  }
+  // top-out banner marker
+  const to=worldToScreen(g.route.topout.x,g.route.topout.y);
+  ctx.fillStyle='rgba(255,220,150,.6)'; ctx.font=`${12*g.zoom}px sans-serif`; ctx.textAlign='center';
+  ctx.fillText('TOP', to.x, to.y);
+}
+function limb(ax,ay,bx,by,len,bend){
+  // 2-bone IK: shoulder(a) to hand(b); elbow via law of cosines; bend = side
+  const dx=bx-ax, dy=by-ay; const d=clamp(Math.hypot(dx,dy),1,len*0.98);
+  const a1=Math.atan2(dy,dx);
+  const l1=len*0.5, l2=len*0.5;
+  const cosA=clamp((d*d+l1*l1-l2*l2)/(2*d*l1),-1,1);
+  const ang=Math.acos(cosA)*bend;
+  const ex=ax+Math.cos(a1+ang)*l1, ey=ay+Math.sin(a1+ang)*l1;
+  return {ex,ey};
+}
+function drawClimber(){
+  const g=game; const z=g.zoom;
+  const com=worldToScreen(g.com.x,g.com.y);
+  const lean=clamp((g.com.x-baseSpan().cx)*0.15,-14,14);
+  const shoulder={x:com.x+lean*z, y:com.y-24*z};
+  const hip={x:com.x+lean*0.4*z, y:com.y+24*z};
+  const armLen=104*z, legLen=98*z;
+  // legs (behind)
+  ctx.lineCap='round';
+  for(const k of ['L','R']){
+    const f=g.feet[k]; const fs=f.planted?worldToScreen(f.x,f.y):{x:hip.x+(k==='L'?-20:20)*z,y:hip.y+70*z};
+    const bend=k==='L'?-1:1;
+    const {ex,ey}=limb(hip.x,hip.y,fs.x,fs.y,legLen,bend);
+    ctx.strokeStyle='#3a4a63'; ctx.lineWidth=9*z; ctx.beginPath(); ctx.moveTo(hip.x,hip.y); ctx.lineTo(ex,ey); ctx.lineTo(fs.x,fs.y); ctx.stroke();
+    ctx.fillStyle='#222'; ctx.beginPath(); ctx.arc(fs.x,fs.y,5*z,0,TAU); ctx.fill();
+  }
+  // torso
+  ctx.strokeStyle='#c85a3c'; ctx.lineWidth=20*z; ctx.beginPath(); ctx.moveTo(shoulder.x,shoulder.y); ctx.lineTo(hip.x,hip.y); ctx.stroke();
+  // harness
+  ctx.strokeStyle='#2b2b33'; ctx.lineWidth=6*z; ctx.beginPath(); ctx.moveTo(hip.x-11*z,hip.y); ctx.lineTo(hip.x+11*z,hip.y); ctx.stroke();
+  // head
+  const head={x:shoulder.x+lean*0.3*z, y:shoulder.y-18*z};
+  ctx.fillStyle='#e8c9a0'; ctx.beginPath(); ctx.arc(head.x,head.y,11*z,0,TAU); ctx.fill();
+  ctx.fillStyle='#3a2a1c'; ctx.beginPath(); ctx.arc(head.x,head.y-3*z,11*z,Math.PI*1.05,Math.PI*1.95); ctx.fill();
+  // arms
+  for(const k of ['L','R']){
+    const hd=g.hands[k]; const hs=worldToScreen(hd.x,hd.y);
+    const bend=k==='L'?1:-1;
+    const {ex,ey}=limb(shoulder.x,shoulder.y,hs.x,hs.y,armLen,bend);
+    ctx.strokeStyle= hd.gripped? '#d98a52' : (hd.reachingOut||g.reaching&&g.reaching.hand===k? '#f0b06a':'#b07048');
+    ctx.lineWidth=8*z; ctx.beginPath(); ctx.moveTo(shoulder.x,shoulder.y); ctx.lineTo(ex,ey); ctx.lineTo(hs.x,hs.y); ctx.stroke();
+    // hand / chalk glow
+    ctx.fillStyle= hd.chalk>0? '#f4eee0' : '#e0a878'; ctx.beginPath(); ctx.arc(hs.x,hs.y,6*z,0,TAU); ctx.fill();
+    if(hd.gripped){ ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=1.5*z; ctx.beginPath(); ctx.arc(hs.x,hs.y,8*z,0,TAU); ctx.stroke(); }
+  }
+  // chalk bag
+  ctx.fillStyle='#6a5a48'; ctx.beginPath(); ctx.arc(hip.x-lean*0.4*z, hip.y+16*z, 7*z,0,TAU); ctx.fill();
+}
+function drawParticles(){
+  const g=game;
+  for(const p of g.particles){ const s=worldToScreen(p.x,p.y);
+    ctx.globalAlpha=clamp(p.life,0,1)*0.8; ctx.fillStyle=p.color;
+    ctx.beginPath(); ctx.arc(s.x,s.y,(3+ (1-p.life)*3)*g.zoom,0,TAU); ctx.fill(); }
+  ctx.globalAlpha=1;
+}
+function drawLatchRing(){
+  const g=game; const L=g.latch; if(!L) return;
+  const s=worldToScreen(L.hold.x,L.hold.y);
+  const center=0.55, w=0.16 + (1-L.diff)*0.14 + L.bodyBonus*0.08;
+  const near=clamp(1-Math.abs(L.t-center)/w,0,1);
+  const R=(40 - L.t*26)*g.zoom;
+  ctx.save(); ctx.translate(s.x,s.y);
+  // outer shrinking ring
+  ctx.strokeStyle=`rgba(255,255,255,${0.4+near*0.5})`; ctx.lineWidth=3*g.zoom;
+  ctx.beginPath(); ctx.arc(0,0,Math.max(R,6*g.zoom),0,TAU); ctx.stroke();
+  // sweet target
+  ctx.strokeStyle=`rgba(120,255,150,${0.5+near*0.5})`; ctx.lineWidth=3*g.zoom;
+  ctx.beginPath(); ctx.arc(0,0,16*g.zoom,0,TAU); ctx.stroke();
+  if(near>0.6){ ctx.fillStyle=`rgba(150,255,170,${(near-0.6)*1.5})`; ctx.beginPath(); ctx.arc(0,0,14*g.zoom,0,TAU); ctx.fill(); }
+  ctx.restore();
+}
+function bar(x,y,w,h,v,c1,c2,label){
+  ctx.fillStyle='rgba(0,0,0,.4)'; ctx.beginPath(); ctx.roundRect(x,y,w,h,h/2); ctx.fill();
+  const grd=ctx.createLinearGradient(x,0,x+w,0); grd.addColorStop(0,c1); grd.addColorStop(1,c2);
+  ctx.fillStyle=grd; ctx.beginPath(); ctx.roundRect(x,y,Math.max(h,w*clamp(v,0,1)),h,h/2); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.85)'; ctx.font='11px sans-serif'; ctx.textAlign='left'; ctx.fillText(label,x,y-4);
+}
+function drawHUD(){
+  const g=game;
+  // pump bars L/R (red = bad)
+  const pumpCol=v=>v>80?['#ff5a5a','#ff2a2a']:v>50?['#ffb454','#ff8a3a']:['#8fd18a','#5fb06a'];
+  const pl=pumpCol(g.hands.L.pump), pr=pumpCol(g.hands.R.pump);
+  bar(14,30,130,14, g.hands.L.pump/100, pl[0],pl[1], 'L PUMP');
+  bar(14,64,130,14, g.hands.R.pump/100, pr[0],pr[1], 'R PUMP');
+  bar(14,98,130,10, g.stamina/100, '#6ab6e6','#4a8fd0','STAMINA');
+  // chalk
+  ctx.fillStyle='#f4eee0'; ctx.font='13px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('✋ Chalk: '+g.chalkLeft, 14, 128);
+  // grade + height (top right)
+  ctx.textAlign='right'; ctx.fillStyle='#ffcf8f'; ctx.font='900 22px sans-serif'; ctx.fillText(g.route.grade, W-14, 34);
+  ctx.fillStyle='#eee'; ctx.font='13px sans-serif';
+  ctx.fillText(Math.round(g.height/10)+' m', W-14, 54);
+  ctx.fillStyle='#bbb'; ctx.font='11px sans-serif'; ctx.fillText('Attempt '+g.attempts, W-14, 72);
+  // barn-door warning
+  if(g.barn>0.15){
+    ctx.textAlign='center'; ctx.fillStyle=`rgba(255,${120-g.barn*100},60,${clamp(g.barn,0,1)})`;
+    ctx.font='900 18px sans-serif'; ctx.fillText('BARN-DOOR!  ← A / D →', W/2, 40);
+    bar(W/2-70, 46, 140, 8, g.barn, '#ff8a3a','#ff2a2a','');
+  }
+  // dyno load meter
+  if(g.dynoLoad>0.02){
+    ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.font='12px sans-serif'; ctx.fillText('DYNO', W/2, H-70);
+    bar(W/2-60,H-64,120,10,g.dynoLoad,'#c98bff','#ff6a6a','');
+  }
+  // slow-mo tint
+  if(g.slowmo<0.9){ ctx.fillStyle=`rgba(40,20,60,${(1-g.slowmo)*0.35})`; ctx.fillRect(0,0,W,H); }
+}
+function render(){
+  ctx.clearRect(0,0,W,H);
+  if(!game){ return; }
+  drawBackground(); drawWall(); drawHolds();
+  drawParticles(); drawClimber(); drawLatchRing();
+  drawHUD();
+  // hint
+  const g=game; const hint=document.getElementById('hint');
+  if(g.mode==='climb'){
+    if(g.latch) hint.textContent='Click / Space at the bright ring to latch!';
+    else if(g.dynoLoad>0.3) hint.textContent='Release Space to launch the dyno';
+    else hint.textContent='Click a hold to reach · A/D flag · C chalk · R rest · hold Space to dyno';
+  } else if(g.mode==='fall'||g.mode==='fell') hint.textContent='Whipper!';
+  else hint.textContent='';
+}
+
+/* ============================== results / scoring ============================== */
+function showResults(){
+  const g=game;
+  let style, mult;
+  if(g.attempts===1 && g.falls===0){ style='FLASH'; mult=3; }
+  else if(g.falls===0){ style='CLEAN SEND'; mult=2; }
+  else { style='SENT'; mult=1.3; }
+  const base=(g.route.gi+1)*100;
+  let score=Math.round(base*mult*(g.cleanDyno?1.2:1)*(g.chalkUsed?1:1.15)*(g.restUsed?1:1.1) - g.time*2);
+  score=Math.max(score,10);
+  document.getElementById('resTitle').textContent='Sent '+g.route.grade+'!';
+  document.getElementById('resStyle').textContent=style + (g.cleanDyno?' · CLEAN DYNO':'') + (g.chalkUsed?'':' · NO-CHALK');
+  document.getElementById('resStats').innerHTML=
+    `<div class="stat"><span>Route</span><b>${g.route.name}</b></div>`+
+    `<div class="stat"><span>Attempts</span><b>${g.attempts}</b></div>`+
+    `<div class="stat"><span>Falls</span><b>${g.falls}</b></div>`+
+    `<div class="stat"><span>Time</span><b>${g.time.toFixed(1)}s</b></div>`+
+    `<div class="stat"><span>Score</span><b>${score}</b></div>`;
+  show('resultPanel');
+}
+
+/* ============================== input ============================== */
+function pickHold(sx,sy){
+  const g=game; const w=screenToWorld(sx,sy);
+  let best=null,bd=1e9;
+  for(const h of g.route.holds){ const d=dist(h.x,h.y,w.x,w.y); if(d<bd){bd=d;best=h;} }
+  return bd< 60/g.zoom ? best : null;
+}
+function onPointer(sx,sy){
+  const g=game; if(!g) return; Audio_.init();
+  if(g.mode!=='climb') return;
+  if(g.latch){ latchPress(); return; }
+  const h=pickHold(sx,sy);
+  if(h) tryReach(h);
+}
+function keydown(e){
+  const g=game; if(!g){ return; }
+  const k=e.key.toLowerCase();
+  if(k===' '){ e.preventDefault();
+    if(g.latch){ latchPress(); return; }
+    if(g.mode==='climb' && !g.reaching){ g.dynoHeld=true; g.dynoArmed=g.dynoLoad>0.4; }
+    return; }
+  if(g.mode!=='climb') return;
+  if(k==='a'){ g.flag=-1; g.flagT=Math.max(g.flagT,0.01); }
+  if(k==='d'){ g.flag=1; g.flagT=Math.max(g.flagT,0.01); }
+  if(k==='c'){ doChalk(); }
+  if(k==='r'){ g.resting=true; }
+  if(k==='q'){ g.preHand='L'; }
+  if(k==='e'){ g.preHand='R'; }
+}
+function keyup(e){
+  const g=game; if(!g) return; const k=e.key.toLowerCase();
+  if(k===' '){
+    if(g.dynoHeld){ g.dynoHeld=false;
+      if(g.dynoLoad>0.4){ g.dynoArmed=true; // next click/auto reach becomes dyno; auto-fire at best nearby high hold
+        autoDyno();
+      } else g.dynoLoad=0;
+    }
+  }
+  if(k==='a'&&g.flag<0) g.flag=0;
+  if(k==='d'&&g.flag>0) g.flag=0;
+  if(k==='r') g.resting=false;
+}
+function autoDyno(){
+  const g=game;
+  // fire dyno at the nearest reachable hold above within dyno range
+  let best=null,bd=1e9;
+  for(const h of g.route.holds){
+    if(h===g.hands.L.hold||h===g.hands.R.hold) continue;
+    if(h.y>=g.com.y-20) continue;
+    const cr=canReach(handForHold(h),h);
+    if(cr.ok && cr.dyno){ const d=dist(g.com.x,g.com.y,h.x,h.y); if(d<bd){bd=d;best=h;} }
+  }
+  g.dynoArmed=true;
+  if(best){ tryReach(best); }
+  g.dynoLoad=0;
+}
+function doChalk(){
+  const g=game; if(g.chalkLeft<=0){ toast('Out of chalk'); return; }
+  // chalk the more-pumped gripped hand
+  let k=null,mp=-1; for(const kk of ['L','R']){ if(g.hands[kk].gripped && g.hands[kk].pump>mp){ mp=g.hands[kk].pump; k=kk; } }
+  if(!k) return;
+  g.hands[k].chalk=4; g.hands[k].creep=0; g.chalkLeft--; g.chalkUsed=true; g.stamina=clamp(g.stamina-3,0,100);
+  Audio_.chalk(); spawnPuff(g.hands[k].x,g.hands[k].y,'#f4eee0'); toast('Chalked '+k);
+}
+// resting recovery
+function restTick(dt){
+  const g=game; if(!g.resting||g.mode!=='climb') return;
+  g.restUsed=true;
+  // recover the ungripped or less-loaded hand faster; on a jug, recover both
+  const onJug=(g.hands.L.hold&&HOLD[g.hands.L.hold.type].rest)||(g.hands.R.hold&&HOLD[g.hands.R.hold.type].rest);
+  const rate=onJug?10:5;
+  for(const k of ['L','R']){ if(g.hands[k].gripped) g.hands[k].pump=clamp(g.hands[k].pump-rate*dt,0,100); }
+  g.stamina=clamp(g.stamina+dt*6,0,100);
+}
+
+/* ============================== loop ============================== */
+let last=0, acc=0;
+function frame(t){
+  requestAnimationFrame(frame);
+  const dt=Math.min((t-last)/1000||0,0.05); last=t;
+  if(game && (game.mode!=='menu')){
+    acc+=dt; const step=1/120;
+    while(acc>=step){ update(step); restTick(step); acc-=step; }
+  }
+  render();
+}
+requestAnimationFrame(frame);
+
+/* ============================== UI / menus ============================== */
+function show(id){ ['titlePanel','routePanel','resultPanel'].forEach(p=>document.getElementById(p).classList.toggle('hidden',p!==id)); }
+function hideAll(){ ['titlePanel','routePanel','resultPanel'].forEach(p=>document.getElementById(p).classList.add('hidden')); }
+function buildRouteList(){
+  const el=document.getElementById('routeList'); el.innerHTML='';
+  ROUTES.forEach((r,i)=>{ const d=document.createElement('div'); d.className='route';
+    d.innerHTML=`<div class="g">${r.grade}</div><div class="n">${r.name}</div><div class="b" style="color:#8f877a">${r.holds.length} holds</div>`;
+    d.onclick=()=>startRoute(i); el.appendChild(d); });
+}
+function startRoute(i){ hideAll(); newClimb(ROUTES[i]); game.mode='climb'; Audio_.init(); }
+
+document.getElementById('playBtn').onclick=()=>{ buildRouteList(); show('routePanel'); };
+document.getElementById('howBtn').onclick=()=>{ const k=document.getElementById('howKeys'); k.style.display=k.style.display==='none'?'block':'none'; };
+document.getElementById('backBtn').onclick=()=>show('titlePanel');
+document.getElementById('againBtn').onclick=()=>{ hideAll(); newClimb(game.route); game.mode='climb'; };
+document.getElementById('menuBtn').onclick=()=>{ buildRouteList(); show('routePanel'); };
+
+/* ============================== boot ============================== */
+cv=document.getElementById('c'); ctx=cv.getContext('2d'); resize();
+window.addEventListener('resize',resize);
+cv.addEventListener('pointerdown',e=>onPointer(e.clientX,e.clientY));
+window.addEventListener('keydown',keydown);
+window.addEventListener('keyup',keyup);
+if(!ctx.roundRect){ CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){ r=Math.min(r,w/2,h/2); this.moveTo(x+r,y); this.arcTo(x+w,y,x+w,y+h,r); this.arcTo(x+w,y+h,x,y+h,r); this.arcTo(x,y+h,x,y,r); this.arcTo(x,y,x+w,y,r); this.closePath(); return this; }; }
+
+/* ============================== test hooks ============================== */
+window.__deadpoint={
+  get game(){ return game; }, ROUTES, HOLD,
+  start(i){ startRoute(i||0); },
+  reach(holdId, hand){ const h=game.route.holds.find(x=>x.id===holdId); return h?tryReach(h,hand):false; },
+  latchNow(){ latchPress(); },
+  step(n,dt){ for(let i=0;i<(n||1);i++){ update(dt||1/120); restTick(dt||1/120); } },
+  climbAuto(maxSteps){
+    // greedy auto-solver for testing: reach the next-highest unclaimed hold, latch perfectly
+    const g=game; let steps=0;
+    while(g.mode==='climb' && steps<(maxSteps||6000)){
+      steps++;
+      if(g.latch){ // press near center
+        if(g.latch.t>0.5){ latchPress(); }
+        update(1/120); continue;
+      }
+      if(g.reaching){ update(1/120); continue; }
+      // choose next hold: lowest y above current hands, reachable from either hand
+      let target=null,bd=1e9;
+      for(const h of g.route.holds){
+        if(h===g.hands.L.hold||h===g.hands.R.hold) continue;
+        if(h.y>=Math.min(g.hands.L.y,g.hands.R.y)-4) continue;
+        let ok=false; for(const c of ['L','R']){ const oth=g.hands[c==='L'?'R':'L']; if(oth.gripped && canReach(c,h).ok){ ok=true; break; } }
+        if(!ok) continue;
+        if(h.y<bd){ bd=h.y; target=h; }
+      }
+      if(!target){ update(1/120); continue; }
+      let staticOk=false,dynoOk=false;
+      for(const c of ['L','R']){ const oth=g.hands[c==='L'?'R':'L']; if(!oth.gripped) continue; const r=canReach(c,target); if(r.ok){ r.dyno?dynoOk=true:staticOk=true; } }
+      if(!staticOk && dynoOk) g.dynoArmed=true;
+      tryReach(target);
+      update(1/120);
+    }
+    return { mode:g.mode, height:g.height, steps };
+  }
+};
+</script>
+</body>
+</html>
