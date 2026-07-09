@@ -294,6 +294,44 @@
         <p>A full-3D golf course in a single file &mdash; four authored holes, a three-click swing meter, real ball flight with wind, draw and fade, cinematic camera swoops, and a sloped-green putting grid.</p>
       </a>
 
+      <a class="card" href="ennead/index.html">
+        <span class="thumb">
+          <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A nested tic-tac-toe board with X and O marks">
+            <defs>
+              <linearGradient id="en-bg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#232a52"/><stop offset="1" stop-color="#0d1122"/>
+              </linearGradient>
+            </defs>
+            <rect width="320" height="120" fill="url(#en-bg)"/>
+            <!-- 3x3 grid centred; cell = 30.7px, board 114..206 / 14..106 -->
+            <g stroke="#6b76a8" stroke-width="3" stroke-linecap="round" opacity="0.85">
+              <line x1="144.7" y1="16" x2="144.7" y2="104"/><line x1="175.3" y1="16" x2="175.3" y2="104"/>
+              <line x1="116" y1="44.7" x2="204" y2="44.7"/><line x1="116" y1="75.3" x2="204" y2="75.3"/>
+            </g>
+            <!-- diagonal X win: TL, centre (nested), BR -->
+            <g stroke="#e8543f" stroke-width="6" stroke-linecap="round">
+              <line x1="121" y1="21" x2="137.5" y2="37.5"/><line x1="137.5" y1="21" x2="121" y2="37.5"/>
+              <line x1="182.5" y1="82.5" x2="199" y2="99"/><line x1="199" y1="82.5" x2="182.5" y2="99"/>
+            </g>
+            <!-- O marks: TR and BL -->
+            <g stroke="#2f8fd8" stroke-width="6" fill="none">
+              <circle cx="190.7" cy="29.3" r="10"/><circle cx="129.3" cy="90.7" r="10"/>
+            </g>
+            <!-- centre cell: a nested 3x3 (the "nine boards") with a small X -->
+            <g stroke="#8b95c8" stroke-width="1.4" opacity="0.9">
+              <line x1="154.9" y1="46.7" x2="154.9" y2="73.3"/><line x1="165.1" y1="46.7" x2="165.1" y2="73.3"/>
+              <line x1="146.7" y1="54.9" x2="173.3" y2="54.9"/><line x1="146.7" y1="65.1" x2="173.3" y2="65.1"/>
+            </g>
+            <g stroke="#e8543f" stroke-width="2.4" stroke-linecap="round">
+              <line x1="148.5" y1="48.5" x2="153.3" y2="53.3"/><line x1="153.3" y1="48.5" x2="148.5" y2="53.3"/>
+            </g>
+            <rect x="114" y="14" width="92" height="92" rx="8" fill="none" stroke="#6b76a8" stroke-width="2" opacity="0.5"/>
+          </svg>
+        </span>
+        <h2>Ennead</h2>
+        <p>Configurable tic-tac-toe &mdash; play Classic on any board from 3&times;3 up to 9&times;9 gomoku, or Ultimate: nine nested sub-boards where each move sends your opponent onward. Local 2-player or a three-level AI.</p>
+      </a>
+
     </div>
     <footer>
       <a href="https://github.com/sudhir-patavardhan/browser-games">github.com/sudhir-patavardhan/browser-games</a>

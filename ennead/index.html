@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Ennead — Tic-Tac-Toe</title>
+<style>
+  :root{
+    --x:#e8543f; --o:#2f8fd8;
+    --bg:#f4f5f8; --panel:#ffffff; --ink:#1c2230; --muted:#5b6478;
+    --line:#c7cedd; --cell:#fdfdff; --cell2:#eef1f7; --ring:#ffb020;
+    --sub-rule:#aab4c8; --shadow:0 10px 30px rgba(20,30,60,.14);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e1220; --panel:#171d2e; --ink:#eef2fb; --muted:#98a2bd;
+    --line:#2c3550; --cell:#1c2438; --cell2:#161d2e; --ring:#ffc23d;
+    --sub-rule:#39435f; --shadow:0 12px 34px rgba(0,0,0,.5);
+    --x:#ff6a52; --o:#4fa9ee;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0e1220; --panel:#171d2e; --ink:#eef2fb; --muted:#98a2bd;
+      --line:#2c3550; --cell:#1c2438; --cell2:#161d2e; --ring:#ffc23d;
+      --sub-rule:#39435f; --shadow:0 12px 34px rgba(0,0,0,.5);
+      --x:#ff6a52; --o:#4fa9ee;
+    }
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; }
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex; flex-direction:column; align-items:center; min-height:100%;
+    user-select:none;
+  }
+  .app{ width:100%; max-width:640px; padding:14px 14px 28px; display:flex; flex-direction:column; gap:12px; }
+  header{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  h1{ font-size:clamp(22px,6vw,30px); margin:0; letter-spacing:.5px; font-weight:800;
+    background:linear-gradient(90deg,var(--x),var(--o)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  h1 small{ display:block; font-size:11px; font-weight:600; letter-spacing:2px; color:var(--muted);
+    -webkit-text-fill-color:var(--muted); margin-top:2px; }
+  .iconbtn{ background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:12px;
+    padding:9px 13px; font-size:14px; font-weight:600; cursor:pointer; box-shadow:var(--shadow); }
+  .iconbtn:active{ transform:translateY(1px); }
+  .status{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:10px 14px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px; box-shadow:var(--shadow); }
+  .turn{ display:flex; align-items:center; gap:9px; font-weight:700; font-size:15px; }
+  .turn .chip{ width:22px; height:22px; }
+  .hint{ font-size:12.5px; color:var(--muted); text-align:right; line-height:1.35; }
+  .boardwrap{ width:100%; overflow:auto; display:flex; justify-content:center; }
+  .board{ position:relative; display:grid; gap:var(--gap); background:var(--sub-rule);
+    padding:var(--gap); border-radius:16px; }
+  .board.classic{ grid-template-columns:repeat(var(--n), var(--cs)); --gap:3px; }
+  .board.ultimate{ grid-template-columns:repeat(var(--b), auto); --gap:6px; }
+  .sub{ display:grid; grid-template-columns:repeat(var(--b), var(--cs)); gap:3px; background:var(--line);
+    padding:3px; border-radius:9px; position:relative; transition:opacity .2s, filter .2s; }
+  .cell{ width:var(--cs); height:var(--cs); background:var(--cell); border:none; border-radius:6px; padding:0;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; color:inherit;
+    transition:background .12s; }
+  .board.classic .cell{ background:var(--cell); }
+  .cell:disabled{ cursor:default; }
+  .cell .mk{ width:74%; height:74%; display:block; }
+  .mk line,.mk circle{ fill:none; stroke-width:12; stroke-linecap:round; }
+  .mk.x line{ stroke:var(--x); }
+  .mk.o circle{ stroke:var(--o); }
+  .cell.ghost .mk{ opacity:.28; }
+  .cell.last::after{ content:""; position:absolute; inset:4px; border:2px solid var(--ring); border-radius:6px;
+    animation:ringIn .3s ease; }
+  @keyframes ringIn{ from{ transform:scale(.6); opacity:0; } to{ transform:scale(1); opacity:1; } }
+  .cell.focusring{ outline:3px solid var(--ring); outline-offset:-2px; z-index:2; }
+  /* ultimate spotlight */
+  .board.ultimate .sub.dim{ opacity:.34; filter:saturate(.5); pointer-events:none; }
+  .board.ultimate .sub.active{ box-shadow:0 0 0 2px var(--ring), 0 0 16px rgba(255,178,32,.5); }
+  .sub.won{ }
+  .sub .stamp{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    pointer-events:none; opacity:0; }
+  .sub.won .stamp{ opacity:1; }
+  .sub.won .stamp .mk{ width:66%; height:66%; }
+  .sub.won .cell{ filter:grayscale(.7) brightness(.9); opacity:.55; }
+  .sub.wonX{ background:color-mix(in srgb, var(--x) 34%, var(--line)); }
+  .sub.wonO{ background:color-mix(in srgb, var(--o) 34%, var(--line)); }
+  .sub.drawn{ background:color-mix(in srgb, var(--muted) 30%, var(--line)); }
+  .sub.pop{ animation:pop .4s ease; }
+  @keyframes pop{ 0%{ transform:scale(1);} 40%{ transform:scale(1.06);} 100%{ transform:scale(1);} }
+  /* win overlay svg */
+  .winsvg{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+  .winsvg line{ stroke:var(--ring); stroke-width:8; stroke-linecap:round; opacity:.92;
+    filter:drop-shadow(0 2px 6px rgba(0,0,0,.35)); }
+  .winsvg.anim line{ stroke-dasharray:var(--len); stroke-dashoffset:var(--len); animation:draw .5s ease forwards; }
+  @keyframes draw{ to{ stroke-dashoffset:0; } }
+  .controls{ display:flex; gap:10px; }
+  .btn{ flex:1; background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:14px;
+    padding:13px; font-size:15px; font-weight:700; cursor:pointer; box-shadow:var(--shadow); }
+  .btn.primary{ background:linear-gradient(90deg,var(--x),var(--o)); color:#fff; border:none; }
+  .btn:disabled{ opacity:.45; cursor:default; }
+  .btn:active{ transform:translateY(1px); }
+  /* modal */
+  .scrim{ position:fixed; inset:0; background:rgba(8,12,24,.5); backdrop-filter:blur(3px); display:none;
+    align-items:flex-end; justify-content:center; z-index:30; }
+  .scrim.open{ display:flex; }
+  .drawer{ background:var(--panel); width:100%; max-width:520px; border-radius:20px 20px 0 0; padding:18px 18px 26px;
+    box-shadow:var(--shadow); max-height:88vh; overflow:auto; }
+  @media(min-width:560px){ .scrim{ align-items:center; } .drawer{ border-radius:20px; } }
+  .drawer h2{ margin:2px 0 14px; font-size:20px; }
+  .row{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0;
+    border-bottom:1px solid var(--line); }
+  .row:last-of-type{ border-bottom:none; }
+  .row label{ font-weight:600; font-size:14.5px; }
+  .row .sub-note{ font-size:11.5px; color:var(--muted); font-weight:400; margin-top:2px; }
+  .seg{ display:flex; background:var(--cell2); border:1px solid var(--line); border-radius:11px; overflow:hidden; }
+  .seg button{ border:none; background:transparent; color:var(--ink); padding:8px 11px; font-size:13px;
+    font-weight:600; cursor:pointer; }
+  .seg button.on{ background:linear-gradient(90deg,var(--x),var(--o)); color:#fff; }
+  select{ background:var(--cell2); color:var(--ink); border:1px solid var(--line); border-radius:11px;
+    padding:8px 10px; font-size:14px; font-weight:600; }
+  .drawer .apply{ margin-top:16px; }
+  .rowgroup[hidden]{ display:none; }
+  /* result banner */
+  .banner{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:40;
+    background:rgba(8,12,24,.55); backdrop-filter:blur(3px); }
+  .banner.open{ display:flex; animation:fade .25s ease; }
+  @keyframes fade{ from{ opacity:0; } to{ opacity:1; } }
+  .card{ background:var(--panel); border-radius:20px; padding:26px 30px; text-align:center; box-shadow:var(--shadow);
+    border:1px solid var(--line); max-width:360px; }
+  .card .big{ font-size:26px; font-weight:800; margin-bottom:6px; }
+  .card .mk{ width:56px; height:56px; margin:4px auto 10px; display:block; }
+  .card p{ color:var(--muted); margin:0 0 16px; font-size:14px; }
+  footer{ color:var(--muted); font-size:11.5px; text-align:center; margin-top:4px; }
+  footer a{ color:inherit; }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.001ms !important; }
+    .winsvg.anim line{ stroke-dashoffset:0; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>ENNEAD<small>TIC · TAC · TOE</small></h1>
+    <button class="iconbtn" id="settingsBtn" aria-label="Settings">⚙ Settings</button>
+  </header>
+
+  <div class="status">
+    <div class="turn"><span id="turnChip" class="chip"></span><span id="turnText">X to move</span></div>
+    <div class="hint" id="hint">Classic · 3×3</div>
+  </div>
+
+  <div class="boardwrap">
+    <div class="board classic" id="board" role="grid" tabindex="0" aria-label="Game board"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn primary" id="newBtn">New Game</button>
+    <button class="btn" id="undoBtn" disabled>Undo</button>
+  </div>
+
+  <footer><a href="https://github.com/sudhir-patavardhan/browser-games">github.com/sudhir-patavardhan/browser-games</a></footer>
+</div>
+
+<!-- settings drawer -->
+<div class="scrim" id="settingsScrim">
+  <div class="drawer" role="dialog" aria-label="Settings">
+    <h2>Settings</h2>
+    <div class="row">
+      <label>Mode</label>
+      <div class="seg" id="segMode"><button data-v="classic">Classic</button><button data-v="ultimate">Ultimate</button></div>
+    </div>
+    <div class="rowgroup" id="grpClassic">
+      <div class="row"><label>Board size <span class="sub-note">N×N</span></label>
+        <select id="selN"></select></div>
+      <div class="row"><label>Win length <span class="sub-note">in a row to win</span></label>
+        <select id="selK"></select></div>
+    </div>
+    <div class="rowgroup" id="grpUltimate" hidden>
+      <div class="row"><label>Base <span class="sub-note">B → (B·B)×(B·B) board</span></label>
+        <select id="selB"></select></div>
+    </div>
+    <div class="row"><label>Opponent</label>
+      <div class="seg" id="segOpp"><button data-v="2p">2 players</button><button data-v="ai">vs AI</button></div></div>
+    <div class="row" id="rowDiff"><label>AI difficulty</label>
+      <div class="seg" id="segDiff"><button data-v="easy">Easy</button><button data-v="medium">Medium</button><button data-v="hard">Hard</button></div></div>
+    <div class="row"><label>First player</label>
+      <div class="seg" id="segFirst"><button data-v="X">X</button><button data-v="O">O</button><button data-v="random">Random</button></div></div>
+    <div class="row"><label>Theme</label>
+      <div class="seg" id="segTheme"><button data-v="system">System</button><button data-v="light">Light</button><button data-v="dark">Dark</button></div></div>
+    <div class="row"><label>Sound</label>
+      <div class="seg" id="segSound"><button data-v="off">Off</button><button data-v="on">On</button></div></div>
+    <button class="btn primary apply" id="applyBtn">Apply &amp; New Game</button>
+  </div>
+</div>
+
+<!-- result banner -->
+<div class="banner" id="banner">
+  <div class="card">
+    <div id="bannerMark"></div>
+    <div class="big" id="bannerTitle">X wins</div>
+    <p id="bannerSub">Three in a row.</p>
+    <button class="btn primary" id="rematchBtn">Rematch</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================ helpers ============================ */
+const $=id=>document.getElementById(id);
+const other=m=>m==='X'?'O':'X';
+const MK={ X:'<svg class="mk x" viewBox="0 0 100 100"><line x1="24" y1="24" x2="76" y2="76"/><line x1="76" y1="24" x2="24" y2="76"/></svg>',
+           O:'<svg class="mk o" viewBox="0 0 100 100"><circle cx="50" cy="50" r="27"/></svg>' };
+
+/* ============================ win check (shared, pure) ============================ */
+// returns array of >=k contiguous indices through lastIdx, or null
+function winCheck(cells, dim, k, lastIdx){
+  const p=cells[lastIdx]; if(!p) return null;
+  const r=Math.floor(lastIdx/dim), c=lastIdx%dim;
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(const [dr,dc] of dirs){
+    const line=[lastIdx];
+    let rr=r+dr, cc=c+dc;
+    while(rr>=0&&rr<dim&&cc>=0&&cc<dim&&cells[rr*dim+cc]===p){ line.push(rr*dim+cc); rr+=dr; cc+=dc; }
+    rr=r-dr; cc=c-dc;
+    while(rr>=0&&rr<dim&&cc>=0&&cc<dim&&cells[rr*dim+cc]===p){ line.unshift(rr*dim+cc); rr-=dr; cc-=dc; }
+    if(line.length>=k) return line;
+  }
+  return null;
+}
+function isFull(cells){ for(const c of cells) if(!c) return false; return true; }
+
+/* ============================ settings ============================ */
+const DEFAULTS={ mode:'classic', N:3, k:3, B:3, opponent:'2p', difficulty:'medium',
+                 firstPlayer:'X', theme:'system', sound:false };
+let settings=loadSettings();
+function loadSettings(){
+  let s={...DEFAULTS};
+  try{ const raw=localStorage.getItem('ennead.settings'); if(raw) s={...s,...JSON.parse(raw)}; }catch(e){}
+  s.N=clampN(s.N); s.k=Math.max(3,Math.min(s.k, s.N)); s.B=Math.max(3,Math.min(5,s.B|0||3));
+  return s;
+}
+function clampN(n){ n=n|0; return Math.max(3,Math.min(9,n||3)); }
+function saveSettings(){ try{ localStorage.setItem('ennead.settings', JSON.stringify(settings)); }catch(e){} }
+
+/* ============================ game state ============================ */
+let G=null;
+let busy=false;            // input lock during AI / animation
+let focusPos=null;         // {b?,i} for keyboard focus
+
+function newGame(){
+  const first = settings.firstPlayer==='random' ? (Math.random()<.5?'X':'O') : settings.firstPlayer;
+  if(settings.mode==='classic'){
+    G={ mode:'classic', N:settings.N, k:settings.k, cells:Array(settings.N*settings.N).fill(null),
+        current:first, status:'playing', winner:null, winningLine:null, last:null, history:[] };
+  } else {
+    const B=settings.B, T=B*B;
+    G={ mode:'ultimate', B, boards:Array.from({length:T},()=>Array(T).fill(null)),
+        subStatus:Array(T).fill('playing'), activeBoard:null, current:first,
+        status:'playing', winner:null, metaLine:null, last:null, history:[] };
+  }
+  // AI identity: human always X, AI is O in vs-AI
+  busy=false; focusPos=null;
+  buildBoard(); syncBoard(); clearWinLine(); closeBanner();
+  saveGame();
+  maybeAI();
+}
+
+function snapshot(){ const s=structuredClone(G); delete s.history; return s; }
+function pushHistory(){ G.history.push(snapshot()); }
+function restore(s){ const h=G.history; Object.assign(G, s); G.history=h; }
+
+/* ============================ moves ============================ */
+function classicLegal(i){ return G.status==='playing' && !G.cells[i]; }
+function ultLegal(b,i){
+  if(G.status!=='playing') return false;
+  if(G.subStatus[b]!=='playing') return false;
+  if(G.activeBoard!=null && b!==G.activeBoard) return false;
+  return !G.boards[b][i];
+}
+
+function doClassicMove(i){
+  if(!classicLegal(i)) return false;
+  pushHistory();
+  const p=G.current;
+  G.cells[i]=p; G.last=i;
+  const line=winCheck(G.cells, G.N, G.k, i);
+  if(line){ G.status='won'; G.winner=p; G.winningLine=line; }
+  else if(isFull(G.cells)){ G.status='draw'; }
+  else G.current=other(p);
+  afterMove();
+  return true;
+}
+
+function doUltMove(b,i){
+  if(!ultLegal(b,i)) return false;
+  pushHistory();
+  const p=G.current, B=G.B;
+  G.boards[b][i]=p; G.last={b,i};
+  let claimed=false;
+  const line=winCheck(G.boards[b], B, B, i);
+  if(line){ G.subStatus[b]=p; claimed=true; }
+  else if(isFull(G.boards[b])){ G.subStatus[b]='draw'; }
+  if(claimed){
+    const meta=G.subStatus.map(s=>(s==='X'||s==='O')?s:null);
+    const mline=winCheck(meta, B, B, b);
+    if(mline){ G.status='won'; G.winner=p; G.metaLine=mline; }
+  }
+  if(G.status==='playing'){
+    if(!G.subStatus.some(s=>s==='playing')) G.status='draw';
+  }
+  // send
+  G.activeBoard = (G.subStatus[i]==='playing') ? i : null;
+  if(G.status==='playing') G.current=other(p);
+  afterMove(claimed?b:-1);
+  return true;
+}
+
+function afterMove(claimBoard){
+  syncBoard();
+  if(claimBoard>=0){ const el=subEls[claimBoard]; if(el) flash(el,'pop'); sfx('claim'); }
+  else sfx('place');
+  saveGame();
+  if(G.status!=='playing'){
+    drawWinLine();
+    setTimeout(showBanner, 480);
+    sfx('win');
+    localStorage.removeItem('ennead.game');
+  } else {
+    updateUndo(); maybeAI();
+  }
+  updateUndo();
+}
+
+/* human entry points */
+function humanClassic(i){ if(busy||aiTurn()) return; if(doClassicMove(i)) {} }
+function humanUlt(b,i){ if(busy||aiTurn()) return; if(doUltMove(b,i)) {} }
+function aiTurn(){ return settings.opponent==='ai' && G.status==='playing' && G.current==='O'; }
+
+/* ============================ undo ============================ */
+function undo(){
+  if(busy) return;
+  let n = (settings.opponent==='ai' && G.history.length>=2) ? 2 : (G.history.length?1:0);
+  // if it's AI's turn (shouldn't happen at rest) fall back to 1
+  if(!n) return;
+  for(let x=0;x<n && G.history.length;x++){ restore(G.history.pop()); }
+  G.status='playing'; // restored snapshot already correct
+  closeBanner(); clearWinLine(); buildBoard(); syncBoard(); updateUndo(); saveGame();
+}
+function updateUndo(){ $('undoBtn').disabled = busy || !G.history.length; }
+
+/* ============================ rendering ============================ */
+const boardEl=$('board');
+let cellEls=[];    // classic: [i]; ultimate: [b][i]
+let subEls=[];     // ultimate sub wrappers
+
+function buildBoard(){
+  boardEl.innerHTML=''; cellEls=[]; subEls=[];
+  if(G.mode==='classic'){
+    boardEl.className='board classic';
+    boardEl.style.setProperty('--n', G.N);
+    boardEl.style.setProperty('--cs', `clamp(30px, calc(min(92vw, 560px) / ${G.N} - 6px), 92px)`);
+    for(let i=0;i<G.N*G.N;i++){
+      const c=document.createElement('button'); c.className='cell'; c.dataset.i=i;
+      c.addEventListener('click',()=>humanClassic(i));
+      boardEl.appendChild(c); cellEls[i]=c;
+    }
+  } else {
+    const B=G.B, T=B*B;
+    boardEl.className='board ultimate';
+    boardEl.style.setProperty('--b', B);
+    boardEl.style.setProperty('--cs', `clamp(28px, calc(min(94vw, 560px) / ${T} - 5px), 60px)`);
+    for(let b=0;b<T;b++){
+      const sub=document.createElement('div'); sub.className='sub'; sub.dataset.b=b;
+      const row=[];
+      for(let i=0;i<T;i++){
+        const c=document.createElement('button'); c.className='cell'; c.dataset.b=b; c.dataset.i=i;
+        c.addEventListener('click',()=>humanUlt(b,i));
+        sub.appendChild(c); row[i]=c;
+      }
+      const stamp=document.createElement('div'); stamp.className='stamp'; sub.appendChild(stamp);
+      boardEl.appendChild(sub); subEls[b]=sub; cellEls[b]=row;
+    }
+  }
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('class','winsvg'); svg.id='winsvg'; boardEl.appendChild(svg);
+}
+
+function syncBoard(){
+  if(G.mode==='classic'){
+    for(let i=0;i<G.cells.length;i++){
+      const c=cellEls[i], v=G.cells[i];
+      c.innerHTML = v?MK[v]:'';
+      c.classList.toggle('last', G.last===i);
+      c.disabled = !!v || G.status!=='playing';
+    }
+  } else {
+    const B=G.B, T=B*B;
+    const free = G.activeBoard==null;
+    for(let b=0;b<T;b++){
+      const sub=subEls[b], st=G.subStatus[b];
+      const playable = st==='playing';
+      const isActive = G.status==='playing' && (free ? playable : b===G.activeBoard);
+      sub.classList.toggle('active', isActive && !free);
+      sub.classList.toggle('dim', G.status==='playing' && !free && b!==G.activeBoard);
+      sub.classList.remove('won','wonX','wonO','drawn');
+      const stamp=sub.querySelector('.stamp');
+      if(st==='X'||st==='O'){ sub.classList.add('won','won'+st); stamp.innerHTML=MK[st]; }
+      else if(st==='draw'){ sub.classList.add('drawn'); stamp.innerHTML=''; }
+      else stamp.innerHTML='';
+      for(let i=0;i<T;i++){
+        const c=cellEls[b][i], v=G.boards[b][i];
+        c.innerHTML = v?MK[v]:'';
+        const lm = G.last && G.last.b===b && G.last.i===i;
+        c.classList.toggle('last', lm);
+        c.disabled = G.status!=='playing' || !ultLegal(b,i);
+      }
+    }
+  }
+  renderStatus();
+}
+
+function renderStatus(){
+  const chip=$('turnChip'), txt=$('turnText'), hint=$('hint');
+  if(G.status==='playing'){
+    chip.innerHTML=MK[G.current];
+    const who = (settings.opponent==='ai') ? (G.current==='O'?'AI (O)':'You (X)') : (G.current+' to move');
+    txt.textContent = who;
+    if(G.mode==='classic'){ hint.textContent=`Classic · ${G.N}×${G.N} · ${G.k} to win`; }
+    else {
+      const geo=`Ultimate · ${G.B*G.B}×${G.B*G.B}`;
+      hint.innerHTML = (G.activeBoard==null? 'Free move — play any lit board' : 'Play in the highlighted board') + `<br>${geo}`;
+    }
+  } else if(G.status==='draw'){
+    chip.innerHTML=''; txt.textContent='Draw';
+  } else {
+    chip.innerHTML=MK[G.winner]; txt.textContent=(G.winner+' wins');
+  }
+}
+
+function flash(el,cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+  setTimeout(()=>el.classList.remove(cls),450); }
+
+/* ============================ win line overlay ============================ */
+function clearWinLine(){ const s=$('winsvg'); if(s){ s.innerHTML=''; s.classList.remove('anim'); } }
+function drawWinLine(){
+  const svg=$('winsvg'); if(!svg) return; svg.innerHTML='';
+  let a,b2;
+  if(G.mode==='classic' && G.winningLine){ a=cellEls[G.winningLine[0]]; b2=cellEls[G.winningLine[G.winningLine.length-1]]; }
+  else if(G.mode==='ultimate' && G.metaLine){ a=subEls[G.metaLine[0]]; b2=subEls[G.metaLine[G.metaLine.length-1]]; }
+  else return;
+  const br=boardEl.getBoundingClientRect();
+  const ra=a.getBoundingClientRect(), rb=b2.getBoundingClientRect();
+  const x1=ra.left+ra.width/2-br.left, y1=ra.top+ra.height/2-br.top;
+  const x2=rb.left+rb.width/2-br.left, y2=rb.top+rb.height/2-br.top;
+  const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+  ln.setAttribute('x1',x1); ln.setAttribute('y1',y1); ln.setAttribute('x2',x2); ln.setAttribute('y2',y2);
+  svg.appendChild(ln);
+  const len=Math.hypot(x2-x1,y2-y1)+8; svg.style.setProperty('--len',len);
+  svg.classList.add('anim');
+}
+
+/* ============================ result banner ============================ */
+function showBanner(){
+  const b=$('banner');
+  if(G.status==='draw'){ $('bannerMark').innerHTML=''; $('bannerTitle').textContent='Draw'; $('bannerSub').textContent='No line — nobody wins.'; }
+  else{
+    $('bannerMark').innerHTML=MK[G.winner];
+    const win = settings.opponent==='ai' ? (G.winner==='X'?'You win!':'AI wins') : (G.winner+' wins');
+    $('bannerTitle').textContent=win;
+    $('bannerSub').textContent = G.mode==='ultimate' ? 'Three sub-boards in a row.' : `${G.k} in a row.`;
+  }
+  b.classList.add('open');
+}
+function closeBanner(){ $('banner').classList.remove('open'); }
+
+/* ============================ sound ============================ */
+let actx=null;
+function sfx(kind){
+  if(!settings.sound) return;
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    const t=actx.currentTime, o=actx.createOscillator(), g=actx.createGain();
+    o.connect(g); g.connect(actx.destination);
+    let f=440, d=.08, vol=.12;
+    if(kind==='place'){ f=330; d=.06; }
+    if(kind==='claim'){ f=660; d=.18; vol=.16; o.frequency.setValueAtTime(520,t); o.frequency.exponentialRampToValueAtTime(880,t+d); }
+    if(kind==='win'){ f=523; d=.5; vol=.18; o.frequency.setValueAtTime(392,t); o.frequency.setValueAtTime(523,t+.12); o.frequency.setValueAtTime(659,t+.24); }
+    o.frequency.setValueAtTime(f,t);
+    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.start(t); o.stop(t+d+.02);
+  }catch(e){}
+}
+
+/* ============================ AI ============================ */
+function maybeAI(){
+  if(!aiTurn()) return;
+  busy=true; updateUndo();
+  setTimeout(()=>{ try{ aiMove(); } finally { busy=false; updateUndo(); } }, 260);
+}
+function aiMove(){
+  if(!aiTurn()){ return; }
+  const me='O', opp='X', diff=settings.difficulty;
+  if(G.mode==='classic'){
+    const cells=G.cells, dim=G.N, k=G.k;
+    let mv = winMoveClassic(cells,dim,k,me);
+    if(mv==null) mv = winMoveClassic(cells,dim,k,opp);        // block
+    if(mv==null){
+      if(diff==='easy') mv=randomEmpty(cells);
+      else if(diff==='medium') mv=bestClassicHeuristic(cells,dim,k,me);
+      else mv=(dim===3&&k===3)? minimaxClassic(cells,me) : searchClassic(cells,dim,k,me);
+    }
+    if(mv==null) mv=randomEmpty(cells);
+    doClassicMove(mv);
+  } else {
+    const mv=chooseUlt(me,diff);
+    if(mv) doUltMove(mv[0],mv[1]);
+  }
+}
+function randomEmpty(cells){ const e=[]; for(let i=0;i<cells.length;i++) if(!cells[i]) e.push(i); return e.length?e[Math.random()*e.length|0]:null; }
+function winMoveClassic(cells,dim,k,mark){
+  for(let i=0;i<cells.length;i++){ if(cells[i]) continue; cells[i]=mark; const w=winCheck(cells,dim,k,i); cells[i]=null; if(w) return i; }
+  return null;
+}
+function candidates(cells,dim){
+  const occ=cells.some(x=>x);
+  if(!occ) return [Math.floor(dim*dim/2)];
+  const set=new Set();
+  for(let i=0;i<cells.length;i++){ if(!cells[i]) continue; const r=Math.floor(i/dim),c=i%dim;
+    for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){ const rr=r+dr,cc=c+dc; if(rr<0||cc<0||rr>=dim||cc>=dim)continue; const j=rr*dim+cc; if(!cells[j]) set.add(j); } }
+  return [...set];
+}
+function evalClassic(cells,dim,k,me,opp){
+  let s=0; const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(let r=0;r<dim;r++)for(let c=0;c<dim;c++){
+    for(const [dr,dc] of dirs){
+      const er=r+dr*(k-1), ec=c+dc*(k-1); if(er<0||ec<0||er>=dim||ec>=dim) continue;
+      let mine=0,his=0;
+      for(let s2=0;s2<k;s2++){ const v=cells[(r+dr*s2)*dim+(c+dc*s2)]; if(v===me)mine++; else if(v===opp)his++; }
+      if(mine&&!his) s+= mine>=k? 1e7 : Math.pow(10,mine);
+      else if(his&&!mine) s-= his>=k? 1e7 : Math.pow(10,his);
+    }
+  }
+  return s;
+}
+function bestClassicHeuristic(cells,dim,k,me){
+  const cand=candidates(cells,dim); let best=cand[0], bv=-Infinity;
+  for(const m of cand){ cells[m]=me; const v=evalClassic(cells,dim,k,me,other(me)); cells[m]=null; if(v>bv){ bv=v; best=m; } }
+  return best;
+}
+function minimaxClassic(cells,me){
+  // perfect play for 3x3, k=3
+  let best=null, bv=-Infinity;
+  for(let i=0;i<9;i++){ if(cells[i])continue; cells[i]=me; const v=mmx(cells,other(me),me,1,-Infinity,Infinity); cells[i]=null; if(v>bv){bv=v;best=i;} }
+  return best;
+}
+function mmx(cells,turn,me,depth,alpha,beta){
+  const w=scan3(cells); if(w){ return w===me? 10-depth : depth-10; }
+  if(isFull(cells)) return 0;
+  if(turn===me){ let v=-Infinity; for(let i=0;i<9;i++){ if(cells[i])continue; cells[i]=turn; v=Math.max(v,mmx(cells,other(turn),me,depth+1,alpha,beta)); cells[i]=null; alpha=Math.max(alpha,v); if(beta<=alpha)break; } return v; }
+  else { let v=Infinity; for(let i=0;i<9;i++){ if(cells[i])continue; cells[i]=turn; v=Math.min(v,mmx(cells,other(turn),me,depth+1,alpha,beta)); cells[i]=null; beta=Math.min(beta,v); if(beta<=alpha)break; } return v; }
+}
+function scan3(cells){ const L=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  for(const [a,b,c] of L){ if(cells[a]&&cells[a]===cells[b]&&cells[b]===cells[c]) return cells[a]; } return null; }
+function searchClassic(cells,dim,k,me){
+  const deadline=performance.now()+140; let best=candidates(cells,dim)[0];
+  for(let depth=2; depth<=6; depth++){
+    let curBest=best, curVal=-Infinity, alpha=-Infinity, aborted=false;
+    for(const m of candidates(cells,dim)){
+      cells[m]=me; let v; const w=winCheck(cells,dim,k,m);
+      if(w) v=1e8; else v=abmin(cells,dim,k,me,depth-1,alpha,Infinity,deadline);
+      cells[m]=null;
+      if(v>curVal){ curVal=v; curBest=m; } alpha=Math.max(alpha,v);
+      if(performance.now()>deadline){ aborted=true; break; }
+    }
+    if(!aborted) best=curBest;
+    if(performance.now()>deadline || curVal>=1e8) break;
+  }
+  return best;
+}
+function abmax(cells,dim,k,me,depth,alpha,beta,dl){
+  if(depth===0||performance.now()>dl) return evalClassic(cells,dim,k,me,other(me));
+  let v=-Infinity, any=false;
+  for(const m of candidates(cells,dim)){ any=true; cells[m]=me; const w=winCheck(cells,dim,k,m);
+    let val = w? 1e8-depth : abmin(cells,dim,k,me,depth-1,alpha,beta,dl); cells[m]=null;
+    v=Math.max(v,val); alpha=Math.max(alpha,v); if(beta<=alpha)break; }
+  if(!any) return 0; return v;
+}
+function abmin(cells,dim,k,me,depth,alpha,beta,dl){
+  if(depth===0||performance.now()>dl) return evalClassic(cells,dim,k,me,other(me));
+  const opp=other(me); let v=Infinity, any=false;
+  for(const m of candidates(cells,dim)){ any=true; cells[m]=opp; const w=winCheck(cells,dim,k,m);
+    let val = w? -1e8+depth : abmax(cells,dim,k,me,depth-1,alpha,beta,dl); cells[m]=null;
+    v=Math.min(v,val); beta=Math.min(beta,v); if(beta<=alpha)break; }
+  if(!any) return 0; return v;
+}
+
+/* ----- ultimate AI ----- */
+function cloneUlt(){ return { B:G.B, boards:G.boards.map(a=>a.slice()), subStatus:G.subStatus.slice(),
+  activeBoard:G.activeBoard, current:G.current, status:G.status, winner:G.winner }; }
+function ultLegalMoves(st){
+  const T=st.B*st.B, out=[];
+  const boards = (st.activeBoard!=null && st.subStatus[st.activeBoard]==='playing')
+    ? [st.activeBoard]
+    : st.subStatus.map((s,b)=>s==='playing'?b:-1).filter(b=>b>=0);
+  for(const b of boards) for(let i=0;i<T;i++) if(!st.boards[b][i]) out.push([b,i]);
+  return out;
+}
+function ultApply(st,b,i,p){
+  const n={ B:st.B, boards:st.boards.map(a=>a.slice()), subStatus:st.subStatus.slice(),
+            activeBoard:st.activeBoard, current:st.current, status:st.status, winner:st.winner };
+  const B=n.B; n.boards[b][i]=p;
+  const w=winCheck(n.boards[b],B,B,i);
+  if(w) n.subStatus[b]=p; else if(isFull(n.boards[b])) n.subStatus[b]='draw';
+  if(n.subStatus[b]===p){ const meta=n.subStatus.map(s=>(s==='X'||s==='O')?s:null); const mw=winCheck(meta,B,B,b); if(mw){ n.status='won'; n.winner=p; } }
+  if(n.status==='playing' && !n.subStatus.some(s=>s==='playing')) n.status='draw';
+  n.activeBoard = (n.subStatus[i]==='playing') ? i : null;
+  n.current=other(p);
+  return n;
+}
+function evalUlt(st,me){
+  const opp=other(me), B=st.B; let s=0;
+  const meta=st.subStatus.map(x=>(x==='X'||x==='O')?x:null);
+  s += 1200*evalClassic(meta,B,B,me,opp);
+  for(let b=0;b<st.subStatus.length;b++){ const v=st.subStatus[b]; if(v===me)s+=120; else if(v===opp)s-=120; }
+  for(let b=0;b<st.boards.length;b++){ if(st.subStatus[b]==='playing') s+=0.15*evalClassic(st.boards[b],B,B,me,opp); }
+  return s;
+}
+function ultImmediateWin(st,p){ // returns move that wins the match for p, or null
+  for(const [b,i] of ultLegalMoves(st)){ const n=ultApply(st,b,i,p); if(n.status==='won'&&n.winner===p) return [b,i]; }
+  return null;
+}
+function chooseUlt(me,diff){
+  const st=cloneUlt(); const moves=ultLegalMoves(st); if(!moves.length) return null;
+  // 1) immediate match win
+  const win=ultImmediateWin(st,me); if(win) return win;
+  if(diff==='easy'){
+    // prefer a sub-board win, else random
+    for(const [b,i] of moves){ const n=ultApply(st,b,i,me); if(n.subStatus[b]===me) return [b,i]; }
+    return moves[Math.random()*moves.length|0];
+  }
+  // medium & hard: score each move; block opponent's immediate reply win
+  const depth = diff==='hard' ? (st.B===3?3:1) : 1;
+  const deadline=performance.now()+150;
+  let best=moves[0], bv=-Infinity;
+  // light move ordering by shallow eval, cap branching
+  const scored=moves.map(m=>{ const n=ultApply(st,m[0],m[1],me); return {m,n,q:evalUlt(n,me)}; })
+                    .sort((a,b)=>b.q-a.q).slice(0, Math.max(8, diff==='hard'?14:moves.length));
+  for(const {m,n,q} of scored){
+    let v;
+    if(n.status==='won'&&n.winner===me) v=1e9;
+    else {
+      // opponent immediate win available? big penalty
+      const oppWin = ultImmediateWin(n, other(me));
+      if(oppWin) v = -1e8 + q*0;      // avoid handing a win
+      else v = (depth>1) ? -ultNega(n, depth-1, -Infinity, Infinity, me, deadline) : q;
+    }
+    if(v>bv){ bv=v; best=m; }
+    if(performance.now()>deadline) break;
+  }
+  return best;
+}
+function ultNega(st,depth,alpha,beta,me,dl){
+  if(st.status==='won') return st.winner===me? 1e9 : -1e9;
+  if(st.status==='draw') return 0;
+  if(depth===0||performance.now()>dl) return evalUlt(st, st.current===me?me:other(me)) * (st.current===me?1:-1);
+  let moves=ultLegalMoves(st);
+  // order + cap
+  moves = moves.map(m=>({m,q:evalUlt(ultApply(st,m[0],m[1],st.current), st.current)}))
+               .sort((a,b)=>b.q-a.q).slice(0,12).map(o=>o.m);
+  let v=-Infinity;
+  for(const m of moves){ const n=ultApply(st,m[0],m[1],st.current);
+    const val = -ultNega(n, depth-1, -beta, -alpha, me, dl);
+    if(val>v) v=val; if(v>alpha)alpha=v; if(alpha>=beta)break;
+    if(performance.now()>dl) break;
+  }
+  return v;
+}
+
+/* ============================ persistence ============================ */
+function saveGame(){ try{ if(G.status==='playing') localStorage.setItem('ennead.game', JSON.stringify(snapshot())); }catch(e){} }
+function tryResume(){
+  try{
+    const raw=localStorage.getItem('ennead.game'); if(!raw) return false;
+    const s=JSON.parse(raw);
+    if(s.mode!==settings.mode) return false;
+    if(s.mode==='classic' && (s.N!==settings.N||s.k!==settings.k)) return false;
+    if(s.mode==='ultimate' && s.B!==settings.B) return false;
+    G={...s, history:[]};
+    buildBoard(); syncBoard(); clearWinLine();
+    updateUndo(); maybeAI();
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ============================ theme ============================ */
+function applyTheme(){
+  const r=document.documentElement;
+  if(settings.theme==='system'){ r.removeAttribute('data-theme'); }
+  else r.setAttribute('data-theme', settings.theme);
+}
+
+/* ============================ settings UI ============================ */
+function segInit(id, val, on){
+  const el=$(id);
+  el.querySelectorAll('button').forEach(btn=>{
+    btn.classList.toggle('on', btn.dataset.v===String(val));
+    btn.onclick=()=>{ el.querySelectorAll('button').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); on(btn.dataset.v); };
+  });
+}
+let draft;
+function openSettings(){
+  draft={...settings};
+  fillSelect('selN', range(3,9), draft.N);
+  fillK();
+  fillSelect('selB', range(3,5), draft.B);
+  segInit('segMode', draft.mode, v=>{ draft.mode=v; toggleGroups(); });
+  segInit('segOpp', draft.opponent, v=>{ draft.opponent=v; $('rowDiff').style.display=v==='ai'?'':'none'; });
+  segInit('segDiff', draft.difficulty, v=>draft.difficulty=v);
+  segInit('segFirst', draft.firstPlayer, v=>draft.firstPlayer=v);
+  segInit('segTheme', draft.theme, v=>{ draft.theme=v; settings.theme=v; applyTheme(); });
+  segInit('segSound', draft.sound?'on':'off', v=>{ draft.sound=v==='on'; settings.sound=draft.sound; });
+  $('selN').onchange=()=>{ draft.N=+$('selN').value; fillK(); };
+  $('selK').onchange=()=>{ draft.k=+$('selK').value; };
+  $('selB').onchange=()=>{ draft.B=+$('selB').value; };
+  $('rowDiff').style.display=draft.opponent==='ai'?'':'none';
+  toggleGroups();
+  $('settingsScrim').classList.add('open');
+}
+function toggleGroups(){ $('grpClassic').hidden = draft.mode!=='classic'; $('grpUltimate').hidden = draft.mode!=='ultimate'; }
+function fillK(){ const kmax=draft.N; draft.k=Math.min(draft.k, kmax); if(draft.k<3)draft.k=Math.min(3,kmax);
+  fillSelect('selK', range(3,kmax), Math.min(draft.k, kmax)); draft.k=+$('selK').value; }
+function fillSelect(id, arr, val){ const s=$(id); s.innerHTML=''; for(const v of arr){ const o=document.createElement('option'); o.value=v; o.textContent=v; if(v===val)o.selected=true; s.appendChild(o); } if(!arr.includes(val)) s.value=arr[0]; }
+function range(a,b){ const r=[]; for(let i=a;i<=b;i++)r.push(i); return r; }
+function closeSettings(){ $('settingsScrim').classList.remove('open'); }
+function applySettings(){
+  const geoChanged = draft.mode!==settings.mode || draft.N!==settings.N || draft.k!==settings.k ||
+    draft.B!==settings.B || draft.opponent!==settings.opponent || draft.firstPlayer!==settings.firstPlayer;
+  settings={...settings, ...draft};
+  settings.N=clampN(settings.N); settings.k=Math.max(3,Math.min(settings.k,settings.N));
+  saveSettings(); applyTheme(); closeSettings();
+  localStorage.removeItem('ennead.game');
+  newGame();
+}
+
+/* ============================ keyboard ============================ */
+function onKey(e){
+  if($('settingsScrim').classList.contains('open')) return;
+  const k=e.key.toLowerCase();
+  if(k==='u'){ undo(); return; }
+  if(k==='n'){ newGame(); return; }
+  if(['arrowup','arrowdown','arrowleft','arrowright',' ','enter'].includes(e.key.toLowerCase())){
+    e.preventDefault(); handleFocusKey(e.key.toLowerCase());
+  }
+}
+function legalCellList(){
+  const list=[];
+  if(G.mode==='classic'){ for(let i=0;i<G.cells.length;i++) if(classicLegal(i)) list.push({i,el:cellEls[i],r:Math.floor(i/G.N),c:i%G.N}); }
+  else { const T=G.B*G.B; for(let b=0;b<T;b++) for(let i=0;i<T;i++) if(ultLegal(b,i)){ const R=Math.floor(b/G.B)*G.B+Math.floor(i/G.B), C=(b%G.B)*G.B+(i%G.B); list.push({b,i,el:cellEls[b][i],r:R,c:C}); } }
+  return list;
+}
+function handleFocusKey(key){
+  const list=legalCellList(); if(!list.length) return;
+  let cur=list.find(o=>o.el.classList.contains('focusring'));
+  if(!cur){ cur=list[0]; }
+  if(key==='enter'||key===' '){ if(cur){ if(G.mode==='classic')humanClassic(cur.i); else humanUlt(cur.b,cur.i); } return; }
+  const dirs={arrowup:[-1,0],arrowdown:[1,0],arrowleft:[0,-1],arrowright:[0,1]}[key];
+  let best=null, bd=Infinity;
+  for(const o of list){ if(o===cur)continue; const dr=o.r-cur.r, dc=o.c-cur.c;
+    if(dirs[0]&&Math.sign(dr)!==dirs[0])continue; if(dirs[1]&&Math.sign(dc)!==dirs[1])continue;
+    const d=Math.abs(dr)+Math.abs(dc); if(d<bd){bd=d;best=o;} }
+  const target=best||cur;
+  list.forEach(o=>o.el.classList.remove('focusring')); target.el.classList.add('focusring');
+}
+
+/* ============================ wire up ============================ */
+$('settingsBtn').onclick=openSettings;
+$('settingsScrim').onclick=e=>{ if(e.target===$('settingsScrim')) closeSettings(); };
+$('applyBtn').onclick=applySettings;
+$('newBtn').onclick=()=>{ localStorage.removeItem('ennead.game'); newGame(); };
+$('undoBtn').onclick=undo;
+$('rematchBtn').onclick=()=>{ closeBanner(); newGame(); };
+window.addEventListener('keydown', onKey);
+window.addEventListener('resize', ()=>{ if(G && G.status!=='playing') drawWinLine(); });
+
+applyTheme();
+if(!tryResume()) newGame();
+
+/* ============================ test hooks ============================ */
+window.__ennead={
+  get G(){ return G; }, get settings(){ return settings; },
+  engine:{ winCheck, isFull, evalClassic, evalUlt, ultApply, minimaxClassic, scan3 },
+  set(part){ settings={...settings,...part}; settings.N=clampN(settings.N); settings.k=Math.max(3,Math.min(settings.k,settings.N)); saveSettings(); },
+  newGame,
+  play(a,b){ if(G.mode==='classic') return doClassicMove(a); return doUltMove(a,b); },
+  aiStep(){ if(aiTurn()){ aiMove(); return true; } return false; },
+  undo,
+  legalMoves(){ return G.mode==='classic'? G.cells.map((v,i)=>v?-1:i).filter(i=>i>=0) : ultLegalMoves(cloneUlt()); }
+};
+</script>
+</body>
+</html>
