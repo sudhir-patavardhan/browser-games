@@ -61,26 +61,40 @@
 
       <a class="card" href="blackjack/index.html">
         <span class="thumb">
-          <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Blackjack cards and chips">
+          <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Realistic Blackjack cards">
             <defs>
               <linearGradient id="bj-felt" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0" stop-color="#0f3d0f"/><stop offset="1" stop-color="#062406"/>
               </linearGradient>
             </defs>
             <rect width="320" height="120" fill="url(#bj-felt)"/>
-            <!-- cards -->
+            <!-- Realistic 10 of clubs -->
             <g>
-              <rect x="60" y="25" width="55" height="78" rx="4" fill="#fff" stroke="#111" stroke-width="3"/>
-              <text x="78" y="48" font-size="28" fill="#c00">A</text>
-              <text x="95" y="65" font-size="22" fill="#c00">♥</text>
-              <rect x="160" y="35" width="55" height="78" rx="4" fill="#fff" stroke="#111" stroke-width="3" transform="rotate(12 180 70)"/>
-              <text x="175" y="58" font-size="26" fill="#111">10</text>
+              <rect x="70" y="22" width="58" height="82" rx="6" fill="#fff" stroke="#111" stroke-width="3"/>
+              <g fill="#111">
+                <text x="82" y="38" font-size="13" font-weight="800">10</text>
+                <text x="82" y="50" font-size="15">♣</text>
+                <text x="110" y="72" font-size="22" font-weight="700">10</text>
+                <text x="110" y="86" font-size="18">♣</text>
+                <text x="82" y="100" font-size="13" font-weight="800" transform="rotate(180 82 100)">10</text>
+                <text x="82" y="112" font-size="15" transform="rotate(180 82 112)">♣</text>
+              </g>
             </g>
-            <!-- chips -->
+            <!-- Ace of hearts (tilted) -->
+            <g transform="rotate(8 200 55)">
+              <rect x="165" y="18" width="58" height="82" rx="6" fill="#fff" stroke="#111" stroke-width="3"/>
+              <g fill="#c00">
+                <text x="177" y="34" font-size="14" font-weight="800">A</text>
+                <text x="177" y="47" font-size="16">♥</text>
+                <text x="200" y="68" font-size="26" font-weight="700">A</text>
+                <text x="200" y="84" font-size="22">♥</text>
+              </g>
+            </g>
+            <!-- Chips -->
             <g>
-              <circle cx="240" cy="55" r="18" fill="#ffd700" stroke="#b38b00" stroke-width="4"/>
-              <text x="240" y="60" font-size="11" fill="#111" text-anchor="middle" font-weight="bold">25</text>
-              <circle cx="275" cy="68" r="15" fill="#c00" stroke="#900" stroke-width="4"/>
+              <circle cx="255" cy="52" r="17" fill="#ffd700" stroke="#b38b00" stroke-width="4"/>
+              <text x="255" y="57" font-size="11" fill="#111" text-anchor="middle" font-weight="bold">25</text>
+              <circle cx="282" cy="68" r="14" fill="#c00" stroke="#900" stroke-width="4"/>
             </g>
           </svg>
         </span>
