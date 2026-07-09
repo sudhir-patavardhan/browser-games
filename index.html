@@ -219,27 +219,32 @@
                 <circle cx="314" cy="83" r="5"/>
               </g>
             </g>
-            <!-- bow (recurve), string drawn back to the left -->
-            <g fill="none" stroke-linecap="round">
-              <path d="M150 12 C 178 26, 178 94, 150 108" stroke="#e8b25a" stroke-width="5"/>
-              <path d="M150 12 C 142 8, 136 8, 132 14" stroke="#e8b25a" stroke-width="4"/>
-              <path d="M150 108 C 142 112, 136 112, 132 106" stroke="#e8b25a" stroke-width="4"/>
-              <path d="M150 12 L120 60 L150 108" stroke="#fff0c4" stroke-width="1.6" stroke-opacity="0.9"/>
+            <!-- recurve bow: belly bulges toward the target (right), tips curl forward -->
+            <g fill="none" stroke="#e8b25a" stroke-linecap="round">
+              <path d="M158 12 C 184 32, 184 88, 158 108" stroke-width="5"/>
+              <path d="M158 12 C 165 7, 173 8, 177 15" stroke-width="4"/>
+              <path d="M158 108 C 165 113, 173 112, 177 105" stroke-width="4"/>
+              <line x1="182" y1="49" x2="182" y2="71" stroke="#a9713a" stroke-width="6"/>
             </g>
-            <!-- arrow -->
-            <g stroke-linecap="round">
-              <line x1="120" y1="60" x2="246" y2="60" stroke="#7a4a24" stroke-width="3"/>
-              <g stroke="#ffe4a0" stroke-width="2">
-                <line x1="120" y1="60" x2="132" y2="52"/><line x1="120" y1="60" x2="132" y2="68"/>
-                <line x1="127" y1="60" x2="138" y2="53"/><line x1="127" y1="60" x2="138" y2="67"/>
+            <!-- bowstring, drawn back to the nock on the left -->
+            <path d="M158 12 L118 60 L158 108" fill="none" stroke="#fff0c4" stroke-width="1.6" stroke-opacity="0.9"/>
+            <!-- arrow, pointing right toward the flame -->
+            <g>
+              <line x1="118" y1="60" x2="250" y2="60" stroke="#6f4322" stroke-width="3" stroke-linecap="round"/>
+              <!-- fletching: short vanes across the tail (never a second arrowhead) -->
+              <g stroke="#ff6a4d" stroke-width="3" stroke-linecap="round">
+                <line x1="122" y1="53" x2="132" y2="67"/>
+                <line x1="128" y1="53" x2="138" y2="67"/>
+                <line x1="134" y1="53" x2="144" y2="67"/>
               </g>
-              <polygon points="244,53 262,60 244,67" fill="#ffe08a"/>
+              <!-- arrowhead -->
+              <polygon points="248,52 269,60 248,68" fill="#ffd27a" stroke="#a9713a" stroke-width="1" stroke-linejoin="round"/>
             </g>
-            <!-- flame at the arrowhead -->
+            <!-- flame streaming off the arrowhead -->
             <g filter="url(#da-glow)">
-              <path d="M250 60 C 268 44, 296 50, 306 60 C 296 70, 268 76, 250 60 Z" fill="url(#da-flame)"/>
-              <path d="M256 60 C 268 50, 286 54, 294 60 C 286 66, 268 70, 256 60 Z" fill="#ffe98a"/>
-              <path d="M300 60 C 306 54, 312 56, 314 52 C 314 60, 310 64, 300 60 Z" fill="#ff9a3d"/>
+              <path d="M258 60 C 274 44, 300 50, 311 60 C 300 70, 274 76, 258 60 Z" fill="url(#da-flame)"/>
+              <path d="M264 60 C 276 50, 292 54, 301 60 C 292 66, 276 70, 264 60 Z" fill="#ffe98a"/>
+              <path d="M305 60 C 311 54, 316 55, 318 51 C 318 59, 314 64, 305 60 Z" fill="#ff9a3d"/>
             </g>
           </svg>
         </span>
