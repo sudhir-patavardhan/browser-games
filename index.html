@@ -61,40 +61,47 @@
 
       <a class="card" href="blackjack/index.html">
         <span class="thumb">
-          <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Realistic Blackjack cards">
+          <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Realistic Blackjack cards with corner indices">
             <defs>
               <linearGradient id="bj-felt" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0" stop-color="#0f3d0f"/><stop offset="1" stop-color="#062406"/>
               </linearGradient>
             </defs>
             <rect width="320" height="120" fill="url(#bj-felt)"/>
-            <!-- Realistic 10 of clubs -->
+            <!-- 10 of clubs - realistic with corner indices -->
             <g>
-              <rect x="70" y="22" width="58" height="82" rx="6" fill="#fff" stroke="#111" stroke-width="3"/>
+              <rect x="68" y="20" width="62" height="86" rx="7" fill="#fff" stroke="#111" stroke-width="3.5"/>
+              <!-- top-left corner -->
               <g fill="#111">
-                <text x="82" y="38" font-size="13" font-weight="800">10</text>
-                <text x="82" y="50" font-size="15">♣</text>
-                <text x="110" y="72" font-size="22" font-weight="700">10</text>
-                <text x="110" y="86" font-size="18">♣</text>
-                <text x="82" y="100" font-size="13" font-weight="800" transform="rotate(180 82 100)">10</text>
-                <text x="82" y="112" font-size="15" transform="rotate(180 82 112)">♣</text>
+                <text x="76" y="36" font-size="12" font-weight="800">10</text>
+                <text x="76" y="49" font-size="14">♣</text>
+              </g>
+              <!-- center -->
+              <g fill="#111" text-anchor="middle">
+                <text x="99" y="68" font-size="20" font-weight="700">10</text>
+                <text x="99" y="84" font-size="18">♣</text>
+              </g>
+              <!-- bottom-right corner (rotated) -->
+              <g fill="#111" transform="rotate(180 125 95)">
+                <text x="125" y="95" font-size="12" font-weight="800">10</text>
+                <text x="125" y="108" font-size="14">♣</text>
               </g>
             </g>
             <!-- Ace of hearts (tilted) -->
-            <g transform="rotate(8 200 55)">
-              <rect x="165" y="18" width="58" height="82" rx="6" fill="#fff" stroke="#111" stroke-width="3"/>
+            <g transform="rotate(7 205 58)">
+              <rect x="168" y="17" width="62" height="86" rx="7" fill="#fff" stroke="#111" stroke-width="3.5"/>
               <g fill="#c00">
-                <text x="177" y="34" font-size="14" font-weight="800">A</text>
-                <text x="177" y="47" font-size="16">♥</text>
-                <text x="200" y="68" font-size="26" font-weight="700">A</text>
-                <text x="200" y="84" font-size="22">♥</text>
+                <text x="176" y="33" font-size="13" font-weight="800">A</text>
+                <text x="176" y="46" font-size="15">♥</text>
+                <text x="199" y="67" font-size="24" font-weight="700">A</text>
+                <text x="199" y="83" font-size="20">♥</text>
               </g>
             </g>
             <!-- Chips -->
             <g>
-              <circle cx="255" cy="52" r="17" fill="#ffd700" stroke="#b38b00" stroke-width="4"/>
-              <text x="255" y="57" font-size="11" fill="#111" text-anchor="middle" font-weight="bold">25</text>
-              <circle cx="282" cy="68" r="14" fill="#c00" stroke="#900" stroke-width="4"/>
+              <circle cx="258" cy="52" r="17" fill="#ffd700" stroke="#b38b00" stroke-width="4"/>
+              <text x="258" y="57" font-size="11" fill="#111" text-anchor="middle" font-weight="bold">25</text>
+              <circle cx="285" cy="68" r="14" fill="#c00" stroke="#900" stroke-width="4"/>
             </g>
           </svg>
         </span>
