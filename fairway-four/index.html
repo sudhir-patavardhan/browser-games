@@ -442,6 +442,62 @@ const arcGeom=new THREE.BufferGeometry().setFromPoints(arcPts);
 const arcLine=new THREE.Points(arcGeom, new THREE.PointsMaterial({ color:0xffffff, size:2.6, sizeAttenuation:false, transparent:true, opacity:0.9 }));
 scene.add(arcLine);
 
+// a little golfer who strides up to the ball between shots
+function makeGolfer(){
+  const grp=new THREE.Group();
+  const mat=(c)=>new THREE.MeshLambertMaterial({ color:c });
+  const skin=0xd8a67a, shirt=0xd8483a, pants=0x25324f, cap=0xf2f2f2, steel=0x9aa0a6;
+  const torso=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.56,0.24), mat(shirt)); torso.position.y=0.9; grp.add(torso);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.15,10,8), mat(skin)); head.position.y=1.34; grp.add(head);
+  const capM=new THREE.Mesh(new THREE.SphereGeometry(0.16,10,6,0,Math.PI*2,0,Math.PI*0.55), mat(cap)); capM.position.y=1.37; grp.add(capM);
+  const brim=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.03,0.15), mat(cap)); brim.position.set(0,1.35,0.14); grp.add(brim);
+  function limb(w,h,d,c,px,py){
+    const piv=new THREE.Group(); piv.position.set(px,py,0);
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat(c)); m.position.y=-h/2; piv.add(m);
+    grp.add(piv); return piv;
+  }
+  const legL=limb(0.15,0.62,0.16,pants,-0.11,0.62), legR=limb(0.15,0.62,0.16,pants,0.11,0.62);
+  const armL=limb(0.11,0.5,0.11,shirt,-0.27,1.14), armR=limb(0.11,0.5,0.11,shirt,0.27,1.14);
+  const club=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,0.85,6), mat(steel));
+  club.position.set(0,-0.42,0.06); club.rotation.x=0.25; armR.add(club);
+  grp.scale.setScalar(1.12); grp.visible=false; scene.add(grp);
+  return { grp, legL, legR, armL, armR, from:new THREE.Vector3(), to:new THREE.Vector3(),
+           t:1, walking:false, phase:0, ready:false };
+}
+const golfer=makeGolfer();
+function startWalk(){
+  const aimDir=new THREE.Vector3(Math.sin(game.aim),0,Math.cos(game.aim));
+  const side=new THREE.Vector3(aimDir.z,0,-aimDir.x);      // perpendicular to aim
+  const stance=ball.pos.clone().addScaledVector(side,0.85); stance.y=rawHeight(stance.x,stance.z);
+  const from=stance.clone().addScaledVector(aimDir,-13);   // start ~13 m back, up the line of play
+  from.y=rawHeight(from.x,from.z);
+  golfer.from.copy(from); golfer.to.copy(stance);
+  golfer.t=0; golfer.walking=true; golfer.ready=true; golfer.phase=0;
+}
+function updateGolfer(dt){
+  const g=golfer;
+  const vis=g.ready && (game.state==='BIRDS'||game.state==='GREEN'||(rig.trans && rig.mode==='players'));
+  g.grp.visible=vis;
+  if(!vis) return;
+  const yaw=Math.atan2(g.to.x-g.from.x, g.to.z-g.from.z);
+  if(g.walking){
+    g.t=Math.min(1, g.t + dt/2.2);
+    const p=g.from.clone().lerp(g.to, smooth(g.t)); p.y=rawHeight(p.x,p.z);
+    g.phase+=dt*9;
+    const sw=Math.sin(g.phase)*0.5;
+    g.legL.rotation.x=sw; g.legR.rotation.x=-sw;
+    g.armL.rotation.x=-sw*0.8; g.armR.rotation.x=sw*0.8;
+    g.grp.position.set(p.x, p.y+Math.abs(Math.sin(g.phase))*0.04, p.z);
+    g.grp.rotation.y=yaw;
+    if(g.t>=1) g.walking=false;
+  } else {
+    // settle into the address stance beside the ball
+    g.grp.position.set(g.to.x, g.to.y, g.to.z);
+    g.grp.rotation.y=Math.atan2(Math.sin(game.aim),Math.cos(game.aim));
+    g.legL.rotation.x*=0.8; g.legR.rotation.x*=0.8; g.armL.rotation.x*=0.8; g.armR.rotation.x*=0.8;
+  }
+}
+
 // putt grid + flow dots (built per green on demand)
 let puttGrid=null, flowDots=null, flowVel=[];
 function buildPuttGrid(H){
@@ -637,9 +693,9 @@ function suggestClub(){
   game.club=best;
 }
 function allowedClub(i){
-  if(ball.lie==='green') return i===PUTTER;
-  if(ball.lie==='sand') return i===5||i===6;
-  return i!==PUTTER;
+  if(ball.lie==='green') return i===PUTTER;          // on the green: putter only
+  if(ball.lie==='sand') return i===5||i===6||i===PUTTER;  // bunker: wedges or a putt-out
+  return true;                                        // anywhere else: any club, putter included
 }
 
 /* ============================== CAMERA RIG ============================== */
@@ -859,6 +915,7 @@ function afterSettle(){
   newGust(); suggestClub(); game.aimDirty=true;
   const dir=Math.atan2(H().pin.x-ball.pos.x, H().pin.z-ball.pos.z);
   game.aim=dir;
+  startWalk();                                     // stride up to the ball for the next shot
   if(ball.lie==='green'){
     game.state='GREEN';
     buildPuttGrid(H());
@@ -890,7 +947,7 @@ function meterTick(dt){
   if(s.phase===1){
     s.needle += (s.dirUp?1:-1)*sp*dt;
     if(s.needle>=100){ s.needle=100; s.dirUp=false; }
-    if(s.needle<=0 && !s.dirUp){ hideMeter(); game.state=(game.club===PUTTER)?'GREEN':'PLAYERS'; return; }
+    if(s.needle<=0 && !s.dirUp){ hideMeter(); game.state=game.swingReturn||'PLAYERS'; game.aimDirty=true; return; }
   } else if(s.phase===2){
     s.needle -= sp*dt;
     if(s.needle<=-14){ commitSwing(-25); return; }   // whiffed the strike zone: duff
@@ -927,6 +984,13 @@ function refreshAimVisuals(){
     dispEllipse.geometry.setFromPoints(pts); dispEllipse.visible=game.club!==PUTTER;
     arcLine.visible=false;
   } else if(game.state==='PLAYERS'||game.state==='SWING'){
+    if(game.club===PUTTER){
+      // putter has no ballistic arc — show a straight ground-line to aim the roll
+      const to=from.clone().addScaledVector(dir,18); to.y=rawHeight(to.x,to.z)+0.3;
+      aimRay.geometry.setFromPoints([from,to]); aimRay.visible=true;
+      arcLine.visible=false; dispEllipse.visible=false;
+      return;
+    }
     const pts=[];
     simFlight(V0[game.club]*(ball.lie==='rough'?0.85:(ball.lie==='sand'?0.75:1)), club.loft, spinOf(club), 0, game.wind, game.aim, ball.pos, pts);
     const g=arcLine.geometry.attributes.position;
@@ -1044,6 +1108,7 @@ function endIntro(){
   const d=rig.desired();
   rig.pos.copy(d.pos); rig.look.copy(d.look); rig.fov=d.fov;
   game.aimDirty=true;
+  startWalk();                                     // walk onto the tee
 }
 function resetRound(){
   game.scores=[]; startHole(0);
@@ -1084,7 +1149,7 @@ window.addEventListener('pointermove',(e)=>{
   moved+=Math.abs(dx)+Math.abs(dy);
   if(game.state==='BIRDS'){ rig.orbitYaw-=dx*0.005; rig.orbitPitch=clamp(rig.orbitPitch+dy*0.003, 35*DEG, 72*DEG); }
   else if(game.state==='GREEN'){ rig.greenYaw-=dx*0.005; }
-  else if(game.state==='PLAYERS'){ game.aim-=dx*0.0012; game.aimDirty=true; }
+  else if(game.state==='PLAYERS'||game.state==='SWING'){ game.aim-=dx*0.0012; game.aimDirty=true; }
 });
 function endPointer(e){
   const wasPinch=pinching;
@@ -1135,7 +1200,7 @@ function onSpace(){
   }
   if(game.state==='PLAYERS'||game.state==='GREEN'){
     if(rig.trans) return;                     // let the swoop finish first
-    game.state='SWING'; showMeter(); return;
+    game.swingReturn=game.state; game.state='SWING'; showMeter(); return;
   }
   if(game.state==='SWING'){ meterClick(); return; }
 }
@@ -1159,7 +1224,7 @@ el('btnMute').addEventListener('click',()=>{
 // held keys: aim + birdseye nudge (processed per frame)
 function heldKeys(dt){
   const aimSpd=(keys['Shift']?4:22)*DEG*dt*0.55;
-  if(game.state==='PLAYERS'||game.state==='GREEN'||game.state==='BIRDS'){
+  if(game.state==='PLAYERS'||game.state==='GREEN'||game.state==='BIRDS'||game.state==='SWING'){
     if(keys['ArrowLeft']||keys['a']||keys['A']){ game.aim+=aimSpd; game.aimDirty=true; }
     if(keys['ArrowRight']||keys['d']||keys['D']){ game.aim-=aimSpd; game.aimDirty=true; }
   }
@@ -1193,7 +1258,7 @@ function frame(now){
       if(game.settleT>0.8) afterSettle();
     }
     if(game.state==='SWING') meterTick(dt);
-    if(game.aimDirty && (game.state==='BIRDS'||game.state==='PLAYERS'||game.state==='GREEN')){ refreshAimVisuals(); game.aimDirty=false; }
+    if(game.aimDirty && (game.state==='BIRDS'||game.state==='PLAYERS'||game.state==='GREEN'||game.state==='SWING')){ refreshAimVisuals(); game.aimDirty=false; }
     if(game.state==='FLIGHT'||game.state==='SETTLE'){ aimRay.visible=false; dispEllipse.visible=false; arcLine.visible=false; }
     updateHUD();
     if(game.msgT>0){ game.msgT-=dt; if(game.msgT<=0) el('hudMsg').style.display='none'; }
@@ -1204,6 +1269,7 @@ function frame(now){
     const pulse=1+0.15*Math.sin(now/300);
     ringMesh.scale.set(pulse,pulse,pulse);
     ringMesh.visible=(game.state==='BIRDS'||game.state==='GREEN');
+    updateGolfer(dt);
 
     // flag wave
     for(const fg of flagCloths){
@@ -1228,10 +1294,11 @@ window.__golf={
   start(){ document.getElementById('playBtn').click(); },
   skipIntro(){ if(game.state==='INTRO') endIntro(); },
   address(){ onSpace(); },
-  toggleView, suggest:suggestClub,
+  toggleView, suggest:suggestClub, allowedClub, golfer, PUTTER,
   setClub(i){ if(allowedClub(i)) { game.club=i; game.aimDirty=true; } },
   aimAtPin(){ game.aim=Math.atan2(H().pin.x-ball.pos.x, H().pin.z-ball.pos.z); game.aimDirty=true; },
   hit(power,err){ if(game.state==='PLAYERS'||game.state==='GREEN'||game.state==='BIRDS') executeShot(power,err||0); },
+  beginSwing(){ if(game.state==='PLAYERS'||game.state==='GREEN'){ game.swingReturn=game.state; game.state='SWING'; showMeter(); } },
   finishSettle(){ if(game.state==='SETTLE'){ game.settleT=99; } },
   distToPin, carryOf(i){ const r=simFlight(V0[i],CLUBS[i].loft,spinOf(CLUBS[i]),0,null,0,new THREE.Vector3(0,rawHeight(0,0),0)); return Math.hypot(r.p.x,r.p.z); }
 };
