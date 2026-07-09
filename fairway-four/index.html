@@ -442,60 +442,130 @@ const arcGeom=new THREE.BufferGeometry().setFromPoints(arcPts);
 const arcLine=new THREE.Points(arcGeom, new THREE.PointsMaterial({ color:0xffffff, size:2.6, sizeAttenuation:false, transparent:true, opacity:0.9 }));
 scene.add(arcLine);
 
-// a little golfer who strides up to the ball between shots
+// a proper golfer with a stand bag, who walks to the ball and takes a real swing
 function makeGolfer(){
   const grp=new THREE.Group();
-  const mat=(c)=>new THREE.MeshLambertMaterial({ color:c });
-  const skin=0xd8a67a, shirt=0xd8483a, pants=0x25324f, cap=0xf2f2f2, steel=0x9aa0a6;
-  const torso=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.56,0.24), mat(shirt)); torso.position.y=0.9; grp.add(torso);
-  const head=new THREE.Mesh(new THREE.SphereGeometry(0.15,10,8), mat(skin)); head.position.y=1.34; grp.add(head);
-  const capM=new THREE.Mesh(new THREE.SphereGeometry(0.16,10,6,0,Math.PI*2,0,Math.PI*0.55), mat(cap)); capM.position.y=1.37; grp.add(capM);
-  const brim=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.03,0.15), mat(cap)); brim.position.set(0,1.35,0.14); grp.add(brim);
-  function limb(w,h,d,c,px,py){
+  const M=(c)=>new THREE.MeshLambertMaterial({ color:c });
+  const skin=0xe0b48c, shirtC=0xf4f4f4, vestC=0xc0392b, pantsC=0x2b3550, capC=0xc0392b, shoeC=0x1d1d1d, steel=0xc2c6cc, gripC=0x141414;
+  function limb(parent,w,h,d,c,px,py){
     const piv=new THREE.Group(); piv.position.set(px,py,0);
-    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat(c)); m.position.y=-h/2; piv.add(m);
-    grp.add(piv); return piv;
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), M(c)); m.position.y=-h/2; piv.add(m);
+    parent.add(piv); return piv;
   }
-  const legL=limb(0.15,0.62,0.16,pants,-0.11,0.62), legR=limb(0.15,0.62,0.16,pants,0.11,0.62);
-  const armL=limb(0.11,0.5,0.11,shirt,-0.27,1.14), armR=limb(0.11,0.5,0.11,shirt,0.27,1.14);
-  const club=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,0.85,6), mat(steel));
-  club.position.set(0,-0.42,0.06); club.rotation.x=0.25; armR.add(club);
-  grp.scale.setScalar(1.12); grp.visible=false; scene.add(grp);
-  return { grp, legL, legR, armL, armR, from:new THREE.Vector3(), to:new THREE.Vector3(),
-           t:1, walking:false, phase:0, ready:false };
+  const legL=limb(grp,0.16,0.62,0.17,pantsC,-0.12,0.64), legR=limb(grp,0.16,0.62,0.17,pantsC,0.12,0.64);
+  const shoeL=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.09,0.3),M(shoeC)); shoeL.position.set(-0.12,0.045,0.06); grp.add(shoeL);
+  const shoeR=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.09,0.3),M(shoeC)); shoeR.position.set(0.12,0.045,0.06); grp.add(shoeR);
+  // hip hinge (bends forward at address); the steady head rides here
+  const hinge=new THREE.Group(); hinge.position.y=0.64; grp.add(hinge);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.15,10,8), M(skin)); head.position.set(0,0.74,0.02); hinge.add(head);
+  const cap=new THREE.Mesh(new THREE.SphereGeometry(0.16,10,6,0,Math.PI*2,0,Math.PI*0.55), M(capC)); cap.position.set(0,0.77,0.02); hinge.add(cap);
+  const brim=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.03,0.16), M(capC)); brim.position.set(0,0.75,0.17); hinge.add(brim);
+  // turning upper body — shoulders, arms and club rotate about the spine for the swing
+  const turn=new THREE.Group(); hinge.add(turn);
+  const torso=new THREE.Mesh(new THREE.BoxGeometry(0.44,0.56,0.26), M(shirtC)); torso.position.y=0.3; turn.add(torso);
+  const vest=new THREE.Mesh(new THREE.BoxGeometry(0.47,0.42,0.29), M(vestC)); vest.position.y=0.36; turn.add(vest);
+  const armL=limb(turn,0.1,0.5,0.1,shirtC,-0.29,0.54), armR=limb(turn,0.1,0.5,0.1,shirtC,0.29,0.54);
+  // club held at the hands: grip + shaft + head
+  const clubPivot=new THREE.Group(); clubPivot.position.set(0,0.28,0.17); turn.add(clubPivot);
+  const grip=new THREE.Mesh(new THREE.CylinderGeometry(0.022,0.022,0.18,6), M(gripC)); grip.position.y=-0.09; clubPivot.add(grip);
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.013,0.019,1.02,6), M(steel)); shaft.position.y=-0.6; clubPivot.add(shaft);
+  const headM=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.07,0.2), M(0xe8ecf0)); headM.position.set(0,-1.14,0.07); clubPivot.add(headM);
+  grp.scale.setScalar(1.14); grp.visible=false; scene.add(grp);
+  return { grp, hinge, turn, legL, legR, armL, armR, clubPivot,
+           from:new THREE.Vector3(), to:new THREE.Vector3(),
+           t:1, walking:false, phase:0, ready:false, pose:0, swing:0, follow:0, last:'' };
+}
+function makeBag(){
+  const g=new THREE.Group();
+  const M=(c)=>new THREE.MeshLambertMaterial({ color:c });
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.18,1.0,12), M(0x1f6f4a)); body.position.y=0.55; g.add(body);
+  const cuff=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,0.16,12), M(0x14563a)); cuff.position.y=1.0; g.add(cuff);
+  const stripe=new THREE.Mesh(new THREE.CylinderGeometry(0.155,0.185,0.16,12), M(0xf0f0f0)); stripe.position.y=0.42; g.add(stripe);
+  const steel=M(0xc2c6cc);
+  const heads=[[-0.06,0.05,0x222222,0.085],[0.02,-0.03,0xc2c6cc,0.05],[0.07,0.06,0xc2c6cc,0.05],[-0.02,-0.07,0xd0a24a,0.05],[0.05,-0.05,0xc2c6cc,0.05]];
+  for(const [ox,oz,col,hs] of heads){
+    const sh=new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.008,0.5,5), steel);
+    sh.position.set(ox,1.2,oz); sh.rotation.x=oz*1.7; sh.rotation.z=-ox*1.7; g.add(sh);
+    const hd=new THREE.Mesh(new THREE.SphereGeometry(hs,8,6), M(col));
+    hd.position.set(ox*1.7,1.44,oz*1.7); g.add(hd);
+  }
+  const l1=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.72,5),M(0x333333)); l1.position.set(0.1,0.3,0.16); l1.rotation.x=-0.32; l1.rotation.z=-0.2; g.add(l1);
+  const l2=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.72,5),M(0x333333)); l2.position.set(-0.1,0.3,0.16); l2.rotation.x=-0.32; l2.rotation.z=0.2; g.add(l2);
+  g.scale.setScalar(1.14); g.visible=false; scene.add(g);
+  return g;
 }
 const golfer=makeGolfer();
+const golfBag=makeBag();
 function startWalk(){
   const aimDir=new THREE.Vector3(Math.sin(game.aim),0,Math.cos(game.aim));
   const side=new THREE.Vector3(aimDir.z,0,-aimDir.x);      // perpendicular to aim
-  const stance=ball.pos.clone().addScaledVector(side,0.85); stance.y=rawHeight(stance.x,stance.z);
+  const stance=ball.pos.clone().addScaledVector(side,0.7); stance.y=rawHeight(stance.x,stance.z);
   const from=stance.clone().addScaledVector(aimDir,-13);   // start ~13 m back, up the line of play
   from.y=rawHeight(from.x,from.z);
   golfer.from.copy(from); golfer.to.copy(stance);
-  golfer.t=0; golfer.walking=true; golfer.ready=true; golfer.phase=0;
+  golfer.t=0; golfer.walking=true; golfer.ready=true; golfer.phase=0; golfer.follow=0; golfer.swing=0;
+}
+function swingTarget(){
+  // map the three-click meter to a club angle: 0 = address, negative = backswing, positive = follow-through
+  const s=game.swing;
+  if(game.state!=='SWING'||s.phase===0) return 0;
+  const scale=(game.club===PUTTER)?0.16:1;
+  const topFor=(pw)=> -1.95*clamp(pw,10,100)/100;
+  if(s.phase===1) return topFor(s.needle)*scale;               // backswing follows the rising needle
+  const top=topFor(s.power);
+  const frac=clamp((s.needle-ACC_TARGET)/Math.max(s.power-ACC_TARGET,1), -1.3, 1);
+  return top*frac*scale;                                       // frac<0 past impact → follow-through
 }
 function updateGolfer(dt){
   const g=golfer;
-  const vis=g.ready && (game.state==='BIRDS'||game.state==='GREEN'||(rig.trans && rig.mode==='players'));
-  g.grp.visible=vis;
-  if(!vis) return;
-  const yaw=Math.atan2(g.to.x-g.from.x, g.to.z-g.from.z);
+  if(g.last==='SWING' && game.state==='FLIGHT' && g.follow<=0) g.follow=0.5;   // just struck → follow-through
+  const swingView=(game.state==='PLAYERS'||game.state==='SWING'||(rig.trans&&rig.mode==='players'));
+  const vis=g.ready && (game.state==='BIRDS'||game.state==='GREEN'||swingView||g.follow>0);
+  g.grp.visible=vis; golfBag.visible=vis;
+  if(!vis){ g.last=game.state; return; }
+  const aimDir=new THREE.Vector3(Math.sin(game.aim),0,Math.cos(game.aim));
+  const side=new THREE.Vector3(aimDir.z,0,-aimDir.x);
+  // the bag stands just off the stance
+  const bp=g.to.clone().addScaledVector(side,0.6).addScaledVector(aimDir,-0.4);
+  golfBag.position.set(bp.x, rawHeight(bp.x,bp.z), bp.z);
+  golfBag.rotation.y=Math.atan2(-side.x,-side.z);
+
   if(g.walking){
-    g.t=Math.min(1, g.t + dt/2.2);
+    g.t=Math.min(1, g.t+dt/2.2);
     const p=g.from.clone().lerp(g.to, smooth(g.t)); p.y=rawHeight(p.x,p.z);
     g.phase+=dt*9;
     const sw=Math.sin(g.phase)*0.5;
     g.legL.rotation.x=sw; g.legR.rotation.x=-sw;
-    g.armL.rotation.x=-sw*0.8; g.armR.rotation.x=sw*0.8;
+    g.armL.rotation.x=-sw*0.7; g.armR.rotation.x=sw*0.7;
     g.grp.position.set(p.x, p.y+Math.abs(Math.sin(g.phase))*0.04, p.z);
-    g.grp.rotation.y=yaw;
+    g.grp.rotation.y=Math.atan2(g.to.x-g.from.x, g.to.z-g.from.z);   // face the walk
+    g.pose=Math.max(0,g.pose-dt*3);
+    g.hinge.rotation.x=g.pose*0.42;
+    g.turn.rotation.y=0; g.swing=0;
+    g.clubPivot.rotation.set(0.2,0,-0.5);                            // carried across the shoulder
     if(g.t>=1) g.walking=false;
   } else {
-    // settle into the address stance beside the ball
-    g.grp.position.set(g.to.x, g.to.y, g.to.z);
-    g.grp.rotation.y=Math.atan2(Math.sin(game.aim),Math.cos(game.aim));
-    g.legL.rotation.x*=0.8; g.legR.rotation.x*=0.8; g.armL.rotation.x*=0.8; g.armR.rotation.x*=0.8;
+    // address: stand beside the ball, facing it
+    g.grp.position.set(g.to.x,g.to.y,g.to.z);
+    g.grp.rotation.y=Math.atan2(-side.x,-side.z);
+    g.pose=Math.min(1,g.pose+dt*3);
+    g.hinge.rotation.x=g.pose*0.42;
+    g.legL.rotation.x*=0.7; g.legR.rotation.x*=0.7;
+    let target=swingTarget();
+    if(g.follow>0){ g.follow-=dt; target=(game.club===PUTTER?0.45:2.35); if(g.follow<=0) g.swing=0; }
+    g.swing += (target-g.swing)*Math.min(1,dt*20);
+    const mag=Math.min(Math.abs(g.swing),2.1);
+    // the golfer faces the ball, so the swing plane is swept by rolling the club (local Z):
+    // backswing rolls it up over the trailing shoulder, follow-through up over the lead side.
+    // a small forward lean (X) reaches the club down to the ball; the shoulders coil a touch (Y).
+    const roll=clamp(g.swing*1.15, -2.4, 2.4);
+    g.turn.rotation.y=g.swing*0.35;
+    g.clubPivot.rotation.set(0.32, 0, roll);
+    const armLift=0.62-mag*0.15;
+    g.armL.rotation.set(armLift,0,roll*0.3);
+    g.armR.rotation.set(armLift,0,roll*0.3);
   }
+  g.last=game.state;
 }
 
 // putt grid + flow dots (built per green on demand)
@@ -712,9 +782,11 @@ const rig={
                look:bp.clone().add(this.nudge), fov:50 };
     }
     if(this.mode==='players'){
+      // over-the-shoulder third-person: the golfer addresses the ball, target beyond
       const dir=new THREE.Vector3(Math.sin(game.aim),0,Math.cos(game.aim));
-      return { pos:bp.clone().addScaledVector(dir,-2.2).add(new THREE.Vector3(0,1.7,0)),
-               look:bp.clone().addScaledVector(dir,20).add(new THREE.Vector3(0,1.2,0)), fov:65 };
+      const side=new THREE.Vector3(dir.z,0,-dir.x);
+      return { pos:bp.clone().addScaledVector(dir,-5.8).addScaledVector(side,1.35).add(new THREE.Vector3(0,3.05,0)),
+               look:bp.clone().addScaledVector(dir,15).add(new THREE.Vector3(0,0.5,0)), fov:58 };
     }
     if(this.mode==='green'){
       const d=this.greenDist, p=62*DEG;
@@ -1015,7 +1087,8 @@ function updateHUD(){
   const wA=Math.atan2(game.wind.x,game.wind.y)-game.aim;
   el('windArrow').style.transform=`rotate(${(-wA/DEG+180).toFixed(0)}deg)`;
   el('hudDist').textContent=distToPin()<25? distToPin().toFixed(1)+' m to pin' : distToPin().toFixed(0)+' m to pin';
-  const inStrike=(game.state==='PLAYERS'||game.state==='SWING'||game.state==='GREEN');
+  // the golfer now stands in the address/swing view, so only show the centre club panel on the green
+  const inStrike=(game.state==='GREEN');
   el('hudBC').style.display=inStrike?'block':'none';
   if(inStrike){
     const c=CLUBS[game.club];
