@@ -464,14 +464,26 @@ function makeGolfer(){
   const turn=new THREE.Group(); hinge.add(turn);
   const torso=new THREE.Mesh(new THREE.BoxGeometry(0.44,0.56,0.26), M(shirtC)); torso.position.y=0.3; turn.add(torso);
   const vest=new THREE.Mesh(new THREE.BoxGeometry(0.47,0.42,0.29), M(vestC)); vest.position.y=0.36; turn.add(vest);
-  const armL=limb(turn,0.1,0.5,0.1,shirtC,-0.29,0.54), armR=limb(turn,0.1,0.5,0.1,shirtC,0.29,0.54);
-  // club held at the hands: grip + shaft + head
-  const clubPivot=new THREE.Group(); clubPivot.position.set(0,0.28,0.17); turn.add(clubPivot);
-  const grip=new THREE.Mesh(new THREE.CylinderGeometry(0.022,0.022,0.18,6), M(gripC)); grip.position.y=-0.09; clubPivot.add(grip);
-  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.013,0.019,1.02,6), M(steel)); shaft.position.y=-0.6; clubPivot.add(shaft);
-  const headM=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.07,0.2), M(0xe8ecf0)); headM.position.set(0,-1.14,0.07); clubPivot.add(headM);
+  // shoulder caps sit on the torso; the arms themselves belong to the swinging triangle below
+  const shL=new THREE.Mesh(new THREE.SphereGeometry(0.1,8,6), M(shirtC)); shL.position.set(-0.26,0.52,0.02); turn.add(shL);
+  const shR=new THREE.Mesh(new THREE.SphereGeometry(0.1,8,6), M(shirtC)); shR.position.set(0.26,0.52,0.02); turn.add(shR);
+  // the arm "triangle": both arms + hands gripping the club, all pivoting together from the chest
+  const arms=new THREE.Group(); arms.position.set(0,0.5,0.12); turn.add(arms);
+  const upperArm=(px)=>{
+    const a=new THREE.Mesh(new THREE.CylinderGeometry(0.058,0.05,0.34,8), M(shirtC));
+    a.position.set(px,-0.15,0); a.rotation.z=(px>0?1:-1)*0.5; arms.add(a);          // shoulders apart
+    const f=new THREE.Mesh(new THREE.CylinderGeometry(0.048,0.042,0.3,8), M(skin)); // bare forearm
+    f.position.set(px*0.3,-0.4,0.015); f.rotation.z=(px>0?1:-1)*0.14; arms.add(f);
+  };
+  upperArm(0.17); upperArm(-0.17);
+  const gloveL=new THREE.Mesh(new THREE.SphereGeometry(0.06,10,8), M(0xf4f4f4)); gloveL.position.set(-0.015,-0.52,0.03); arms.add(gloveL);
+  const gloveR=new THREE.Mesh(new THREE.SphereGeometry(0.06,10,8), M(skin));    gloveR.position.set(0.03,-0.56,0.03); arms.add(gloveR);
+  // club held in those hands
+  const grip=new THREE.Mesh(new THREE.CylinderGeometry(0.024,0.024,0.24,6), M(gripC)); grip.position.y=-0.55; arms.add(grip);
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.02,0.95,6), M(steel)); shaft.position.y=-1.08; arms.add(shaft);
+  const headM=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.07,0.22), M(0xe8ecf0)); headM.position.set(0,-1.6,0.07); arms.add(headM);
   grp.scale.setScalar(1.14); grp.visible=false; scene.add(grp);
-  return { grp, hinge, turn, legL, legR, armL, armR, clubPivot,
+  return { grp, hinge, turn, legL, legR, arms,
            from:new THREE.Vector3(), to:new THREE.Vector3(),
            t:1, walking:false, phase:0, ready:false, pose:0, swing:0, follow:0, last:'' };
 }
@@ -536,13 +548,12 @@ function updateGolfer(dt){
     g.phase+=dt*9;
     const sw=Math.sin(g.phase)*0.5;
     g.legL.rotation.x=sw; g.legR.rotation.x=-sw;
-    g.armL.rotation.x=-sw*0.7; g.armR.rotation.x=sw*0.7;
     g.grp.position.set(p.x, p.y+Math.abs(Math.sin(g.phase))*0.04, p.z);
     g.grp.rotation.y=Math.atan2(g.to.x-g.from.x, g.to.z-g.from.z);   // face the walk
     g.pose=Math.max(0,g.pose-dt*3);
     g.hinge.rotation.x=g.pose*0.42;
     g.turn.rotation.y=0; g.swing=0;
-    g.clubPivot.rotation.set(0.2,0,-0.5);                            // carried across the shoulder
+    g.arms.rotation.set(0.18+sw*0.25,0,-0.4);                        // club carried, arms sway with the stride
     if(g.t>=1) g.walking=false;
   } else {
     // address: stand beside the ball, facing it
@@ -554,16 +565,12 @@ function updateGolfer(dt){
     let target=swingTarget();
     if(g.follow>0){ g.follow-=dt; target=(game.club===PUTTER?0.45:2.35); if(g.follow<=0) g.swing=0; }
     g.swing += (target-g.swing)*Math.min(1,dt*20);
-    const mag=Math.min(Math.abs(g.swing),2.1);
-    // the golfer faces the ball, so the swing plane is swept by rolling the club (local Z):
-    // backswing rolls it up over the trailing shoulder, follow-through up over the lead side.
+    // the golfer faces the ball, so the swing plane is swept by rolling the arm-triangle (local Z):
+    // backswing rolls the arms + club up over the trailing shoulder, follow-through over the lead side.
     // a small forward lean (X) reaches the club down to the ball; the shoulders coil a touch (Y).
     const roll=clamp(g.swing*1.15, -2.4, 2.4);
     g.turn.rotation.y=g.swing*0.35;
-    g.clubPivot.rotation.set(0.32, 0, roll);
-    const armLift=0.62-mag*0.15;
-    g.armL.rotation.set(armLift,0,roll*0.3);
-    g.armR.rotation.set(armLift,0,roll*0.3);
+    g.arms.rotation.set(0.32, 0, roll);
   }
   g.last=game.state;
 }
