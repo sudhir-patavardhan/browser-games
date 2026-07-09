@@ -219,32 +219,38 @@
                 <circle cx="314" cy="83" r="5"/>
               </g>
             </g>
-            <!-- recurve bow: belly bulges toward the target (right), tips curl forward -->
+            <!-- recurve bow — bold "B"-shaped double-curve limbs -->
             <g fill="none" stroke="#e8b25a" stroke-linecap="round">
-              <path d="M158 12 C 184 32, 184 88, 158 108" stroke-width="5"/>
-              <path d="M158 12 C 165 7, 173 8, 177 15" stroke-width="4"/>
-              <path d="M158 108 C 165 113, 173 112, 177 105" stroke-width="4"/>
-              <line x1="182" y1="49" x2="182" y2="71" stroke="#a9713a" stroke-width="6"/>
+              <path d="M170 16 C 191 22, 200 33, 198 47 C 197 56, 183 55, 176 60 C 183 65, 197 64, 198 73 C 200 87, 191 98, 170 104" stroke-width="8"/>
             </g>
+            <!-- leaf nock caps at the limb tips -->
+            <g fill="#e8b25a">
+              <ellipse cx="168" cy="12" rx="4.5" ry="7.5" transform="rotate(28 168 12)"/>
+              <ellipse cx="168" cy="108" rx="4.5" ry="7.5" transform="rotate(-28 168 108)"/>
+            </g>
+            <!-- grip wrap -->
+            <line x1="177" y1="51" x2="177" y2="69" stroke="#a9713a" stroke-width="8" stroke-linecap="round"/>
             <!-- bowstring, drawn back to the nock on the left -->
-            <path d="M158 12 L118 60 L158 108" fill="none" stroke="#fff0c4" stroke-width="1.6" stroke-opacity="0.9"/>
+            <path d="M169 15 L118 60 L169 105" fill="none" stroke="#fff0c4" stroke-width="1.6" stroke-opacity="0.9"/>
             <!-- arrow, pointing right toward the flame -->
             <g>
-              <line x1="118" y1="60" x2="250" y2="60" stroke="#6f4322" stroke-width="3" stroke-linecap="round"/>
-              <!-- fletching: short vanes across the tail (never a second arrowhead) -->
-              <g stroke="#ff6a4d" stroke-width="3" stroke-linecap="round">
-                <line x1="122" y1="53" x2="132" y2="67"/>
-                <line x1="128" y1="53" x2="138" y2="67"/>
-                <line x1="134" y1="53" x2="144" y2="67"/>
+              <line x1="118" y1="60" x2="252" y2="60" stroke="#6f4322" stroke-width="3.4" stroke-linecap="round"/>
+              <!-- feather fletching at the tail -->
+              <g fill="#ff6a4d">
+                <path d="M146 59 C 137 55, 129 50, 123 47 C 128 53, 133 58, 144 61 Z"/>
+                <path d="M144 61 C 135 65, 128 69, 122 72 C 128 66, 134 63, 146 60 Z"/>
               </g>
-              <!-- arrowhead -->
-              <polygon points="248,52 269,60 248,68" fill="#ffd27a" stroke="#a9713a" stroke-width="1" stroke-linejoin="round"/>
+              <g stroke="#ffb199" stroke-width="1.4" stroke-linecap="round">
+                <line x1="129" y1="54" x2="137" y2="60"/><line x1="128" y1="66" x2="136" y2="60"/>
+              </g>
+              <!-- barbed arrowhead -->
+              <path d="M244 49 L272 60 L244 71 L252 60 Z" fill="#ffd27a" stroke="#a9713a" stroke-width="1" stroke-linejoin="round"/>
             </g>
-            <!-- flame streaming off the arrowhead -->
+            <!-- flame engulfing the arrowhead -->
             <g filter="url(#da-glow)">
-              <path d="M258 60 C 274 44, 300 50, 311 60 C 300 70, 274 76, 258 60 Z" fill="url(#da-flame)"/>
-              <path d="M264 60 C 276 50, 292 54, 301 60 C 292 66, 276 70, 264 60 Z" fill="#ffe98a"/>
-              <path d="M305 60 C 311 54, 316 55, 318 51 C 318 59, 314 64, 305 60 Z" fill="#ff9a3d"/>
+              <path d="M262 60 C 279 43, 305 49, 314 60 C 305 71, 279 77, 262 60 Z" fill="url(#da-flame)"/>
+              <path d="M268 60 C 281 49, 297 53, 306 60 C 297 67, 281 71, 268 60 Z" fill="#ffe98a"/>
+              <path d="M308 60 C 314 53, 317 54, 318 50 C 318 58, 314 64, 308 60 Z" fill="#ff9a3d"/>
             </g>
           </svg>
         </span>
