@@ -40,6 +40,11 @@
   .steerhint{ position:fixed; bottom:120px; z-index:3; font-weight:900; font-size:34px; color:rgba(255,255,255,.5);
     pointer-events:none; text-shadow:0 2px 6px rgba(0,0,0,.2); }
   #hintL{ left:22px; } #hintR{ right:22px; }
+  #viewBtn{ position:fixed; top:118px; left:50%; transform:translateX(-50%); z-index:6;
+    background:rgba(255,255,255,.82); border:none; border-radius:14px; padding:8px 14px; cursor:pointer;
+    font-weight:800; font-size:12.5px; letter-spacing:1px; color:#17324a; backdrop-filter:blur(6px);
+    box-shadow:0 6px 18px rgba(20,40,20,.18); touch-action:manipulation; }
+  #viewBtn:active{ transform:translateX(-50%) translateY(1px); }
 
   /* overlays */
   .panel{ position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;
@@ -77,6 +82,7 @@
 <div class="driftpop" id="driftpop"></div>
 <div class="steerhint" id="hintL" style="display:none">‹</div>
 <div class="steerhint" id="hintR" style="display:none">›</div>
+<button id="viewBtn" style="display:none">DRIVER VIEW</button>
 <button id="brake" style="display:none">HANDBRAKE</button>
 
 <div class="panel" id="startPanel">
@@ -87,7 +93,8 @@
     <button class="go" id="startBtn">Drive</button>
     <div class="keys">
       <b>Steer:</b> &larr; &rarr; or A / D &nbsp;·&nbsp; tap the left / right side on mobile<br>
-      <b>Handbrake:</b> Space, or the big button — hold it through corners for huge slides
+      <b>Handbrake:</b> Space, or the big button — hold it through corners for huge slides<br>
+      <b>Camera:</b> tap “Driver view”, or press V
     </div>
   </div>
 </div>
@@ -126,6 +133,7 @@ const CAR_L=46, CAR_W=24;
 let state='start';               // start | play | over
 let game=null;
 let best=+(localStorage.getItem('drift.best')||0);
+let driftView = (localStorage.getItem('drift.view')==='driver') ? 'driver' : 'top';
 
 /* ============================ road ============================ */
 function makeRoad(seed){
@@ -168,7 +176,7 @@ function newGame(){
     road:R, seed,
     car:{ x:p0.x, y:p0.y, vx:p0.tx*430, vy:p0.ty*430, angle:R.ga, idx:3,
           rl:{x:0,y:0,set:false}, rr:{x:0,y:0,set:false} },
-    cam:{ x:p0.x, y:p0.y },
+    cam:{ x:p0.x, y:p0.y }, view:driftView, camAngle:R.ga,
     steer:0, brake:false,
     score:0, mult:1, driftTime:0, grace:0, dist:0, onGrass:false, slip:0, speed:430,
     stall:0, chainScore:0, bestChain:0,
@@ -264,7 +272,7 @@ function gameOver(reason){
   document.getElementById('finalScore').textContent=sc.toLocaleString();
   document.getElementById('overBest').textContent='Best '+best.toLocaleString();
   document.getElementById('newBest').style.display=isBest?'inline-block':'none';
-  showHUD(false); document.getElementById('brake').style.display='none';
+  showHUD(false); document.getElementById('brake').style.display='none'; document.getElementById('viewBtn').style.display='none';
   document.getElementById('hintL').style.display='none'; document.getElementById('hintR').style.display='none';
   setTimeout(()=>{ if(state==='over') document.getElementById('overPanel').classList.remove('hidden'); },420);
   sfx('crash');
@@ -278,15 +286,26 @@ function render(){
   ctx.clearRect(0,0,W,H);
   if(!g){ ctx.fillStyle='#79c665'; ctx.fillRect(0,0,W,H); return; }
   const c=g.car;
-  const spd=Math.hypot(c.vx,c.vy)||1, lead=Math.min(spd*0.34,210);
-  const tx=c.x+(c.vx/spd)*lead, ty=c.y+(c.vy/spd)*lead;
-  g.cam.x=lerp(g.cam.x,tx,0.12); g.cam.y=lerp(g.cam.y,ty,0.12);
+  const spd=Math.hypot(c.vx,c.vy);
   let shx=0,shy=0; if(g.shake>0){ shx=(Math.random()-0.5)*g.shake*14; shy=(Math.random()-0.5)*g.shake*14; }
 
   ctx.fillStyle='#79c665'; ctx.fillRect(0,0,W,H);
   ctx.save();
-  ctx.translate(W/2+shx, H/2+shy);
-  ctx.translate(-g.cam.x,-g.cam.y);
+  if(g.view==='driver'){
+    // driver / chase view — the camera up-axis follows the direction of travel, so the road flows
+    // toward you and the car visibly kicks sideways as it drifts. car anchored in the lower third.
+    if(spd>50){ const target=Math.atan2(c.vy,c.vx); g.camAngle += angWrap(target-g.camAngle)*0.09; }
+    g.cam.x=lerp(g.cam.x,c.x,0.25); g.cam.y=lerp(g.cam.y,c.y,0.25);
+    ctx.translate(W/2+shx, H*0.66+shy);
+    ctx.rotate(-(g.camAngle+Math.PI/2));
+    ctx.translate(-g.cam.x,-g.cam.y);
+  } else {
+    const s=spd||1, lead=Math.min(s*0.34,210);
+    const tx=c.x+(c.vx/s)*lead, ty=c.y+(c.vy/s)*lead;
+    g.cam.x=lerp(g.cam.x,tx,0.12); g.cam.y=lerp(g.cam.y,ty,0.12);
+    ctx.translate(W/2+shx, H/2+shy);
+    ctx.translate(-g.cam.x,-g.cam.y);
+  }
 
   ctx.fillStyle='#6cbb57';
   for(const t of g.grassTufts){
@@ -393,16 +412,27 @@ addEventListener('keydown',e=>{ const k=e.key.toLowerCase();
   if(['arrowleft','arrowright','arrowup','arrowdown',' '].includes(k)) e.preventDefault();
   keys[k]=true;
   if((k===' '||k==='enter')&&state!=='play'){ startGame(); }
+  if(k==='v'&&state==='play'){ toggleDriftView(); }
 });
+function setViewButton(){ document.getElementById('viewBtn').textContent = (game&&game.view==='driver')?'TOP VIEW':'DRIVER VIEW'; }
+function toggleDriftView(){ if(!game) return;
+  game.view = game.view==='driver'?'top':'driver'; driftView=game.view;
+  try{ localStorage.setItem('drift.view',driftView); }catch(e){}
+  game.camAngle = Math.atan2(game.car.vy,game.car.vx) || game.car.angle;   // avoid a spin on switch
+  setViewButton();
+}
+document.getElementById('viewBtn').onclick=()=>{ toggleDriftView(); };
 addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
 
 const pointers=new Map();
 const brakeBtn=document.getElementById('brake');
+const viewBtn=document.getElementById('viewBtn');
 function pointerType(x,target){ if(target===brakeBtn) return 'brake'; return x<W/2? 'L':'R'; }
 addEventListener('pointerdown',e=>{
   audioInit();
   if(state!=='play') return;
   if(e.target.closest('.panel')) return;
+  if(e.target===viewBtn) return;                  // the view toggle isn't a steering tap
   const type=pointerType(e.clientX,e.target);
   pointers.set(e.pointerId,type);
   if(type==='brake') brakeBtn.classList.add('on');
@@ -436,6 +466,7 @@ function startGame(){
   showHUD(true);
   const touch=matchMedia('(hover:none)').matches;
   brakeBtn.style.display='block';
+  viewBtn.style.display='block'; setViewButton();
   document.getElementById('hintL').style.display=touch?'block':'none';
   document.getElementById('hintR').style.display=touch?'block':'none';
 }
