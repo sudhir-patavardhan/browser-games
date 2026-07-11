@@ -941,8 +941,16 @@ function showHUD(v){ document.getElementById('hud').style.display=v?'flex':'none
    The game must run perfectly with NO music present: index.html on its own is still the whole game. */
 const MUSIC=[];
 (function(){ const t=window.DRIFT_TRACKS;
-  if(Array.isArray(t)) for(const x of t) if(x && x.file)
-    MUSIC.push({ src:'music/'+x.file, title:x.title||x.file.replace(/\.[^.]+$/,''), artist:x.artist||'' });
+  if(!Array.isArray(t)) return;
+  for(const x of t){
+    if(!x) continue;
+    // `file` is a track sitting in drift/music/. `url` streams it from anywhere you're entitled to stream
+    // from — your own bucket, or a host that permits direct playback. Neither is required.
+    const src = x.url || (x.file ? 'music/'+x.file : null);
+    if(!src) continue;
+    const name = x.title || String(x.file||src).split('/').pop().split('?')[0].replace(/\.[^.]+$/,'') || 'Track';
+    MUSIC.push({ src, title:name, artist:x.artist||'', remote:!!x.url });
+  }
 })();
 let audioEl=null, mIdx=Math.max(0,+(localStorage.getItem('drift.trk')||0)), mPlaying=false;
 let mMuted=localStorage.getItem('drift.mute')==='1';

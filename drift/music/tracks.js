@@ -4,8 +4,11 @@
  * play them, and you can skip through them from the dash.
  *
  *   window.DRIFT_TRACKS = [
- *     { file: 'neon-ridge.mp3',  title: 'Neon Ridge',      artist: 'ASTRA' },
- *     { file: 'coastline.mp3',   title: 'Coastline at Dusk', artist: 'Vela Ninety' },
+ *     { file: 'neon-ridge.mp3', title: 'Neon Ridge', artist: 'ASTRA' },
+ *
+ *     // or stream it, from anywhere you're entitled to stream from (your own bucket, a host that allows
+ *     // direct playback). NOT a stock-music or streaming service's preview files — see README.md.
+ *     { url: 'https://your-bucket.example.com/coastline.mp3', title: 'Coastline at Dusk' },
  *   ];
  *
  * `title` and `artist` are optional — without them the filename is used.
