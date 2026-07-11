@@ -30,14 +30,18 @@
   @keyframes pop{ 0%{opacity:0; transform:translateX(-50%) scale(.7);} 20%{opacity:1; transform:translateX(-50%) scale(1.05);}
     80%{opacity:1;} 100%{opacity:0; transform:translateX(-50%) scale(1);} }
 
-  /* handbrake button */
-  #brake{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:5;
-    width:min(78vw,360px); height:78px; border-radius:22px; border:none;
-    background:linear-gradient(180deg,#ffd24a,#ff8a2f); color:#7a2f00; font-weight:900; font-size:18px; letter-spacing:2px;
-    box-shadow:0 10px 0 #d96a1e, 0 16px 26px rgba(120,50,0,.3); touch-action:none; }
-  #brake.on{ transform:translateX(-50%) translateY(6px); box-shadow:0 4px 0 #d96a1e, 0 8px 16px rgba(120,50,0,.3);
-    background:linear-gradient(180deg,#ff9a3d,#ff5a2f); }
-  .steerhint{ position:fixed; bottom:120px; z-index:3; font-weight:900; font-size:34px; color:rgba(255,255,255,.5);
+  /* pedals */
+  .pedal{ position:fixed; bottom:22px; z-index:5; border:none; border-radius:22px; touch-action:none;
+    width:min(38vw,190px); height:82px; font-weight:900; font-size:17px; letter-spacing:2px; }
+  #gas{ right:16px; background:linear-gradient(180deg,#a7f06d,#3fbf4a); color:#0c3d16;
+    box-shadow:0 10px 0 #2e8f38, 0 16px 26px rgba(20,90,20,.3); }
+  #gas.on{ transform:translateY(6px); box-shadow:0 4px 0 #2e8f38, 0 8px 16px rgba(20,90,20,.3);
+    background:linear-gradient(180deg,#86e252,#2ba63a); }
+  #brake{ left:16px; background:linear-gradient(180deg,#ffb0a4,#ef5350); color:#5e1010;
+    box-shadow:0 10px 0 #b8353a, 0 16px 26px rgba(120,30,20,.3); }
+  #brake.on{ transform:translateY(6px); box-shadow:0 4px 0 #b8353a, 0 8px 16px rgba(120,30,20,.3);
+    background:linear-gradient(180deg,#ff8a7c,#d93a3f); }
+  .steerhint{ position:fixed; bottom:134px; z-index:3; font-weight:900; font-size:34px; color:rgba(255,255,255,.5);
     pointer-events:none; text-shadow:0 2px 6px rgba(0,0,0,.2); }
   #hintL{ left:22px; } #hintR{ right:22px; }
   #viewBtn{ position:fixed; top:118px; left:50%; transform:translateX(-50%); z-index:6;
@@ -45,9 +49,10 @@
     font-weight:800; font-size:12.5px; letter-spacing:1px; color:#17324a; backdrop-filter:blur(6px);
     box-shadow:0 6px 18px rgba(20,40,20,.18); touch-action:manipulation; }
   #viewBtn:active{ transform:translateX(-50%) translateY(1px); }
-  /* driver view: handbrake moves to the bottom-right so it clears the steering wheel */
-  body.driver-view #brake{ left:auto; right:14px; transform:none; width:min(34vw,150px); height:72px; bottom:24px; letter-spacing:1px; font-size:15px; }
-  body.driver-view #brake.on{ transform:translateY(6px); }
+  /* driver view: both pedals stack on the right so they clear the steering wheel (and the drag-to-steer area) */
+  body.driver-view .pedal{ width:min(30vw,134px); height:66px; font-size:14px; letter-spacing:1px; }
+  body.driver-view #gas{ right:14px; bottom:22px; }
+  body.driver-view #brake{ left:auto; right:14px; bottom:98px; }
 
   /* overlays */
   .panel{ position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;
@@ -86,17 +91,19 @@
 <div class="steerhint" id="hintL" style="display:none">‹</div>
 <div class="steerhint" id="hintR" style="display:none">›</div>
 <button id="viewBtn" style="display:none">DRIVER VIEW</button>
-<button id="brake" style="display:none">HANDBRAKE</button>
+<button class="pedal" id="brake" style="display:none">BRAKE</button>
+<button class="pedal" id="gas" style="display:none">GAS</button>
 
 <div class="panel" id="startPanel">
   <div class="card">
     <h1>DRIFT</h1>
     <div class="tag">SLIDE · CHAIN · SEND IT</div>
-    <p class="lead">An endless sunlit road that keeps throwing tighter corners. Drift through them to build your multiplier — the wider and longer the slide, the bigger the score. Keep your speed up or spin out.</p>
+    <p class="lead">An endless sunlit road that keeps throwing tighter corners. Pin the throttle down the straights, brake into the bends — carry too much speed and the rear steps out. Hold the slide to build your multiplier; the wider and longer, the bigger the score.</p>
     <button class="go" id="startBtn">Drive</button>
     <div class="keys">
       <b>Steer:</b> &larr; &rarr; or A / D &nbsp;·&nbsp; tap the left / right side on mobile<br>
-      <b>Handbrake:</b> Space, or the big button — hold it through corners for huge slides<br>
+      <b>Throttle:</b> &uarr; / W &nbsp;·&nbsp; <b>Brake:</b> &darr; / S &nbsp;·&nbsp; or the two pedals on mobile<br>
+      <b>To slide:</b> brake as you turn in — the tail steps out. Then get back on the power to hold it<br>
       <b>Views:</b> tap “Driver view” (through the windshield) or press V — in driver view, drag anywhere to turn the wheel
     </div>
   </div>
@@ -180,7 +187,7 @@ function newGame(){
     car:{ x:p0.x, y:p0.y, vx:p0.tx*430, vy:p0.ty*430, angle:R.ga, idx:3,
           rl:{x:0,y:0,set:false}, rr:{x:0,y:0,set:false} },
     cam:{ x:p0.x, y:p0.y }, view:driftView, camAngle:R.ga,
-    steer:0, brake:false, wheelSteer:0, wheelPtr:null, wheelStartX:0, wheelBase:0,
+    steer:0, steerPos:0, gas:0, brake:0, wheelSteer:0, wheelPtr:null, wheelStartX:0, wheelBase:0,
     score:0, mult:1, driftTime:0, grace:0, dist:0, onGrass:false, slip:0, speed:430,
     stall:0, chainScore:0, bestChain:0,
     skid:[], smoke:[], grassTufts:makeTufts(seed),
@@ -190,11 +197,20 @@ function newGame(){
 function makeTufts(seed){ const rng=mulberry32(seed^0x9e37); const a=[]; for(let i=0;i<160;i++) a.push({x:(rng()*2-1)*4000, y:(rng()*2-1)*4000, r:6+rng()*10}); return a; }
 
 /* ============================ physics ============================ */
-const CRUISE0=420, CRUISE1=560, ACCEL=560, DRAG=0.4, STEER=2.4;
+// steering yaws the car; the velocity vector chases the heading, but only as hard as the tyres can pull sideways.
+// that sideways pull is a hard budget (LAT). cornering force ≈ speed × yaw — blow past the budget and the rear goes.
+const STEER=1.95, STEER_ON=3.4, STEER_OFF=6.5;          // yaw rate at full lock; how fast the wheel winds on / unwinds
+const LAT0=290, LAT1=235;                                // lateral grip budget (px/s²), fades as the road gets meaner
+const GRIP=11;                                           // tyre stiffness: how hard the velocity is dragged onto the heading
+const RESTORE=2.6;                                       // rear tyres self-straighten the car — sets the sustainable drift angle
+const POWER=0.9;                                         // power-on oversteer: throttle pushes the tail wider once it's out
+const ROT=1.05;                                          // brake-rotate: weight on the nose sharpens the turn-in. scales with STEER, so it's never a free spin
+const BRAKE_GRIP=0.42, GAS_GRIP=0.80, LIFT=0.5;          // weight transfer: braking (and, less so, lifting) unloads the rear; power lights it up
+const SPIN=1.15;                                         // beyond this much slip the tyres claw back — no free spins
+const ACCEL=760, VTOP=790, DRAG=0.22, COAST=32, BRAKEF=320;
 function step(dt){
   const g=game, c=g.car, R=g.road;
   const diff=clamp(g.dist/46000,0,1);
-  const cruise=lerp(CRUISE0,CRUISE1,diff);
 
   // road frame
   ensureAhead(R,c.idx);
@@ -206,30 +222,55 @@ function step(dt){
   if(Math.abs(lateral)>BARRIER-CAR_W*0.4){ return gameOver('CRASH'); }
 
   const spd=Math.hypot(c.vx,c.vy);
-  // steering rotates the car's heading
-  const steerRate=STEER*clamp(spd/220,0,1);
-  c.angle+=g.steer*steerRate*dt;
-  // the velocity direction CHASES the heading (tyre grip). low grip (handbrake/grass) → it lags → visible drift,
-  // but grip stays high enough that the slide still arcs through the corner instead of washing straight off.
+  const thr=clamp(g.gas||0,0,1), brk=clamp(g.brake||0,0,1);
+  // the wheel winds on rather than snapping — but it unwinds fast, so countersteer is always there when you need it
+  const want=clamp(g.steer||0,-1,1);
+  const sr=(Math.abs(want)>Math.abs(g.steerPos) && want*g.steerPos>=0)? STEER_ON : STEER_OFF;
+  g.steerPos+=clamp(want-g.steerPos,-sr*dt,sr*dt);
+
   let velAng = spd>1? Math.atan2(c.vy,c.vx) : c.angle;
   let slip = angWrap(c.angle - velAng);
-  let gripTurn = g.brake? 4.0 : 8.5; if(g.onGrass) gripTurn*=0.5;
-  if(Math.abs(slip)>1.2) gripTurn*=2.8;                  // recover from a near-spin
-  velAng += slip*gripTurn*dt;
-  // speed: auto-throttle toward cruise, drag, grass drag, and a light drift scrub
+  const ad0=Math.abs(slip);
+
+  // weight transfer: on the brakes the nose goes down and the rear goes light. lifting does a milder version of it.
+  const wf=clamp(brk+(thr>0?0:LIFT),0,1);
+  let lat=lerp(LAT0,LAT1,diff);
+  lat *= 1-(1-BRAKE_GRIP)*wf;                           // trail-braking is what unloads the rear — this is the drift trigger
+  lat *= 1-(1-GAS_GRIP)*thr;                            // and power lights the rears up
+  if(g.onGrass) lat*=0.45;
+  if(ad0>SPIN) lat*=3.2;                                // safety valve: haul it back from a near-spin
+
+  // heading: the front tyres yaw the car in (harder with weight over the nose), the rear tyres straighten it back out
+  const sf=clamp(spd/170,0,1);
+  let yaw = (g.steerPos*(STEER+ROT*wf) - RESTORE*Math.sin(slip))*sf;
+  if(ad0>0.14 && ad0<SPIN){   // power-on oversteer: stay in it and the tail goes wider; countersteer and the power stops helping
+    const into=clamp(0.5+g.steerPos*Math.sign(slip),0,1);
+    yaw += POWER*thr*into*Math.sign(slip)*clamp((ad0-0.14)/0.30,0,1)*sf;
+  }
+  c.angle+=yaw*dt;
+
+  // the velocity direction chases the heading — but the chase is capped by the grip budget, so too much
+  // speed × steering leaves the tyres behind and the gap (slip) opens up. that gap is the drift.
+  slip=angWrap(c.angle-velAng);
+  const cap=lat/Math.max(spd,60);
+  velAng += clamp(GRIP*slip,-cap,cap)*dt;
+  slip=angWrap(c.angle-velAng);
+
+  // speed: your right foot, drag, grass drag, and the scrub of a slide (power keeps it lit, braking kills it)
   let mag = spd;
-  mag += (g.brake? -40 : (mag<cruise? ACCEL : -30))*dt;
+  mag += thr*ACCEL*clamp(1-mag/VTOP,0,1)*dt;
+  mag -= (brk*BRAKEF + (thr>0?0:COAST))*dt;
   mag -= mag*DRAG*dt;
   if(g.onGrass) mag -= 300*dt;
-  mag -= mag*Math.abs(slip)*(g.brake?0.32:0.18)*dt;
+  mag -= mag*Math.abs(slip)*(brk>0?0.72:(thr>0?0.30:0.55))*dt;
   if(mag<0) mag=0;
   c.vx=Math.cos(velAng)*mag; c.vy=Math.sin(velAng)*mag;
   c.x+=c.vx*dt; c.y+=c.vy*dt;
   g.speed=mag; g.slip=slip;
   const ad=Math.abs(g.slip);
-  const drifting = g.speed>210 && ad>0.14 && !g.onGrass;
+  const drifting = g.speed>240 && ad>0.16 && !g.onGrass;
   if(drifting){
-    g.driftTime+=dt; g.grace=0.45;
+    g.driftTime+=dt; g.grace=0.7;                        // enough slack to link one corner into the next
     g.mult=clamp(g.mult+dt*0.85,1,8);
     const add=g.speed*ad*g.mult*0.5*dt;
     g.score+=add; g.chainScore+=add;
@@ -239,8 +280,8 @@ function step(dt){
       g.chainScore=0; g.mult=1; g.driftTime=0; }
   }
 
-  // stall / spun-out
-  if(g.speed<105){ g.stall+=dt; if(g.stall>1.8) return gameOver('SPUN OUT'); }
+  // stall / spun-out — a hard stop on corner entry is fine, crawling is not
+  if(g.speed<120){ g.stall+=dt; if(g.stall>2.2) return gameOver('SPUN OUT'); }
   else g.stall=Math.max(0,g.stall-dt*2);
 
   g.dist+=g.speed*dt; g.time+=dt;
@@ -250,7 +291,7 @@ function step(dt){
   const rearX=c.x-fx*CAR_L*0.42, rearY=c.y-fy*CAR_L*0.42;
   const rlx=rearX+rx*CAR_W*0.42, rly=rearY+ry*CAR_W*0.42;
   const rrx=rearX-rx*CAR_W*0.42, rry=rearY-ry*CAR_W*0.42;
-  const laying = !g.onGrass && g.speed>180 && (ad>0.2 || (g.brake&&ad>0.1));
+  const laying = !g.onGrass && g.speed>180 && (ad>0.18 || (brk>0&&ad>0.1));
   if(laying){
     if(c.rl.set) g.skid.push({ax:c.rl.x,ay:c.rl.y,bx:rlx,by:rly,t:g.time});
     if(c.rr.set) g.skid.push({ax:c.rr.x,ay:c.rr.y,bx:rrx,by:rry,t:g.time});
@@ -275,7 +316,8 @@ function gameOver(reason){
   document.getElementById('finalScore').textContent=sc.toLocaleString();
   document.getElementById('overBest').textContent='Best '+best.toLocaleString();
   document.getElementById('newBest').style.display=isBest?'inline-block':'none';
-  showHUD(false); document.getElementById('brake').style.display='none'; document.getElementById('viewBtn').style.display='none';
+  showHUD(false); document.getElementById('brake').style.display='none'; document.getElementById('gas').style.display='none';
+  document.getElementById('viewBtn').style.display='none';
   document.getElementById('hintL').style.display='none'; document.getElementById('hintR').style.display='none';
   setTimeout(()=>{ if(state==='over') document.getElementById('overPanel').classList.remove('hidden'); },420);
   sfx('crash');
@@ -496,7 +538,7 @@ function frame(t){
   if(state==='play' && game){
     // wheel springs back to centre when released and no keys held
     if(game.view==='driver' && game.wheelPtr==null && !(keys['arrowleft']||keys['a']||keys['arrowright']||keys['d'])) game.wheelSteer*=0.72;
-    game.steer=steerInput(); game.brake=brakeInput();
+    game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput();
     acc+=dt; const h=1/120;
     while(acc>=h){ if(state==='play') step(h); acc-=h; }
     if(game){ const ad=Math.abs(game.slip); skidSound(!game.onGrass&&game.speed>180&&ad>0.18, game.speed/500); }
@@ -532,13 +574,16 @@ addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
 
 const pointers=new Map();
 const brakeBtn=document.getElementById('brake');
+const gasBtn=document.getElementById('gas');
 const viewBtn=document.getElementById('viewBtn');
 const WHEEL_RANGE=()=>W*0.34;
 addEventListener('pointerdown',e=>{
   audioInit();
   if(state!=='play') return;
   if(e.target.closest('.panel')||e.target===viewBtn) return;
-  if(e.target===brakeBtn){ pointers.set(e.pointerId,'brake'); brakeBtn.classList.add('on'); return; }
+  // pedals are claimed first, so they're never swallowed by the steering drag / side-tap below
+  const pedal=e.target.closest?e.target.closest('.pedal'):null;
+  if(pedal){ const role=pedal===gasBtn?'gas':'brake'; pointers.set(e.pointerId,role); pedal.classList.add('on'); return; }
   if(game.view==='driver'){                        // driver view: drag anywhere to steer the wheel (analog)
     pointers.set(e.pointerId,'wheel'); game.wheelPtr=e.pointerId; game.wheelStartX=e.clientX; game.wheelBase=game.wheelSteer||0; return;
   }
@@ -546,9 +591,13 @@ addEventListener('pointerdown',e=>{
 });
 addEventListener('pointermove',e=>{ if(!pointers.has(e.pointerId)) return; const role=pointers.get(e.pointerId);
   if(role==='wheel'){ game.wheelSteer=clamp(game.wheelBase+(e.clientX-game.wheelStartX)/WHEEL_RANGE(),-1,1); return; }
-  if(role!=='brake'){ pointers.set(e.pointerId, e.clientX<W/2?'L':'R'); }
+  if(role==='L'||role==='R'){ pointers.set(e.pointerId, e.clientX<W/2?'L':'R'); }   // a pedal stays a pedal
 });
-function releasePointer(id){ const role=pointers.get(id); if(role==='brake') brakeBtn.classList.remove('on'); if(role==='wheel'&&game) game.wheelPtr=null; pointers.delete(id); }
+function releasePointer(id){ const role=pointers.get(id);
+  if(role==='gas') gasBtn.classList.remove('on');
+  if(role==='brake') brakeBtn.classList.remove('on');
+  if(role==='wheel'&&game) game.wheelPtr=null;
+  pointers.delete(id); }
 addEventListener('pointerup',e=>releasePointer(e.pointerId));
 addEventListener('pointercancel',e=>releasePointer(e.pointerId));
 
@@ -564,11 +613,17 @@ function steerInput(){
   if(tl) s-=1; if(tr) s+=1;
   return clamp(s,-1,1);
 }
+function throttleInput(){
+  if(game && game.forceGas!==undefined) return game.forceGas;
+  if(keys['arrowup']||keys['w']) return 1;
+  for(const v of pointers.values()) if(v==='gas') return 1;
+  return 0;
+}
 function brakeInput(){
   if(game && game.forceBrake!==undefined) return game.forceBrake;
-  if(keys[' ']) return true;
-  for(const v of pointers.values()) if(v==='brake') return true;
-  return false;
+  if(keys['arrowdown']||keys['s']) return 1;
+  for(const v of pointers.values()) if(v==='brake') return 1;
+  return 0;
 }
 
 /* ============================ flow ============================ */
@@ -577,7 +632,8 @@ function startGame(){
   document.getElementById('startPanel').classList.add('hidden');
   document.getElementById('overPanel').classList.add('hidden');
   showHUD(true);
-  brakeBtn.style.display='block';
+  brakeBtn.style.display='block'; brakeBtn.classList.remove('on');
+  gasBtn.style.display='block'; gasBtn.classList.remove('on');
   viewBtn.style.display='block'; setViewButton();   // also sets the driver-view body class + hints
 }
 document.getElementById('startBtn').onclick=startGame;
@@ -588,20 +644,30 @@ document.getElementById('startPanel').addEventListener('pointerdown',e=>{ if(e.t
 window.__drift={
   get state(){ return state; }, get game(){ return game; }, get best(){ return best; },
   start(){ startGame(); },
-  setInput(steer,brake){ if(game){ game.forceSteer=steer; game.forceBrake=brake; } },
-  clearInput(){ if(game){ delete game.forceSteer; delete game.forceBrake; } },
-  step(n){ for(let i=0;i<(n||1);i++){ if(state==='play'){ game.steer=steerInput(); game.brake=brakeInput(); step(1/120); } } },
+  setInput(steer,gas,brake){ if(game){ game.forceSteer=steer; game.forceGas=gas; game.forceBrake=brake; } },
+  clearInput(){ if(game){ delete game.forceSteer; delete game.forceGas; delete game.forceBrake; } },
+  step(n){ for(let i=0;i<(n||1);i++){ if(state==='play'){ game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); step(1/120); } } },
   autopilot(){ const g=game; if(!g) return; const R=g.road, c=g.car;
-    // bang-bang pure-pursuit, like a real player (±1 steer only)
-    const look=R.pts[Math.min(R.pts.length-1, c.idx+6)];
+    // a tidy driver: pure-pursuit for the line, and a corner speed straight out of the grip budget (v ≤ sqrt(lat/curvature))
+    const p=R.pts[c.idx];
+    const grip=lerp(LAT0,LAT1,clamp(g.dist/46000,0,1))*GAS_GRIP;
+    const lead=Math.round(clamp(5+g.speed/70,6,15));
+    const look=R.pts[Math.min(R.pts.length-1, c.idx+lead)];
     const desired=Math.atan2(look.y-c.y, look.x-c.x);
-    const p=R.pts[c.idx]; const nx=-p.ty; const ny=p.tx; const lat=(c.x-p.x)*nx+(c.y-p.y)*ny;
-    let err=angWrap(desired-c.angle) + clamp(-lat/260,-0.35,0.35);
-    const s = err>0.045?1 : err<-0.045?-1 : 0;
-    const ahead=R.pts[Math.min(R.pts.length-1,c.idx+12)];
-    const curv=Math.abs(angWrap(Math.atan2(ahead.ty,ahead.tx)-Math.atan2(p.ty,p.tx)));
-    const brake = curv>0.16 && g.speed>430 && Math.abs(err)>0.1;
-    g.forceSteer=s; g.forceBrake=brake;
+    const nx=-p.ty, ny=p.tx, off=(c.x-p.x)*nx+(c.y-p.y)*ny;
+    const err=angWrap(desired-c.angle) + clamp(-off/280,-0.35,0.35);
+    const lock=clamp(grip/(Math.max(g.speed,140)*STEER),0.16,1);      // never ask for more grip than the tyres have
+    const over=Math.max(0,Math.abs(g.slip)-0.22)*Math.sign(g.slip);   // and catch it long before it goes all the way round
+    g.forceSteer=clamp(clamp(err*2.6,-lock,lock) - over*1.8, -1, 1);
+    let k=0.00012;
+    for(let i=c.idx+2;i<Math.min(R.pts.length-1,c.idx+30);i++){
+      const a=R.pts[i], b=R.pts[i+1];
+      const kk=Math.abs(angWrap(Math.atan2(b.ty,b.tx)-Math.atan2(a.ty,a.tx)))/SEG;
+      if(kk>k) k=kk;
+    }
+    const vT=clamp(Math.sqrt(grip/k),260,VTOP);
+    g.forceGas   = g.speed < vT-15 ? 1 : 0;                           // hard on the power once the corner's done
+    g.forceBrake = g.speed > vT+15 ? 1 : 0;                           // and hard on the brakes on the way in
   }
 };
 </script>
