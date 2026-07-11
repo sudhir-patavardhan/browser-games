@@ -45,6 +45,9 @@
     font-weight:800; font-size:12.5px; letter-spacing:1px; color:#17324a; backdrop-filter:blur(6px);
     box-shadow:0 6px 18px rgba(20,40,20,.18); touch-action:manipulation; }
   #viewBtn:active{ transform:translateX(-50%) translateY(1px); }
+  /* driver view: handbrake moves to the bottom-right so it clears the steering wheel */
+  body.driver-view #brake{ left:auto; right:14px; transform:none; width:min(34vw,150px); height:72px; bottom:24px; letter-spacing:1px; font-size:15px; }
+  body.driver-view #brake.on{ transform:translateY(6px); }
 
   /* overlays */
   .panel{ position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;
@@ -94,7 +97,7 @@
     <div class="keys">
       <b>Steer:</b> &larr; &rarr; or A / D &nbsp;·&nbsp; tap the left / right side on mobile<br>
       <b>Handbrake:</b> Space, or the big button — hold it through corners for huge slides<br>
-      <b>Camera:</b> tap “Driver view”, or press V
+      <b>Views:</b> tap “Driver view” (through the windshield) or press V — in driver view, drag anywhere to turn the wheel
     </div>
   </div>
 </div>
@@ -177,7 +180,7 @@ function newGame(){
     car:{ x:p0.x, y:p0.y, vx:p0.tx*430, vy:p0.ty*430, angle:R.ga, idx:3,
           rl:{x:0,y:0,set:false}, rr:{x:0,y:0,set:false} },
     cam:{ x:p0.x, y:p0.y }, view:driftView, camAngle:R.ga,
-    steer:0, brake:false,
+    steer:0, brake:false, wheelSteer:0, wheelPtr:null, wheelStartX:0, wheelBase:0,
     score:0, mult:1, driftTime:0, grace:0, dist:0, onGrass:false, slip:0, speed:430,
     stall:0, chainScore:0, bestChain:0,
     skid:[], smoke:[], grassTufts:makeTufts(seed),
@@ -287,26 +290,17 @@ function render(){
   if(!g){ ctx.fillStyle='#79c665'; ctx.fillRect(0,0,W,H); return; }
   const c=g.car;
   const spd=Math.hypot(c.vx,c.vy);
-  let shx=0,shy=0; if(g.shake>0){ shx=(Math.random()-0.5)*g.shake*14; shy=(Math.random()-0.5)*g.shake*14; }
+  if(g.view==='driver'){ drawWindshield(g,spd); updateHUD(); return; }
 
+  // ---- top-down view ----
+  let shx=0,shy=0; if(g.shake>0){ shx=(Math.random()-0.5)*g.shake*14; shy=(Math.random()-0.5)*g.shake*14; }
   ctx.fillStyle='#79c665'; ctx.fillRect(0,0,W,H);
   ctx.save();
-  if(g.view==='driver'){
-    // driver / chase view — the camera up-axis follows the direction of travel, so the road flows
-    // toward you and the car visibly kicks sideways as it drifts. car anchored in the lower third.
-    if(spd>50){ const target=Math.atan2(c.vy,c.vx); g.camAngle += angWrap(target-g.camAngle)*0.09; }
-    g.cam.x=lerp(g.cam.x,c.x,0.25); g.cam.y=lerp(g.cam.y,c.y,0.25);
-    ctx.translate(W/2+shx, H*0.66+shy);
-    ctx.rotate(-(g.camAngle+Math.PI/2));
-    ctx.translate(-g.cam.x,-g.cam.y);
-  } else {
-    const s=spd||1, lead=Math.min(s*0.34,210);
-    const tx=c.x+(c.vx/s)*lead, ty=c.y+(c.vy/s)*lead;
-    g.cam.x=lerp(g.cam.x,tx,0.12); g.cam.y=lerp(g.cam.y,ty,0.12);
-    ctx.translate(W/2+shx, H/2+shy);
-    ctx.translate(-g.cam.x,-g.cam.y);
-  }
-
+  const s=spd||1, lead=Math.min(s*0.34,210);
+  const tx=c.x+(c.vx/s)*lead, ty=c.y+(c.vy/s)*lead;
+  g.cam.x=lerp(g.cam.x,tx,0.12); g.cam.y=lerp(g.cam.y,ty,0.12);
+  ctx.translate(W/2+shx, H/2+shy);
+  ctx.translate(-g.cam.x,-g.cam.y);
   ctx.fillStyle='#6cbb57';
   for(const t of g.grassTufts){
     const x=t.x+Math.round((g.cam.x-t.x)/4000)*4000;
@@ -316,6 +310,106 @@ function render(){
   drawRoad(g); drawSkid(g); drawCar(g); drawSmoke(g);
   ctx.restore();
   updateHUD();
+}
+
+/* ============================ first-person windshield view ============================ */
+const HORIZON_F=0.42, FOCAL=185, CAMH=112, NEARZ=11;
+function drawWindshield(g,spd){
+  const c=g.car, R=g.road;
+  // look along a lightly-smoothed heading (the direction the nose points)
+  g.camAngle += angWrap(c.angle - g.camAngle)*0.22;
+  const a=g.camAngle, ca=Math.cos(a), sa=Math.sin(a);
+  const horizon=H*HORIZON_F;
+  let shy=0, shx=0; if(g.shake>0){ shx=(Math.random()-0.5)*g.shake*16; shy=(Math.random()-0.5)*g.shake*12; }
+  // project a ground point (world px,py) into the windshield
+  const proj=(px,py)=>{ const dx=px-c.x, dy=py-c.y; const z=dx*ca+dy*sa; if(z<NEARZ) return null;
+    const side=-dx*sa+dy*ca; const sc=FOCAL/z; return { x:W/2+shx+side*sc, y:horizon+shy+CAMH*sc, sc, z }; };
+
+  // sky
+  const sky=ctx.createLinearGradient(0,0,0,horizon); sky.addColorStop(0,'#8fd0ff'); sky.addColorStop(1,'#eaf6d8');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,horizon+2);
+  // distant hills band
+  ctx.fillStyle='#a8d89a'; ctx.fillRect(0,horizon-8,W,12);
+  // grass ground
+  ctx.fillStyle='#79c665'; ctx.fillRect(0,horizon,W,H-horizon);
+
+  // gather visible road strip
+  const lo=Math.max(R.start,c.idx-2), hi=Math.min(R.pts.length,c.idx+64);
+  const L=[],Rt=[],C=[];
+  for(let i=lo;i<hi;i++){ const p=R.pts[i];
+    const l=proj(p.x-p.ty*ROAD_HALF, p.y+p.tx*ROAD_HALF);
+    const r=proj(p.x+p.ty*ROAD_HALF, p.y-p.tx*ROAD_HALF);
+    const m=proj(p.x,p.y);
+    if(l&&r){ L.push(l); Rt.push(r); C.push(m); }
+  }
+  if(L.length>1){
+    // asphalt ribbon
+    ctx.beginPath(); ctx.moveTo(L[0].x,L[0].y);
+    for(let i=1;i<L.length;i++) ctx.lineTo(L[i].x,L[i].y);
+    for(let i=Rt.length-1;i>=0;i--) ctx.lineTo(Rt[i].x,Rt[i].y);
+    ctx.closePath(); ctx.fillStyle='#adb3bd'; ctx.fill();
+    // white edge lines
+    ctx.lineCap='round';
+    for(const E of [L,Rt]){ ctx.beginPath(); ctx.moveTo(E[0].x,E[0].y);
+      for(let i=1;i<E.length;i++) ctx.lineTo(E[i].x,E[i].y);
+      ctx.strokeStyle='#f6f8fb'; ctx.lineWidth=Math.max(1.5,4*E[0].sc); ctx.stroke(); }
+    // yellow centre dashes
+    for(let i=0;i<C.length-1;i++){ if(i%2) continue; const A=C[i],B=C[i+1];
+      ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y);
+      ctx.strokeStyle='#ffd24a'; ctx.lineWidth=Math.max(1.5,5*A.sc); ctx.stroke(); }
+    // barriers (red/white posts)
+    for(const sgn of [1,-1]){ for(let i=lo;i<hi-1;i+=1){ const p=R.pts[i];
+      const b=proj(p.x - p.ty*BARRIER*sgn, p.y + p.tx*BARRIER*sgn); if(!b) continue;
+      ctx.fillStyle=(i%2===0)?'#e5484d':'#ffffff'; const w=Math.max(2,6*b.sc), h=Math.max(4,14*b.sc);
+      ctx.fillRect(b.x-w/2, b.y-h, w, h); } }
+  }
+  // skid marks projected
+  ctx.lineCap='round';
+  for(const s of g.skid){ const A=proj(s.ax,s.ay), B=proj(s.bx,s.by); if(!A||!B) continue;
+    const al=clamp(1-(g.time-s.t)/4.5,0,1)*0.4; ctx.strokeStyle='rgba(40,42,48,'+al+')'; ctx.lineWidth=Math.max(1,7*A.sc);
+    ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke(); }
+  // smoke projected
+  for(const s of g.smoke){ const P=proj(s.x,s.y); if(!P) continue; const al=clamp(s.life,0,1);
+    ctx.fillStyle='rgba(255,'+Math.round(190+40*al)+','+Math.round(90+70*(1-al))+','+(al*0.5)+')';
+    ctx.beginPath(); ctx.arc(P.x,P.y,Math.max(2,s.r*P.sc),0,TAU); ctx.fill(); }
+  // haze at the horizon for depth
+  const hz=ctx.createLinearGradient(0,horizon,0,horizon+70); hz.addColorStop(0,'rgba(234,246,216,.55)'); hz.addColorStop(1,'rgba(234,246,216,0)');
+  ctx.fillStyle=hz; ctx.fillRect(0,horizon,W,70);
+  // speed streaks at high pace
+  if(spd>420){ ctx.strokeStyle='rgba(255,255,255,'+clamp((spd-420)/500,0,.3)+')'; ctx.lineWidth=2;
+    for(let i=0;i<6;i++){ const yy=horizon+40+Math.random()*(H-horizon-60); const xx=Math.random()<.5?20+Math.random()*60:W-80+Math.random()*60;
+      ctx.beginPath(); ctx.moveTo(xx,yy); ctx.lineTo(xx,yy+40); ctx.stroke(); } }
+
+  drawDashboard(g);
+  drawWheel(g);
+}
+function drawDashboard(g){
+  const topY=H*0.80;
+  const grd=ctx.createLinearGradient(0,topY,0,H); grd.addColorStop(0,'#2a2f3a'); grd.addColorStop(1,'#12151d');
+  // hood/dash swoops up at the sides
+  ctx.fillStyle=grd; ctx.beginPath(); ctx.moveTo(0,H); ctx.lineTo(0,topY+18);
+  ctx.quadraticCurveTo(W*0.5,topY-26, W,topY+18); ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
+  // subtle dash top highlight
+  ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,topY+18);
+  ctx.quadraticCurveTo(W*0.5,topY-26,W,topY+18); ctx.stroke();
+}
+function drawWheel(g){
+  const cx=W*0.30, cy=H-42, rad=Math.min(W*0.20,98);
+  g.wheelCx=cx; g.wheelCy=cy; g.wheelR=rad;
+  const ang=(g.wheelSteer||0)*2.1;   // up to ~120°
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(ang);
+  // rim
+  ctx.lineWidth=rad*0.16; ctx.strokeStyle='#1c2330'; ctx.beginPath(); ctx.arc(0,0,rad,0,TAU); ctx.stroke();
+  ctx.lineWidth=rad*0.09; ctx.strokeStyle='#39435a'; ctx.beginPath(); ctx.arc(0,0,rad,0,TAU); ctx.stroke();
+  // spokes
+  ctx.strokeStyle='#2a3346'; ctx.lineWidth=rad*0.16; ctx.lineCap='round';
+  for(const th of [Math.PI*0.5, Math.PI*1.17, Math.PI*1.83]){ ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(th)*rad*0.9,Math.sin(th)*rad*0.9); ctx.stroke(); }
+  // hub
+  ctx.fillStyle='#ff5a2f'; ctx.beginPath(); ctx.arc(0,0,rad*0.28,0,TAU); ctx.fill();
+  ctx.fillStyle='#1c2330'; ctx.beginPath(); ctx.arc(0,0,rad*0.13,0,TAU); ctx.fill();
+  // top marker
+  ctx.fillStyle='#ffd24a'; ctx.fillRect(-rad*0.06,-rad-rad*0.02,rad*0.12,rad*0.18);
+  ctx.restore();
 }
 function roadRange(g){ const R=g.road, c=g.car;
   return { lo:Math.max(R.start, c.idx-24), hi:Math.min(R.pts.length, c.idx+70) }; }
@@ -397,6 +491,8 @@ function frame(t){
   requestAnimationFrame(frame);
   const dt=Math.min((t-last)/1000||0,0.05); last=t;
   if(state==='play' && game){
+    // wheel springs back to centre when released and no keys held
+    if(game.view==='driver' && game.wheelPtr==null && !(keys['arrowleft']||keys['a']||keys['arrowright']||keys['d'])) game.wheelSteer*=0.72;
     game.steer=steerInput(); game.brake=brakeInput();
     acc+=dt; const h=1/120;
     while(acc>=h){ if(state==='play') step(h); acc-=h; }
@@ -414,7 +510,14 @@ addEventListener('keydown',e=>{ const k=e.key.toLowerCase();
   if((k===' '||k==='enter')&&state!=='play'){ startGame(); }
   if(k==='v'&&state==='play'){ toggleDriftView(); }
 });
-function setViewButton(){ document.getElementById('viewBtn').textContent = (game&&game.view==='driver')?'TOP VIEW':'DRIVER VIEW'; }
+function setViewButton(){ const dv=game&&game.view==='driver';
+  document.getElementById('viewBtn').textContent = dv?'TOP VIEW':'DRIVER VIEW';
+  document.body.classList.toggle('driver-view', dv);
+  // the ‹ › tap hints are for top-view steering only
+  const touch=matchMedia('(hover:none)').matches && state==='play';
+  document.getElementById('hintL').style.display=(!dv&&touch)?'block':'none';
+  document.getElementById('hintR').style.display=(!dv&&touch)?'block':'none';
+}
 function toggleDriftView(){ if(!game) return;
   game.view = game.view==='driver'?'top':'driver'; driftView=game.view;
   try{ localStorage.setItem('drift.view',driftView); }catch(e){}
@@ -427,26 +530,33 @@ addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
 const pointers=new Map();
 const brakeBtn=document.getElementById('brake');
 const viewBtn=document.getElementById('viewBtn');
-function pointerType(x,target){ if(target===brakeBtn) return 'brake'; return x<W/2? 'L':'R'; }
+const WHEEL_RANGE=()=>W*0.34;
 addEventListener('pointerdown',e=>{
   audioInit();
   if(state!=='play') return;
-  if(e.target.closest('.panel')) return;
-  if(e.target===viewBtn) return;                  // the view toggle isn't a steering tap
-  const type=pointerType(e.clientX,e.target);
-  pointers.set(e.pointerId,type);
-  if(type==='brake') brakeBtn.classList.add('on');
+  if(e.target.closest('.panel')||e.target===viewBtn) return;
+  if(e.target===brakeBtn){ pointers.set(e.pointerId,'brake'); brakeBtn.classList.add('on'); return; }
+  if(game.view==='driver'){                        // driver view: drag anywhere to steer the wheel (analog)
+    pointers.set(e.pointerId,'wheel'); game.wheelPtr=e.pointerId; game.wheelStartX=e.clientX; game.wheelBase=game.wheelSteer||0; return;
+  }
+  pointers.set(e.pointerId, e.clientX<W/2?'L':'R');   // top view: tap a side to steer
 });
-addEventListener('pointermove',e=>{ if(!pointers.has(e.pointerId)) return; if(pointers.get(e.pointerId)!=='brake'){ pointers.set(e.pointerId, e.clientX<W/2?'L':'R'); } });
-function releasePointer(id){ if(pointers.get(id)==='brake') brakeBtn.classList.remove('on'); pointers.delete(id); }
+addEventListener('pointermove',e=>{ if(!pointers.has(e.pointerId)) return; const role=pointers.get(e.pointerId);
+  if(role==='wheel'){ game.wheelSteer=clamp(game.wheelBase+(e.clientX-game.wheelStartX)/WHEEL_RANGE(),-1,1); return; }
+  if(role!=='brake'){ pointers.set(e.pointerId, e.clientX<W/2?'L':'R'); }
+});
+function releasePointer(id){ const role=pointers.get(id); if(role==='brake') brakeBtn.classList.remove('on'); if(role==='wheel'&&game) game.wheelPtr=null; pointers.delete(id); }
 addEventListener('pointerup',e=>releasePointer(e.pointerId));
 addEventListener('pointercancel',e=>releasePointer(e.pointerId));
 
 function steerInput(){
   if(game && game.forceSteer!==undefined) return game.forceSteer;
-  let s=0;
-  if(keys['arrowleft']||keys['a']) s-=1;
-  if(keys['arrowright']||keys['d']) s+=1;
+  let ks=0; if(keys['arrowleft']||keys['a']) ks-=1; if(keys['arrowright']||keys['d']) ks+=1;
+  if(game && game.view==='driver'){
+    if(ks!==0){ game.wheelSteer=ks; return ks; }     // keys snap the wheel and steer
+    return clamp(game.wheelSteer||0,-1,1);           // otherwise the analog wheel
+  }
+  let s=ks;
   let tl=false,tr=false; for(const v of pointers.values()){ if(v==='L')tl=true; if(v==='R')tr=true; }
   if(tl) s-=1; if(tr) s+=1;
   return clamp(s,-1,1);
@@ -464,11 +574,8 @@ function startGame(){
   document.getElementById('startPanel').classList.add('hidden');
   document.getElementById('overPanel').classList.add('hidden');
   showHUD(true);
-  const touch=matchMedia('(hover:none)').matches;
   brakeBtn.style.display='block';
-  viewBtn.style.display='block'; setViewButton();
-  document.getElementById('hintL').style.display=touch?'block':'none';
-  document.getElementById('hintR').style.display=touch?'block':'none';
+  viewBtn.style.display='block'; setViewButton();   // also sets the driver-view body class + hints
 }
 document.getElementById('startBtn').onclick=startGame;
 document.getElementById('againBtn').onclick=startGame;
