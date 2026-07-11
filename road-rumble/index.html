@@ -155,11 +155,23 @@ function rr(ctx,x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath();
 /* ============================ canvas ============================ */
 const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
 let W=0,H=0,DPR=1;
-function resize(){ DPR=Math.min(devicePixelRatio||1,2); W=innerWidth; H=innerHeight;
+function viewportSize(){
+  // some browsers / embedded frames report 0 for innerWidth/Height at load; fall back to other viewport
+  // sources (never to canvas.clientWidth — we set that ourselves, so it would latch to the largest size).
+  const de=document.documentElement, vp=window.visualViewport;
+  const w=Math.max(innerWidth||0, (de&&de.clientWidth)||0, (vp&&vp.width)||0);
+  const h=Math.max(innerHeight||0, (de&&de.clientHeight)||0, (vp&&vp.height)||0);
+  return { w:Math.max(1,Math.round(w)), h:Math.max(1,Math.round(h)) };
+}
+function resize(){ const dpr=Math.min(devicePixelRatio||1,2), s=viewportSize();
+  if(s.w===W && s.h===H && dpr===DPR) return;        // nothing changed
+  DPR=dpr; W=s.w; H=s.h;
   canvas.width=Math.floor(W*DPR); canvas.height=Math.floor(H*DPR);
   canvas.style.width=W+'px'; canvas.style.height=H+'px';
   ctx.setTransform(DPR,0,0,DPR,0,0); }
-addEventListener('resize',resize); resize();
+addEventListener('resize',resize); addEventListener('orientationchange',resize); addEventListener('load',resize);
+if(window.visualViewport) visualViewport.addEventListener('resize',resize);
+resize();
 if(matchMedia('(hover:none) and (pointer:coarse)').matches) document.body.classList.add('touch');
 
 /* ============================ road model ============================ */
@@ -645,6 +657,7 @@ function renderPlayer(pSeg){
 let lastT=0, acc=0;
 function frame(t){
   requestAnimationFrame(frame);
+  if(innerWidth!==W || innerHeight!==H) resize();     // self-heal a mis-sized canvas even if no resize event fires
   const dt=Math.min((t-lastT)/1000||0,0.05); lastT=t;
   if(state==='play' && game){
     acc+=dt; const h=1/120; let guard=0;
