@@ -313,11 +313,11 @@ function render(){
 }
 
 /* ============================ first-person windshield view ============================ */
-const HORIZON_F=0.42, FOCAL=185, CAMH=112, NEARZ=11;
+const HORIZON_F=0.42, FOCAL=185, CAMH=112, NEARZ=16;
 function drawWindshield(g,spd){
   const c=g.car, R=g.road;
   // look along a lightly-smoothed heading (the direction the nose points)
-  g.camAngle += angWrap(c.angle - g.camAngle)*0.22;
+  g.camAngle += angWrap(c.angle - g.camAngle)*0.18;
   const a=g.camAngle, ca=Math.cos(a), sa=Math.sin(a);
   const horizon=H*HORIZON_F;
   let shy=0, shx=0; if(g.shake>0){ shx=(Math.random()-0.5)*g.shake*16; shy=(Math.random()-0.5)*g.shake*12; }
@@ -333,36 +333,39 @@ function drawWindshield(g,spd){
   // grass ground
   ctx.fillStyle='#79c665'; ctx.fillRect(0,horizon,W,H-horizon);
 
-  // gather visible road strip
-  const lo=Math.max(R.start,c.idx-2), hi=Math.min(R.pts.length,c.idx+64);
-  const L=[],Rt=[],C=[];
-  for(let i=lo;i<hi;i++){ const p=R.pts[i];
-    const l=proj(p.x-p.ty*ROAD_HALF, p.y+p.tx*ROAD_HALF);
-    const r=proj(p.x+p.ty*ROAD_HALF, p.y-p.tx*ROAD_HALF);
-    const m=proj(p.x,p.y);
-    if(l&&r){ L.push(l); Rt.push(r); C.push(m); }
-  }
-  if(L.length>1){
+  // gather visible road strip — near-plane clipped, per-segment widths so lines don't shake near the camera
+  const lo=Math.max(R.start,c.idx-2), hi=Math.min(R.pts.length,c.idx+70);
+  const zside=(px,py)=>{ const dx=px-c.x, dy=py-c.y; return { z:dx*ca+dy*sa, side:-dx*sa+dy*ca }; };
+  const toScreen=(z,side)=>{ const sc=FOCAL/z; return { x:W/2+shx+side*sc, y:horizon+shy+CAMH*sc, sc }; };
+  function buildLine(worldOf){ const out=[]; let prev=null;
+    for(let i=lo;i<hi;i++){ const w=worldOf(i); const cur=zside(w.x,w.y);
+      if(prev && (prev.z>=NEARZ)!==(cur.z>=NEARZ)){ const t=(NEARZ-prev.z)/(cur.z-prev.z); out.push(toScreen(NEARZ, lerp(prev.side,cur.side,t))); }
+      if(cur.z>=NEARZ) out.push(toScreen(cur.z,cur.side));
+      prev=cur; }
+    return out; }
+  function segStroke(pts,color,base){ if(pts.length<2) return; ctx.strokeStyle=color; ctx.lineCap='round';
+    for(let i=0;i<pts.length-1;i++){ const A=pts[i],B=pts[i+1]; ctx.lineWidth=clamp(base*(A.sc+B.sc)*0.5,1.4,22);
+      ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke(); } }
+  const L =buildLine(i=>{const p=R.pts[i]; return {x:p.x-p.ty*ROAD_HALF, y:p.y+p.tx*ROAD_HALF};});
+  const Rt=buildLine(i=>{const p=R.pts[i]; return {x:p.x+p.ty*ROAD_HALF, y:p.y-p.tx*ROAD_HALF};});
+  const C =buildLine(i=>{const p=R.pts[i]; return {x:p.x, y:p.y};});
+  if(L.length>1 && Rt.length>1){
     // asphalt ribbon
     ctx.beginPath(); ctx.moveTo(L[0].x,L[0].y);
     for(let i=1;i<L.length;i++) ctx.lineTo(L[i].x,L[i].y);
     for(let i=Rt.length-1;i>=0;i--) ctx.lineTo(Rt[i].x,Rt[i].y);
     ctx.closePath(); ctx.fillStyle='#adb3bd'; ctx.fill();
-    // white edge lines
-    ctx.lineCap='round';
-    for(const E of [L,Rt]){ ctx.beginPath(); ctx.moveTo(E[0].x,E[0].y);
-      for(let i=1;i<E.length;i++) ctx.lineTo(E[i].x,E[i].y);
-      ctx.strokeStyle='#f6f8fb'; ctx.lineWidth=Math.max(1.5,4*E[0].sc); ctx.stroke(); }
+    // white edge lines — per-segment widths keep them steady near the camera
+    segStroke(L,'#f6f8fb',4); segStroke(Rt,'#f6f8fb',4);
     // yellow centre dashes
+    ctx.lineCap='round';
     for(let i=0;i<C.length-1;i++){ if(i%2) continue; const A=C[i],B=C[i+1];
-      ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y);
-      ctx.strokeStyle='#ffd24a'; ctx.lineWidth=Math.max(1.5,5*A.sc); ctx.stroke(); }
-    // barriers (red/white posts)
-    for(const sgn of [1,-1]){ for(let i=lo;i<hi-1;i+=1){ const p=R.pts[i];
-      const b=proj(p.x - p.ty*BARRIER*sgn, p.y + p.tx*BARRIER*sgn); if(!b) continue;
-      ctx.fillStyle=(i%2===0)?'#e5484d':'#ffffff'; const w=Math.max(2,6*b.sc), h=Math.max(4,14*b.sc);
-      ctx.fillRect(b.x-w/2, b.y-h, w, h); } }
+      ctx.strokeStyle='#ffd24a'; ctx.lineWidth=clamp((A.sc+B.sc)*2.5,1.6,20); ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke(); }
   }
+  // barriers (red/white) — clamped so the nearest posts don't blow up or jitter
+  for(const sgn of [1,-1]){ for(let i=lo;i<hi-1;i++){ const p=R.pts[i]; const zs=zside(p.x-p.ty*BARRIER*sgn, p.y+p.tx*BARRIER*sgn);
+    if(zs.z<NEARZ) continue; const b=toScreen(zs.z,zs.side); const w=clamp(6*b.sc,2,16), h=clamp(14*b.sc,4,40);
+    ctx.fillStyle=(i%2===0)?'#e5484d':'#ffffff'; ctx.fillRect(b.x-w/2,b.y-h,w,h); } }
   // skid marks projected
   ctx.lineCap='round';
   for(const s of g.skid){ const A=proj(s.ax,s.ay), B=proj(s.bx,s.by); if(!A||!B) continue;
