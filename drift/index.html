@@ -208,7 +208,9 @@ const POWER=0.9;                                         // power-on oversteer: 
 const ROT=1.05;                                          // brake-rotate: weight on the nose sharpens the turn-in. scales with STEER, so it's never a free spin
 const BRAKE_GRIP=0.42, GAS_GRIP=0.80, LIFT=0.5;          // weight transfer: braking (and, less so, lifting) unloads the rear; power lights it up
 const SPIN=1.15;                                         // beyond this much slip the tyres claw back — no free spins
-const ACCEL=760, VTOP=790, DRAG=0.22, COAST=32, BRAKEF=320;
+// brakes are strong enough to set a corner up, but they must NOT stop you dead: braking is the drift trigger,
+// and a slide needs the speed it's scrubbing. too much here and the tool defeats itself.
+const ACCEL=760, VTOP=790, DRAG=0.22, COAST=32, BRAKEF=120;
 function step(dt){
   const g=game, c=g.car, R=g.road;
   const diff=clamp(g.dist/46000,0,1);
@@ -253,7 +255,7 @@ function step(dt){
   // the velocity direction chases the heading — but the chase is capped by the grip budget, so too much
   // speed × steering leaves the tyres behind and the gap (slip) opens up. that gap is the drift.
   slip=angWrap(c.angle-velAng);
-  const cap=lat/Math.max(spd,60);
+  const cap=lat/Math.max(spd,90);   // floor: at a crawl the tyres always win, so you can't rack up slip while parked
   velAng += clamp(GRIP*slip,-cap,cap)*dt;
   slip=angWrap(c.angle-velAng);
 
@@ -263,7 +265,7 @@ function step(dt){
   mag -= (brk*BRAKEF + (thr>0?0:COAST))*dt;
   mag -= mag*DRAG*dt;
   if(g.onGrass) mag -= 300*dt;
-  mag -= mag*Math.abs(slip)*(brk>0?0.72:(thr>0?0.30:0.55))*dt;
+  mag -= mag*Math.abs(slip)*(brk>0?0.45:(thr>0?0.30:0.55))*dt;
   if(mag<0) mag=0;
   c.vx=Math.cos(velAng)*mag; c.vy=Math.sin(velAng)*mag;
   c.x+=c.vx*dt; c.y+=c.vy*dt;
