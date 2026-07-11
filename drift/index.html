@@ -395,15 +395,27 @@ function drawWindshield(g,spd){
   function segStroke(pts,color,base){ if(pts.length<2) return; ctx.strokeStyle=color; ctx.lineCap='round';
     for(let i=0;i<pts.length-1;i++){ const A=pts[i],B=pts[i+1]; ctx.lineWidth=clamp(base*(A.sc+B.sc)*0.5,1.4,22);
       ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke(); } }
+  const SH=42;                                              // gravel verge width, world px (~1.5m)
   const L =buildLine(i=>{const p=R.pts[i]; return {x:p.x-p.ty*ROAD_HALF, y:p.y+p.tx*ROAD_HALF};});
   const Rt=buildLine(i=>{const p=R.pts[i]; return {x:p.x+p.ty*ROAD_HALF, y:p.y-p.tx*ROAD_HALF};});
+  const Lo=buildLine(i=>{const p=R.pts[i]; return {x:p.x-p.ty*(ROAD_HALF+SH), y:p.y+p.tx*(ROAD_HALF+SH)};});
+  const Ro=buildLine(i=>{const p=R.pts[i]; return {x:p.x+p.ty*(ROAD_HALF+SH), y:p.y-p.tx*(ROAD_HALF+SH)};});
   const C =buildLine(i=>{const p=R.pts[i]; return {x:p.x, y:p.y};});
+  // fill the strip between inner polyline A (tarmac edge) and outer B (grass edge)
+  function ribbon(A,B,fill){ if(A.length<2||B.length<2) return; ctx.beginPath(); ctx.moveTo(A[0].x,A[0].y);
+    for(let i=1;i<A.length;i++) ctx.lineTo(A[i].x,A[i].y);
+    for(let i=B.length-1;i>=0;i--) ctx.lineTo(B[i].x,B[i].y);
+    ctx.closePath(); ctx.fillStyle=fill; ctx.fill(); }
   if(L.length>1 && Rt.length>1){
-    // asphalt ribbon
+    // gravel/dirt shoulders — a real verge between tarmac and grass, not a hard white cut
+    ribbon(L,Lo,'#b7aa8b'); ribbon(Rt,Ro,'#b7aa8b');
+    // asphalt ribbon, shaded with aerial perspective: near tarmac darker, far tarmac hazes lighter
     ctx.beginPath(); ctx.moveTo(L[0].x,L[0].y);
     for(let i=1;i<L.length;i++) ctx.lineTo(L[i].x,L[i].y);
     for(let i=Rt.length-1;i>=0;i--) ctx.lineTo(Rt[i].x,Rt[i].y);
-    ctx.closePath(); ctx.fillStyle='#adb3bd'; ctx.fill();
+    ctx.closePath();
+    const road=ctx.createLinearGradient(0,horizon,0,H); road.addColorStop(0,'#c1c6ce'); road.addColorStop(1,'#a1a7b3');
+    ctx.fillStyle=road; ctx.fill();
     // white edge lines — per-segment widths keep them steady near the camera
     segStroke(L,'#f6f8fb',4); segStroke(Rt,'#f6f8fb',4);
     // yellow centre dashes
