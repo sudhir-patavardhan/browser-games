@@ -184,6 +184,7 @@ function newGame(){
     score:0, mult:1, driftTime:0, grace:0, dist:0, onGrass:false, slip:0, speed:430,
     stall:0, chainScore:0, bestChain:0,
     skid:[], smoke:[], grassTufts:makeTufts(seed),
+    scenery:makeScenery(seed),
     shake:0, time:0
   };
 }
@@ -325,13 +326,20 @@ function drawWindshield(g,spd){
   const proj=(px,py)=>{ const dx=px-c.x, dy=py-c.y; const z=dx*ca+dy*sa; if(z<NEARZ) return null;
     const side=-dx*sa+dy*ca; const sc=FOCAL/z; return { x:W/2+shx+side*sc, y:horizon+shy+CAMH*sc, sc, z }; };
 
-  // sky
-  const sky=ctx.createLinearGradient(0,0,0,horizon); sky.addColorStop(0,'#8fd0ff'); sky.addColorStop(1,'#eaf6d8');
-  ctx.fillStyle=sky; ctx.fillRect(0,0,W,horizon+2);
-  // distant hills band
-  ctx.fillStyle='#a8d89a'; ctx.fillRect(0,horizon-8,W,12);
+  // sky — sun, cloud decks, birds and the odd airliner. all of it sits at infinity, so only yaw moves it.
+  const px=W/2+shx, py=horizon+shy;
+  drawSky(g,a,px,py,horizon);
   // grass ground
   ctx.fillStyle='#79c665'; ctx.fillRect(0,horizon,W,H-horizon);
+  // the edge of the world: a city hazing out along one arc of the horizon, then hills, landmarks, treeline
+  drawHorizon(g,a,px,py,Math.max(horizon,py)+4);
+  drawBirds(g.scenery,a,px,py,g.time,true);
+  // the fields we're actually driving past — anchored in the world, so they stream by with travel
+  drawNearScenery(g,ca,sa,px,py);
+  // wash the far fields into the treeline so the horizon reads as distance, not as a cut
+  const fz=ctx.createLinearGradient(0,horizon-12,0,horizon+34); fz.addColorStop(0,'rgba(234,246,216,0)');
+  fz.addColorStop(.3,'rgba(234,246,216,.4)'); fz.addColorStop(1,'rgba(234,246,216,0)');
+  ctx.fillStyle=fz; ctx.fillRect(0,horizon-12,W,46);
 
   // gather visible road strip — near-plane clipped, per-segment widths so lines don't shake near the camera
   const lo=Math.max(R.start,c.idx-2), hi=Math.min(R.pts.length,c.idx+70);
@@ -414,6 +422,215 @@ function drawWheel(g){
   ctx.fillStyle='#ffd24a'; ctx.fillRect(-rad*0.06,-rad-rad*0.02,rad*0.12,rad*0.18);
   ctx.restore();
 }
+/* ============================ driver-view scenery ============================ */
+/* Everything above the horizon lives in a panorama: a bearing b (radians, wraps at 2π) and a height in
+   centre-screen pixels. It's parked at infinity, so only the camera's YAW moves it — and it moves through
+   the very same pinhole lens the road uses:
+       x = W/2 + FOCAL*tan(b-cam)      y = horizon - h/cos(b-cam)
+   Bearings wrap and every profile is cyclic, so it's seamless whichever way you turn, and nothing here is
+   scaled by 1/z, so nothing here can shake. Near scenery (poles, trees) IS pinned to the world and gets
+   projected exactly like the road, so it streams past you as you travel. */
+function h01(n){ n=Math.imul(n^0x9e3779b9,0x85ebca6b); n^=n>>>13; n=Math.imul(n,0xc2b2ae35); return ((n^n>>>16)>>>0)/4294967296; }
+// cyclic smooth noise: white noise, box-blurred round the loop — periodic in 2π by construction
+function cyc(rng,n,passes){ const a=new Float32Array(n); for(let i=0;i<n;i++) a[i]=rng();
+  for(let p=0;p<passes;p++){ const b=a.slice(); for(let i=0;i<n;i++) a[i]=(b[(i+n-1)%n]+b[i]*2+b[(i+1)%n])*0.25; }
+  let mn=2,mx=-2; for(let i=0;i<n;i++){ if(a[i]<mn)mn=a[i]; if(a[i]>mx)mx=a[i]; }
+  const d=(mx-mn)||1; for(let i=0;i<n;i++) a[i]=(a[i]-mn)/d; return a; }
+function prof(a,b){ const n=a.length; let t=b/TAU*n; t-=Math.floor(t/n)*n; const i=t|0; return lerp(a[i],a[(i+1)%n],t-i); }
+const secT=t=>{ const s=Math.sqrt(1+t*t); return s>3.4?3.4:s; };   // wide-angle stretch, capped so edges stay sane
+const SEC=d=>secT(Math.tan(d));
+const DMAX=()=>Math.atan((W/2+170)/FOCAL);                          // widest bearing that can land on screen
+
+function makeScenery(seed){
+  const rng=mulberry32(seed^0x5cee7);
+  const S={ ps:(seed^0x51ed)|0, sunB:rng()*TAU, sunH:120+rng()*80 };
+  S.ridge=cyc(rng,96,4); S.hills=cyc(rng,160,3); S.tree=cyc(rng,512,1); S.gap=cyc(rng,48,3);
+  // the city takes one arc of the horizon. rank 2 = the downtown towers, furthest off and most washed out;
+  // rank 0 = the low blocks of the outskirts, nearest and holding the most colour.
+  const cb=rng()*TAU; S.city=[[],[],[]];
+  const RK=[{n:78,arc:2.4,w:[.030,.085],h:[6,22]},{n:46,arc:1.2,w:[.018,.048],h:[14,48]},{n:26,arc:.54,w:[.010,.030],h:[36,108]}];
+  for(let r=0;r<3;r++){ const K=RK[r];
+    for(let i=0;i<K.n;i++){ const u=(i+0.5)/K.n+(rng()-0.5)*0.8/K.n;
+      const core=Math.pow(Math.max(0,Math.cos((u-0.5)*Math.PI)),0.75);      // tallest through the middle
+      S.city[r].push({ b:cb+(u-0.5)*K.arc, hw:lerp(K.w[0],K.w[1],rng())*0.5,
+        h:lerp(K.h[0],K.h[1],rng()*rng())*(0.3+0.7*core), cap:rng() }); } }
+  // the bits and pieces you actually see on the edge of town, scattered round the whole horizon
+  S.marks=[];
+  for(const k of ['shed','shed','shed','shed','tank','tank','pylon','pylon','pylon','pylon','pylon','silo','silo','spire'])
+    S.marks.push({ k, b:rng()*TAU, s:0.75+rng()*0.6 });
+  // three cloud decks. the low deck is miles off (small, hazy, barely drifts); the high deck is overhead
+  // and close (big, bright, drifts fastest) — that spread of size + drift is what reads as parallax.
+  S.decks=[];
+  const DK=[{n:20,h:[14,58],s:[9,17],dr:.004,core:'rgba(255,255,255,.5)',base:'rgba(214,229,228,.45)',halo:0},
+            {n:12,h:[66,165],s:[16,29],dr:.010,core:'rgba(255,255,255,.85)',base:'rgba(228,224,221,.7)',halo:.1},
+            {n:7, h:[180,330],s:[28,48],dr:.019,core:'rgba(255,255,255,.96)',base:'rgba(234,219,203,.85)',halo:.16}];
+  for(const D of DK){ const L={dr:D.dr,core:D.core,base:D.base,halo:D.halo,list:[]};
+    for(let i=0;i<D.n;i++){ const puffs=[], np=4+(rng()*4|0); let x=0;
+      for(let j=0;j<np;j++){ const rx=0.42+rng()*0.58, ry=rx*(0.52+rng()*0.3);
+        puffs.push({dx:x, dy:-ry+(rng()-0.5)*0.12, rx, ry}); x+=rx*1.02; }   // flat-bottomed, lumpy on top
+      const mid=x*0.5; for(const p of puffs) p.dx-=mid;
+      L.list.push({ b:(i+rng())/D.n*TAU, h:lerp(D.h[0],D.h[1],rng()), s:lerp(D.s[0],D.s[1],rng()), ph:rng()*TAU, p:puffs }); }
+    S.decks.push(L); }
+  // bird flocks: the far four ride behind the hills, the near three pass in front of them
+  S.flocks=[];
+  for(let i=0;i<7;i++){ const far=i<4, n=3+(rng()*5|0), birds=[];
+    for(let j=0;j<n;j++) birds.push({ db:(rng()-0.5)*0.11, dh:(rng()-0.5)*28, ph:rng()*TAU });
+    S.flocks.push({ far, birds, b:rng()*TAU, h:(far?55:130)+rng()*(far?95:170), s:far?2.6:5,
+      dr:(rng()<0.5?-1:1)*(0.010+rng()*0.03), rate:5+rng()*4, al:far?0.28:0.5 }); }
+  S.pPeriod=46+rng()*22;    // one airliner slot every ~minute, and most slots come up empty
+  return S;
+}
+
+function drawSky(g,a,cx,hy,horizon){
+  const S=g.scenery, t=g.time, dmax=DMAX();
+  const sky=ctx.createLinearGradient(0,0,0,horizon+4);
+  sky.addColorStop(0,'#79c6ff'); sky.addColorStop(.45,'#a6ddfb'); sky.addColorStop(.82,'#d9eeea'); sky.addColorStop(1,'#eaf6d8');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,horizon+2);
+  // sun: a soft warm bloom, no hard disc
+  const sd=angWrap(S.sunB-a);
+  if(Math.abs(sd)<dmax+0.35){ const s=SEC(sd), x=cx+FOCAL*Math.tan(sd), y=hy-S.sunH*s, r=175*s;
+    const rg=ctx.createRadialGradient(x,y,0,x,y,r);
+    rg.addColorStop(0,'rgba(255,253,231,.95)'); rg.addColorStop(.09,'rgba(255,245,196,.55)');
+    rg.addColorStop(.34,'rgba(255,233,170,.18)'); rg.addColorStop(1,'rgba(255,230,165,0)');
+    ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); }
+  drawDeck(S.decks[0],a,cx,hy,t,dmax); drawDeck(S.decks[1],a,cx,hy,t,dmax);
+  drawPlane(S,a,cx,hy,t,dmax);                 // high up, so the near deck can pass in front of it
+  drawBirds(S,a,cx,hy,t,false);
+  drawDeck(S.decks[2],a,cx,hy,t,dmax);
+}
+// one path for the whole cloud → the puffs union instead of double-blending where they overlap
+function puffs(c,x,y,sx,sy,pad){ ctx.beginPath();
+  for(const p of c.p) ctx.ellipse(x+p.dx*sx, y+p.dy*sy, p.rx*sx+pad, p.ry*sy+pad, 0, 0, TAU); }
+function drawDeck(L,a,cx,hy,t,dmax){
+  for(const c of L.list){ const d=angWrap(c.b+L.dr*t-a); if(Math.abs(d)>dmax) continue;
+    const s=SEC(d), x=cx+FOCAL*Math.tan(d), y=hy-(c.h+Math.sin(t*0.06+c.ph)*3)*s;
+    const sx=c.s*s*1.15, sy=c.s*s;         // a touch of wide-angle stretch — the full sec² would tear the edges apart
+    if(L.halo){ puffs(c,x,y,sx,sy,3.5*s); ctx.fillStyle='rgba(255,255,255,'+L.halo+')'; ctx.fill(); }
+    puffs(c,x,y+0.11*sy,sx*0.97,sy,0); ctx.fillStyle=L.base; ctx.fill();   // sunlit underside peeking out below
+    puffs(c,x,y,sx,sy,0); ctx.fillStyle=L.core; ctx.fill(); }
+}
+function drawBirds(S,a,cx,hy,t,near){
+  const dmax=DMAX();
+  for(const F of S.flocks){ if(F.far===near) continue;
+    const fb=F.b+F.dr*t; if(Math.abs(angWrap(fb-a))>dmax+0.2) continue;
+    ctx.strokeStyle='rgba(56,72,88,'+F.al+')'; ctx.lineWidth=Math.max(1,F.s*0.28); ctx.lineCap='round';
+    ctx.beginPath();
+    for(const q of F.birds){ const d=angWrap(fb+q.db-a); if(Math.abs(d)>dmax) continue;
+      const s=SEC(d), x=cx+FOCAL*Math.tan(d), y=hy-(F.h+q.dh+Math.sin(t*0.3+q.ph)*5)*s, w=F.s*s;
+      const fl=0.28+0.66*(0.5+0.5*Math.sin(t*F.rate+q.ph));            // wingbeat
+      ctx.moveTo(x-w,y-w*fl); ctx.quadraticCurveTo(x-w*0.42,y+w*0.16,x,y);
+      ctx.quadraticCurveTo(x+w*0.42,y+w*0.16,x+w,y-w*fl); }
+    ctx.stroke(); }
+}
+function drawPlane(S,a,cx,hy,t,dmax){
+  const k=Math.floor(t/S.pPeriod), u=t/S.pPeriod-k;
+  if(h01(S.ps+k*97)<0.45) return;                                      // most slots are empty
+  const cross=0.66; if(u>cross) return;                                // and it only crosses in part of one
+  const f=u/cross, dir=h01(S.ps+k*31)<0.5?-1:1;
+  const b0=h01(S.ps+k*7)*TAU, sweep=(0.8+h01(S.ps+k*57)*0.9)*dir, hh=215+h01(S.ps+k*13)*95;
+  const fade=clamp(f*9,0,1)*clamp((1-f)*5,0,1);
+  const at=x=>{ const d=angWrap(b0+sweep*x-a); return Math.abs(d)>dmax? null
+    : {x:cx+FOCAL*Math.tan(d), y:hy-hh*SEC(d), s:SEC(d)}; };
+  ctx.lineCap='round';                                                 // contrail: old end is fat and faint
+  for(let i=0;i<18;i++){ const A=at(f*i/18), B=at(f*(i+1)/18); if(!A||!B) continue; const w=i/18;
+    ctx.strokeStyle='rgba(255,255,255,'+(w*w*0.36*fade).toFixed(3)+')';
+    ctx.lineWidth=(1.1+2.8*(1-w))*Math.min(A.s,2);
+    ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke(); }
+  const P=at(f); if(!P) return;
+  const z=5.4*P.s;
+  ctx.save(); ctx.translate(P.x,P.y); ctx.scale(dir*z,z);
+  ctx.fillStyle='rgba(70,90,108,'+(0.9*fade).toFixed(2)+')';
+  ctx.beginPath(); ctx.ellipse(0,0,1,0.16,0,0,TAU); ctx.fill();
+  for(const sg of [1,-1]){ ctx.beginPath(); ctx.moveTo(0.16,0); ctx.lineTo(-0.5,0.62*sg);
+    ctx.lineTo(-0.2,0.66*sg); ctx.lineTo(0.4,0.05*sg); ctx.closePath(); ctx.fill(); }
+  ctx.beginPath(); ctx.moveTo(-0.72,0); ctx.lineTo(-1.02,-0.32); ctx.lineTo(-0.84,-0.34); ctx.lineTo(-0.58,-0.03);
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+// a ridge line: sample the profile per screen column, so it costs the same however far you can see
+function band(hf,a,cx,hy,bandY,fill,step){
+  const x0=-40, x1=W+40;
+  const yat=x=>{ const t=(x-cx)/FOCAL; return hy-hf(a+Math.atan(t))*secT(t); };
+  ctx.beginPath(); ctx.moveTo(x0,bandY); ctx.lineTo(x0,yat(x0));
+  for(let x=x0+step;x<x1;x+=step) ctx.lineTo(x,yat(x));
+  ctx.lineTo(x1,yat(x1)); ctx.lineTo(x1,bandY); ctx.closePath();
+  ctx.fillStyle=fill; ctx.fill();
+}
+// atmospheric perspective: every layer washes toward the sky at its base, where the air is thickest
+function haze(hy,h,c0,c1){ const g=ctx.createLinearGradient(0,hy-h,0,hy+6); g.addColorStop(0,c0); g.addColorStop(1,c1); return g; }
+function drawHorizon(g,a,cx,hy,bandY){
+  const S=g.scenery, dmax=DMAX();
+  band(b=>7+prof(S.ridge,b)*17, a,cx,hy,bandY, haze(hy,58,'#a7c6d4','#d0e3df'), 10);      // far blue ridge
+  const CC=[['#7c9cba','#b6cfd8'],['#89abc7','#c3d9dd'],['#9dbdd3','#d3e4e3']];           // near blocks → far towers
+  for(let r=2;r>=0;r--){ ctx.beginPath();
+    for(const q of S.city[r]){ const d=angWrap(q.b-a); if(Math.abs(d)>dmax) continue;
+      const s=SEC(d), x=cx+FOCAL*Math.tan(d), w=FOCAL*q.hw*s*s, top=hy-q.h*s;
+      ctx.rect(x-w,top,w*2,bandY-top);
+      if(q.cap>0.82&&q.h>44) ctx.rect(x-Math.max(.7,.9*s), top-11*s, Math.max(1.4,1.8*s), 11*s); }   // mast
+    ctx.fillStyle=haze(hy,124,CC[r][0],CC[r][1]); ctx.fill(); }
+  band(b=>2+prof(S.hills,b)*30, a,cx,hy,bandY, haze(hy,46,'#8cc191','#bedcc1'), 8);        // rolling hills
+  drawMarks(S,a,cx,hy,bandY,dmax);
+  band(b=>1+prof(S.tree,b)*10*(0.2+0.95*prof(S.gap,b)), a,cx,hy,bandY, haze(hy,26,'#5d9c5b','#8abd79'), 4);
+}
+function drawMarks(S,a,cx,hy,bandY,dmax){
+  for(const m of S.marks){ const d=angWrap(m.b-a); if(Math.abs(d)>dmax) continue;
+    const s=SEC(d)*m.s, x=cx+FOCAL*Math.tan(d), y=hy+2;
+    if(m.k==='shed'){ const w=44*s, h=10*s;                                   // warehouse: long, pale roof
+      ctx.fillStyle='#9fb0b4'; ctx.fillRect(x-w/2,y-h*0.62,w,h*0.62);
+      ctx.fillStyle='#cbd7d6'; ctx.beginPath(); ctx.moveTo(x-w/2,y-h*0.6); ctx.lineTo(x-w*0.4,y-h);
+      ctx.lineTo(x+w*0.4,y-h); ctx.lineTo(x+w/2,y-h*0.6); ctx.closePath(); ctx.fill(); }
+    else if(m.k==='tank'){ const h=26*s, r=6.5*s;                             // water tower
+      ctx.strokeStyle='#8fa2a8'; ctx.lineWidth=Math.max(1,1.4*s);
+      ctx.beginPath(); for(const o of [-r*0.6,0,r*0.6]){ ctx.moveTo(x+o*0.4,y-h+r); ctx.lineTo(x+o,y); } ctx.stroke();
+      ctx.fillStyle='#a8b8bc'; ctx.beginPath(); ctx.ellipse(x,y-h+r*0.6,r,r*0.8,0,0,TAU); ctx.fill();
+      ctx.fillRect(x-r,y-h+r*0.5,r*2,r*0.5); }
+    else if(m.k==='pylon'){ const h=24*s, w=7*s;                              // lattice pylon
+      ctx.strokeStyle='rgba(104,120,128,.8)'; ctx.lineWidth=Math.max(1,1.2*s); ctx.beginPath();
+      ctx.moveTo(x-w/2,y); ctx.lineTo(x,y-h); ctx.lineTo(x+w/2,y);
+      for(const o of [0.42,0.68]){ ctx.moveTo(x-w*(1-o)*0.9,y-h*o); ctx.lineTo(x+w*(1-o)*0.9,y-h*o); }
+      ctx.stroke(); }
+    else if(m.k==='silo'){ const h=18*s, r=3.4*s; ctx.fillStyle='#c2cbc8';    // grain silos
+      for(const o of [-1,0.15,1.3]){ ctx.beginPath(); ctx.moveTo(x+o*r*2.2-r,y);
+        ctx.lineTo(x+o*r*2.2-r,y-h+r); ctx.arc(x+o*r*2.2,y-h+r,r,Math.PI,0); ctx.lineTo(x+o*r*2.2+r,y); ctx.fill(); } }
+    else { const h=30*s; ctx.fillStyle='#a9b6b8'; ctx.beginPath(); ctx.moveTo(x,y-h);  // a spire out in the villages
+      ctx.lineTo(x+3*s,y); ctx.lineTo(x-3*s,y); ctx.closePath(); ctx.fill(); }
+  }
+}
+// poles and trees live in world space and go through the road's own projection, so they sweep past with travel
+function drawNearScenery(g,ca,sa,cx,hy){
+  const R=g.road, c=g.car;
+  const lo=Math.max(R.start,c.idx-1), hi=Math.min(R.pts.length,c.idx+88);
+  const put=(wx,wy)=>{ const dx=wx-c.x, dy=wy-c.y, z=dx*ca+dy*sa; if(z<70) return null;
+    const sc=FOCAL/z, x=cx+(-dx*sa+dy*ca)*sc;
+    return (x<-140||x>W+140)? null : { x, y:hy+CAMH*sc, sc }; };
+  const poles=[], trees=[];
+  for(let i=lo;i<hi;i++){ const p=R.pts[i];
+    if(i%16===0){ const off=BARRIER+180+h01(i*3)*70;                     // telephone poles down one shoulder
+      const q=put(p.x-p.ty*off, p.y+p.tx*off); if(q){ q.h=205*q.sc; poles.push(q); } }
+    if(h01(i*7+3)<0.42){ const sg=h01(i*11)<0.5?1:-1;                    // tree clumps out in the fields
+      const off=(BARRIER+230+Math.pow(h01(i*17),0.7)*2200)*sg;
+      const q=put(p.x-p.ty*off, p.y+p.tx*off);
+      if(q){ q.hh=(120+h01(i*23)*115)*q.sc; q.c=h01(i*29); trees.push(q); } } }
+  if(poles.length>1){ ctx.strokeStyle='rgba(52,64,74,.38)'; ctx.lineWidth=1.4;   // slack wires between them
+    for(const k of [0.93,0.84]){ ctx.beginPath();
+      for(let j=0;j<poles.length-1;j++){ const A=poles[j], B=poles[j+1];
+        const ay=A.y-A.h*k, by=B.y-B.h*k, sag=6*(A.sc+B.sc);
+        ctx.moveTo(A.x,ay); ctx.quadraticCurveTo((A.x+B.x)/2,(ay+by)/2+sag,B.x,by); }
+      ctx.stroke(); } }
+  ctx.fillStyle='#8b7c69';
+  for(const q of poles){ const w=clamp(4*q.sc,1,9), aw=clamp(36*q.sc,3,74), top=q.y-q.h;
+    ctx.fillRect(q.x-w/2,top,w,q.h);
+    ctx.fillRect(q.x-aw/2,top+q.h*0.05,aw,Math.max(1,2.4*q.sc));
+    ctx.fillRect(q.x-aw*0.35,top+q.h*0.14,aw*0.7,Math.max(1,2*q.sc)); }
+  ctx.fillStyle='#6b5744';
+  for(const q of trees){ const w=clamp(q.hh*0.08,0.8,13); ctx.fillRect(q.x-w/2,q.y-q.hh*0.45,w,q.hh*0.45); }
+  for(let k=0;k<2;k++){ ctx.beginPath();                                 // two greens, batched into two fills
+    for(const q of trees){ if((q.c<0.5)!==(k===0)) continue; const r=q.hh*0.34, ty=q.y-q.hh*0.62;
+      ctx.moveTo(q.x+r,ty); ctx.arc(q.x,ty,r,0,TAU);
+      ctx.moveTo(q.x-r*0.75+r*0.6,ty+r*0.55); ctx.arc(q.x-r*0.75,ty+r*0.55,r*0.6,0,TAU);
+      ctx.moveTo(q.x+r*0.78+r*0.58,ty+r*0.5); ctx.arc(q.x+r*0.78,ty+r*0.5,r*0.58,0,TAU); }
+    ctx.fillStyle=k===0?'#4e9250':'#63a95a'; ctx.fill(); }
+}
+
 function roadRange(g){ const R=g.road, c=g.car;
   return { lo:Math.max(R.start, c.idx-24), hi:Math.min(R.pts.length, c.idx+70) }; }
 function drawRoad(g){
