@@ -41,6 +41,10 @@ The claims it defends, in rough order of how much they matter:
   exception — with no on-screen pedals there's nothing to hold, so fingers get an auto-throttle and a
   second finger brakes. `run.sh controls` drives both paths with synthetic events, because a control
   scheme with no buttons has no geometry to eyeball: the only way to know touch works is to touch it.
+- **The EV cabin tells the truth.** The dash reports state of charge, range and live kW, so those numbers
+  have to mean something: pulling power drains the pack, braking at speed genuinely regenerates (peak
+  ~-42kW, charge gained), and a full charge outlasts any realistic run — the range readout is flavour, not
+  a hidden fail state, and the battery never feeds back into the physics.
 - **The driver view renders through a full yaw sweep without throwing.**
 
 ## Judgement, not a rubber stamp

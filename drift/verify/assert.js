@@ -165,6 +165,27 @@
   rec("no auto-throttle (idling stalls you out)", idle.state==='over' || idle.speed<200,
       "6s no input: speed="+idle.speed.toFixed(0)+" state="+idle.state+" reason="+idle.over);
 
+  // ---- J: the EV cabin. The battery is telemetry the dash reports, so it has to be TRUE: pulling power
+  // drains it, the brakes hand some back, and it must never be so thirsty that a normal run runs it flat.
+  // track PEAK regen, not the final reading — the car has slowed to a crawl by the end of a brake, where
+  // regen power is trivially near zero, so a final-value check measures the wrong instant
+  const batt=(secs,drive)=>{ seedRandom(4242); D.start(); const b0=D.game.batt; let peak=0;
+    for(let i=0;i<secs*HZ;i++){ if(D.state!=='play') break; const u=drive(i/HZ,D.game);
+      D.setInput(u[0],u[1],u[2]); D.step(1); if(D.game.kw<peak) peak=D.game.kw; }
+    return { b0, b1:D.game.batt, kw:D.game.kw, peakRegen:peak }; };
+  const wot=batt(8, ()=>[0,1,0]);
+  // brake for only 2s: brake for 8 and the car is stopped, where regen is trivially zero and the test
+  // would pass without ever demonstrating that the brakes put anything back
+  const braking=batt(2, ()=>[0,0,1]);
+  rec("EV: pulling power drains the battery", wot.b1 < wot.b0,
+      "8s flat out: "+(wot.b0*100).toFixed(1)+"% -> "+(wot.b1*100).toFixed(1)+"%, draw="+wot.kw.toFixed(0)+"kW");
+  rec("EV: braking at speed actually puts charge back", braking.b1 > braking.b0 && braking.peakRegen < -20,
+      "2s on the brakes from speed: "+(braking.b0*100).toFixed(2)+"% -> "+(braking.b1*100).toFixed(2)+
+      "% (charge GAINED), peak regen="+braking.peakRegen.toFixed(0)+"kW");
+  const spent=(wot.b0-wot.b1)/8;                              // battery per second, flat out
+  rec("EV: a full charge outlasts a real run", spent>0 && 1/spent > 240,
+      "flat out, empty in "+(1/spent).toFixed(0)+"s (want >240s — the range readout should be flavour, not a fail state)");
+
   const div=document.createElement('div');
   div.id='RESULTS'; div.textContent=out.join("\n"); document.body.appendChild(div);
 

@@ -33,12 +33,19 @@
   .steerhint{ position:fixed; bottom:64px; z-index:3; font-weight:900; font-size:34px; color:rgba(255,255,255,.5);
     pointer-events:none; text-shadow:0 2px 6px rgba(0,0,0,.2); }
   #hintL{ left:22px; } #hintR{ right:22px; }
-  #viewBtn{ position:fixed; top:118px; left:50%; transform:translateX(-50%); z-index:6;
+  /* the only button left, and it's out of the road: bottom of the screen in top view, and in driver view
+     it becomes a console key down on the dash, tucked to the left of the wheel */
+  #viewBtn{ position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:6;
     background:rgba(255,255,255,.82); border:none; border-radius:14px; padding:8px 14px; cursor:pointer;
     font-weight:800; font-size:12.5px; letter-spacing:1px; color:#17324a; backdrop-filter:blur(6px);
     box-shadow:0 6px 18px rgba(20,40,20,.18); touch-action:manipulation; }
   #viewBtn:active{ transform:translateX(-50%) translateY(1px); }
-  /* no on-screen buttons: you steer with keys or by touching the road itself, and the car finds its own pace */
+  body.driver-view #viewBtn{ left:9px; bottom:15px; transform:none; padding:7px 9px; font-size:10.5px;
+    letter-spacing:.5px; border-radius:9px; color:#a9e9ff; background:rgba(14,18,26,.78);
+    border:1px solid rgba(160,225,255,.22); box-shadow:0 2px 10px rgba(0,0,0,.35); }
+  body.driver-view #viewBtn:active{ transform:translateY(1px); background:rgba(24,32,44,.92); }
+  /* driver view: the dash reports your speed, so the HUD's speed pill would just be saying it twice */
+  body.driver-view .rt{ display:none; }
 
   /* overlays */
   .panel{ position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;
@@ -176,6 +183,7 @@ function newGame(){
     score:0, mult:1, driftTime:0, grace:0, dist:0, onGrass:false, slip:0, speed:430,
     stall:0, chainScore:0, bestChain:0,
     skid:[], smoke:[], grassTufts:makeTufts(seed),
+    batt:0.86, kw:0, trk:(seed>>>3)%TRACKS.length, trkT:18+((seed>>>7)%40),   // the cabin: charge, power draw, what's playing
     scenery:makeScenery(seed),
     shake:0, time:0
   };
@@ -196,6 +204,12 @@ const SPIN=1.15;                                         // beyond this much sli
 // brakes are strong enough to set a corner up, but they must NOT stop you dead: braking is the drift trigger,
 // and a slide needs the speed it's scrubbing. too much here and the tool defeats itself.
 const ACCEL=760, VTOP=790, DRAG=0.22, COAST=32, BRAKEF=120;
+/* the cabin. A high-end EV: ~340kW on tap, ~90kW of regen on the brakes, ~520km of quoted range.
+   The battery is telemetry, not a fail state — it never feeds back into the physics, it just gives the
+   dash something true to say. Roughly 8 minutes of flat-out driving would empty it. */
+const EV_KW=340, REGEN_KW=90, EV_RANGE=520, EV_BURN=0.0011;
+const TRACKS=[['Neon Ridge','ASTRA'],['Coastline at Dusk','Vela Ninety'],['Nightshift','Kōki'],
+              ['Amber Dust','LUME'],['Static Bloom','Fen & Roe'],['Long Way Home','Marisa Vane']];
 function step(dt){
   const g=game, c=g.car, R=g.road;
   const diff=clamp(g.dist/46000,0,1);
@@ -273,6 +287,12 @@ function step(dt){
   else g.stall=Math.max(0,g.stall-dt*2);
 
   g.dist+=g.speed*dt; g.time+=dt;
+
+  // battery: pulling hard at speed drains it, the brakes hand some back. Purely what the dash reports.
+  const load=(0.30+1.30*thr)*(0.32+0.88*mag/VTOP);
+  const regen=1.05*brk*clamp(mag/VTOP,0,1);
+  g.kw = lerp(g.kw, thr*EV_KW*clamp(0.35+mag/VTOP,0,1) - brk*REGEN_KW*clamp(mag/VTOP,0,1), 0.12);
+  g.batt = clamp(g.batt - (load-regen)*EV_BURN*dt, 0, 1);
 
   // skid marks (rear wheels) — from the car's heading
   const fx=Math.cos(c.angle), fy=Math.sin(c.angle), rx=-Math.sin(c.angle), ry=Math.cos(c.angle);
@@ -434,32 +454,166 @@ function drawWindshield(g,spd){
   drawDashboard(g);
   drawWheel(g);
 }
+/* ============================ the cabin ============================ */
+/* A high-end EV: soft-touch dash, an ambient light line, one pane of glass carrying speed / charge /
+   range / power, an infotainment strip below it, and a flat-bottom two-spoke wheel. Everything is laid
+   out off the wheel's geometry so it can't collide with it on a narrow phone. */
+const TRK_LEN=196;   // seconds per track
+// the wheel sits high enough that its flat bottom clears the screen edge — otherwise the one detail that
+// says "EV" is the one detail you never see
+function wheelGeom(){ const rad=Math.min(W*0.20,92); return { cx:W*0.5, cy:H-rad*0.70-4, rad }; }
+const CYAN='#7fe2ff', DIM='rgba(190,215,235,.55)';
+
 function drawDashboard(g){
-  const topY=H*0.80;
-  const grd=ctx.createLinearGradient(0,topY,0,H); grd.addColorStop(0,'#2a2f3a'); grd.addColorStop(1,'#12151d');
-  // hood/dash swoops up at the sides
-  ctx.fillStyle=grd; ctx.beginPath(); ctx.moveTo(0,H); ctx.lineTo(0,topY+18);
-  ctx.quadraticCurveTo(W*0.5,topY-26, W,topY+18); ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
-  // subtle dash top highlight
-  ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,topY+18);
-  ctx.quadraticCurveTo(W*0.5,topY-26,W,topY+18); ctx.stroke();
+  const { cx, cy, rad }=wheelGeom();
+  // lay the dash out off the wheel, not off the screen: the cluster always gets its band, so a short
+  // phone loses dash height rather than losing the speedo
+  const wheelTop=cy-rad, clusterH=clamp(H*0.105,52,92);
+  const topY=wheelTop-clusterH-24, lip=topY+16;
+  // soft-touch dash, swooping up at the sides
+  const grd=ctx.createLinearGradient(0,topY,0,H);
+  grd.addColorStop(0,'#232833'); grd.addColorStop(0.35,'#171b24'); grd.addColorStop(1,'#0a0c11');
+  ctx.fillStyle=grd; ctx.beginPath(); ctx.moveTo(0,H); ctx.lineTo(0,lip);
+  ctx.quadraticCurveTo(W*0.5,topY-26, W,lip); ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
+  // ambient light line along the dash top — the giveaway of an expensive interior
+  ctx.lineCap='round';
+  for(const [w,a] of [[6,'rgba(110,215,255,.10)'],[2.4,'rgba(150,230,255,.30)'],[1,'rgba(225,248,255,.75)']]){
+    ctx.strokeStyle=a; ctx.lineWidth=w; ctx.beginPath(); ctx.moveTo(0,lip);
+    ctx.quadraticCurveTo(W*0.5,topY-26,W,lip); ctx.stroke();
+  }
+  drawCluster(g, topY+13, clusterH);
 }
+
+// one pane of glass: speed, gear, power/regen, charge, range — and the stereo along the bottom
+function drawCluster(g, y0, h){
+  const pad=W*0.05, x0=pad, wd=W-pad*2;
+  if(h<34) return;                       // no room at all — better nothing than a mess
+  const s=h/92, p=11*s;
+  const mainH=h*0.60;
+
+  // the pane
+  ctx.fillStyle='rgba(6,9,14,.82)'; rr(x0,y0,wd,h,10*s+3); ctx.fill();
+  ctx.strokeStyle='rgba(150,205,235,.16)'; ctx.lineWidth=1; rr(x0,y0,wd,h,10*s+3); ctx.stroke();
+  const gl=ctx.createLinearGradient(0,y0,0,y0+h*0.5);
+  gl.addColorStop(0,'rgba(255,255,255,.07)'); gl.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=gl; rr(x0,y0,wd,h*0.5,10*s+3); ctx.fill();
+
+  const baseY=y0+mainH*0.78;
+  ctx.textBaseline='alphabetic';
+
+  // ---- speed. the big number, like every EV cluster
+  const kmh=Math.round(g.speed*0.36);
+  ctx.textAlign='left';
+  ctx.fillStyle='#eaf6ff'; ctx.font='800 '+Math.round(37*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
+  ctx.fillText(String(kmh), x0+p, baseY);
+  const nw=ctx.measureText(String(kmh)).width;
+  ctx.fillStyle=DIM; ctx.font='700 '+Math.round(10*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
+  ctx.fillText('km/h', x0+p+nw+5*s, baseY);
+  // drive selector — an EV only ever shows you D
+  ctx.fillStyle=CYAN; ctx.font='800 '+Math.round(11*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
+  ctx.fillText('D', x0+p+nw+5*s, baseY-13*s);
+
+  // ---- charge + range, right-hand end
+  const rx=x0+wd-p;
+  const pct=Math.round(g.batt*100), km=Math.round(g.batt*EV_RANGE);
+  const low=g.batt<0.15;
+  ctx.textAlign='right';
+  ctx.fillStyle=low?'#ffb454':'#eaf6ff'; ctx.font='800 '+Math.round(15*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
+  ctx.fillText(km+' km', rx, baseY);
+  ctx.fillStyle=DIM; ctx.font='700 '+Math.round(9.5*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
+  ctx.fillText(pct+'%', rx, baseY-17*s);
+  // battery glyph
+  const bw=30*s, bh=11*s, bx=rx-bw-26*s, by=baseY-17*s-bh+1.5*s;
+  ctx.strokeStyle='rgba(190,215,235,.5)'; ctx.lineWidth=Math.max(1,1.2*s);
+  rr(bx,by,bw,bh,2.5*s); ctx.stroke();
+  ctx.fillStyle='rgba(190,215,235,.5)'; ctx.fillRect(bx+bw+1.5*s, by+bh*0.28, 2*s, bh*0.44);
+  ctx.fillStyle=low?'#ffb454':CYAN;
+  ctx.fillRect(bx+1.6*s, by+1.6*s, Math.max(1,(bw-3.2*s)*g.batt), bh-3.2*s);
+
+  // ---- power / regen. centre is zero: pulling power runs cyan to the right, regen runs green to the left
+  const pwW=wd*0.26, pwX=x0+wd*0.5-pwW*0.5, pwY=y0+mainH*0.42, pwH=4.5*s;
+  ctx.fillStyle='rgba(255,255,255,.07)'; rr(pwX,pwY,pwW,pwH,pwH*0.5); ctx.fill();
+  const f=clamp(g.kw/EV_KW,-1,1), half=pwW*0.5;
+  if(f>=0){ ctx.fillStyle=CYAN; rr(pwX+half, pwY, Math.max(1,half*f), pwH, pwH*0.5); ctx.fill(); }
+  else    { const w2=Math.max(1,half*Math.min(-f*(EV_KW/REGEN_KW),1));
+            ctx.fillStyle='#63e6a4'; rr(pwX+half-w2, pwY, w2, pwH, pwH*0.5); ctx.fill(); }
+  ctx.fillStyle='rgba(255,255,255,.35)'; ctx.fillRect(pwX+half-0.5, pwY-1.5*s, 1, pwH+3*s);
+  ctx.textAlign='center'; ctx.fillStyle=DIM;
+  ctx.font='700 '+Math.round(8.5*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
+  ctx.fillText((g.kw<-2?'REGEN ':'')+Math.round(Math.abs(g.kw))+' kW', pwX+half, pwY-5*s);
+
+  // ---- the stereo, along the bottom of the pane
+  if(h<58) return;                      // too short to be legible — leave it out rather than smear it
+  const my=y0+mainH+2*s, mh=h-mainH-6*s;
+  const art=mh*0.74, ax=x0+p, ay=my+(mh-art)*0.5-1*s;
+  const elapsed=g.trkT+g.time, t=TRACKS[(g.trk+Math.floor(elapsed/TRK_LEN))%TRACKS.length], pos=(elapsed%TRK_LEN)/TRK_LEN;
+  // album art
+  const ag=ctx.createLinearGradient(ax,ay,ax+art,ay+art);
+  ag.addColorStop(0,'#ff6a3d'); ag.addColorStop(1,'#7b5cff');
+  ctx.fillStyle=ag; rr(ax,ay,art,art,3*s); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.85)'; ctx.beginPath(); ctx.arc(ax+art*0.5,ay+art*0.5,art*0.14,0,TAU); ctx.fill();
+  // title / artist
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillStyle='#dcecf7'; ctx.font='700 '+Math.round(10*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
+  ctx.fillText(t[0], ax+art+7*s, ay+art*0.32);
+  ctx.fillStyle=DIM; ctx.font='600 '+Math.round(8.5*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
+  ctx.fillText(t[1], ax+art+7*s, ay+art*0.74);
+  ctx.textBaseline='alphabetic';
+  // level meter — it dances harder the faster you're going, like a stereo fighting road noise
+  const bars=7, bw2=2.6*s, gap=2.2*s, bx2=x0+wd-p-(bars*(bw2+gap));
+  const loud=0.45+0.55*clamp(g.speed/VTOP,0,1);
+  for(let i=0;i<bars;i++){
+    const e=(0.35+0.65*Math.abs(Math.sin(g.time*(2.1+i*0.63)+i*1.7)))*(0.55+0.45*Math.sin(g.time*0.8+i*2.1))*loud;
+    const bh2=Math.max(1.5*s, mh*0.42*Math.abs(e));
+    ctx.fillStyle=i<4?'rgba(127,226,255,.75)':'rgba(99,230,164,.7)';
+    rr(bx2+i*(bw2+gap), ay+art*0.72-bh2, bw2, bh2, bw2*0.5); ctx.fill();
+  }
+  // track progress, a hairline across the foot of the pane
+  ctx.fillStyle='rgba(255,255,255,.10)'; ctx.fillRect(x0+p, y0+h-3.5*s, wd-p*2, 1.4*s);
+  ctx.fillStyle='rgba(127,226,255,.65)'; ctx.fillRect(x0+p, y0+h-3.5*s, (wd-p*2)*pos, 1.4*s);
+}
+
 function drawWheel(g){
-  const cx=W*0.5, cy=H-30, rad=Math.min(W*0.22,104);
+  const { cx, cy, rad }=wheelGeom();
   g.wheelCx=cx; g.wheelCy=cy; g.wheelR=rad;
   const ang=(g.wheelSteer||0)*2.1;   // up to ~120°
   ctx.save(); ctx.translate(cx,cy); ctx.rotate(ang);
-  // rim
-  ctx.lineWidth=rad*0.16; ctx.strokeStyle='#1c2330'; ctx.beginPath(); ctx.arc(0,0,rad,0,TAU); ctx.stroke();
-  ctx.lineWidth=rad*0.09; ctx.strokeStyle='#39435a'; ctx.beginPath(); ctx.arc(0,0,rad,0,TAU); ctx.stroke();
-  // spokes
-  ctx.strokeStyle='#2a3346'; ctx.lineWidth=rad*0.16; ctx.lineCap='round';
-  for(const th of [Math.PI*0.5, Math.PI*1.17, Math.PI*1.83]){ ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(th)*rad*0.9,Math.sin(th)*rad*0.9); ctx.stroke(); }
-  // hub
-  ctx.fillStyle='#ff5a2f'; ctx.beginPath(); ctx.arc(0,0,rad*0.28,0,TAU); ctx.fill();
-  ctx.fillStyle='#1c2330'; ctx.beginPath(); ctx.arc(0,0,rad*0.13,0,TAU); ctx.fill();
-  // top marker
-  ctx.fillStyle='#ffd24a'; ctx.fillRect(-rad*0.06,-rad-rad*0.02,rad*0.12,rad*0.18);
+
+  // flat-bottom rim: an arc over the top, closed by a straight bar across the bottom
+  const flat=rad*0.70, ex=Math.sqrt(Math.max(rad*rad-flat*flat,1));
+  const a0=Math.atan2(flat,ex);
+  const rim=()=>{ ctx.beginPath(); ctx.arc(0,0,rad,a0,Math.PI-a0,true); ctx.lineTo(ex,flat); };
+  ctx.lineJoin='round'; ctx.lineCap='round';
+  rim(); ctx.strokeStyle='#0a0d13'; ctx.lineWidth=rad*0.20; ctx.stroke();          // leather
+  rim(); ctx.strokeStyle='#232b3a'; ctx.lineWidth=rad*0.13; ctx.stroke();
+  rim(); ctx.strokeStyle='rgba(210,235,255,.14)'; ctx.lineWidth=rad*0.03; ctx.stroke();   // sheen
+  // contrast stitching just inside the rim
+  ctx.setLineDash([rad*0.05, rad*0.06]);
+  rim(); ctx.strokeStyle='rgba(255,180,120,.35)'; ctx.lineWidth=Math.max(1,rad*0.012); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // two spokes out to the rim, and a short column down to the flat bottom
+  ctx.strokeStyle='#161c27'; ctx.lineWidth=rad*0.17;
+  for(const th of [0.16, Math.PI-0.16]){
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(th)*rad*0.92, Math.sin(th)*rad*0.92); ctx.stroke(); }
+  ctx.lineWidth=rad*0.13; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,flat); ctx.stroke();
+
+  // capacitive button pads on each spoke
+  for(const sgn of [-1,1]){
+    const bx=sgn*rad*0.52, by=rad*0.085, bw=rad*0.30, bh=rad*0.17;
+    ctx.fillStyle='#0d121b'; rr(bx-bw/2,by-bh/2,bw,bh,bh*0.34); ctx.fill();
+    ctx.strokeStyle='rgba(150,205,235,.18)'; ctx.lineWidth=Math.max(1,rad*0.008);
+    rr(bx-bw/2,by-bh/2,bw,bh,bh*0.34); ctx.stroke();
+    ctx.fillStyle='rgba(127,226,255,.55)';
+    for(const d of [-1,1]){ ctx.beginPath(); ctx.arc(bx+d*bw*0.19, by, rad*0.021, 0, TAU); ctx.fill(); }
+  }
+  // hub, with a lit badge
+  ctx.fillStyle='#0b0f16'; rr(-rad*0.30,-rad*0.19,rad*0.60,rad*0.38,rad*0.10); ctx.fill();
+  ctx.strokeStyle='rgba(150,205,235,.16)'; ctx.lineWidth=Math.max(1,rad*0.01);
+  rr(-rad*0.30,-rad*0.19,rad*0.60,rad*0.38,rad*0.10); ctx.stroke();
+  ctx.fillStyle=CYAN; rr(-rad*0.13,-rad*0.022,rad*0.26,rad*0.044,rad*0.022); ctx.fill();
+  // 12 o'clock marker, so you can read the lock at a glance
+  ctx.fillStyle='#ffd24a'; rr(-rad*0.05,-rad-rad*0.03,rad*0.10,rad*0.16,rad*0.03); ctx.fill();
   ctx.restore();
 }
 /* ============================ driver-view scenery ============================ */
