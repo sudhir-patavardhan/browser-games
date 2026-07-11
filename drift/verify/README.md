@@ -11,7 +11,7 @@ Chrome/Chromium. The game exposes `window.__drift` (`start()`, `setInput(steer, 
 
 ```bash
 ./drift/verify/run.sh              # physics + behaviour suite; exits non-zero on any FAIL
-./drift/verify/run.sh geo          # pedal geometry in both cameras (offscreen / overlap / what a tap hits)
+./drift/verify/run.sh controls     # the control scheme, driven with synthetic pointer + key events
 ./drift/verify/run.sh plane        # scenery built, and the rare airliner is actually reachable
 ./drift/verify/shoot.sh driver f.png   # screenshot the car mid-drive, so you can LOOK at it
 ```
@@ -37,7 +37,10 @@ The claims it defends, in rough order of how much they matter:
 - **Brakes must not stop you dead.** Braking is the drift trigger, and a slide needs the speed it scrubs, so
   over-strong brakes make the tool defeat itself. This one has already regressed once.
 - **The bang-bang keyboard player** (steering is only -1/0/+1) can still hold a line on every road.
-- **No auto-throttle**: doing nothing must let you stall out.
+- **No auto-throttle on a keyboard**: doing nothing must let you stall out. Touch is the deliberate
+  exception — with no on-screen pedals there's nothing to hold, so fingers get an auto-throttle and a
+  second finger brakes. `run.sh controls` drives both paths with synthetic events, because a control
+  scheme with no buttons has no geometry to eyeball: the only way to know touch works is to touch it.
 - **The driver view renders through a full yaw sweep without throwing.**
 
 ## Judgement, not a rubber stamp

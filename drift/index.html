@@ -30,18 +30,7 @@
   @keyframes pop{ 0%{opacity:0; transform:translateX(-50%) scale(.7);} 20%{opacity:1; transform:translateX(-50%) scale(1.05);}
     80%{opacity:1;} 100%{opacity:0; transform:translateX(-50%) scale(1);} }
 
-  /* pedals */
-  .pedal{ position:fixed; bottom:22px; z-index:5; border:none; border-radius:22px; touch-action:none;
-    width:min(38vw,190px); height:82px; font-weight:900; font-size:17px; letter-spacing:2px; }
-  #gas{ right:16px; background:linear-gradient(180deg,#a7f06d,#3fbf4a); color:#0c3d16;
-    box-shadow:0 10px 0 #2e8f38, 0 16px 26px rgba(20,90,20,.3); }
-  #gas.on{ transform:translateY(6px); box-shadow:0 4px 0 #2e8f38, 0 8px 16px rgba(20,90,20,.3);
-    background:linear-gradient(180deg,#86e252,#2ba63a); }
-  #brake{ left:16px; background:linear-gradient(180deg,#ffb0a4,#ef5350); color:#5e1010;
-    box-shadow:0 10px 0 #b8353a, 0 16px 26px rgba(120,30,20,.3); }
-  #brake.on{ transform:translateY(6px); box-shadow:0 4px 0 #b8353a, 0 8px 16px rgba(120,30,20,.3);
-    background:linear-gradient(180deg,#ff8a7c,#d93a3f); }
-  .steerhint{ position:fixed; bottom:134px; z-index:3; font-weight:900; font-size:34px; color:rgba(255,255,255,.5);
+  .steerhint{ position:fixed; bottom:64px; z-index:3; font-weight:900; font-size:34px; color:rgba(255,255,255,.5);
     pointer-events:none; text-shadow:0 2px 6px rgba(0,0,0,.2); }
   #hintL{ left:22px; } #hintR{ right:22px; }
   #viewBtn{ position:fixed; top:118px; left:50%; transform:translateX(-50%); z-index:6;
@@ -49,7 +38,7 @@
     font-weight:800; font-size:12.5px; letter-spacing:1px; color:#17324a; backdrop-filter:blur(6px);
     box-shadow:0 6px 18px rgba(20,40,20,.18); touch-action:manipulation; }
   #viewBtn:active{ transform:translateX(-50%) translateY(1px); }
-  /* driver view has no pedals: the wheel is centred, throttle is automatic, and a second finger brakes */
+  /* no on-screen buttons: you steer with keys or by touching the road itself, and the car finds its own pace */
 
   /* overlays */
   .panel{ position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;
@@ -88,8 +77,6 @@
 <div class="steerhint" id="hintL" style="display:none">‹</div>
 <div class="steerhint" id="hintR" style="display:none">›</div>
 <button id="viewBtn" style="display:none">DRIVER VIEW</button>
-<button class="pedal" id="brake" style="display:none">BRAKE</button>
-<button class="pedal" id="gas" style="display:none">GAS</button>
 
 <div class="panel" id="startPanel">
   <div class="card">
@@ -98,10 +85,11 @@
     <p class="lead">An endless sunlit road that keeps throwing tighter corners. Pin the throttle down the straights, brake into the bends — carry too much speed and the rear steps out. Hold the slide to build your multiplier; the wider and longer, the bigger the score.</p>
     <button class="go" id="startBtn">Drive</button>
     <div class="keys">
-      <b>Steer:</b> &larr; &rarr; or A / D &nbsp;·&nbsp; tap the left / right side on mobile<br>
-      <b>Throttle:</b> &uarr; / W &nbsp;·&nbsp; <b>Brake:</b> &darr; / S &nbsp;·&nbsp; or the two pedals on mobile<br>
+      <b>Keyboard:</b> &larr; &rarr; (or A / D) steer &nbsp;·&nbsp; &uarr; / W throttle &nbsp;·&nbsp; &darr; / S brake<br>
+      <b>Touch:</b> hold the left / right side to steer — or swipe to turn the wheel in driver view.
+      The car drives itself; a <b>second finger</b> anywhere is the brake<br>
       <b>To slide:</b> brake as you turn in — the tail steps out. Then get back on the power to hold it<br>
-      <b>Views:</b> tap “Driver view” (through the windshield) or press V — in driver view, drag anywhere to turn the wheel; it drives itself and a second finger brakes
+      <b>Views:</b> tap “Driver view” (through the windshield) or press V
     </div>
   </div>
 </div>
@@ -316,8 +304,7 @@ function gameOver(reason){
   document.getElementById('finalScore').textContent=sc.toLocaleString();
   document.getElementById('overBest').textContent='Best '+best.toLocaleString();
   document.getElementById('newBest').style.display=isBest?'inline-block':'none';
-  showHUD(false); document.getElementById('brake').style.display='none'; document.getElementById('gas').style.display='none';
-  document.getElementById('viewBtn').style.display='none';
+  showHUD(false); document.getElementById('viewBtn').style.display='none';
   document.getElementById('hintL').style.display='none'; document.getElementById('hintR').style.display='none';
   setTimeout(()=>{ if(state==='over') document.getElementById('overPanel').classList.remove('hidden'); },420);
   sfx('crash');
@@ -780,16 +767,14 @@ const keys={};
 addEventListener('keydown',e=>{ const k=e.key.toLowerCase();
   if(['arrowleft','arrowright','arrowup','arrowdown',' '].includes(k)) e.preventDefault();
   keys[k]=true;
+  // touch a driving key and the right foot is yours again — no auto-throttle behind your back
+  if(['arrowup','w','arrowdown','s','arrowleft','a','arrowright','d'].includes(k)) touchMode=false;
   if((k===' '||k==='enter')&&state!=='play'){ startGame(); }
   if(k==='v'&&state==='play'){ toggleDriftView(); }
 });
 function setViewButton(){ const dv=game&&game.view==='driver';
   document.getElementById('viewBtn').textContent = dv?'TOP VIEW':'DRIVER VIEW';
   document.body.classList.toggle('driver-view', dv);
-  // driver view has no pedals (auto-throttle + a second finger brakes); top view keeps the two pedals
-  const showPedals=(state==='play'&&!dv)?'block':'none';
-  document.getElementById('gas').style.display=showPedals;
-  document.getElementById('brake').style.display=showPedals;
   // the ‹ › tap hints are for top-view steering only
   const touch=matchMedia('(hover:none)').matches && state==='play';
   document.getElementById('hintL').style.display=(!dv&&touch)?'block':'none';
@@ -805,31 +790,32 @@ document.getElementById('viewBtn').onclick=()=>{ toggleDriftView(); };
 addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
 
 const pointers=new Map();
-const brakeBtn=document.getElementById('brake');
-const gasBtn=document.getElementById('gas');
 const viewBtn=document.getElementById('viewBtn');
 const WHEEL_RANGE=()=>W*0.34;
+// which hands are on the car? fingers get an auto-throttle (you can't hold a pedal you don't have), keys
+// keep full manual control of the right foot. whichever you touched last wins, so a laptop with a
+// touchscreen behaves sensibly either way.
+let touchMode=false;
 addEventListener('pointerdown',e=>{
   audioInit();
   if(state!=='play') return;
   if(e.target.closest('.panel')||e.target===viewBtn) return;
-  // pedals are claimed first, so they're never swallowed by the steering drag / side-tap below
-  const pedal=e.target.closest?e.target.closest('.pedal'):null;
-  if(pedal){ const role=pedal===gasBtn?'gas':'brake'; pointers.set(e.pointerId,role); pedal.classList.add('on'); return; }
-  if(game.view==='driver'){                        // driver view: first finger drags the wheel, a second finger brakes
-    if(game.wheelPtr==null){ pointers.set(e.pointerId,'wheel'); game.wheelPtr=e.pointerId; game.wheelStartX=e.clientX; game.wheelBase=game.wheelSteer||0; }
-    else { pointers.set(e.pointerId,'brake'); }
+  touchMode=true;
+  // FIRST finger steers — hold a side (top view) or swipe the wheel (driver view).
+  // ANY SECOND finger, anywhere, is the brake. That's the whole control scheme.
+  const steering=[...pointers.values()].some(v=>v==='L'||v==='R'||v==='wheel');
+  if(steering){ pointers.set(e.pointerId,'brake'); return; }
+  if(game.view==='driver'){
+    pointers.set(e.pointerId,'wheel'); game.wheelPtr=e.pointerId; game.wheelStartX=e.clientX; game.wheelBase=game.wheelSteer||0;
     return;
   }
-  pointers.set(e.pointerId, e.clientX<W/2?'L':'R');   // top view: tap a side to steer
+  pointers.set(e.pointerId, e.clientX<W/2?'L':'R');
 });
 addEventListener('pointermove',e=>{ if(!pointers.has(e.pointerId)) return; const role=pointers.get(e.pointerId);
   if(role==='wheel'){ game.wheelSteer=clamp(game.wheelBase+(e.clientX-game.wheelStartX)/WHEEL_RANGE(),-1,1); return; }
-  if(role==='L'||role==='R'){ pointers.set(e.pointerId, e.clientX<W/2?'L':'R'); }   // a pedal stays a pedal
+  if(role==='L'||role==='R'){ pointers.set(e.pointerId, e.clientX<W/2?'L':'R'); }   // slide across to swap sides
 });
 function releasePointer(id){ const role=pointers.get(id);
-  if(role==='gas') gasBtn.classList.remove('on');
-  if(role==='brake') brakeBtn.classList.remove('on');
   if(role==='wheel'&&game) game.wheelPtr=null;
   pointers.delete(id); }
 addEventListener('pointerup',e=>releasePointer(e.pointerId));
@@ -850,8 +836,7 @@ function steerInput(){
 function throttleInput(){
   if(game && game.forceGas!==undefined) return game.forceGas;
   if(keys['arrowup']||keys['w']) return 1;
-  if(game && game.view==='driver') return brakeInput()?0:1;   // auto-throttle; lift off only while braking
-  for(const v of pointers.values()) if(v==='gas') return 1;
+  if(touchMode) return brakeInput()?0:1;   // on touch the car drives itself; you lift off by braking
   return 0;
 }
 function brakeInput(){
@@ -867,8 +852,7 @@ function startGame(){
   document.getElementById('startPanel').classList.add('hidden');
   document.getElementById('overPanel').classList.add('hidden');
   showHUD(true);
-  brakeBtn.classList.remove('on'); gasBtn.classList.remove('on');
-  viewBtn.style.display='block'; setViewButton();   // shows the pedals (top view only) + sets the body class + hints
+  viewBtn.style.display='block'; setViewButton();   // sets the driver-view body class + the tap hints
 }
 document.getElementById('startBtn').onclick=startGame;
 document.getElementById('againBtn').onclick=startGame;
