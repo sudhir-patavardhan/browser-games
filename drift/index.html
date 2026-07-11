@@ -847,11 +847,23 @@ function drawNearScenery(g,ca,sa,cx,hy){
   const poles=[], trees=[];
   for(let i=lo;i<hi;i++){ const p=R.pts[i];
     if(i%16===0){ const off=BARRIER+180+h01(i*3)*70;                     // telephone poles down one shoulder
-      const q=put(p.x-p.ty*off, p.y+p.tx*off); if(q){ q.h=205*q.sc; poles.push(q); } }
+      const wx=p.x-p.ty*off, wy=p.y+p.tx*off; const q=put(wx,wy); if(q){ q.h=205*q.sc; q.wx=wx; q.wy=wy; poles.push(q); } }
     if(h01(i*7+3)<0.42){ const sg=h01(i*11)<0.5?1:-1;                    // tree clumps out in the fields
       const off=(BARRIER+230+Math.pow(h01(i*17),0.7)*2200)*sg;
-      const q=put(p.x-p.ty*off, p.y+p.tx*off);
-      if(q){ q.hh=(120+h01(i*23)*115)*q.sc; q.c=h01(i*29); trees.push(q); } } }
+      const wx=p.x-p.ty*off, wy=p.y+p.tx*off; const q=put(wx,wy);
+      if(q){ q.hh=(120+h01(i*23)*115)*q.sc; q.c=h01(i*29); q.wx=wx; q.wy=wy; trees.push(q); } } }
+  // one sun lights the whole verge: everything drops a contact shadow away from it, cast on the grass and
+  // batched into a single fill. sunB is a world bearing, so the shadow tip is the base slid along the ground
+  // away from the sun and re-projected — it swings correctly as you turn, and shortens toward midday.
+  const sux=Math.cos(g.scenery.sunB), suy=Math.sin(g.scenery.sunB);
+  ctx.fillStyle='rgba(34,60,30,.17)'; ctx.beginPath();
+  for(const q of trees){ const wh=q.hh/q.sc, t=put(q.wx-sux*wh*0.55, q.wy-suy*wh*0.55);
+    const tx=t?t.x:q.x, ty=t?t.y:q.y, dx=tx-q.x, dy=ty-q.y; q.sdx=-dx;   // -dx points back toward the sun (for the highlight)
+    ctx.ellipse((q.x+tx)/2,(q.y+ty)/2,Math.max(Math.hypot(dx,dy)*0.5+q.hh*0.30,q.hh*0.15+2),q.hh*0.15+2,Math.atan2(dy,dx),0,TAU); }
+  for(const q of poles){ const wh=q.h/q.sc, t=put(q.wx-sux*wh*0.55, q.wy-suy*wh*0.55);
+    const tx=t?t.x:q.x, ty=t?t.y:q.y, dx=tx-q.x, dy=ty-q.y;
+    ctx.ellipse((q.x+tx)/2,(q.y+ty)/2,Math.hypot(dx,dy)*0.5+2,Math.max(1.5,2*q.sc),Math.atan2(dy,dx),0,TAU); }
+  ctx.fill();
   if(poles.length>1){ ctx.strokeStyle='rgba(52,64,74,.38)'; ctx.lineWidth=1.4;   // slack wires between them
     for(const k of [0.93,0.84]){ ctx.beginPath();
       for(let j=0;j<poles.length-1;j++){ const A=poles[j], B=poles[j+1];
@@ -871,6 +883,12 @@ function drawNearScenery(g,ca,sa,cx,hy){
       ctx.moveTo(q.x-r*0.75+r*0.6,ty+r*0.55); ctx.arc(q.x-r*0.75,ty+r*0.55,r*0.6,0,TAU);
       ctx.moveTo(q.x+r*0.78+r*0.58,ty+r*0.5); ctx.arc(q.x+r*0.78,ty+r*0.5,r*0.58,0,TAU); }
     ctx.fillStyle=k===0?'#4e9250':'#63a95a'; ctx.fill(); }
+  // a warm sunlit cap on the crown's sunward face — same light source that threw the shadows
+  ctx.fillStyle='rgba(224,242,188,.5)'; ctx.beginPath();
+  for(const q of trees){ const r=q.hh*0.34, ty=q.y-q.hh*0.62;
+    const hx=q.x+(q.sdx||0)/(Math.abs(q.sdx||0)+40)*r*1.1;               // slide toward the sun; damped so it never leaves the crown
+    ctx.moveTo(hx+r*0.46,ty-r*0.26); ctx.arc(hx,ty-r*0.26,r*0.46,0,TAU); }
+  ctx.fill();
 }
 
 function roadRange(g){ const R=g.road, c=g.car;
