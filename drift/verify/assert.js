@@ -53,6 +53,7 @@
     seedRandom(opts.seed===undefined?12345:opts.seed);
     D.start();
     if(opts.view) D.game.view=opts.view;
+    if(opts.batt!==undefined) D.game.batt=opts.batt;
     const g=D.game;
     let maxSlip=0, score0=g.score, grassF=0, n=0, alive=true, driftT=0;
     let bigSlip=false, recovered=false;      // did we provoke a real slide, and did it ever come back?
@@ -73,7 +74,8 @@
     const g2=D.game;
     return { maxSlip, scoreGain:g2.score-score0, grass:n?grassF/n:0, speed:g2.speed,
              slip:Math.abs(g2.slip), alive: alive && D.state==='play', dist:g2.dist,
-             state:D.state, over:g2.overReason||null, driftT, survived:n/HZ, bigSlip, recovered };
+             state:D.state, over:g2.overReason||null, driftT, survived:n/HZ, bigSlip, recovered,
+             batt:g2.batt };
   }
   function rec(name, pass, detail){ out.push((pass?"PASS":"FAIL")+" | "+name+" | "+detail); }
 
@@ -111,10 +113,17 @@
   rec("pushing is survivable with skill (not a coin flip)",
       push.lived>=Math.ceil(SEEDS.length/2),
       "survived "+push.lived+"/"+SEEDS.length+" roads, avg life="+push.life.toFixed(0)+"s/50s");
-  rec("risk is real: recklessness kills you far more than tidiness",
-      wild.lived < tidy.lived && wild.life < tidy.life,
-      "reckless(1.45x): "+wild.lived+"/"+SEEDS.length+" survived, avg life="+wild.life.toFixed(0)+
-      "s  vs tidy: "+tidy.lived+"/"+SEEDS.length+", "+tidy.life.toFixed(0)+"s");
+  // Risk is now paid in CHARGE, not in sudden death: barriers and grass eat the pack that the run runs on.
+  // (This assertion was rewritten when the fail model changed — it used to check instant crash deaths.)
+  const long_=(aggr,stab)=>{ const rs=SEEDS.map(s=>stint(120, follower(aggr,{stab:!!stab}), {seed:s}));
+    return { lived:rs.filter(r=>r.alive).length, batt:sum(rs.map(r=>r.batt))/SEEDS.length,
+             life:sum(rs.map(r=>r.survived))/SEEDS.length }; };
+  const tidyL=long_(1.00,false), wildL=long_(1.45,true);
+  rec("risk is real: recklessness burns the pack that keeps you alive",
+      wildL.batt < tidyL.batt*0.6 && wildL.life < tidyL.life,
+      "over 120s -- reckless(1.45x) ends on "+(wildL.batt*100).toFixed(0)+"% charge, lasting "+
+      wildL.life.toFixed(0)+"s ("+wildL.lived+"/"+SEEDS.length+" still going)  vs tidy on "+
+      (tidyL.batt*100).toFixed(0)+"%, lasting "+tidyL.life.toFixed(0)+"s ("+tidyL.lived+"/"+SEEDS.length+")");
 
   // ---- D: trail-braking rotates the car more than lifting, at a MATCHED point in the turn.
   // short stab (0.3s), not a long brake — a long brake just scrubs the speed the slide needs.
@@ -169,22 +178,77 @@
   // drains it, the brakes hand some back, and it must never be so thirsty that a normal run runs it flat.
   // track PEAK regen, not the final reading — the car has slowed to a crawl by the end of a brake, where
   // regen power is trivially near zero, so a final-value check measures the wrong instant
-  const batt=(secs,drive)=>{ seedRandom(4242); D.start(); const b0=D.game.batt; let peak=0;
+  const batt=(secs,drive,start)=>{ seedRandom(4242); D.start();
+    if(start!==undefined) D.game.batt=start;      // a FULL pack clamps, so regen would be invisible
+    const b0=D.game.batt; let peak=0;
     for(let i=0;i<secs*HZ;i++){ if(D.state!=='play') break; const u=drive(i/HZ,D.game);
       D.setInput(u[0],u[1],u[2]); D.step(1); if(D.game.kw<peak) peak=D.game.kw; }
     return { b0, b1:D.game.batt, kw:D.game.kw, peakRegen:peak }; };
   const wot=batt(8, ()=>[0,1,0]);
   // brake for only 2s: brake for 8 and the car is stopped, where regen is trivially zero and the test
   // would pass without ever demonstrating that the brakes put anything back
-  const braking=batt(2, ()=>[0,0,1]);
+  const braking=batt(2, ()=>[0,0,1], 0.80);
   rec("EV: pulling power drains the battery", wot.b1 < wot.b0,
       "8s flat out: "+(wot.b0*100).toFixed(1)+"% -> "+(wot.b1*100).toFixed(1)+"%, draw="+wot.kw.toFixed(0)+"kW");
   rec("EV: braking at speed actually puts charge back", braking.b1 > braking.b0 && braking.peakRegen < -20,
       "2s on the brakes from speed: "+(braking.b0*100).toFixed(2)+"% -> "+(braking.b1*100).toFixed(2)+
       "% (charge GAINED), peak regen="+braking.peakRegen.toFixed(0)+"kW");
-  const spent=(wot.b0-wot.b1)/8;                              // battery per second, flat out
-  rec("EV: a full charge outlasts a real run", spent>0 && 1/spent > 240,
-      "flat out, empty in "+(1/spent).toFixed(0)+"s (want >240s — the range readout should be flavour, not a fail state)");
+  // measure it with a driver that STAYS ON THE ROAD — a straight-line full-throttle run leaves a curving
+  // road within a second and is really measuring the off-road burn, not clean driving
+  const clean=stint(60, follower(1.00,{stab:false}), {seed:12345});   // tidy means TIDY: no drifting, no walls
+  const cleanRate=(1-clean.batt)/clean.survived;
+  rec("EV: a clean run is measured in minutes, not seconds", cleanRate>0 && 1/cleanRate > 240,
+      "driving the road properly for "+clean.survived.toFixed(0)+"s used "+((1-clean.batt)*100).toFixed(0)+
+      "% => a full pack lasts "+(1/cleanRate).toFixed(0)+"s (want >240s)");
+
+  // ---- K: the fail model. The pack is your life: grass drains it, barriers bite it, 0% ends you.
+  // Measure the drain WHILE off-road frame by frame, so a wall-grind can't be mistaken for grass burn.
+  const drain=(secs,drive)=>{ seedRandom(4242); D.start();
+    let onB=0,onT=0,offB=0,offT=0,prev=D.game.batt;
+    for(let i=0;i<secs*HZ;i++){ if(D.state!=='play') break;
+      const u=drive(i/HZ,D.game); D.setInput(u[0],u[1],u[2]);
+      const wasGrass=D.game.onGrass; D.step(1);
+      const d=prev-D.game.batt; prev=D.game.batt;
+      if(wasGrass){ offB+=d; offT+=1/HZ; } else { onB+=d; onT+=1/HZ; }
+    }
+    return { onRate:onT?onB/onT:0, offRate:offT?offB/offT:0, onT, offT }; };
+  const off=drain(5, ()=>[1,1,0]);                       // full lock, full throttle: straight off the road
+  rec("off-road: wandering into the grass drains the pack hard",
+      off.offT>0.5 && off.offRate > off.onRate*8,
+      "on tarmac "+(off.onRate*100).toFixed(2)+"%/s vs off-road "+(off.offRate*100).toFixed(2)+
+      "%/s over "+off.offT.toFixed(1)+"s of grass ("+(off.offRate/Math.max(off.onRate,1e-9)).toFixed(0)+"x)");
+
+  // a barrier is now a cost, not an execution
+  const wall=(function(){ seedRandom(4242); D.start();
+    let hit=false, b0=0,b1=0,s0=0,s1=0,st='';
+    for(let i=0;i<5*HZ;i++){ if(D.state!=='play') break;
+      const pb=D.game.batt, ps=D.game.speed;
+      D.setInput(1,1,0); D.step(1);
+      if(!hit && pb-D.game.batt>0.05){ hit=true; b0=pb; b1=D.game.batt; s0=ps; s1=D.game.speed; st=D.state; }
+    }
+    return {hit,b0,b1,s0,s1,st}; })();
+  rec("barrier: an impact costs charge and speed, it does NOT end the run",
+      wall.hit && wall.st==='play' && wall.s1<wall.s0,
+      wall.hit? ("hit took "+((wall.b0-wall.b1)*100).toFixed(0)+"% charge and "+(wall.s0-wall.s1).toFixed(0)+
+                 "px/s of speed; still driving="+(wall.st==='play')) : "never reached a barrier");
+
+  // and running the pack flat is what actually ends you
+  const flat=(function(){ seedRandom(4242); D.start(); D.game.batt=0.02;
+    for(let i=0;i<8*HZ;i++){ if(D.state!=='play') break; D.setInput(1,1,0); D.step(1); }
+    return {state:D.state, over:D.game.overReason}; })();
+  rec("the run ends when the pack runs flat", flat.state==='over' && flat.over==='OUT OF CHARGE',
+      "starting at 2% and driving off-road: state="+flat.state+" reason="+flat.over);
+
+  // ---- L: the loop that keeps you alive — land a chain, claw charge back
+  const claw=(function(){ seedRandom(12345); D.start(); let best=0;
+    const drive=follower(1.20,{stab:true});
+    for(let i=0;i<50*HZ;i++){ if(D.state!=='play') break;
+      const pb=D.game.batt; const u=drive(i/HZ,D.game);
+      D.setInput(u[0],u[1],u[2]); D.step(1);
+      const d=D.game.batt-pb; if(d>best) best=d; }
+    return best; })();
+  rec("landing a drift chain claws charge back", claw>0.004,
+      "biggest single chain payback="+(claw*100).toFixed(1)+"% charge (regen alone is ~0.0003%/frame, so this is a chain)");
 
   const div=document.createElement('div');
   div.id='RESULTS'; div.textContent=out.join("\n"); document.body.appendChild(div);

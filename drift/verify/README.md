@@ -41,10 +41,12 @@ The claims it defends, in rough order of how much they matter:
   exception — with no on-screen pedals there's nothing to hold, so fingers get an auto-throttle and a
   second finger brakes. `run.sh controls` drives both paths with synthetic events, because a control
   scheme with no buttons has no geometry to eyeball: the only way to know touch works is to touch it.
-- **The EV cabin tells the truth.** The dash reports state of charge, range and live kW, so those numbers
-  have to mean something: pulling power drains the pack, braking at speed genuinely regenerates (peak
-  ~-42kW, charge gained), and a full charge outlasts any realistic run — the range readout is flavour, not
-  a hidden fail state, and the battery never feeds back into the physics.
+- **The pack is the run's clock.** The battery is the fail state now, so every number on the dash has to be
+  true: pulling power drains it, braking at speed genuinely regenerates (peak ~-42kW, charge gained),
+  wandering off-road burns it ~90x faster than tarmac, a barrier impact costs charge and speed but does
+  NOT end the run, landing a drift chain claws charge back, and 0% ends you with `OUT OF CHARGE`.
+  Driving tidily buys ~840s; sending it recklessly burns you down to ~7% within 100s. That gradient is the
+  whole risk/reward loop, and it replaced the old instant-crash death.
 - **The driver view renders through a full yaw sweep without throwing.**
 
 ## Judgement, not a rubber stamp

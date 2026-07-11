@@ -27,6 +27,7 @@
     font-weight:900; font-size:clamp(30px,9vw,54px); color:#fff; opacity:0;
     text-shadow:0 3px 0 rgba(255,122,47,.9), 0 6px 20px rgba(0,0,0,.25); }
   .driftpop.show{ animation:pop 1s ease forwards; }
+  .driftpop .chg{ color:#7fe2ff; font-size:.55em; vertical-align:middle; text-shadow:0 2px 8px rgba(0,0,0,.3); }
   @keyframes pop{ 0%{opacity:0; transform:translateX(-50%) scale(.7);} 20%{opacity:1; transform:translateX(-50%) scale(1.05);}
     80%{opacity:1;} 100%{opacity:0; transform:translateX(-50%) scale(1);} }
 
@@ -63,6 +64,9 @@
   .final{ font-size:56px; font-weight:900; color:#17324a; line-height:1; }
   .finalsub{ font-size:14px; color:#5a7a5a; font-weight:700; margin:6px 0 2px; letter-spacing:2px; }
   .newbest{ display:inline-block; margin:10px 0 2px; color:#ff4d3d; font-weight:900; letter-spacing:1px; font-size:14px; }
+  .aux{ margin-top:14px; background:none; border:1px solid rgba(23,50,74,.22); color:#48627a; cursor:pointer;
+    border-radius:12px; padding:9px 16px; font-weight:800; font-size:12px; letter-spacing:.5px; }
+  .aux:active{ background:rgba(23,50,74,.06); }
   .keys{ font-size:12.5px; color:#6a7a88; line-height:1.8; margin-top:16px; }
   .keys b{ color:#ff7a2f; }
 </style>
@@ -84,6 +88,7 @@
 <div class="steerhint" id="hintL" style="display:none">‹</div>
 <div class="steerhint" id="hintR" style="display:none">›</div>
 <button id="viewBtn" style="display:none">DRIVER VIEW</button>
+<input id="auxIn" type="file" accept="audio/*" multiple hidden>
 
 <div class="panel" id="startPanel">
   <div class="card">
@@ -91,11 +96,14 @@
     <div class="tag">SLIDE · CHAIN · SEND IT</div>
     <p class="lead">An endless sunlit road that keeps throwing tighter corners. Pin the throttle down the straights, brake into the bends — carry too much speed and the rear steps out. Hold the slide to build your multiplier; the wider and longer, the bigger the score.</p>
     <button class="go" id="startBtn">Drive</button>
+    <div><button class="aux" id="auxBtn">♪ Load music from this device</button></div>
     <div class="keys">
       <b>Keyboard:</b> &larr; &rarr; (or A / D) steer &nbsp;·&nbsp; &uarr; / W throttle &nbsp;·&nbsp; &darr; / S brake<br>
       <b>Touch:</b> hold the left / right side to steer — or swipe to turn the wheel in driver view.
       The car drives itself; a <b>second finger</b> anywhere is the brake<br>
       <b>To slide:</b> brake as you turn in — the tail steps out. Then get back on the power to hold it<br>
+      <b>Stereo:</b> tap the dash screen — art plays/pauses, middle skips, meter mutes &nbsp;·&nbsp;
+      keys <b>K</b> / <b>N</b> / <b>P</b> / <b>M</b><br>
       <b>Views:</b> tap “Driver view” (through the windshield) or press V
     </div>
   </div>
@@ -111,6 +119,7 @@
   </div>
 </div>
 
+<script src="music/tracks.js"></script>
 <script>
 "use strict";
 /* ============================ util ============================ */
@@ -183,7 +192,7 @@ function newGame(){
     score:0, mult:1, driftTime:0, grace:0, dist:0, onGrass:false, slip:0, speed:430,
     stall:0, chainScore:0, bestChain:0,
     skid:[], smoke:[], grassTufts:makeTufts(seed),
-    batt:0.86, kw:0, trk:(seed>>>3)%TRACKS.length, trkT:18+((seed>>>7)%40),   // the cabin: charge, power draw, what's playing
+    batt:1, kw:0, hitT:0,                     // the cabin: charge, power draw, last impact
     scenery:makeScenery(seed),
     shake:0, time:0
   };
@@ -205,11 +214,12 @@ const SPIN=1.15;                                         // beyond this much sli
 // and a slide needs the speed it's scrubbing. too much here and the tool defeats itself.
 const ACCEL=760, VTOP=790, DRAG=0.22, COAST=32, BRAKEF=120;
 /* the cabin. A high-end EV: ~340kW on tap, ~90kW of regen on the brakes, ~520km of quoted range.
-   The battery is telemetry, not a fail state — it never feeds back into the physics, it just gives the
-   dash something true to say. Roughly 8 minutes of flat-out driving would empty it. */
+   The pack is your LIFE now — it is the clock every run runs on. Hitting a barrier bites a chunk out of
+   it, ploughing a field drains it fast, and landing a drift chain claws some back. At 0% you're done. */
 const EV_KW=340, REGEN_KW=90, EV_RANGE=520, EV_BURN=0.0011;
-const TRACKS=[['Neon Ridge','ASTRA'],['Coastline at Dusk','Vela Ninety'],['Nightshift','Kōki'],
-              ['Amber Dust','LUME'],['Static Bloom','Fen & Roe'],['Long Way Home','Marisa Vane']];
+// ~24s off-road empties a full pack, against ~10min of clean driving. Wandering off is the mistake that
+// costs you the run — but slowly enough that you can still fight your way back onto the tarmac.
+const OFFROAD_BURN=38;
 function step(dt){
   const g=game, c=g.car, R=g.road;
   const diff=clamp(g.dist/46000,0,1);
@@ -221,7 +231,18 @@ function step(dt){
   const nx=-p.ty, ny=p.tx;
   const lateral=(c.x-p.x)*nx+(c.y-p.y)*ny;
   g.onGrass=Math.abs(lateral)>ROAD_HALF;
-  if(Math.abs(lateral)>BARRIER-CAR_W*0.4){ return gameOver('CRASH'); }
+  // the barrier doesn't end you any more — it costs you. Scrub back onto the tarmac, lose the speed you
+  // carried into it, and take a bite out of the pack. Enough hits will flatten it; one mistake won't.
+  const lim=BARRIER-CAR_W*0.4;
+  if(Math.abs(lateral)>lim){
+    const sgn=lateral<0?-1:1, over=Math.abs(lateral)-lim;
+    c.x-=nx*over*sgn; c.y-=ny*over*sgn;                       // put the car back inside the wall
+    const vn=c.vx*nx+c.vy*ny;
+    if(vn*sgn>0){ c.vx-=nx*vn*1.4; c.vy-=ny*vn*1.4; }         // kill the outward push, nudge it back in
+    c.vx*=0.74; c.vy*=0.74;
+    if(g.hitT<=0){ g.batt=clamp(g.batt-0.07,0,1); g.shake=1.1; sfx('crash'); g.hitT=0.55; }  // cooldown: don't bill you 120x/s for one scrape
+  }
+  if(g.hitT>0) g.hitT-=dt;
 
   const spd=Math.hypot(c.vx,c.vy);
   const thr=clamp(g.gas||0,0,1), brk=clamp(g.brake||0,0,1);
@@ -278,21 +299,31 @@ function step(dt){
     g.score+=add; g.chainScore+=add;
   } else {
     g.grace-=dt;
-    if(g.grace<=0){ if(g.chainScore>240) driftPop(g.chainScore); g.bestChain=Math.max(g.bestChain,g.chainScore);
+    if(g.grace<=0){
+      if(g.chainScore>240){
+        // land a chain and you recover charge. This is the loop: drive well, drive longer.
+        const back=clamp(g.chainScore/11000,0,0.055);
+        g.batt=clamp(g.batt+back,0,1);
+        driftPop(g.chainScore, back);
+      }
+      g.bestChain=Math.max(g.bestChain,g.chainScore);
       g.chainScore=0; g.mult=1; g.driftTime=0; }
   }
 
   // stall / spun-out — a hard stop on corner entry is fine, crawling is not
-  if(g.speed<120){ g.stall+=dt; if(g.stall>2.2) return gameOver('SPUN OUT'); }
+  if(g.speed<95){ g.stall+=dt; if(g.stall>3.5) return gameOver('SPUN OUT'); }
   else g.stall=Math.max(0,g.stall-dt*2);
 
   g.dist+=g.speed*dt; g.time+=dt;
 
-  // battery: pulling hard at speed drains it, the brakes hand some back. Purely what the dash reports.
+  // battery: pulling hard at speed drains it, the brakes hand some back — and ploughing through a field
+  // costs you dearly. The pack is your life now, so this is the clock the whole run runs on.
   const load=(0.30+1.30*thr)*(0.32+0.88*mag/VTOP);
   const regen=1.05*brk*clamp(mag/VTOP,0,1);
+  const offRoad=g.onGrass?OFFROAD_BURN:0;
   g.kw = lerp(g.kw, thr*EV_KW*clamp(0.35+mag/VTOP,0,1) - brk*REGEN_KW*clamp(mag/VTOP,0,1), 0.12);
-  g.batt = clamp(g.batt - (load-regen)*EV_BURN*dt, 0, 1);
+  g.batt = clamp(g.batt - (load-regen+offRoad)*EV_BURN*dt, 0, 1);
+  if(g.batt<=0) return gameOver('OUT OF CHARGE');
 
   // skid marks (rear wheels) — from the car's heading
   const fx=Math.cos(c.angle), fy=Math.sin(c.angle), rx=-Math.sin(c.angle), ry=Math.cos(c.angle);
@@ -329,7 +360,8 @@ function gameOver(reason){
   setTimeout(()=>{ if(state==='over') document.getElementById('overPanel').classList.remove('hidden'); },420);
   sfx('crash');
 }
-function driftPop(v){ const el=document.getElementById('driftpop'); el.textContent='+'+Math.round(v);
+function driftPop(v,charge){ const el=document.getElementById('driftpop');
+  el.innerHTML='+'+Math.round(v)+(charge>0.002?' <span class="chg">+'+(charge*100).toFixed(0)+'%</span>':'');
   el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); sfx('chain'); }
 
 /* ============================ rendering ============================ */
@@ -458,7 +490,6 @@ function drawWindshield(g,spd){
 /* A high-end EV: soft-touch dash, an ambient light line, one pane of glass carrying speed / charge /
    range / power, an infotainment strip below it, and a flat-bottom two-spoke wheel. Everything is laid
    out off the wheel's geometry so it can't collide with it on a narrow phone. */
-const TRK_LEN=196;   // seconds per track
 // the wheel sits high enough that its flat bottom clears the screen edge — otherwise the one detail that
 // says "EV" is the one detail you never see
 function wheelGeom(){ const rad=Math.min(W*0.20,92); return { cx:W*0.5, cy:H-rad*0.70-4, rad }; }
@@ -546,31 +577,48 @@ function drawCluster(g, y0, h){
   if(h<58) return;                      // too short to be legible — leave it out rather than smear it
   const my=y0+mainH+2*s, mh=h-mainH-6*s;
   const art=mh*0.74, ax=x0+p, ay=my+(mh-art)*0.5-1*s;
-  const elapsed=g.trkT+g.time, t=TRACKS[(g.trk+Math.floor(elapsed/TRK_LEN))%TRACKS.length], pos=(elapsed%TRK_LEN)/TRK_LEN;
-  // album art
+  const n=musicNow();
+  // the stereo is touchable: art = play/pause, the middle = next track, the meter = mute.
+  // Remember the strip so pointerdown can hit-test it and NOT read a tap on the dash as steering.
+  g.uiStereo={ x:x0, y:my-2*s, w:wd, h:mh+4*s };
+  // album art (a play/pause glyph sits on it)
   const ag=ctx.createLinearGradient(ax,ay,ax+art,ay+art);
   ag.addColorStop(0,'#ff6a3d'); ag.addColorStop(1,'#7b5cff');
-  ctx.fillStyle=ag; rr(ax,ay,art,art,3*s); ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,.85)'; ctx.beginPath(); ctx.arc(ax+art*0.5,ay+art*0.5,art*0.14,0,TAU); ctx.fill();
+  ctx.fillStyle=n.has?ag:'rgba(255,255,255,.10)'; rr(ax,ay,art,art,3*s); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.92)';
+  if(n.playing){ ctx.fillRect(ax+art*0.34,ay+art*0.30,art*0.10,art*0.40); ctx.fillRect(ax+art*0.56,ay+art*0.30,art*0.10,art*0.40); }
+  else { ctx.beginPath(); ctx.moveTo(ax+art*0.38,ay+art*0.28); ctx.lineTo(ax+art*0.72,ay+art*0.5);
+         ctx.lineTo(ax+art*0.38,ay+art*0.72); ctx.closePath(); ctx.fill(); }
   // title / artist
   ctx.textAlign='left'; ctx.textBaseline='middle';
-  ctx.fillStyle='#dcecf7'; ctx.font='700 '+Math.round(10*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
-  ctx.fillText(t[0], ax+art+7*s, ay+art*0.32);
+  const tx=ax+art+7*s, tw=(x0+wd-p-30*s)-tx;
+  ctx.save(); ctx.beginPath(); ctx.rect(tx,my,Math.max(10,tw),mh); ctx.clip();   // long titles don't run into the meter
+  ctx.fillStyle=n.has?'#dcecf7':DIM; ctx.font='700 '+Math.round(10*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
+  ctx.fillText(n.title, tx, ay+art*0.32);
   ctx.fillStyle=DIM; ctx.font='600 '+Math.round(8.5*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
-  ctx.fillText(t[1], ax+art+7*s, ay+art*0.74);
+  ctx.fillText(n.artist, tx, ay+art*0.74);
+  ctx.restore();
   ctx.textBaseline='alphabetic';
-  // level meter — it dances harder the faster you're going, like a stereo fighting road noise
+  // level meter — a visualiser, and the mute button
   const bars=7, bw2=2.6*s, gap=2.2*s, bx2=x0+wd-p-(bars*(bw2+gap));
-  const loud=0.45+0.55*clamp(g.speed/VTOP,0,1);
   for(let i=0;i<bars;i++){
-    const e=(0.35+0.65*Math.abs(Math.sin(g.time*(2.1+i*0.63)+i*1.7)))*(0.55+0.45*Math.sin(g.time*0.8+i*2.1))*loud;
-    const bh2=Math.max(1.5*s, mh*0.42*Math.abs(e));
-    ctx.fillStyle=i<4?'rgba(127,226,255,.75)':'rgba(99,230,164,.7)';
+    const bh2=Math.max(1.5*s, mh*0.42*Math.abs(musicLevel(i,g.time,g.speed)));
+    ctx.fillStyle=n.muted?'rgba(150,175,195,.28)':(i<4?'rgba(127,226,255,.75)':'rgba(99,230,164,.7)');
     rr(bx2+i*(bw2+gap), ay+art*0.72-bh2, bw2, bh2, bw2*0.5); ctx.fill();
   }
+  if(n.muted){ ctx.strokeStyle='rgba(255,140,140,.8)'; ctx.lineWidth=Math.max(1,1.3*s); ctx.beginPath();
+    ctx.moveTo(bx2-1*s, ay+art*0.74); ctx.lineTo(bx2+bars*(bw2+gap)-gap+1*s, ay+art*0.18); ctx.stroke(); }
   // track progress, a hairline across the foot of the pane
   ctx.fillStyle='rgba(255,255,255,.10)'; ctx.fillRect(x0+p, y0+h-3.5*s, wd-p*2, 1.4*s);
-  ctx.fillStyle='rgba(127,226,255,.65)'; ctx.fillRect(x0+p, y0+h-3.5*s, (wd-p*2)*pos, 1.4*s);
+  ctx.fillStyle='rgba(127,226,255,.65)'; ctx.fillRect(x0+p, y0+h-3.5*s, (wd-p*2)*n.pos, 1.4*s);
+}
+// a tap landed on the stereo: left = play/pause, middle = next, right = mute
+function stereoTap(g,x,y){
+  const u=g.uiStereo; if(!u) return false;
+  if(x<u.x||x>u.x+u.w||y<u.y||y>u.y+u.h) return false;
+  const f=(x-u.x)/u.w;
+  if(f<0.24) musicToggle(); else if(f>0.76) musicMute(); else if(MUSIC.length) musicSkip(1); else auxPick();
+  return true;
 }
 
 function drawWheel(g){
@@ -887,6 +935,62 @@ function updateHUD(){
 }
 function showHUD(v){ document.getElementById('hud').style.display=v?'flex':'none'; }
 
+/* ============================ the stereo ============================ */
+/* Plays real audio files. Tracks come from drift/music/ via the optional music/tracks.js manifest, and you
+   can load your own off the device (AUX) — those become blob URLs, so nothing is uploaded anywhere.
+   The game must run perfectly with NO music present: index.html on its own is still the whole game. */
+const MUSIC=[];
+(function(){ const t=window.DRIFT_TRACKS;
+  if(Array.isArray(t)) for(const x of t) if(x && x.file)
+    MUSIC.push({ src:'music/'+x.file, title:x.title||x.file.replace(/\.[^.]+$/,''), artist:x.artist||'' });
+})();
+let audioEl=null, mIdx=Math.max(0,+(localStorage.getItem('drift.trk')||0)), mPlaying=false;
+let mMuted=localStorage.getItem('drift.mute')==='1';
+const MVOL=0.55;
+function musicEl(){
+  if(audioEl) return audioEl;
+  audioEl=new Audio(); audioEl.preload='auto'; audioEl.volume=mMuted?0:MVOL;
+  audioEl.addEventListener('ended',()=>musicSkip(1));
+  audioEl.addEventListener('error',()=>{ if(MUSIC.length>1) musicSkip(1); else mPlaying=false; });
+  return audioEl;
+}
+function musicLoad(i){
+  if(!MUSIC.length) return;
+  mIdx=((i%MUSIC.length)+MUSIC.length)%MUSIC.length;
+  try{ localStorage.setItem('drift.trk',mIdx); }catch(e){}
+  const a=musicEl(); a.src=MUSIC[mIdx].url||MUSIC[mIdx].src;
+}
+function musicPlay(){ if(!MUSIC.length) return; const a=musicEl(); if(!a.src) musicLoad(mIdx);
+  const pr=a.play(); mPlaying=true; if(pr&&pr.catch) pr.catch(()=>{ mPlaying=false; }); }   // autoplay may refuse until a gesture
+function musicSkip(d){ if(!MUSIC.length) return; musicLoad(mIdx+d); musicPlay(); }
+function musicToggle(){ if(!MUSIC.length){ auxPick(); return; }
+  const a=musicEl(); if(mPlaying && !a.paused){ a.pause(); mPlaying=false; } else musicPlay(); }
+function musicMute(){ mMuted=!mMuted; if(audioEl) audioEl.volume=mMuted?0:MVOL;
+  try{ localStorage.setItem('drift.mute',mMuted?'1':'0'); }catch(e){} }
+function musicNow(){
+  if(!MUSIC.length) return { has:false, title:'NO MEDIA', artist:'tap to load music', pos:0, playing:false, muted:mMuted };
+  const t=MUSIC[mIdx], a=audioEl;
+  const pos=(a&&a.duration)? clamp(a.currentTime/a.duration,0,1) : 0;
+  return { has:true, title:t.title, artist:t.artist||'—', pos, playing:!!(a&&!a.paused&&mPlaying), muted:mMuted };
+}
+// the level meter is a VISUALISER, not a spectrum — routing the element through an AnalyserNode can be
+// refused on file:// and silence the music outright, and playing your music matters more than a true FFT
+function musicLevel(i,t,spd){
+  const n=musicNow();
+  const live=n.playing && !n.muted ? 1 : 0.12;
+  return (0.35+0.65*Math.abs(Math.sin(t*(2.1+i*0.63)+i*1.7)))*(0.55+0.45*Math.sin(t*0.8+i*2.1))
+         * (0.45+0.55*clamp(spd/VTOP,0,1)) * live;
+}
+const auxIn=document.getElementById('auxIn');
+function auxPick(){ try{ auxIn.click(); }catch(e){} }
+auxIn.onchange=()=>{
+  const files=[...auxIn.files]; if(!files.length) return;
+  const at=MUSIC.length;
+  for(const f of files) MUSIC.push({ url:URL.createObjectURL(f), title:f.name.replace(/\.[^.]+$/,''), artist:'From your device' });
+  musicLoad(at); musicPlay();
+};
+document.getElementById('auxBtn').onclick=e=>{ e.stopPropagation(); auxPick(); };
+
 /* ============================ audio ============================ */
 let actx=null, skidNode=null, skidGain=null;
 function audioInit(){ if(actx) return; try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
@@ -925,6 +1029,10 @@ addEventListener('keydown',e=>{ const k=e.key.toLowerCase();
   if(['arrowup','w','arrowdown','s','arrowleft','a','arrowright','d'].includes(k)) touchMode=false;
   if((k===' '||k==='enter')&&state!=='play'){ startGame(); }
   if(k==='v'&&state==='play'){ toggleDriftView(); }
+  if(k==='m') musicMute();
+  if(k==='n') musicSkip(1);
+  if(k==='p') musicSkip(-1);
+  if(k==='k') musicToggle();
 });
 function setViewButton(){ const dv=game&&game.view==='driver';
   document.getElementById('viewBtn').textContent = dv?'TOP VIEW':'DRIVER VIEW';
@@ -954,6 +1062,8 @@ addEventListener('pointerdown',e=>{
   audioInit();
   if(state!=='play') return;
   if(e.target.closest('.panel')||e.target===viewBtn) return;
+  // the dash is an interface, not the road: a tap on the stereo works the stereo
+  if(game.view==='driver' && stereoTap(game, e.clientX, e.clientY)){ pointers.set(e.pointerId,'ui'); return; }
   touchMode=true;
   // FIRST finger steers — hold a side (top view) or swipe the wheel (driver view).
   // ANY SECOND finger, anywhere, is the brake. That's the whole control scheme.
@@ -1003,6 +1113,7 @@ function brakeInput(){
 /* ============================ flow ============================ */
 function startGame(){
   audioInit(); newGame(); state='play'; last=performance.now(); acc=0;
+  if(MUSIC.length && !mPlaying) musicPlay();   // the Drive click is the gesture autoplay policy wants
   document.getElementById('startPanel').classList.add('hidden');
   document.getElementById('overPanel').classList.add('hidden');
   showHUD(true);
