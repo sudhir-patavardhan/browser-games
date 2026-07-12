@@ -4,6 +4,7 @@
 #   ./drift/verify/run.sh            # physics + behaviour suite (exits non-zero on any FAIL)
 #   ./drift/verify/run.sh controls   # the touch + keyboard control scheme, both cameras
 #   ./drift/verify/run.sh plane      # scenery build + airliner reachability
+#   ./drift/verify/run.sh music      # the playlist actually loads in a browser
 #
 # The game exposes window.__drift (start / setInput(steer,gas,brake) / step(n) / autopilot), so a probe is
 # just a <script> appended to a copy of the page. Probes write their findings into a <div id="RESULTS">,
@@ -44,7 +45,8 @@ case "$PROBE" in
   assert) JS="$HERE/assert.js"; DIV="RESULTS" ;;
   controls) JS="$HERE/controls.js"; DIV="RESULTS" ;;
   plane)  JS="$HERE/plane.js";  DIV="PLANE" ;;
-  *) echo "unknown probe '$PROBE' (want: assert | controls | plane)" >&2; exit 2 ;;
+  music)  JS="$HERE/music.js";  DIV="RESULTS" ;;
+  *) echo "unknown probe '$PROBE' (want: assert | controls | plane | music)" >&2; exit 2 ;;
 esac
 
 # splice the probe in just before </body>, after the game's own script has defined window.__drift
@@ -58,7 +60,8 @@ fs.writeFileSync(out,html);
 ' "$GAME" "$JS" "$PROBE_HTML" || exit 2
 
 OUT="$("$CHROME_BIN" --headless=new --disable-gpu --no-sandbox --hide-scrollbars \
-  --allow-file-access-from-files --virtual-time-budget=90000 --window-size=500,900 \
+  --allow-file-access-from-files --autoplay-policy=no-user-gesture-required \
+  --virtual-time-budget=90000 --window-size=500,900 \
   --dump-dom "file://$PROBE_HTML" 2>/dev/null \
   | DIV="$DIV" node -e '
       let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{
