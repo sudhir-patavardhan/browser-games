@@ -102,6 +102,8 @@
       <b>Touch:</b> hold the left / right side to steer — or swipe to turn the wheel in driver view.
       The car drives itself; a <b>second finger</b> anywhere is the brake<br>
       <b>To slide:</b> brake as you turn in — the tail steps out. Then get back on the power to hold it<br>
+      <b>Cruise:</b> <b>C</b>, or tap CRUISE on the dash — it holds your speed, but the corners are still yours.
+      Braking cancels it<br>
       <b>Stereo:</b> tap the dash screen — art plays/pauses, middle skips, meter mutes &nbsp;·&nbsp;
       keys <b>K</b> / <b>N</b> / <b>P</b> / <b>M</b><br>
       <b>Views:</b> tap “Driver view” (through the windshield) or press V
@@ -192,7 +194,7 @@ function newGame(){
     score:0, mult:1, driftTime:0, grace:0, dist:0, onGrass:false, slip:0, speed:430,
     stall:0, chainScore:0, bestChain:0,
     skid:[], smoke:[], grassTufts:makeTufts(seed),
-    batt:1, kw:0, hitT:0,                     // the cabin: charge, power draw, last impact
+    batt:1, kw:0, hitT:0, cc:0,               // the cabin: charge, power draw, last impact, cruise set-speed
     scenery:makeScenery(seed),
     shake:0, time:0
   };
@@ -239,8 +241,14 @@ function step(dt){
     c.x-=nx*over*sgn; c.y-=ny*over*sgn;                       // put the car back inside the wall
     const vn=c.vx*nx+c.vy*ny;
     if(vn*sgn>0){ c.vx-=nx*vn*1.4; c.vy-=ny*vn*1.4; }         // kill the outward push, nudge it back in
-    c.vx*=0.74; c.vy*=0.74;
-    if(g.hitT<=0){ g.batt=clamp(g.batt-0.07,0,1); g.shake=1.1; sfx('crash'); g.hitT=0.55; }  // cooldown: don't bill you 120x/s for one scrape
+    if(g.hitT<=0){
+      // the IMPACT: one hit, one cost. This used to run every step, i.e. 0.74^120 a second, so brushing a
+      // wall didn't cost you speed — it pinned you to a standstill.
+      c.vx*=0.74; c.vy*=0.74;
+      g.batt=clamp(g.batt-0.07,0,1); g.shake=1.1; sfx('crash'); g.hitT=0.55;
+    } else {
+      const k=clamp(1-1.6*dt,0,1); c.vx*=k; c.vy*=k;           // still scraping along it: that just drags
+    }
   }
   if(g.hitT>0) g.hitT-=dt;
 
@@ -678,6 +686,23 @@ function clusterTop(g,x0,x1,y,s){
   ctx.textAlign='right'; ctx.fillText((18+(g.seed%11))+'°C', x1-10*s, y);
   ctx.textAlign='center'; ctx.fillStyle='#dff2ff'; ctx.font='800 '+Math.round(10*s)+'px '+FSANS;
   ctx.fillText('D', (x0+x1)*0.5, y);
+  // CRUISE: lit with the set speed when it's holding, dim when it isn't
+  const on=g.cc>0, cw=Math.max(52,58*s), chh=Math.max(13,15*s);
+  const cx2=(x0+x1)*0.5 - (x1-x0)*0.235, cy2=y-chh*0.72;
+  g.uiCruise={ x:cx2-cw*0.5, y:cy2, w:cw, h:chh };
+  ctx.fillStyle=on?'rgba(127,226,255,.16)':'rgba(255,255,255,.05)';
+  rr(cx2-cw*0.5, cy2, cw, chh, chh*0.5); ctx.fill();
+  ctx.strokeStyle=on?'rgba(127,226,255,.6)':'rgba(190,215,235,.16)'; ctx.lineWidth=1;
+  rr(cx2-cw*0.5, cy2, cw, chh, chh*0.5); ctx.stroke();
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle=on?CYAN:DIM; ctx.font='800 '+Math.round(7.5*s)+'px '+FSANS;
+  ctx.fillText(on? ('CC '+Math.round(g.cc*0.36)) : 'CRUISE', cx2, cy2+chh*0.54);
+  ctx.textBaseline='alphabetic';
+}
+function cruiseTap(g,x,y){
+  const u=g.uiCruise; if(!u) return false;
+  if(x<u.x-6||x>u.x+u.w+6||y<u.y-6||y>u.y+u.h+6) return false;
+  toggleCruise(); return true;
 }
 
 // one big, light numeral between two brackets. Airy is the whole point — a cluster is not a dashboard of tiles.
@@ -1101,7 +1126,9 @@ function drawTraffic(g,proj,a){
     const p0=R.pts[i0], p1=R.pts[i0+1], lane=V.lane*ROAD_HALF*(V.onc?-1:1);  // our lane is +normal, oncoming is -normal
     const P=proj(lerp(p0.x,p1.x,fr)+p0.ty*lane, lerp(p0.y,p1.y,fr)-p0.tx*lane); if(!P) continue;
     const x=P.x, base=P.y, sc=P.sc; if(x<-80||x>W+80) continue;
-    const h=(V.truck?60:33)*sc, w=(V.truck?44:38)*sc; if(h<1.6) continue;
+    // sized against the projection, not by eye: the road is 490 units across (~7m), so ~70 units/m — which
+    // also makes CAMH=112 a 1.6m eye height. A car is 1.8x1.45m; a truck 2.5x3.2m. They were 3.3x too small.
+    const h=(V.truck?224:102)*sc, w=(V.truck?175:126)*sc; if(h<1.6) continue;
     const fade=clamp((rel-2)/6,0,1)*clamp((66-rel)/10,0,1);                  // fade in from the haze, fade out as it passes
     const depth=clamp((rel-6)/56,0,1)*0.6;                                   // wash the paint toward haze with distance
     ctx.globalAlpha=fade;
@@ -1271,7 +1298,7 @@ function frame(t){
   if(state==='play' && game){
     // wheel springs back to centre when released and no keys held
     if(game.view==='driver' && game.wheelPtr==null && !(keys['arrowleft']||keys['a']||keys['arrowright']||keys['d'])) game.wheelSteer*=0.72;
-    game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput();
+    game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); cruiseAdjust(game);
     acc+=dt; const h=1/120;
     while(acc>=h){ if(state==='play') step(h); acc-=h; }
     if(game){ const ad=Math.abs(game.slip); skidSound(!game.onGrass&&game.speed>180&&ad>0.18, game.speed/500); }
@@ -1289,6 +1316,7 @@ addEventListener('keydown',e=>{ const k=e.key.toLowerCase();
   if(['arrowup','w','arrowdown','s','arrowleft','a','arrowright','d'].includes(k)) touchMode=false;
   if((k===' '||k==='enter')&&state!=='play'){ startGame(); }
   if(k==='v'&&state==='play'){ toggleDriftView(); }
+  if(k==='c'&&state==='play') toggleCruise();
   if(k==='m') musicMute();
   if(k==='n') musicSkip(1);
   if(k==='p') musicSkip(-1);
@@ -1323,6 +1351,7 @@ addEventListener('pointerdown',e=>{
   if(state!=='play') return;
   if(e.target.closest('.panel')||e.target===viewBtn) return;
   // the dash is an interface, not the road: a tap on the stereo works the stereo
+  if(game.view==='driver' && cruiseTap(game, e.clientX, e.clientY)){ pointers.set(e.pointerId,'ui'); return; }
   if(game.view==='driver' && stereoTap(game, e.clientX, e.clientY)){ pointers.set(e.pointerId,'ui'); return; }
   touchMode=true;
   // FIRST finger steers — hold a side (top view) or swipe the wheel (driver view).
@@ -1357,6 +1386,21 @@ function steerInput(){
   if(tl) s-=1; if(tr) s+=1;
   return clamp(s,-1,1);
 }
+/* Cruise control, speed only. It holds the set speed on the throttle alone — it never brakes and never
+   steers, so every corner is still yours. A dab of brake drops it, exactly like a real car, which also
+   means the brake stays free to be the drift trigger: you can't accidentally trail-brake with cruise on. */
+function toggleCruise(){
+  const g=game; if(!g || state!=='play') return;
+  if(g.cc){ g.cc=0; return; }
+  const kmh=Math.max(80, Math.round(g.speed*0.36/10)*10);     // set at the pace you're already doing
+  g.cc=clamp(kmh/0.36, 0, VTOP);
+}
+function cruiseAdjust(g){
+  if(!g.cc) return;
+  if(g.brake>0){ g.cc=0; return; }                            // braking cancels it, like every car ever made
+  if(keys['arrowup']||keys['w']){ g.cc=Math.max(g.cc,g.speed); return; }   // right foot overrides, and re-sets
+  g.gas = g.speed < g.cc-4 ? 1 : 0;                           // holds the set speed; overrides touch auto-throttle
+}
 function throttleInput(){
   if(game && game.forceGas!==undefined) return game.forceGas;
   if(keys['arrowup']||keys['w']) return 1;
@@ -1389,7 +1433,8 @@ window.__drift={
   start(){ startGame(); },
   setInput(steer,gas,brake){ if(game){ game.forceSteer=steer; game.forceGas=gas; game.forceBrake=brake; } },
   clearInput(){ if(game){ delete game.forceSteer; delete game.forceGas; delete game.forceBrake; } },
-  step(n){ for(let i=0;i<(n||1);i++){ if(state==='play'){ game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); step(1/120); } } },
+  step(n){ for(let i=0;i<(n||1);i++){ if(state==='play'){ game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); cruiseAdjust(game); step(1/120); } } },
+  cruise(){ toggleCruise(); },
   autopilot(){ const g=game; if(!g) return; const R=g.road, c=g.car;
     // a tidy driver: pure-pursuit for the line, and a corner speed straight out of the grip budget (v ≤ sqrt(lat/curvature))
     const p=R.pts[c.idx];

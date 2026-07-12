@@ -66,6 +66,50 @@
     kd('ArrowUp'); ku('ArrowUp');
     rec("touching a key hands manual throttle back", G()===0,
         "gas="+G()+" after a keypress with no keys held (auto-throttle must not linger)");
+
+    // ---- CRUISE: it owns the right foot and nothing else
+    const D2=window.__drift;
+    D2.start();
+    const gg=D2.game;
+    // get some pace on, then set cruise at it
+    for(let i=0;i<200;i++){ D2.setInput(0,1,0); D2.step(1); }
+    const atSet=D2.game.speed;
+    D2.clearInput();
+    D2.cruise();
+    rec("cruise engages at the pace you're doing", D2.game.cc>0 &&
+        Math.abs(D2.game.cc-atSet)<atSet*0.12,
+        "engaged at "+Math.round(D2.game.cc*0.36)+" km/h (was doing "+Math.round(atSet*0.36)+")");
+
+    // Cruise owns the throttle, not the wheel — so keep steering, exactly as a player must. (Letting go of
+    // the wheel entirely just drives you off a curving road, which tests the road, not the cruise.)
+    // setInput(steer, undefined, undefined) forces ONLY the steering and leaves the pedals to cruise.
+    for(let i=0;i<600;i++){
+      if(D2.state!=='play') break;
+      D2.autopilot(); const st=D2.game.forceSteer;
+      D2.setInput(st, undefined, undefined);
+      D2.step(1);
+    }
+    const held=D2.game.speed, tgt=D2.game.cc;
+    rec("cruise holds the set speed with no input at all", D2.game.cc>0 &&
+        Math.abs(held-tgt) < tgt*0.10,
+        "after 5s hands-off: "+Math.round(held*0.36)+" km/h vs set "+Math.round(tgt*0.36)+" km/h");
+
+    // it must never steer — the corners stay yours. Take our hands off the wheel for one step and check
+    // cruise contributes NOTHING to the steering (the loop above was steering, so asserting on it would be
+    // asserting on the test's own input).
+    D2.clearInput(); D2.step(1);
+    rec("cruise never steers for you", D2.game.steer===0 && D2.game.cc>0,
+        "hands off the wheel with cruise still holding "+Math.round(D2.game.cc*0.36)+" km/h: steer="+
+        D2.game.steer+" (must be 0 — the corners stay yours)");
+
+    // and a dab of brake drops it, which is also what keeps the brake free as the drift trigger
+    D2.setInput(0,0,1); D2.step(2); D2.clearInput();
+    rec("braking cancels cruise (so the brake stays the drift trigger)", D2.game.cc===0,
+        "cc="+D2.game.cc+" after a dab of brake");
+
+    // toggling off works too
+    D2.cruise(); const onAgain=D2.game.cc>0; D2.cruise();
+    rec("cruise toggles off", onAgain && D2.game.cc===0, "on->"+onAgain+" then off->"+(D2.game.cc===0));
   }catch(e){ rows.push("THREW: "+(e&&e.stack||e)); fail.push("threw"); }
 
   rows.push("");
