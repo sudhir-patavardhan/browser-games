@@ -42,7 +42,7 @@ let html=fs.readFileSync(game,"utf8");
 const harness=`
 <script>
 (function(){
-  try{ localStorage.setItem("drift.view", ${JSON.stringify(view)}==="driver"?"driver":"top"); }catch(e){}
+  try{ localStorage.setItem("drift.view2", ${JSON.stringify(view)}==="driver"?"driver":"top"); }catch(e){}
   (function boot(){
     if(!window.__drift) return setTimeout(boot,30);
     __drift.start();

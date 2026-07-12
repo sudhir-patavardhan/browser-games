@@ -106,7 +106,8 @@
       Braking cancels it<br>
       <b>Stereo:</b> tap the dash screen — art plays/pauses, middle skips, meter mutes &nbsp;·&nbsp;
       keys <b>K</b> / <b>N</b> / <b>P</b> / <b>M</b><br>
-      <b>Views:</b> tap “Driver view” (through the windshield) or press V
+      <b>Views:</b> you drive from behind the wheel. Tap “Top view” (or press V) for a look down at the
+      corner coming — the dash also has an AR guide and a nav map
     </div>
   </div>
 </div>
@@ -140,13 +141,15 @@ addEventListener('resize',resize); resize();
 
 /* ============================ constants ============================ */
 const SEG=26, ROAD_HALF=245, GRASS=85, BARRIER=ROAD_HALF+GRASS;
+const TOPZOOM=0.72;      // top view is pulled back — it's there to read the road, not to drive by
 const CAR_L=46, CAR_W=24;
 
 /* ============================ state ============================ */
 let state='start';               // start | play | over
 let game=null;
 let best=+(localStorage.getItem('drift.best')||0);
-let driftView = (localStorage.getItem('drift.view')==='driver') ? 'driver' : 'top';
+// you drive from the driver's seat. Top view is the glance you take to read a corner, not the game.
+let driftView = (localStorage.getItem('drift.view2')==='top') ? 'top' : 'driver';
 
 /* ============================ road ============================ */
 function makeRoad(seed){
@@ -386,10 +389,11 @@ function render(){
   let shx=0,shy=0; if(g.shake>0){ shx=(Math.random()-0.5)*g.shake*14; shy=(Math.random()-0.5)*g.shake*14; }
   ctx.fillStyle='#79c665'; ctx.fillRect(0,0,W,H);
   ctx.save();
-  const s=spd||1, lead=Math.min(s*0.34,210);
-  const tx=c.x+(c.vx/s)*lead, ty=c.y+(c.vy/s)*lead;
+  const s=spd||1, lead=Math.min(s*0.46,300);            // look further ahead, and sit further back:
+  const tx=c.x+(c.vx/s)*lead, ty=c.y+(c.vy/s)*lead;      // this view's whole job is showing you the corner
   g.cam.x=lerp(g.cam.x,tx,0.12); g.cam.y=lerp(g.cam.y,ty,0.12);
   ctx.translate(W/2+shx, H/2+shy);
+  ctx.scale(TOPZOOM,TOPZOOM);
   ctx.translate(-g.cam.x,-g.cam.y);
   ctx.fillStyle='#6cbb57';
   for(const t of g.grassTufts){
@@ -1332,7 +1336,7 @@ function setViewButton(){ const dv=game&&game.view==='driver';
 }
 function toggleDriftView(){ if(!game) return;
   game.view = game.view==='driver'?'top':'driver'; driftView=game.view;
-  try{ localStorage.setItem('drift.view',driftView); }catch(e){}
+  try{ localStorage.setItem('drift.view2',driftView); }catch(e){}
   game.camAngle = Math.atan2(game.car.vy,game.car.vx) || game.car.angle;   // avoid a spin on switch
   setViewButton();
 }
