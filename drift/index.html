@@ -422,8 +422,12 @@ function drawWindshield(g,spd){
   // sky — sun, cloud decks, birds and the odd airliner. all of it sits at infinity, so only yaw moves it.
   const px=W/2+shx, py=horizon+shy;
   drawSky(g,a,px,py,horizon);
-  // grass ground
-  ctx.fillStyle='#79c665'; ctx.fillRect(0,horizon,W,H-horizon);
+  // grass ground — aerial perspective down the field: far grass by the horizon hazes pale and desaturated
+  // into the sky, near grass under the camera reads richer and deeper. one vertical wash, so it costs nothing
+  // and it's the whole ground plane's depth cue.
+  const grnd=ctx.createLinearGradient(0,horizon,0,H);
+  grnd.addColorStop(0,'#a4cd8f'); grnd.addColorStop(.28,'#83c76a'); grnd.addColorStop(1,'#5aa544');
+  ctx.fillStyle=grnd; ctx.fillRect(0,horizon,W,H-horizon);
   // the edge of the world: a city hazing out along one arc of the horizon, then hills, landmarks, treeline
   drawHorizon(g,a,px,py,Math.max(horizon,py)+4);
   drawBirds(g.scenery,a,px,py,g.time,true);
