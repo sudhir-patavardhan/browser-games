@@ -1132,6 +1132,32 @@ function drawNearScenery(g,ca,sa,cx,hy){
     const hx=q.x+(q.sdx||0)/(Math.abs(q.sdx||0)+40)*r*1.1;               // slide toward the sun; damped so it never leaves the crown
     ctx.moveTo(hx+r*0.46,ty-r*0.26); ctx.arc(hx,ty-r*0.26,r*0.46,0,TAU); }
   ctx.fill();
+  // roadside chevron alignment boards: black-on-yellow markers ranged along the OUTSIDE of a real bend,
+  // pointing the way the road turns — the one bit of roadside furniture a driver genuinely reads. Gated on
+  // curvature (cross product of adjacent unit tangents ~ sin dθ), so they only stand where there's a corner
+  // and never march down a straight. Same world projection, same one sun, as the poles and trees.
+  const signs=[];
+  for(let i=lo;i<hi-1;i++){ if(i&3) continue; const p=R.pts[i], p2=R.pts[i+1];
+    const cross=p.tx*p2.ty-p.ty*p2.tx; if(Math.abs(cross)<0.012) continue;   // ~0.7°/seg: a corner, not a wobble
+    const os=cross>0?1:-1, off=BARRIER+40, wx=p.x+os*p.ty*off, wy=p.y-os*p.tx*off;   // stand on the outside verge
+    const q=put(wx,wy); if(!q) continue; q.wx=wx; q.wy=wy; signs.push(q); }
+  if(signs.length){
+    for(const q of signs){ const s=q.sc; q.bw=clamp(30*s,3,58); q.bh=clamp(22*s,2,44); q.top=q.y-clamp(36*s,3,66)-q.bh; }
+    ctx.fillStyle='rgba(34,60,30,.17)'; ctx.beginPath();                     // contact shadow, thrown off the sun
+    for(const q of signs){ const t=put(q.wx-sux*40, q.wy-suy*40);
+      const tx=t?t.x:q.x, ty=t?t.y:q.y, dx=tx-q.x, dy=ty-q.y;
+      ctx.ellipse((q.x+tx)/2,(q.y+ty)/2,Math.hypot(dx,dy)*0.5+2,Math.max(1.4,2*q.sc),Math.atan2(dy,dx),0,TAU); }
+    ctx.fill();
+    ctx.fillStyle='#5a5e66'; for(const q of signs){ const pw=clamp(3.2*q.sc,1,7); ctx.fillRect(q.x-pw/2,q.top+q.bh,pw,q.y-q.top-q.bh); }
+    ctx.fillStyle='#202226'; for(const q of signs) ctx.fillRect(q.x-q.bw/2-1,q.top-1,q.bw+2,q.bh+2);   // dark border
+    ctx.fillStyle='#ffce30'; for(const q of signs) ctx.fillRect(q.x-q.bw/2,q.top,q.bw,q.bh);           // yellow board
+    ctx.strokeStyle='#202226'; ctx.lineCap='round'; ctx.lineJoin='round';                              // chevrons → the road
+    for(const q of signs){ const dir=q.x<W/2?1:-1, n=q.bw>20?3:(q.bw>10?2:1), ah=q.bh*0.33, cw=q.bw*0.26;
+      const my=q.top+q.bh/2, x0=q.x-q.bw*0.30, step=q.bw*0.62/Math.max(1,n-1||1);
+      ctx.lineWidth=clamp(q.bw*0.15,1,5); ctx.beginPath();
+      for(let j=0;j<n;j++){ const bx=x0+step*j; ctx.moveTo(bx,my-ah); ctx.lineTo(bx+dir*cw,my); ctx.lineTo(bx,my+ah); }
+      ctx.stroke(); }
+  }
 }
 
 function roadRange(g){ const R=g.road, c=g.car;
