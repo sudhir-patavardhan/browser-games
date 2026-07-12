@@ -1,0 +1,13 @@
+# Audio stays OUT of git on purpose.
+#
+# A stock-music licence (Envato Elements and friends) covers USING a track inside an end product like this
+# game. It does not cover redistributing the raw audio on its own — and a public repo does exactly that:
+# anyone can clone it, or hit the raw file URL, and walk off with the track.
+#
+# So: keep your files here to play locally, and to publish them, host them somewhere you control and point
+# tracks.js at the URLs instead. See README.md.
+*.mp3
+*.m4a
+*.ogg
+*.wav
+*.flac

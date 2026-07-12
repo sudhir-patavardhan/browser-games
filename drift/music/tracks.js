@@ -1,25 +1,23 @@
 /* Drift's playlist.
  *
- * Drop .mp3 (or .m4a/.ogg) files next to this file, then list them here. That's it — the car's stereo will
- * play them, and you can skip through them from the dash.
+ * Each entry is either a `file` sitting in this folder, or a `url` streamed from anywhere you're entitled to
+ * stream from. The player treats them identically. `title` and `artist` are optional.
  *
- *   window.DRIFT_TRACKS = [
- *     { file: 'neon-ridge.mp3', title: 'Neon Ridge', artist: 'ASTRA' },
+ *   { file: 'neon-ridge.mp3', title: 'Neon Ridge', artist: 'ASTRA' },
+ *   { url:  'https://your-bucket.example.com/neon-ridge.mp3', title: 'Neon Ridge' },
  *
- *     // or stream it, from anywhere you're entitled to stream from (your own bucket, a host that allows
- *     // direct playback). NOT a stock-music or streaming service's preview files — see README.md.
- *     { url: 'https://your-bucket.example.com/coastline.mp3', title: 'Coastline at Dusk' },
- *   ];
+ * These stream from S3 rather than living in the repo. A stock-music licence covers USING a track inside an
+ * end product like this game; it does not cover redistributing the raw audio on its own, which is exactly
+ * what committing the .mp3s to a public repo would do. So the audio is hosted, and .gitignore keeps the
+ * local copies out of git.
  *
- * `title` and `artist` are optional — without them the filename is used.
- *
- * No tracks here? Nothing breaks. The game runs exactly as it always has, the dash reads NO MEDIA, and you
- * can still load music straight off your device with "Load music" on the start screen (or by tapping the
- * dash screen). Those files never leave your machine.
- *
- * Nothing is committed to this repo for you: the tracks you want are yours to supply, and shipping music
- * we don't have the rights to would be someone else's problem to clean up.
+ * Nothing here, or nothing reachable? Nothing breaks — the dash reads NO MEDIA, the game is untouched, and
+ * you can still load music straight off your device with "Load music" on the start screen.
  */
+const S3 = 'https://browser-games-music.s3.us-west-2.amazonaws.com/';
+
 window.DRIFT_TRACKS = [
-  // { file: 'your-track.mp3', title: 'Your Track', artist: 'You' },
+  { url: S3+'adrenaline-soundroll-main-version-1818-02-20.mp3',            title: 'Adrenaline',           artist: 'Soundroll' },
+  { url: S3+'southern-speed-demon-airstream-main-version-41961-01-24.mp3', title: 'Southern Speed Demon', artist: 'Airstream' },
+  { url: S3+'limitless-vince-mcgill-main-version-30229-01-30.mp3',         title: 'Limitless',            artist: 'Vince McGill' },
 ];

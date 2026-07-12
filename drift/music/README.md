@@ -20,7 +20,37 @@ window.DRIFT_TRACKS = [
 ];
 ```
 
-## 3. Stream from a URL
+## 3. Stream from a URL  ← what this repo does
+
+The three tracks here stream from S3 (`browser-games-music`, us-west-2). The `.mp3`s are **not** committed —
+see the `.gitignore` next to this file, and the licence note below.
+
+For the browser to play them, the objects must be **publicly readable**. Keep bucket *listing* denied (so the
+bucket can't be enumerated) and allow `s3:GetObject` on the audio only:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "PublicReadTracksOnly",
+    "Effect": "Allow",
+    "Principal": "*",
+    "Action": "s3:GetObject",
+    "Resource": "arn:aws:s3:::browser-games-music/*.mp3"
+  }]
+}
+```
+
+You'll also need to turn off "Block all public access" for that bucket (bucket-policy access, at least), and
+make sure each object's Content-Type is `audio/mpeg`. Check it works with:
+
+```bash
+curl -I https://browser-games-music.s3.us-west-2.amazonaws.com/<file>.mp3   # want 200 + audio/mpeg
+```
+
+A 403 means the browser can't fetch it either — the dash will simply read `NO MEDIA`.
+
+## Any other URL
 
 A track can be a `url` instead of a `file`, and it can point anywhere:
 

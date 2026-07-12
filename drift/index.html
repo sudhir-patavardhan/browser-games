@@ -344,6 +344,7 @@ function step(dt){
   for(let i=g.smoke.length-1;i>=0;i--){ const s=g.smoke[i]; s.x+=s.vx*dt; s.y+=s.vy*dt; s.vx*=0.92; s.vy*=0.92;
     s.r+=26*dt; s.life-=dt/s.max; if(s.life<=0) g.smoke.splice(i,1); }
 
+  g.nav=navAhead(g);          // one read of the road ahead, shared by the AR overlay and the cluster map
   if(g.shake>0) g.shake-=dt*4;
 }
 
@@ -483,6 +484,7 @@ function drawWindshield(g,spd){
     for(let i=0;i<6;i++){ const yy=horizon+40+Math.random()*(H-horizon-60); const xx=Math.random()<.5?20+Math.random()*60:W-80+Math.random()*60;
       ctx.beginPath(); ctx.moveTo(xx,yy); ctx.lineTo(xx,yy+40); ctx.stroke(); } }
 
+  if(g.nav) drawNav(g, proj, horizon);
   drawDashboard(g);
   drawWheel(g);
 }
@@ -490,134 +492,312 @@ function drawWindshield(g,spd){
 /* A high-end EV: soft-touch dash, an ambient light line, one pane of glass carrying speed / charge /
    range / power, an infotainment strip below it, and a flat-bottom two-spoke wheel. Everything is laid
    out off the wheel's geometry so it can't collide with it on a narrow phone. */
-// the wheel sits high enough that its flat bottom clears the screen edge — otherwise the one detail that
-// says "EV" is the one detail you never see
+/* The cabin of a high-end EV. A car's panel is a PHYSICAL object, and that's what sells it: a hooded
+   binnacle standing proud of a stitched dash, gauges that sweep and step rather than fill a bar, backlit
+   telltales, brushed trim, vents beside the column, and glare across the glass. Everything is laid out off
+   the wheel's geometry, so nothing can collide with it on a narrow phone. */
+const FSANS='-apple-system,Segoe UI,Roboto,sans-serif';
+const FMONO='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+const CYAN='#7fe2ff', DIM='rgba(178,205,228,.5)', LOW='#ffb454';
 function wheelGeom(){ const rad=Math.min(W*0.20,92); return { cx:W*0.5, cy:H-rad*0.70-4, rad }; }
-const CYAN='#7fe2ff', DIM='rgba(190,215,235,.55)';
+
+// a housing that leans away from you: narrower along its top edge than its foot
+function trap(x0,x1,y0,y1,lean){
+  ctx.beginPath(); ctx.moveTo(x0+lean,y0); ctx.lineTo(x1-lean,y0); ctx.lineTo(x1,y1); ctx.lineTo(x0,y1); ctx.closePath();
+}
+
+/* ============================ navigation ============================ */
+/* One read of the road ahead, used by both the windshield AR overlay and the cluster map. Distance is in
+   game pixels; 1px ~ 0.1m, which is the same scale the trip meter uses. The advisory speed falls straight
+   out of the grip budget the physics already runs on (v <= sqrt(lat/k)), so the car never tells you a lie. */
+function navAhead(g){
+  const R=g.road, c=g.car;
+  let k=0, dir=0, idx=-1;
+  const hi=Math.min(R.pts.length-1, c.idx+70);
+  for(let i=c.idx+3;i<hi;i++){
+    const a=R.pts[i], b=R.pts[i+1];
+    const d=angWrap(Math.atan2(b.ty,b.tx)-Math.atan2(a.ty,a.tx));
+    const kk=Math.abs(d)/SEG;
+    if(kk>k){ k=kk; dir=d<0?-1:1; idx=i; }
+  }
+  const diff=clamp(g.dist/46000,0,1);
+  const grip=lerp(LAT0,LAT1,diff)*GAS_GRIP;
+  const rec=k>1e-5 ? Math.sqrt(grip/k) : VTOP;
+  return { k, dir, idx,
+           distPx: idx<0?9e9:Math.max(0,(idx-c.idx)*SEG),
+           rec: clamp(rec,220,VTOP),
+           real: k>0.0011 && idx>=0 };      // a bend worth warning about, not every twitch in the tarmac
+}
+
+/* AR head-up display: chevrons laid ON the tarmac ahead, plus a card floating over the road. This is the
+   real thing a car does — it isn't decoration, it's the thing that lets you set up for a corner you can't
+   see the exit of yet. It goes amber when you're carrying more speed than the corner will take. */
+function drawNav(g, proj, horizon){
+  const R=g.road, c=g.car, nav=g.nav;
+  const hot = nav.real && g.speed > nav.rec*1.06;     // arriving too fast
+  // chevrons down the centreline, from just ahead of the bumper into the corner
+  const from=c.idx+7, to=Math.min(R.pts.length-2, c.idx+46);
+  for(let i=from;i<to;i+=5){
+    const p=R.pts[i], q=R.pts[i+1];
+    const tx=q.x-p.x, ty=q.y-p.y, tl=Math.hypot(tx,ty)||1;
+    const ux=tx/tl, uy=ty/tl, nx2=-uy, ny2=ux;        // along, and across, the road
+    const wdt=52, len=46;
+    const A=proj(p.x-nx2*wdt, p.y-ny2*wdt), B=proj(p.x+ux*len, p.y+uy*len), C=proj(p.x+nx2*wdt, p.y+ny2*wdt);
+    const D2=proj(p.x+ux*len*0.45, p.y+uy*len*0.45);
+    if(!A||!B||!C||!D2) continue;
+    const t=(i-from)/(to-from);
+    const a=clamp(1-t*0.85,0,1)*0.72*(0.55+0.45*Math.sin(g.time*3-t*4));   // a slow pulse running away from you
+    ctx.fillStyle = hot ? 'rgba(255,170,70,'+a+')' : 'rgba(120,225,255,'+a+')';
+    ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.lineTo(C.x,C.y); ctx.lineTo(D2.x,D2.y);
+    ctx.closePath(); ctx.fill();
+  }
+  if(!nav.real || nav.distPx>2600) return;
+  // the card, floating over the road the way an AR HUD paints it
+  const m=Math.round(nav.distPx*0.1/5)*5;              // metres, to the nearest 5
+  const cw=Math.min(W*0.52,208), chh=44, cx0=W*0.5-cw/2, cy0=Math.max(8, horizon-chh-26);
+  ctx.fillStyle='rgba(8,12,18,.42)'; rr(cx0,cy0,cw,chh,11); ctx.fill();
+  ctx.strokeStyle=hot?'rgba(255,180,90,.75)':'rgba(140,230,255,.5)'; ctx.lineWidth=1.2;
+  rr(cx0,cy0,cw,chh,11); ctx.stroke();
+  // the turn arrow, bent the way the road bends
+  const ax=cx0+26, ay=cy0+chh*0.5, d=nav.dir;
+  ctx.strokeStyle=hot?'#ffb454':'#8fe3ff'; ctx.lineWidth=3.2; ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.beginPath(); ctx.moveTo(ax-d*4, ay+11); ctx.quadraticCurveTo(ax-d*4, ay-3, ax+d*9, ay-7); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ax+d*2, ay-13); ctx.lineTo(ax+d*11, ay-7); ctx.lineTo(ax+d*2, ay-1); ctx.closePath();
+  ctx.fillStyle=hot?'#ffb454':'#8fe3ff'; ctx.fill();
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.fillStyle='#eaf6ff'; ctx.font='800 15px '+FMONO;
+  ctx.fillText(m+' m', cx0+48, cy0+20);
+  ctx.fillStyle=hot?'#ffb454':'rgba(190,215,235,.75)'; ctx.font='700 10.5px '+FSANS;
+  ctx.fillText((hot?'EASE OFF · ':'')+Math.round(nav.rec*0.36)+' km/h', cx0+48, cy0+34);
+}
 
 function drawDashboard(g){
   const { cx, cy, rad }=wheelGeom();
-  // lay the dash out off the wheel, not off the screen: the cluster always gets its band, so a short
-  // phone loses dash height rather than losing the speedo
-  const wheelTop=cy-rad, clusterH=clamp(H*0.105,52,92);
-  const topY=wheelTop-clusterH-24, lip=topY+16;
-  // soft-touch dash, swooping up at the sides
+  const wheelTop=cy-rad, ch=clamp(H*0.155,84,136);
+  const topY=wheelTop-ch-26, lip=topY+16;
+
+  // dash body — matte, unlit, and darker as it falls away from the glass
   const grd=ctx.createLinearGradient(0,topY,0,H);
-  grd.addColorStop(0,'#232833'); grd.addColorStop(0.35,'#171b24'); grd.addColorStop(1,'#0a0c11');
+  grd.addColorStop(0,'#262b35'); grd.addColorStop(0.30,'#171b23'); grd.addColorStop(1,'#080a0e');
   ctx.fillStyle=grd; ctx.beginPath(); ctx.moveTo(0,H); ctx.lineTo(0,lip);
   ctx.quadraticCurveTo(W*0.5,topY-26, W,lip); ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
-  // ambient light line along the dash top — the giveaway of an expensive interior
+
+  const roll=(dy)=>{ ctx.beginPath(); ctx.moveTo(0,lip+dy); ctx.quadraticCurveTo(W*0.5,topY-26+dy,W,lip+dy); };
+  // ambient light line along the crash pad
   ctx.lineCap='round';
-  for(const [w,a] of [[6,'rgba(110,215,255,.10)'],[2.4,'rgba(150,230,255,.30)'],[1,'rgba(225,248,255,.75)']]){
-    ctx.strokeStyle=a; ctx.lineWidth=w; ctx.beginPath(); ctx.moveTo(0,lip);
-    ctx.quadraticCurveTo(W*0.5,topY-26,W,lip); ctx.stroke();
-  }
-  drawCluster(g, topY+13, clusterH);
+  for(const [w,a] of [[6,'rgba(110,215,255,.09)'],[2.4,'rgba(150,230,255,.26)'],[1,'rgba(225,248,255,.7)']]){
+    ctx.strokeStyle=a; ctx.lineWidth=w; roll(0); ctx.stroke(); }
+  // contrast stitching, the way a leather dash top is actually finished
+  ctx.setLineDash([5,6]); ctx.strokeStyle='rgba(226,164,110,.34)'; ctx.lineWidth=1.4; roll(9); ctx.stroke();
+  ctx.setLineDash([]);
+  // brushed trim strip
+  const tg=ctx.createLinearGradient(0,0,W,0);
+  tg.addColorStop(0,'rgba(150,170,190,.10)'); tg.addColorStop(.45,'rgba(215,235,250,.34)');
+  tg.addColorStop(.55,'rgba(215,235,250,.30)'); tg.addColorStop(1,'rgba(150,170,190,.08)');
+  ctx.strokeStyle=tg; ctx.lineWidth=2.4; roll(17); ctx.stroke();
+
+  // vents flanking the column
+  const vh=Math.min(24,rad*0.30), vy=cy-rad*0.55;
+  vent(11, vy, cx-rad-22, vh);
+  vent(cx+rad+11, vy, W-11-(cx+rad+11), vh);
+
+  drawBinnacle(g, topY+13, ch, cx, rad);
 }
 
-// one pane of glass: speed, gear, power/regen, charge, range — and the stereo along the bottom
-function drawCluster(g, y0, h){
-  const pad=W*0.05, x0=pad, wd=W-pad*2;
-  if(h<34) return;                       // no room at all — better nothing than a mess
-  const s=h/92, p=11*s;
-  const mainH=h*0.60;
-
-  // the pane
-  ctx.fillStyle='rgba(6,9,14,.82)'; rr(x0,y0,wd,h,10*s+3); ctx.fill();
-  ctx.strokeStyle='rgba(150,205,235,.16)'; ctx.lineWidth=1; rr(x0,y0,wd,h,10*s+3); ctx.stroke();
-  const gl=ctx.createLinearGradient(0,y0,0,y0+h*0.5);
-  gl.addColorStop(0,'rgba(255,255,255,.07)'); gl.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.fillStyle=gl; rr(x0,y0,wd,h*0.5,10*s+3); ctx.fill();
-
-  const baseY=y0+mainH*0.78;
-  ctx.textBaseline='alphabetic';
-
-  // ---- speed. the big number, like every EV cluster
-  const kmh=Math.round(g.speed*0.36);
-  ctx.textAlign='left';
-  ctx.fillStyle='#eaf6ff'; ctx.font='800 '+Math.round(37*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
-  ctx.fillText(String(kmh), x0+p, baseY);
-  const nw=ctx.measureText(String(kmh)).width;
-  ctx.fillStyle=DIM; ctx.font='700 '+Math.round(10*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
-  ctx.fillText('km/h', x0+p+nw+5*s, baseY);
-  // drive selector — an EV only ever shows you D
-  ctx.fillStyle=CYAN; ctx.font='800 '+Math.round(11*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
-  ctx.fillText('D', x0+p+nw+5*s, baseY-13*s);
-
-  // ---- charge + range, right-hand end
-  const rx=x0+wd-p;
-  const pct=Math.round(g.batt*100), km=Math.round(g.batt*EV_RANGE);
-  const low=g.batt<0.15;
-  ctx.textAlign='right';
-  ctx.fillStyle=low?'#ffb454':'#eaf6ff'; ctx.font='800 '+Math.round(15*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
-  ctx.fillText(km+' km', rx, baseY);
-  ctx.fillStyle=DIM; ctx.font='700 '+Math.round(9.5*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
-  ctx.fillText(pct+'%', rx, baseY-17*s);
-  // battery glyph
-  const bw=30*s, bh=11*s, bx=rx-bw-26*s, by=baseY-17*s-bh+1.5*s;
-  ctx.strokeStyle='rgba(190,215,235,.5)'; ctx.lineWidth=Math.max(1,1.2*s);
-  rr(bx,by,bw,bh,2.5*s); ctx.stroke();
-  ctx.fillStyle='rgba(190,215,235,.5)'; ctx.fillRect(bx+bw+1.5*s, by+bh*0.28, 2*s, bh*0.44);
-  ctx.fillStyle=low?'#ffb454':CYAN;
-  ctx.fillRect(bx+1.6*s, by+1.6*s, Math.max(1,(bw-3.2*s)*g.batt), bh-3.2*s);
-
-  // ---- power / regen. centre is zero: pulling power runs cyan to the right, regen runs green to the left
-  const pwW=wd*0.26, pwX=x0+wd*0.5-pwW*0.5, pwY=y0+mainH*0.42, pwH=4.5*s;
-  ctx.fillStyle='rgba(255,255,255,.07)'; rr(pwX,pwY,pwW,pwH,pwH*0.5); ctx.fill();
-  const f=clamp(g.kw/EV_KW,-1,1), half=pwW*0.5;
-  if(f>=0){ ctx.fillStyle=CYAN; rr(pwX+half, pwY, Math.max(1,half*f), pwH, pwH*0.5); ctx.fill(); }
-  else    { const w2=Math.max(1,half*Math.min(-f*(EV_KW/REGEN_KW),1));
-            ctx.fillStyle='#63e6a4'; rr(pwX+half-w2, pwY, w2, pwH, pwH*0.5); ctx.fill(); }
-  ctx.fillStyle='rgba(255,255,255,.35)'; ctx.fillRect(pwX+half-0.5, pwY-1.5*s, 1, pwH+3*s);
-  ctx.textAlign='center'; ctx.fillStyle=DIM;
-  ctx.font='700 '+Math.round(8.5*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
-  ctx.fillText((g.kw<-2?'REGEN ':'')+Math.round(Math.abs(g.kw))+' kW', pwX+half, pwY-5*s);
-
-  // ---- the stereo, along the bottom of the pane
-  if(h<58) return;                      // too short to be legible — leave it out rather than smear it
-  const my=y0+mainH+2*s, mh=h-mainH-6*s;
-  const art=mh*0.74, ax=x0+p, ay=my+(mh-art)*0.5-1*s;
-  const n=musicNow();
-  // the stereo is touchable: art = play/pause, the middle = next track, the meter = mute.
-  // Remember the strip so pointerdown can hit-test it and NOT read a tap on the dash as steering.
-  g.uiStereo={ x:x0, y:my-2*s, w:wd, h:mh+4*s };
-  // album art (a play/pause glyph sits on it)
-  const ag=ctx.createLinearGradient(ax,ay,ax+art,ay+art);
-  ag.addColorStop(0,'#ff6a3d'); ag.addColorStop(1,'#7b5cff');
-  ctx.fillStyle=n.has?ag:'rgba(255,255,255,.10)'; rr(ax,ay,art,art,3*s); ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,.92)';
-  if(n.playing){ ctx.fillRect(ax+art*0.34,ay+art*0.30,art*0.10,art*0.40); ctx.fillRect(ax+art*0.56,ay+art*0.30,art*0.10,art*0.40); }
-  else { ctx.beginPath(); ctx.moveTo(ax+art*0.38,ay+art*0.28); ctx.lineTo(ax+art*0.72,ay+art*0.5);
-         ctx.lineTo(ax+art*0.38,ay+art*0.72); ctx.closePath(); ctx.fill(); }
-  // title / artist
-  ctx.textAlign='left'; ctx.textBaseline='middle';
-  const tx=ax+art+7*s, tw=(x0+wd-p-30*s)-tx;
-  ctx.save(); ctx.beginPath(); ctx.rect(tx,my,Math.max(10,tw),mh); ctx.clip();   // long titles don't run into the meter
-  ctx.fillStyle=n.has?'#dcecf7':DIM; ctx.font='700 '+Math.round(10*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
-  ctx.fillText(n.title, tx, ay+art*0.32);
-  ctx.fillStyle=DIM; ctx.font='600 '+Math.round(8.5*s)+'px -apple-system,Segoe UI,Roboto,sans-serif';
-  ctx.fillText(n.artist, tx, ay+art*0.74);
+// slot vent: a recessed housing with slats and one adjustable wheel
+function vent(x,y,w,h){
+  if(w<26) return;
+  ctx.fillStyle='rgba(4,6,9,.9)'; rr(x,y,w,h,h*0.30); ctx.fill();
+  ctx.strokeStyle='rgba(190,215,235,.10)'; ctx.lineWidth=1; rr(x,y,w,h,h*0.30); ctx.stroke();
+  ctx.save(); rr(x+1.5,y+1.5,w-3,h-3,h*0.26); ctx.clip();
+  for(let i=1;i<=3;i++){ const yy=y+h*(i/4);
+    ctx.strokeStyle='rgba(150,180,205,.16)'; ctx.lineWidth=Math.max(1,h*0.055);
+    ctx.beginPath(); ctx.moveTo(x+3,yy); ctx.lineTo(x+w-3,yy); ctx.stroke(); }
   ctx.restore();
+  ctx.fillStyle='rgba(160,190,215,.22)'; ctx.beginPath();
+  ctx.arc(x+w-h*0.42, y+h*0.5, h*0.17, 0, TAU); ctx.fill();
+}
+
+function drawBinnacle(g, y0, h, cx, rad){
+  const pad=W*0.04, x0=pad, x1=W-pad, wd=x1-x0, y1=y0+h;
+  const s=h/136, r=Math.min(14,h*0.11);
+
+  // the hood: the binnacle stands proud of the crash pad and throws a shadow onto its own glass
+  ctx.fillStyle='rgba(0,0,0,.55)';
+  ctx.beginPath(); ctx.moveTo(x0-7,y0+4); ctx.quadraticCurveTo(cx,y0-14, x1+7,y0+4);
+  ctx.lineTo(x1+7,y0+12); ctx.quadraticCurveTo(cx,y0-6, x0-7,y0+12); ctx.closePath(); ctx.fill();
+  // bezel, then glass sunk inside it
+  ctx.fillStyle='#191d25'; rr(x0-3,y0-2,wd+6,h+5,r+3); ctx.fill();
+  ctx.strokeStyle='rgba(210,235,255,.12)'; ctx.lineWidth=1; rr(x0-3,y0-2,wd+6,h+5,r+3); ctx.stroke();
+  ctx.fillStyle='#04050a'; rr(x0,y0,wd,h,r); ctx.fill();
+
+  ctx.save(); rr(x0,y0,wd,h,r); ctx.clip();
+
+  // the nebula behind the numbers — the single thing that makes a modern cluster look expensive
+  const gcx=x0+wd*0.5, gcy=y0+h*0.52, gr=Math.max(wd*0.34,h*0.9);
+  const neb=ctx.createRadialGradient(gcx,gcy,0,gcx,gcy,gr);
+  neb.addColorStop(0,'rgba(196,74,150,.30)'); neb.addColorStop(.35,'rgba(120,60,180,.20)');
+  neb.addColorStop(.72,'rgba(60,40,120,.09)'); neb.addColorStop(1,'rgba(20,20,40,0)');
+  ctx.fillStyle=neb; ctx.fillRect(x0,y0,wd,h);
+  const lit=ctx.createLinearGradient(0,y0,0,y1);
+  lit.addColorStop(0,'rgba(140,190,225,.10)'); lit.addColorStop(.4,'rgba(255,255,255,.015)'); lit.addColorStop(1,'rgba(0,0,0,.30)');
+  ctx.fillStyle=lit; ctx.fillRect(x0,y0,wd,h);
+
+  clusterTop(g, x0, x1, y0+13*s, s);
+  bigSpeed(g, gcx, y0+h*0.50, h, s);
+  navMap(g, x0+9*s, y0+h*0.30, wd*0.235, h*0.42, s);      // the map, where a real cluster puts it
+  rangeBlock(g, x0+9*s, y1-10*s, s);
+  powerBlock(g, x1-9*s, y1-10*s, wd*0.24, s);
+  mediaBar(g, gcx, y1-13*s, wd*0.30, s);
+
+  // glare across the glass — a flat card never has this, and a pane of glass always does
+  const gl=ctx.createLinearGradient(x0,y1,x0+wd*0.75,y0);
+  gl.addColorStop(0,'rgba(255,255,255,0)'); gl.addColorStop(.47,'rgba(255,255,255,.05)');
+  gl.addColorStop(.53,'rgba(255,255,255,.07)'); gl.addColorStop(.6,'rgba(255,255,255,0)');
+  ctx.fillStyle=gl; ctx.fillRect(x0,y0,wd,h);
+  ctx.restore();
+}
+
+// the thin strip along the top: clock, gear, outside temp — the small print every car carries
+function clusterTop(g,x0,x1,y,s){
+  const d=new Date();
+  const hh=d.getHours(), mm=String(d.getMinutes()).padStart(2,'0');
+  const clock=((hh%12)||12)+':'+mm+' '+(hh<12?'AM':'PM');
   ctx.textBaseline='alphabetic';
-  // level meter — a visualiser, and the mute button
-  const bars=7, bw2=2.6*s, gap=2.2*s, bx2=x0+wd-p-(bars*(bw2+gap));
-  for(let i=0;i<bars;i++){
-    const bh2=Math.max(1.5*s, mh*0.42*Math.abs(musicLevel(i,g.time,g.speed)));
-    ctx.fillStyle=n.muted?'rgba(150,175,195,.28)':(i<4?'rgba(127,226,255,.75)':'rgba(99,230,164,.7)');
-    rr(bx2+i*(bw2+gap), ay+art*0.72-bh2, bw2, bh2, bw2*0.5); ctx.fill();
+  ctx.textAlign='left'; ctx.fillStyle=DIM; ctx.font='600 '+Math.round(9*s)+'px '+FMONO;
+  ctx.fillText(clock, x0+10*s, y);
+  ctx.textAlign='right'; ctx.fillText((18+(g.seed%11))+'°C', x1-10*s, y);
+  ctx.textAlign='center'; ctx.fillStyle='#dff2ff'; ctx.font='800 '+Math.round(10*s)+'px '+FSANS;
+  ctx.fillText('D', (x0+x1)*0.5, y);
+}
+
+// one big, light numeral between two brackets. Airy is the whole point — a cluster is not a dashboard of tiles.
+function bigSpeed(g,cx2,cy2,h,s){
+  const kmh=Math.round(g.speed*0.36);
+  ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  ctx.fillStyle='#f4fbff'; ctx.font='300 '+Math.round(h*0.42)+'px '+FMONO;
+  ctx.fillText(String(kmh), cx2, cy2+h*0.13);
+  ctx.fillStyle=DIM; ctx.font='600 '+Math.round(h*0.075)+'px '+FSANS;
+  ctx.fillText('km/h', cx2, cy2+h*0.27);
+  // lane brackets, exactly the way the reference cluster frames the speed
+  const bw=h*0.30, bx=h*0.44, by=h*0.02;
+  ctx.strokeStyle='rgba(190,215,235,.42)'; ctx.lineWidth=Math.max(1.6,h*0.018);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  for(const sg of [-1,1]){
+    ctx.beginPath();
+    ctx.moveTo(cx2+sg*(bx-h*0.06), cy2-bw*0.5+by);
+    ctx.lineTo(cx2+sg*bx,          cy2-bw*0.5+by+h*0.05);
+    ctx.lineTo(cx2+sg*bx,          cy2+bw*0.5+by-h*0.05);
+    ctx.lineTo(cx2+sg*(bx-h*0.06), cy2+bw*0.5+by);
+    ctx.stroke();
   }
-  if(n.muted){ ctx.strokeStyle='rgba(255,140,140,.8)'; ctx.lineWidth=Math.max(1,1.3*s); ctx.beginPath();
-    ctx.moveTo(bx2-1*s, ay+art*0.74); ctx.lineTo(bx2+bars*(bw2+gap)-gap+1*s, ay+art*0.18); ctx.stroke(); }
-  // track progress, a hairline across the foot of the pane
-  ctx.fillStyle='rgba(255,255,255,.10)'; ctx.fillRect(x0+p, y0+h-3.5*s, wd-p*2, 1.4*s);
-  ctx.fillStyle='rgba(127,226,255,.65)'; ctx.fillRect(x0+p, y0+h-3.5*s, (wd-p*2)*n.pos, 1.4*s);
+}
+
+// a live top-down of the road you're on, oriented so your heading points up — like every car's nav pane
+function navMap(g,x,y,w,h,s){
+  const R=g.road, c=g.car, nav=g.nav||{};
+  ctx.fillStyle='rgba(255,255,255,.045)'; rr(x-2,y-2,w+4,h+4,5*s); ctx.fill();
+  ctx.fillStyle='#070a10'; rr(x,y,w,h,4*s); ctx.fill();
+  ctx.strokeStyle='rgba(190,215,235,.12)'; ctx.lineWidth=1; rr(x,y,w,h,4*s); ctx.stroke();
+
+  ctx.save(); rr(x,y,w,h,4*s); ctx.clip();
+  ctx.translate(x+w*0.5, y+h*0.80);            // you sit near the bottom, looking up the road
+  ctx.rotate(-c.angle-Math.PI/2);              // heading-up, like a car's map
+  const sc=(h*0.92)/1700;                      // ~1700px of road fits the pane
+  ctx.scale(sc,sc);
+  ctx.translate(-c.x,-c.y);
+  const lo=Math.max(R.start,c.idx-6), hi=Math.min(R.pts.length,c.idx+70);
+  ctx.beginPath();
+  for(let i=lo;i<hi;i++){ const p=R.pts[i]; ctx.lineTo(p.x-p.ty*ROAD_HALF, p.y+p.tx*ROAD_HALF); }
+  for(let i=hi-1;i>=lo;i--){ const p=R.pts[i]; ctx.lineTo(p.x+p.ty*ROAD_HALF, p.y-p.tx*ROAD_HALF); }
+  ctx.closePath(); ctx.fillStyle='rgba(150,190,220,.20)'; ctx.fill();
+  // the route itself, and the corner it's warning you about
+  ctx.beginPath();
+  for(let i=lo;i<hi;i++){ const p=R.pts[i]; i===lo?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); }
+  ctx.strokeStyle='#7fe2ff'; ctx.lineWidth=70; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
+  if(nav.real && nav.idx>0 && nav.idx<R.pts.length){
+    const p=R.pts[nav.idx];
+    ctx.fillStyle=(g.speed>nav.rec*1.06)?'#ffb454':'#ffffff';
+    ctx.beginPath(); ctx.arc(p.x,p.y,95,0,TAU); ctx.fill();
+  }
+  ctx.restore();
+
+  // you: a chevron pinned where the map pivots
+  const px=x+w*0.5, py=y+h*0.80;
+  ctx.fillStyle='#ff6a3d';
+  ctx.beginPath(); ctx.moveTo(px,py-6*s); ctx.lineTo(px+4.6*s,py+4*s); ctx.lineTo(px,py+1.8*s);
+  ctx.lineTo(px-4.6*s,py+4*s); ctx.closePath(); ctx.fill();
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.fillStyle=DIM; ctx.font='700 '+Math.round(6.5*s)+'px '+FSANS;
+  ctx.fillText('NAV', x+4*s, y+9*s);
+}
+
+// range, bottom-left, in amber — the way a real EV cluster shouts about what's left
+function rangeBlock(g,x,y,s){
+  const low=g.batt<0.15, col=low?'#ff8a5c':'#ffb454';
+  const bw=13*s, bh=7*s, by=y-16*s;
+  ctx.strokeStyle=col; ctx.lineWidth=Math.max(1,1.1*s);
+  rr(x,by,bw,bh,1.6*s); ctx.stroke();
+  ctx.fillStyle=col; ctx.fillRect(x+bw+1*s, by+bh*0.28, 1.6*s, bh*0.44);
+  ctx.fillRect(x+1.4*s, by+1.4*s, Math.max(1,(bw-2.8*s)*g.batt), bh-2.8*s);
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.fillStyle=col; ctx.font='800 '+Math.round(15*s)+'px '+FMONO;
+  ctx.fillText(Math.round(g.batt*EV_RANGE)+' km', x+bw+7*s, by+bh);
+  ctx.fillStyle=DIM; ctx.font='700 '+Math.round(8*s)+'px '+FSANS;
+  ctx.fillText('RANGE · '+Math.round(g.batt*100)+'%', x, y);
+}
+
+// power / regen, bottom-right, stepped like an instrument
+function powerBlock(g,x,y,w,s){
+  const n=10, mid=3, gap=Math.max(1.2,w*0.014), sw=(w-gap*(n-1))/n;
+  const bh=Math.max(3.5,5*s), by=y-15*s, x0=x-w;
+  for(let i=0;i<n;i++){
+    let col='rgba(150,180,205,.13)';
+    if(i<mid){ if((mid-i)/mid<=clamp(-g.kw/REGEN_KW,0,1)) col='#63e6a4'; }
+    else if((i-mid+1)/(n-mid)<=clamp(g.kw/EV_KW,0,1)) col=CYAN;
+    ctx.fillStyle=col; rr(x0+i*(sw+gap), by, sw, bh, Math.min(1.6,sw*0.3)); ctx.fill();
+  }
+  ctx.fillStyle='rgba(255,255,255,.28)'; ctx.fillRect(x0+mid*(sw+gap)-gap*0.5-0.5, by-2*s, 1, bh+4*s);
+  ctx.textAlign='right'; ctx.textBaseline='alphabetic';
+  ctx.fillStyle=DIM; ctx.font='700 '+Math.round(8*s)+'px '+FSANS;
+  ctx.fillText((g.kw<-2?'REGEN':'POWER')+' · '+Math.round(Math.abs(g.kw))+' kW', x, y);
+}
+
+// the stereo, as a cluster widget rather than a card: title, meter, and a tap target
+function mediaBar(g,cx2,y,w,s){
+  const n=musicNow(), h=15*s, x=cx2-w*0.5, yy=y-h;
+  g.uiStereo={ x:x-6*s, y:yy-4*s, w:w+12*s, h:h+8*s };
+  ctx.fillStyle='rgba(255,255,255,.05)'; rr(x-6*s,yy-4*s,w+12*s,h+8*s,(h+8*s)*0.5); ctx.fill();
+  // play/pause dot
+  ctx.fillStyle=n.has?'#ff6a3d':'rgba(255,255,255,.22)';
+  ctx.beginPath(); ctx.arc(x+h*0.5, yy+h*0.5, h*0.46, 0, TAU); ctx.fill();
+  ctx.fillStyle='#fff';
+  if(n.playing){ ctx.fillRect(x+h*0.36,yy+h*0.32,h*0.09,h*0.36); ctx.fillRect(x+h*0.56,yy+h*0.32,h*0.09,h*0.36); }
+  else { ctx.beginPath(); ctx.moveTo(x+h*0.40,yy+h*0.30); ctx.lineTo(x+h*0.68,yy+h*0.5);
+         ctx.lineTo(x+h*0.40,yy+h*0.70); ctx.closePath(); ctx.fill(); }
+  // title, clipped so a long one can't shove the meter off the glass
+  const bars=5, bw=2.2*s, bg=1.9*s, mw=bars*(bw+bg);
+  const tx=x+h+5*s, tw=(x+w-mw-4*s)-tx;
+  ctx.save(); ctx.beginPath(); ctx.rect(tx,yy,Math.max(6,tw),h); ctx.clip();
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillStyle=n.has?'#dfeefb':DIM; ctx.font='700 '+Math.round(8.5*s)+'px '+FSANS;
+  ctx.fillText(n.title, tx, yy+h*0.5);
+  ctx.restore(); ctx.textBaseline='alphabetic';
+  const mx=x+w-mw;
+  for(let i=0;i<bars;i++){
+    const bh2=Math.max(1.4*s, h*0.62*Math.abs(musicLevel(i,g.time,g.speed)));
+    ctx.fillStyle=n.muted?'rgba(150,175,195,.25)':'rgba(127,226,255,.8)';
+    rr(mx+i*(bw+bg), yy+h*0.78-bh2, bw, bh2, bw*0.5); ctx.fill();
+  }
+  if(n.muted){ ctx.strokeStyle='rgba(255,140,140,.85)'; ctx.lineWidth=Math.max(1,1.1*s);
+    ctx.beginPath(); ctx.moveTo(mx-1*s, yy+h*0.8); ctx.lineTo(mx+mw-bg+1*s, yy+h*0.2); ctx.stroke(); }
 }
 // a tap landed on the stereo: left = play/pause, middle = next, right = mute
 function stereoTap(g,x,y){
   const u=g.uiStereo; if(!u) return false;
   if(x<u.x||x>u.x+u.w||y<u.y||y>u.y+u.h) return false;
   const f=(x-u.x)/u.w;
-  if(f<0.24) musicToggle(); else if(f>0.76) musicMute(); else if(MUSIC.length) musicSkip(1); else auxPick();
+  if(f<0.28) musicToggle(); else if(f>0.72) musicMute(); else if(MUSIC.length) musicSkip(1); else auxPick();
   return true;
 }
 
@@ -954,12 +1134,18 @@ const MUSIC=[];
 })();
 let audioEl=null, mIdx=Math.max(0,+(localStorage.getItem('drift.trk')||0)), mPlaying=false;
 let mMuted=localStorage.getItem('drift.mute')==='1';
+let mFails=0;   // if every track is missing (a manifest listing files that were never deployed), skipping
+                // on failure would spin forever — so give up once we've been round the whole playlist
 const MVOL=0.55;
 function musicEl(){
   if(audioEl) return audioEl;
   audioEl=new Audio(); audioEl.preload='auto'; audioEl.volume=mMuted?0:MVOL;
-  audioEl.addEventListener('ended',()=>musicSkip(1));
-  audioEl.addEventListener('error',()=>{ if(MUSIC.length>1) musicSkip(1); else mPlaying=false; });
+  audioEl.addEventListener('ended',()=>{ mFails=0; musicSkip(1); });
+  audioEl.addEventListener('playing',()=>{ mFails=0; });
+  audioEl.addEventListener('error',()=>{
+    if(++mFails>=MUSIC.length){ mPlaying=false; return; }   // whole playlist is unreachable: stop, don't spin
+    musicSkip(1);
+  });
   return audioEl;
 }
 function musicLoad(i){
@@ -976,7 +1162,8 @@ function musicToggle(){ if(!MUSIC.length){ auxPick(); return; }
 function musicMute(){ mMuted=!mMuted; if(audioEl) audioEl.volume=mMuted?0:MVOL;
   try{ localStorage.setItem('drift.mute',mMuted?'1':'0'); }catch(e){} }
 function musicNow(){
-  if(!MUSIC.length) return { has:false, title:'NO MEDIA', artist:'tap to load music', pos:0, playing:false, muted:mMuted };
+  if(!MUSIC.length || mFails>=MUSIC.length)   // no playlist, or every track in it failed to load
+    return { has:false, title:'NO MEDIA', artist:'tap to load music', pos:0, playing:false, muted:mMuted };
   const t=MUSIC[mIdx], a=audioEl;
   const pos=(a&&a.duration)? clamp(a.currentTime/a.duration,0,1) : 0;
   return { has:true, title:t.title, artist:t.artist||'—', pos, playing:!!(a&&!a.paused&&mPlaying), muted:mMuted };

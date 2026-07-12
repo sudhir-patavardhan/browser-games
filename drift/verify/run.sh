@@ -12,8 +12,11 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GAME="${GAME:-$HERE/../index.html}"
 PROBE="${1:-assert}"
-WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
+# the probe page must live NEXT TO the game, or relative paths (music/tracks.js, and anything
+# else the game loads) resolve into a temp dir and silently vanish
+WORK="$(cd "$(dirname "$GAME")" && pwd)"
+PROBE_HTML="$WORK/.probe-$$.html"
+trap 'rm -f "$PROBE_HTML"' EXIT
 
 find_chrome(){
   if [ -n "${CHROME:-}" ]; then
@@ -52,11 +55,11 @@ let html=fs.readFileSync(game,"utf8");
 if(!html.includes("window.__drift")) { console.error("!! "+game+" has no window.__drift test hooks"); process.exit(2); }
 html=html.replace("</body>", "<script>\n"+fs.readFileSync(js,"utf8")+"\n<\/script>\n</body>");
 fs.writeFileSync(out,html);
-' "$GAME" "$JS" "$WORK/probe.html" || exit 2
+' "$GAME" "$JS" "$PROBE_HTML" || exit 2
 
 OUT="$("$CHROME_BIN" --headless=new --disable-gpu --no-sandbox --hide-scrollbars \
   --allow-file-access-from-files --virtual-time-budget=90000 --window-size=500,900 \
-  --dump-dom "file://$WORK/probe.html" 2>/dev/null \
+  --dump-dom "file://$PROBE_HTML" 2>/dev/null \
   | DIV="$DIV" node -e '
       let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{
         const m=s.match(new RegExp("<div id=\""+process.env.DIV+"\">([\\s\\S]*?)</div>"));

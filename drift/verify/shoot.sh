@@ -4,14 +4,18 @@
 #   ./drift/verify/shoot.sh driver out.png          # first-person windshield
 #   ./drift/verify/shoot.sh top out.png 20000       # top-down, 20s of virtual game time
 #
-# Boots the game, forces the requested camera, and runs the built-in autopilot so the frame you capture is
-# a car mid-drive rather than a start screen. Headless Chrome lays out at ~500px wide regardless of
-# --window-size, so the default capture matches that; don't read a narrow capture as a layout bug.
+# Boots the game, forces the requested camera, then DRIVES THE SIM FORWARD SYNCHRONOUSLY before handing back
+# to the render loop — Chrome's virtual clock doesn't fire anywhere near enough rAF callbacks to advance the
+# game on its own, so without this every capture is of a car that has only just set off (trip 0.0km, battery
+# still 100%). The 5th arg is how many seconds of driving to do first (default 70).
+# Headless Chrome lays out at ~500px wide regardless of --window-size; don't read a narrow capture as a bug.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GAME="${GAME:-$HERE/../index.html}"
-VIEW="${1:-driver}"; OUT="${2:-$VIEW.png}"; VT="${3:-14000}"; SIZE="${4:-500,900}"
-WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
+VIEW="${1:-driver}"; OUT="${2:-$VIEW.png}"; VT="${3:-14000}"; SIZE="${4:-500,900}"; WARM="${5:-70}"
+WORK="$(cd "$(dirname "$GAME")" && pwd)"
+PROBE_HTML="$WORK/.probe-$$.html"
+trap 'rm -f "$PROBE_HTML"' EXIT
 
 find_chrome(){
   if [ -n "${CHROME:-}" ]; then
@@ -30,10 +34,10 @@ find_chrome(){
 CHROME_BIN="$(find_chrome)"
 [ -z "$CHROME_BIN" ] && { echo "!! no Chrome/Chromium found; set CHROME=/path/to/chrome" >&2; exit 2; }
 
-VIEW="$VIEW" node -e '
+VIEW="$VIEW" WARM="$WARM" node -e '
 const fs=require("fs");
 const [game,out]=process.argv.slice(1);
-const view=process.env.VIEW;
+const view=process.env.VIEW, warm=+(process.env.WARM||70);
 let html=fs.readFileSync(game,"utf8");
 const harness=`
 <script>
@@ -45,6 +49,10 @@ const harness=`
     if(__drift.game && __drift.game.view !== ${JSON.stringify(view)}){
       const b=document.getElementById("viewBtn"); if(b) b.click();
     }
+    for(let i=0;i<${warm}*120;i++){          // drive it for real before we look at it
+      if(__drift.state!=="play") break;
+      __drift.autopilot(); __drift.step(1);
+    }
     (function tick(){
       if(window.__drift && __drift.state==="play") __drift.autopilot();
       requestAnimationFrame(tick);
@@ -53,10 +61,10 @@ const harness=`
 })();
 <\/script>`;
 fs.writeFileSync(out, html.replace("</body>", harness+"</body>"));
-' "$GAME" "$WORK/shot.html" || exit 2
+' "$GAME" "$PROBE_HTML" || exit 2
 
 "$CHROME_BIN" --headless=new --disable-gpu --no-sandbox --hide-scrollbars \
   --allow-file-access-from-files --virtual-time-budget="$VT" \
-  --window-size="$SIZE" --screenshot="$OUT" "file://$WORK/shot.html" >/dev/null 2>&1
+  --window-size="$SIZE" --screenshot="$OUT" "file://$PROBE_HTML" >/dev/null 2>&1
 
 [ -s "$OUT" ] && echo "wrote $OUT" || { echo "!! screenshot failed" >&2; exit 1; }
