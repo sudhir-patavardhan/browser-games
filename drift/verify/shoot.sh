@@ -3,6 +3,8 @@
 #
 #   ./drift/verify/shoot.sh driver out.png          # first-person windshield
 #   ./drift/verify/shoot.sh top out.png 20000       # top-down, 20s of virtual game time
+#   ./drift/verify/shoot.sh driver b.png 14000 500,900 70 bridge   # ...and drive until a bridge is ahead
+#   ./drift/verify/shoot.sh driver s.png 14000 500,900 70 span     # ...or until you are out over the water
 #
 # Boots the game, forces the requested camera, then DRIVES THE SIM FORWARD SYNCHRONOUSLY before handing back
 # to the render loop — Chrome's virtual clock doesn't fire anywhere near enough rAF callbacks to advance the
@@ -12,7 +14,7 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GAME="${GAME:-$HERE/../index.html}"
-VIEW="${1:-driver}"; OUT="${2:-$VIEW.png}"; VT="${3:-14000}"; SIZE="${4:-500,900}"; WARM="${5:-70}"
+VIEW="${1:-driver}"; OUT="${2:-$VIEW.png}"; VT="${3:-14000}"; SIZE="${4:-500,900}"; WARM="${5:-70}"; UNTIL="${6:-}"
 WORK="$(cd "$(dirname "$GAME")" && pwd)"
 PROBE_HTML="$WORK/.probe-$$.html"
 trap 'rm -f "$PROBE_HTML"' EXIT
@@ -34,10 +36,10 @@ find_chrome(){
 CHROME_BIN="$(find_chrome)"
 [ -z "$CHROME_BIN" ] && { echo "!! no Chrome/Chromium found; set CHROME=/path/to/chrome" >&2; exit 2; }
 
-VIEW="$VIEW" WARM="$WARM" node -e '
+VIEW="$VIEW" WARM="$WARM" UNTIL="$UNTIL" node -e '
 const fs=require("fs");
 const [game,out]=process.argv.slice(1);
-const view=process.env.VIEW, warm=+(process.env.WARM||70);
+const view=process.env.VIEW, warm=+(process.env.WARM||70), until=process.env.UNTIL||"";
 let html=fs.readFileSync(game,"utf8");
 const harness=`
 <script>
@@ -53,8 +55,28 @@ const harness=`
       if(__drift.state!=="play") break;
       __drift.autopilot(); __drift.step(1);
     }
+    // The road seed is random per run, so warming for N seconds cannot land you on a rare feature — you have
+    // to drive until you find one. And once you have, HOLD it there: the virtual clock keeps firing rAF right
+    // up to the shutter, and an autopilot left running will cheerfully drive over the bridge and out the far
+    // side before the picture is taken. So pin the car and let the world keep rendering around it.
+    const AT={
+      bridge: gg=> !bridgeAt(gg.car.idx,gg.seed) && !!bridgeAt(gg.car.idx+22,gg.seed),  // the span, dead ahead
+      span:   gg=>{ const b=bridgeAt(gg.car.idx,gg.seed); return !!b && b.t>0.6; }      // out over the water
+    }[${JSON.stringify(until)}];
+    let pinned=null;
+    if(AT){
+      for(let i=0;i<300*120;i++){
+        if(__drift.state!=="play" || AT(__drift.game)) break;
+        __drift.autopilot(); __drift.step(1);
+      }
+      const c=__drift.game.car;
+      pinned={ x:c.x, y:c.y, angle:c.angle, vx:c.vx, vy:c.vy, idx:c.idx };
+    }
     (function tick(){
-      if(window.__drift && __drift.state==="play") __drift.autopilot();
+      if(window.__drift && __drift.state==="play"){
+        if(pinned) Object.assign(__drift.game.car, pinned);   // hold it where we drove it to
+        else __drift.autopilot();
+      }
       requestAnimationFrame(tick);
     })();
   })();

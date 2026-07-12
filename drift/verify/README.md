@@ -23,7 +23,9 @@ Chrome/Chromium. The game exposes `window.__drift` (`start()`, `setInput(steer, 
 ./drift/verify/run.sh badges       # the trophy shelf: feats award once, streaks count days, all persists
 ./drift/verify/run.sh waves        # bounty waves: seeded schedule, double pay, the +$120 clear
 ./drift/verify/run.sh plane        # scenery built, and the rare airliner is actually reachable
+./drift/verify/run.sh land         # rivers, bridges and woods — driven to, then checked in real pixels
 ./drift/verify/shoot.sh driver f.png   # screenshot the car mid-drive, so you can LOOK at it
+./drift/verify/shoot.sh driver b.png 14000 500,900 70 bridge   # ...having driven until a bridge is ahead
 ```
 
 Set `CHROME=/path/to/chrome` if it isn't found automatically. If no browser exists the runner **exits 2
@@ -58,6 +60,17 @@ The claims it defends, in rough order of how much they matter:
   Driving tidily buys ~840s; sending it recklessly burns you down to ~7% within 100s. That gradient is the
   whole risk/reward loop, and it replaced the old instant-crash death.
 - **The driver view renders through a full yaw sweep without throwing.**
+- **The landscape is really out there.** Rivers, the bridges over them and the thickening woods are stored
+  nowhere — they're a pure function of the road index and the seed, so the only way to know a river exists is
+  to drive to it and look. `run.sh land` does exactly that: it drives until a span is ahead, renders the frame
+  the player would see, and **reads the pixels back**. A blue-pixel count on its own proves nothing (the sky
+  is blue too), so every pixel claim is a **delta against a control frame** shot on open road with no river in
+  sight, counted below the horizon only. It also pins the things that make the feature honest: the deck
+  strictly covers the water (never a road point over open water with nothing to drive on), the river is still
+  drawn when you're standing over it (the quads used to be *dropped* rather than clipped once a corner fell
+  behind the camera, so the water blinked out exactly when you got close enough to look over the side), the
+  parapet holds you out of the river at full lock, and the deck **drives** like the concrete it looks like
+  rather than like a ploughed field.
 
 ## Judgement, not a rubber stamp
 

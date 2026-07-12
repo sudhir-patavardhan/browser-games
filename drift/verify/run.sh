@@ -15,6 +15,7 @@
 #   ./drift/verify/run.sh waves      # bounty waves: seeded schedule, double pay, the +$120 clear
 #   ./drift/verify/run.sh plane      # scenery build + airliner reachability
 #   ./drift/verify/run.sh music      # the playlist actually loads in a browser
+#   ./drift/verify/run.sh land       # rivers, the bridges over them, and the woods — checked in real pixels
 #
 # The game exposes window.__drift (start / setInput(steer,gas,brake) / step(n) / autopilot), so a probe is
 # just a <script> appended to a copy of the page. Probes write their findings into a <div id="RESULTS">,
@@ -66,7 +67,8 @@ case "$PROBE" in
   waves) JS="$HERE/waves.js"; DIV="RESULTS" ;;
   plane)  JS="$HERE/plane.js";  DIV="PLANE" ;;
   music)  JS="$HERE/music.js";  DIV="RESULTS" ;;
-  *) echo "unknown probe '$PROBE' (want: assert | controls | contracts | garage | nearmiss | daily | ghost | report | weather | horde | badges | waves | plane | music)" >&2; exit 2 ;;
+  land)   JS="$HERE/land.js";   DIV="RESULTS" ;;
+  *) echo "unknown probe '$PROBE' (want: assert | controls | contracts | garage | nearmiss | daily | ghost | report | weather | horde | badges | waves | plane | music | land)" >&2; exit 2 ;;
 esac
 
 # splice the probe in just before </body>, after the game's own script has defined window.__drift

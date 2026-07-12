@@ -374,7 +374,9 @@ function step(dt){
   const p=R.pts[c.idx];
   const nx=-p.ty, ny=p.tx;
   const lateral=(c.x-p.x)*nx+(c.y-p.y)*ny;
-  g.onGrass=Math.abs(lateral)>ROAD_HALF;
+  // off the tarmac is grass — except on a bridge, where what you can see out to the parapet is deck. The car
+  // has to agree with the picture: concrete grips like road and doesn't drink the pack the way a field does.
+  g.onGrass=Math.abs(lateral)>ROAD_HALF && !bridgeAt(c.idx,g.seed);
   // the barrier doesn't end you any more — it costs you. Scrub back onto the tarmac, lose the speed you
   // carried into it, and take a bite out of the pack. Enough hits will flatten it; one mistake won't.
   const lim=BARRIER-CAR_W*0.4;
@@ -586,7 +588,7 @@ function render(){
     const y=t.y+Math.round((g.cam.y-t.y)/4000)*4000;
     ctx.beginPath(); ctx.arc(x,y,t.r,0,TAU); ctx.fill();
   }
-  drawRoad(g); drawBillboardsTop(g); drawSkid(g); drawZombiesTop(g); drawGhostTop(g); drawCar(g); drawSmoke(g); drawGibs(g);
+  drawRiversTop(g); drawBridgeTop(g); drawRoad(g); drawBillboardsTop(g); drawSkid(g); drawZombiesTop(g); drawGhostTop(g); drawCar(g); drawSmoke(g); drawGibs(g);
   ctx.restore();
   updateHUD();
 }
@@ -603,6 +605,10 @@ function drawWindshield(g,spd){
   // project a ground point (world px,py) into the windshield
   const proj=(px,py)=>{ const dx=px-c.x, dy=py-c.y; const z=dx*ca+dy*sa; if(z<NEARZ) return null;
     const side=-dx*sa+dy*ca; const sc=FOCAL/z; return { x:W/2+shx+side*sc, y:horizon+shy+CAMH*sc, sc, z }; };
+  // the same projection in two halves, so ground polygons can be clipped against the near plane in camera
+  // space (where the clip is a straight line) instead of being dropped whole when a corner falls behind us
+  const zside=(px,py)=>{ const dx=px-c.x, dy=py-c.y; return { z:dx*ca+dy*sa, side:-dx*sa+dy*ca }; };
+  const toScreen=(z,side)=>{ const sc=FOCAL/z; return { x:W/2+shx+side*sc, y:horizon+shy+CAMH*sc, sc }; };
 
   // sky — sun, cloud decks, birds and the odd airliner. all of it sits at infinity, so only yaw moves it.
   const px=W/2+shx, py=horizon+shy;
@@ -616,6 +622,9 @@ function drawWindshield(g,spd){
   // the edge of the world: a city hazing out along one arc of the horizon, then hills, landmarks, treeline
   drawHorizon(g,a,px,py,Math.max(horizon,py)+4);
   drawBirds(g.scenery,a,px,py,g.time,true);
+  // the river lies on the ground, so it goes down BEFORE anything that stands up out of it: the trees on its
+  // banks then paint over the water, which is what makes them read as being in front of it rather than under it
+  drawRivers(g,proj,zside,toScreen);
   // the fields we're actually driving past — anchored in the world, so they stream by with travel
   drawNearScenery(g,ca,sa,px,py);
   // wash the far fields into the treeline so the horizon reads as distance, not as a cut
@@ -625,8 +634,6 @@ function drawWindshield(g,spd){
 
   // gather visible road strip — near-plane clipped, per-segment widths so lines don't shake near the camera
   const lo=Math.max(R.start,c.idx-2), hi=Math.min(R.pts.length,c.idx+70);
-  const zside=(px,py)=>{ const dx=px-c.x, dy=py-c.y; return { z:dx*ca+dy*sa, side:-dx*sa+dy*ca }; };
-  const toScreen=(z,side)=>{ const sc=FOCAL/z; return { x:W/2+shx+side*sc, y:horizon+shy+CAMH*sc, sc }; };
   function buildLine(worldOf){ const out=[]; let prev=null;
     for(let i=lo;i<hi;i++){ const w=worldOf(i); const cur=zside(w.x,w.y);
       if(prev && (prev.z>=NEARZ)!==(cur.z>=NEARZ)){ const t=(NEARZ-prev.z)/(cur.z-prev.z); out.push(toScreen(NEARZ, lerp(prev.side,cur.side,t))); }
@@ -650,6 +657,9 @@ function drawWindshield(g,spd){
   if(L.length>1 && Rt.length>1){
     // gravel/dirt shoulders — a real verge between tarmac and grass, not a hard white cut
     ribbon(L,Lo,'#b7aa8b'); ribbon(Rt,Ro,'#b7aa8b');
+    // over the water there is no verge to have: the deck runs out to the parapet. Laid over the gravel and
+    // under the tarmac, so the road's own edge lines and dashes still land on top of it.
+    drawBridgeDeck(g,zside,toScreen,lo,hi);
     // asphalt ribbon, shaded with aerial perspective: near tarmac darker, far tarmac hazes lighter
     ctx.beginPath(); ctx.moveTo(L[0].x,L[0].y);
     for(let i=1;i<L.length;i++) ctx.lineTo(L[i].x,L[i].y);
@@ -698,10 +708,13 @@ function drawWindshield(g,spd){
   // the horde — splats bake into the tarmac, shamblers stand on it, both under the roadside barriers
   drawZombiesDriver(g, proj);
   drawGhostDriver(g, proj);   // the phantom runs the same tarmac, under the same barriers
-  // barriers (red/white) — clamped so the nearest posts don't blow up or jitter
-  for(const sgn of [1,-1]){ for(let i=lo;i<hi-1;i++){ const p=R.pts[i]; const zs=zside(p.x-p.ty*BARRIER*sgn, p.y+p.tx*BARRIER*sgn);
+  // barriers (red/white) — clamped so the nearest posts don't blow up or jitter. Over a bridge the posts
+  // give way to a parapet, which is what actually keeps you out of the water.
+  for(const sgn of [1,-1]){ for(let i=lo;i<hi-1;i++){ if(bridgeAt(i,g.seed)) continue;
+    const p=R.pts[i]; const zs=zside(p.x-p.ty*BARRIER*sgn, p.y+p.tx*BARRIER*sgn);
     if(zs.z<NEARZ) continue; const b=toScreen(zs.z,zs.side); const w=clamp(6*b.sc,2,16), h=clamp(14*b.sc,4,40);
     ctx.fillStyle=(i%2===0)?'#e5484d':'#ffffff'; ctx.fillRect(b.x-w/2,b.y-h,w,h); } }
+  drawBridge(g,zside,toScreen,lo,hi);
   // skid marks projected
   ctx.lineCap='round';
   for(const s of g.skid){ const A=proj(s.ax,s.ay), B=proj(s.bx,s.by); if(!A||!B) continue;
@@ -1136,6 +1149,183 @@ function drawWheel(g){
   ctx.fillStyle='#ffd24a'; rr(-rad*0.05,-rad-rad*0.03,rad*0.10,rad*0.16,rad*0.03); ctx.fill();
   ctx.restore();
 }
+/* ============================ rivers, bridges, forest ============================ */
+/* The road is endless and generated as you go, so the landscape can't be a list of things — it has to be a
+   FUNCTION of where you are. Rivers, the bridges that span them, and how thick the woods are are all derived
+   statelessly from the road index and the seed. Same road, same world, forever, with nothing to remember. */
+const RIVER_EVERY=470, BRIDGE_PAD=2.8;
+function riverBlock(b,seed){
+  const s=(Math.imul(b,911)^Math.imul(seed,2654435761))|0;
+  return { c: b*RIVER_EVERY + 150 + Math.floor(h01(s)*200),      // where it crosses
+           half: 20 + h01(s^0x5bf03635)*14,                      // half-width in road points => a 15-25m river,
+                                                                 // properly wider than the 7m road that crosses it
+           skew: (h01(s^0x9e3779b9)-0.5)*0.85 };                 // rivers don't cross square
+}
+// is road point i on a bridge? t=1 at mid-span, 0 at the abutments.
+function bridgeAt(i,seed){
+  const b=Math.floor(i/RIVER_EVERY);
+  for(let k=b-1;k<=b+1;k++){
+    const r=riverBlock(k,seed), span=r.half+BRIDGE_PAD, d=i-r.c;
+    if(Math.abs(d)<=span) return { r, span, d, t:1-Math.abs(d)/span };
+  }
+  return null;
+}
+// Woodland comes and goes: long stretches of dense forest, then the country opens back up. You start out in
+// open country though — the woods only close in once you've been driving a couple of minutes (~2300 road
+// points at a normal pace), so the run has somewhere to go.
+const FOREST_FROM=2300, FOREST_RAMP=800;
+function forestAt(i,seed){
+  const onset=clamp((i-FOREST_FROM)/FOREST_RAMP,0,1);
+  if(onset<=0) return 0;
+  const p=(seed&2047)*0.0031;
+  const v=Math.sin(i*0.0041+p)*0.50 + Math.sin(i*0.0012+p*2.7)*0.34 + Math.sin(i*0.0093+p*0.6)*0.16;
+  return clamp((v+0.12)*1.45,0,1)*onset;
+}
+
+// The rivers near the car, each reduced to its own frame: an origin p on the road, a unit axis a running
+// across it, and the road tangent t, along which distance from the crossing IS distance across the water.
+// Built once, then everything — the water, the banks, and what refuses to grow in them — asks it questions.
+function nearRivers(g,back,fwd){
+  const R=g.road, out=[];
+  for(let b=Math.floor((g.car.idx-back)/RIVER_EVERY); b<=Math.floor((g.car.idx+fwd)/RIVER_EVERY); b++){
+    const r=riverBlock(b,g.seed);
+    if(r.c<2 || r.c>=R.pts.length-2) continue;
+    if(r.c < g.car.idx-back || r.c > g.car.idx+fwd) continue;
+    const p=R.pts[r.c];
+    let ax=-p.ty+p.tx*r.skew, ay=p.tx+p.ty*r.skew;               // the river's own axis, skewed across the road
+    const al=Math.hypot(ax,ay)||1; ax/=al; ay/=al;
+    out.push({ b, r, p, ax, ay, hw:r.half*SEG });
+  }
+  return out;
+}
+// Is a world point standing in open water? Solve (P-p) = a*s + t*o for o — the offset along the road tangent,
+// which is what the water is measured in. The margin keeps trees off the lip of the bank as well as out of it.
+function wet(rv,wx,wy,margin){
+  for(const v of rv){
+    const D=v.ax*v.p.ty - v.p.tx*v.ay; if(!D) continue;
+    const o=(v.ax*(wy-v.p.y) - (wx-v.p.x)*v.ay)/D;
+    if(Math.abs(o) < v.hw+(margin||0)) return true;
+  }
+  return false;
+}
+// A ground polygon, clipped against the near plane in camera space and appended to the current path. Corners
+// BEHIND you can't be projected at all, so a quad you're standing on has to be cut — not dropped, which is
+// what made the water blink out from under the bridge exactly when you got close enough to look over the side.
+function groundPoly(cam,toScreen){
+  const out=[];
+  for(let i=0;i<cam.length;i++){
+    const A=cam[i], B=cam[(i+1)%cam.length], ain=A.z>=NEARZ, bin=B.z>=NEARZ;
+    if(ain) out.push(A);
+    if(ain!==bin){ const t=(NEARZ-A.z)/(B.z-A.z); out.push({ z:NEARZ, side:lerp(A.side,B.side,t) }); }
+  }
+  if(out.length<3) return false;
+  out.forEach((q,i)=>{ const s=toScreen(q.z,q.side); i? ctx.lineTo(s.x,s.y) : ctx.moveTo(s.x,s.y); });
+  ctx.closePath();
+  return true;
+}
+// The water. It goes down on the ground before anything that stands up out of it, so the banks' trees and the
+// bridge deck both paint over it. Sliced along the river's own axis only to carry the haze out to the bends.
+const REACH=6400, SLICE=520;
+function drawRivers(g,proj,zside,toScreen){
+  for(const v of nearRivers(g,45,130)){
+    const p=v.p, hw=v.hw;
+    const strip=(hf,at)=>{
+      for(let s=-REACH;s<REACH;s+=SLICE){
+        const far=clamp(Math.abs(s+SLICE/2)/REACH,0,1);          // wash out toward the bends, which are far away
+        ctx.beginPath();
+        const ok=groundPoly([[s,-hf],[s+SLICE,-hf],[s+SLICE,hf],[s,hf]].map(([q,o])=>
+          zside(p.x+v.ax*q+p.tx*o, p.y+v.ay*q+p.ty*o)), toScreen);
+        if(!ok) continue;
+        ctx.fillStyle=at(far); ctx.fill();
+      }
+    };
+    const mix=(a,b)=>far=>'rgb('+Math.round(lerp(a[0],b[0],far))+','+Math.round(lerp(a[1],b[1],far))+','+Math.round(lerp(a[2],b[2],far))+')';
+    strip(hw+40, mix([198,184,140],[208,198,168]));               // the mud bank it cut for itself
+    strip(hw,    mix([ 70,146,182],[176,206,198]));               // and the water, hazing into the distance
+    // glints, so it reads as water and not as a blue road
+    for(let k=0;k<14;k++){
+      const s=(h01(k*37+v.b*13)*2-1)*REACH*0.75;
+      const o=(Math.sin(g.time*0.7+k*1.9)*0.5)*hw*1.2;
+      const A=proj(p.x+v.ax*s+p.tx*o, p.y+v.ay*s+p.ty*o);
+      const B=proj(p.x+v.ax*(s+150)+p.tx*o, p.y+v.ay*(s+150)+p.ty*o);
+      if(!A||!B) continue;
+      ctx.strokeStyle='rgba(255,255,255,'+(0.10+0.10*Math.sin(g.time*1.7+k))+')';
+      ctx.lineWidth=Math.max(1,2.5*A.sc); ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke();
+    }
+  }
+}
+// The deck you actually drive on: concrete right out to the parapet, because over a river there is no verge
+// to have. Laid over the gravel and under the tarmac, so the road's own lines still land on top of it.
+// (Not drawDeck — that name is taken by the cloud decks up in the sky, and a clash here silently hands the
+//  road's drawing to the weather.)
+function drawBridgeDeck(g,zside,toScreen,lo,hi){
+  const R=g.road, seed=g.seed, EDGE=BARRIER-14;
+  ctx.beginPath();
+  for(let i=lo;i<hi-1;i++){
+    if(!bridgeAt(i,seed)) continue;
+    const p=R.pts[i], q=R.pts[i+1];
+    groundPoly([[p,-1],[q,-1],[q,1],[p,1]].map(([w,sg])=>
+      zside(w.x-w.ty*EDGE*sg, w.y+w.tx*EDGE*sg)), toScreen);
+  }
+  ctx.fillStyle='#b9c0c4'; ctx.fill();
+}
+
+// The bridge: a deck with real thickness and a solid parapet, in place of the roadside posts.
+function drawBridge(g,zside,toScreen,lo,hi){
+  const R=g.road, seed=g.seed;
+  const EDGE=BARRIER-14;
+  for(const sgn of [1,-1]){
+    // the deck's edge beam — what gives the bridge thickness over the water
+    ctx.beginPath(); let open=false;
+    for(let i=lo;i<hi-1;i++){
+      if(!bridgeAt(i,seed)){ open=false; continue; }
+      const p=R.pts[i], q=R.pts[i+1];
+      const z1=zside(p.x-p.ty*EDGE*sgn, p.y+p.tx*EDGE*sgn), z2=zside(q.x-q.ty*EDGE*sgn, q.y+q.tx*EDGE*sgn);
+      if(z1.z<NEARZ||z2.z<NEARZ){ open=false; continue; }
+      const A=toScreen(z1.z,z1.side), B=toScreen(z2.z,z2.side);
+      const d1=clamp(26*A.sc,2,54), d2=clamp(26*B.sc,2,54);
+      ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.lineTo(B.x,B.y+d2); ctx.lineTo(A.x,A.y+d1); ctx.closePath();
+    }
+    ctx.fillStyle='#8d949a'; ctx.fill();
+    // the parapet
+    ctx.beginPath();
+    for(let i=lo;i<hi-1;i++){
+      if(!bridgeAt(i,seed)) continue;
+      const p=R.pts[i], q=R.pts[i+1];
+      const z1=zside(p.x-p.ty*EDGE*sgn, p.y+p.tx*EDGE*sgn), z2=zside(q.x-q.ty*EDGE*sgn, q.y+q.tx*EDGE*sgn);
+      if(z1.z<NEARZ||z2.z<NEARZ) continue;
+      const A=toScreen(z1.z,z1.side), B=toScreen(z2.z,z2.side);
+      const h1=clamp(48*A.sc,3,90), h2=clamp(48*B.sc,3,90);
+      ctx.moveTo(A.x,A.y); ctx.lineTo(A.x,A.y-h1); ctx.lineTo(B.x,B.y-h2); ctx.lineTo(B.x,B.y); ctx.closePath();
+    }
+    ctx.fillStyle='#d5dbdd'; ctx.fill();
+    // its shadowed inner face, so it isn't a flat white strip
+    ctx.beginPath();
+    for(let i=lo;i<hi-1;i++){
+      if(!bridgeAt(i,seed)) continue;
+      const p=R.pts[i], q=R.pts[i+1];
+      const z1=zside(p.x-p.ty*EDGE*sgn, p.y+p.tx*EDGE*sgn), z2=zside(q.x-q.ty*EDGE*sgn, q.y+q.tx*EDGE*sgn);
+      if(z1.z<NEARZ||z2.z<NEARZ) continue;
+      const A=toScreen(z1.z,z1.side), B=toScreen(z2.z,z2.side);
+      const h1=clamp(48*A.sc,3,90), h2=clamp(48*B.sc,3,90);
+      ctx.moveTo(A.x,A.y-h1*0.72); ctx.lineTo(A.x,A.y-h1); ctx.lineTo(B.x,B.y-h2); ctx.lineTo(B.x,B.y-h2*0.72); ctx.closePath();
+    }
+    ctx.fillStyle='rgba(70,90,100,.30)'; ctx.fill();
+  }
+  // expansion joints where the deck meets the road
+  for(let i=lo;i<hi-1;i++){
+    const br=bridgeAt(i,seed); if(!br) continue;
+    if(Math.abs(Math.abs(br.d)-br.span)>0.9) continue;
+    const p=R.pts[i];
+    const L=zside(p.x-p.ty*ROAD_HALF, p.y+p.tx*ROAD_HALF), Rt=zside(p.x+p.ty*ROAD_HALF, p.y-p.tx*ROAD_HALF);
+    if(L.z<NEARZ||Rt.z<NEARZ) continue;
+    const A=toScreen(L.z,L.side), B=toScreen(Rt.z,Rt.side);
+    ctx.strokeStyle='rgba(40,46,54,.55)'; ctx.lineWidth=Math.max(1,3*A.sc);
+    ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke();
+  }
+}
+
 /* ============================ driver-view scenery ============================ */
 /* Everything above the horizon lives in a panorama: a bearing b (radians, wraps at 2π) and a height in
    centre-screen pixels. It's parked at infinity, so only the camera's YAW moves it — and it moves through
@@ -1379,11 +1569,12 @@ function drawMarks(S,a,cx,hy,bandY,dmax){
 }
 // poles and trees live in world space and go through the road's own projection, so they sweep past with travel
 function drawNearScenery(g,ca,sa,cx,hy){
-  const R=g.road, c=g.car;
-  const lo=Math.max(R.start,c.idx-1), hi=Math.min(R.pts.length,c.idx+88);
+  const R=g.road, c=g.car, seed=g.seed;
+  const lo=Math.max(R.start,c.idx-1), hi=Math.min(R.pts.length,c.idx+128);   // see further, so they arrive from the haze
+  const FADE0=2550, FADE1=3350;                                              // where a tree fades up out of nothing
   const put=(wx,wy)=>{ const dx=wx-c.x, dy=wy-c.y, z=dx*ca+dy*sa; if(z<70) return null;
     const sc=FOCAL/z, x=cx+(-dx*sa+dy*ca)*sc;
-    return (x<-140||x>W+140)? null : { x, y:hy+CAMH*sc, sc }; };
+    return (x<-160||x>W+160)? null : { x, y:hy+CAMH*sc, sc, z }; };
   // one sun, reused by every verge highlight/shadow below
   const sux=Math.cos(g.scenery.sunB), suy=Math.sin(g.scenery.sunB);
   const hlx=Math.sign(suy*ca-sux*sa)||1;                                 // which screen side the sun is on
@@ -1411,27 +1602,58 @@ function drawNearScenery(g,ca,sa,cx,hy){
       ctx.moveTo(q.x+dx,q.y-h*0.14); ctx.quadraticCurveTo(q.x+dx+hlx*h*0.24,q.y-h*0.58,q.x+dx+hlx*h*0.52,q.y-h); }
     ctx.stroke(); }
   const poles=[], trees=[];
-  for(let i=lo;i<hi;i++){ const p=R.pts[i];
-    if(i%16===0){ const off=BARRIER+180+h01(i*3)*70;                     // telephone poles down one shoulder
-      const wx=p.x-p.ty*off, wy=p.y+p.tx*off; const q=put(wx,wy); if(q){ q.h=205*q.sc; q.wx=wx; q.wy=wy; poles.push(q); } }
-    if(h01(i*7+3)<0.42){ const sg=h01(i*11)<0.5?1:-1;                    // tree clumps out in the fields
-      const off=(BARRIER+230+Math.pow(h01(i*17),0.7)*2200)*sg;
-      const wx=p.x-p.ty*off, wy=p.y+p.tx*off; const q=put(wx,wy);
-      if(q){ q.hh=(120+h01(i*23)*115)*q.sc; q.c=h01(i*29); q.wx=wx; q.wy=wy; trees.push(q); } } }
+  const rv=nearRivers(g,80,200);                                          // nothing takes root in a river
+  for(let i=lo;i<hi;i++){
+    const p=R.pts[i];
+    const onBridge=!!bridgeAt(i,seed);
+    if(i%16===0 && !onBridge){ const off=BARRIER+180+h01(i*3)*70;        // telephone poles down one shoulder
+      const wx=p.x-p.ty*off, wy=p.y+p.tx*off;
+      if(!wet(rv,wx,wy,60)){ const q=put(wx,wy); if(q){ q.h=620*q.sc; q.wx=wx; q.wy=wy; poles.push(q); } } }
+    if(onBridge) continue;                                                // nothing grows on a bridge
+    // how thick are the woods here? Dense forest crowds the verge and stacks trees back into the distance;
+    // open country leaves a few out in the fields. Same road, same woods, every time.
+    const dens=forestAt(i,seed);
+    const n = dens>0.62 ? 3 : dens>0.34 ? 2 : 1;
+    for(let k=0;k<n;k++){
+      const hh=h01(i*37+k*613+1);
+      if(hh > 0.30+dens*0.68) continue;
+      const sg=h01(i*11+k*97)<0.5?1:-1;
+      const near = 120 + (1-dens)*520;                                    // woods come right up to the verge
+      const off=(BARRIER+near+Math.pow(h01(i*17+k*281),0.65)*(360+dens*2400))*sg;
+      const wx=p.x-p.ty*off, wy=p.y+p.tx*off;
+      if(wet(rv,wx,wy,45)) continue;                                      // it would be standing in the water
+      const q=put(wx,wy);
+      if(!q) continue;
+      const conif = h01(i*53+k*31) < 0.30+dens*0.42;                      // conifers take over in the deep woods
+      q.hh=((conif?1050:680) + h01(i*23+k*7)*(conif?900:560))*q.sc;   // ~10-28m: an actual tree
+      q.conif=conif; q.c=h01(i*29+k*11); q.wx=wx; q.wy=wy;
+      q.a=clamp((FADE1-q.z)/(FADE1-FADE0),0,1);                           // fades up out of the haze instead of popping
+      if(q.a<=0.02) continue;
+      trees.push(q);
+    }
+  }
+  // Budget by DISTANCE, never by loop order: dropping whatever happened to come last meant dropping the
+  // farthest trees, which then blinked into existence as you closed on them. Keep the nearest.
+  trees.sort((a,b)=>b.sc-a.sc);
+  if(trees.length>340) trees.length=340;
+  trees.reverse();                                                         // far ones drawn first, near ones over them
+
   // one sun lights the whole verge: everything drops a contact shadow away from it, cast on the grass and
   // batched into a single fill. sunB is a world bearing, so the shadow tip is the base slid along the ground
   // away from the sun and re-projected — it swings correctly as you turn, and shortens toward midday.
   ctx.fillStyle='rgba(34,60,30,.17)'; ctx.beginPath();
   for(const q of trees){ const wh=q.hh/q.sc, t=put(q.wx-sux*wh*0.55, q.wy-suy*wh*0.55);
     const tx=t?t.x:q.x, ty=t?t.y:q.y, dx=tx-q.x, dy=ty-q.y; q.sdx=-dx;   // -dx points back toward the sun (for the highlight)
-    ctx.ellipse((q.x+tx)/2,(q.y+ty)/2,Math.max(Math.hypot(dx,dy)*0.5+q.hh*0.30,q.hh*0.15+2),q.hh*0.15+2,Math.atan2(dy,dx),0,TAU); }
+    ctx.ellipse((q.x+tx)/2,(q.y+ty)/2,Math.max(Math.hypot(dx,dy)*0.5+q.hh*0.26,q.hh*0.13+2),q.hh*0.13+2,Math.atan2(dy,dx),0,TAU); }
   for(const q of poles){ const wh=q.h/q.sc, t=put(q.wx-sux*wh*0.55, q.wy-suy*wh*0.55);
     const tx=t?t.x:q.x, ty=t?t.y:q.y, dx=tx-q.x, dy=ty-q.y;
     ctx.ellipse((q.x+tx)/2,(q.y+ty)/2,Math.hypot(dx,dy)*0.5+2,Math.max(1.5,2*q.sc),Math.atan2(dy,dx),0,TAU); }
   ctx.fill();
+
   if(poles.length>1){ ctx.strokeStyle='rgba(52,64,74,.38)'; ctx.lineWidth=1.4;   // slack wires between them
     for(const k of [0.93,0.84]){ ctx.beginPath();
       for(let j=0;j<poles.length-1;j++){ const A=poles[j], B=poles[j+1];
+        if(Math.abs(A.x-B.x)>W*0.6) continue;                             // don't string a wire across a gap
         const ay=A.y-A.h*k, by=B.y-B.h*k, sag=6*(A.sc+B.sc);
         ctx.moveTo(A.x,ay); ctx.quadraticCurveTo((A.x+B.x)/2,(ay+by)/2+sag,B.x,by); }
       ctx.stroke(); } }
@@ -1466,19 +1688,72 @@ function drawNearScenery(g,ca,sa,cx,hy){
     for(const q of hedge){ const r=q.r; ctx.moveTo(q.x+hlx*r*0.35+r*0.5,q.y-r*0.98); ctx.arc(q.x+hlx*r*0.35,q.y-r*0.98,r*0.5,0,TAU); }
     ctx.fill();
   }
-  ctx.fillStyle='#6b5744';
-  for(const q of trees){ const w=clamp(q.hh*0.08,0.8,13); ctx.fillRect(q.x-w/2,q.y-q.hh*0.45,w,q.hh*0.45); }
-  for(let k=0;k<2;k++){ ctx.beginPath();                                 // two greens, batched into two fills
-    for(const q of trees){ if((q.c<0.5)!==(k===0)) continue; const r=q.hh*0.34, ty=q.y-q.hh*0.62;
-      ctx.moveTo(q.x+r,ty); ctx.arc(q.x,ty,r,0,TAU);
-      ctx.moveTo(q.x-r*0.75+r*0.6,ty+r*0.55); ctx.arc(q.x-r*0.75,ty+r*0.55,r*0.6,0,TAU);
-      ctx.moveTo(q.x+r*0.78+r*0.58,ty+r*0.5); ctx.arc(q.x+r*0.78,ty+r*0.5,r*0.58,0,TAU); }
-    ctx.fillStyle=k===0?'#4e9250':'#63a95a'; ctx.fill(); }
-  // a warm sunlit cap on the crown's sunward face — same light source that threw the shadows
-  ctx.fillStyle='rgba(224,242,188,.5)'; ctx.beginPath();
-  for(const q of trees){ const r=q.hh*0.34, ty=q.y-q.hh*0.62;
-    const hx=q.x+(q.sdx||0)/(Math.abs(q.sdx||0)+40)*r*1.1;               // slide toward the sun; damped so it never leaves the crown
-    ctx.moveTo(hx+r*0.46,ty-r*0.26); ctx.arc(hx,ty-r*0.26,r*0.46,0,TAU); }
+
+  // trunks — tapered, and dark against the crown
+  ctx.fillStyle='#5b4737';
+  ctx.beginPath();
+  for(const q of trees){
+    const w=clamp(q.hh*(q.conif?0.055:0.075),0.8,14), t=q.y-q.hh*(q.conif?0.80:0.46);
+    ctx.moveTo(q.x-w/2, q.y); ctx.lineTo(q.x-w*0.30, t); ctx.lineTo(q.x+w*0.30, t); ctx.lineTo(q.x+w/2, q.y); ctx.closePath();
+  }
+  ctx.fill();
+
+  // crowns, in two passes per species: the body, then the face the sun actually reaches. Distance washes
+  // everything toward the haze, which is what stops a deep forest reading as a wall of flat green.
+  const haze=(hex,t)=>{ const a=parseInt(hex.slice(1),16);
+    const r=lerp(a>>16,222,t)|0, gg=lerp((a>>8)&255,238,t)|0, b=lerp(a&255,214,t)|0;
+    return 'rgb('+r+','+gg+','+b+')'; };
+  const far=q=>clamp(1-q.sc*7,0,0.72);                                    // near trees keep their colour
+  const BANDS=[1,0.66,0.33];
+  const bandOf=q=> q.a>0.8?0 : q.a>0.45?1 : 2;                            // three fade bands: cheap, and invisible
+  for(const conif of [true,false]){
+    for(let shade=0;shade<2;shade++){
+     for(let bi=0;bi<3;bi++){
+      ctx.globalAlpha=BANDS[bi];
+      for(const q of trees){
+        if(q.conif!==conif) continue;
+        if(bandOf(q)!==bi) continue;
+        const dark = q.c<0.5;
+        if((shade===0) !== dark) continue;
+        ctx.fillStyle=haze(conif ? (dark?'#2f6d4a':'#3c8256') : (dark?'#478a49':'#5aa155'), far(q));
+        ctx.beginPath();
+        if(conif){
+          // a fir: three tiers, each a little wider than the one above
+          const H=q.hh*0.86, base=q.y-q.hh*0.10, wmax=q.hh*0.30;
+          for(let t=0;t<3;t++){
+            const ty=base-H*(0.16+t*0.27), tw=wmax*(1-t*0.24), th=H*0.40;
+            ctx.moveTo(q.x, ty-th); ctx.lineTo(q.x+tw, ty); ctx.lineTo(q.x-tw, ty); ctx.closePath();
+          }
+        } else {
+          // a broadleaf: a lumpy crown, not a circle
+          const r=q.hh*0.33, ty=q.y-q.hh*0.62;
+          ctx.moveTo(q.x+r,ty); ctx.arc(q.x,ty,r,0,TAU);
+          ctx.moveTo(q.x-r*0.72+r*0.60,ty+r*0.52); ctx.arc(q.x-r*0.72,ty+r*0.52,r*0.60,0,TAU);
+          ctx.moveTo(q.x+r*0.76+r*0.56,ty+r*0.48); ctx.arc(q.x+r*0.76,ty+r*0.48,r*0.56,0,TAU);
+          ctx.moveTo(q.x+r*0.10+r*0.52,ty-r*0.46); ctx.arc(q.x+r*0.10,ty-r*0.46,r*0.52,0,TAU);
+        }
+        ctx.fill();
+      }
+     }
+    }
+  }
+  ctx.globalAlpha=1;
+  // the sunlit face — same light that threw the shadows, so the whole verge agrees about where the sun is
+  ctx.fillStyle='rgba(226,244,190,.42)'; ctx.beginPath();
+  for(const q of trees){
+    const lean=(q.sdx||0)/(Math.abs(q.sdx||0)+40);
+    if(q.conif){
+      const H=q.hh*0.86, base=q.y-q.hh*0.10, wmax=q.hh*0.30;
+      for(let t=0;t<3;t++){
+        const ty=base-H*(0.16+t*0.27), tw=wmax*(1-t*0.24)*0.42, th=H*0.40*0.55;
+        const hx=q.x+lean*wmax*0.45;
+        ctx.moveTo(hx, ty-th); ctx.lineTo(hx+tw*Math.sign(lean||1), ty); ctx.lineTo(hx-tw*0.15*Math.sign(lean||1), ty); ctx.closePath();
+      }
+    } else {
+      const r=q.hh*0.33, ty=q.y-q.hh*0.62, hx=q.x+lean*r*1.05;
+      ctx.moveTo(hx+r*0.44,ty-r*0.24); ctx.arc(hx,ty-r*0.24,r*0.44,0,TAU);
+    }
+  }
   ctx.fill();
   // roadside boundary fence: the low post-and-wire line a rural verge always carries at its field edge. World-
   // anchored through the road's own projection, so the posts stream past and the two slack wires converge to
@@ -1948,7 +2223,32 @@ function renderArmory(){
       b.dataset.m ? buyMod(b.dataset.m) : buyGun(b.dataset.g); };
   }
 }
-
+// The deck from above, laid over the water before the road goes down on top of it. Without this the map
+// shows the river washing right up against the tarmac, with nothing holding the car out of it.
+function drawBridgeTop(g){
+  const R=g.road, seed=g.seed, EDGE=BARRIER-14, {lo,hi}=roadRange(g);
+  ctx.beginPath();
+  for(let i=lo;i<hi-1;i++){
+    if(!bridgeAt(i,seed)) continue;
+    const p=R.pts[i], q=R.pts[i+1];
+    ctx.moveTo(p.x-p.ty*EDGE, p.y+p.tx*EDGE); ctx.lineTo(q.x-q.ty*EDGE, q.y+q.tx*EDGE);
+    ctx.lineTo(q.x+q.ty*EDGE, q.y-q.tx*EDGE); ctx.lineTo(p.x+p.ty*EDGE, p.y-p.tx*EDGE);
+    ctx.closePath();
+  }
+  ctx.fillStyle='#b9c0c4'; ctx.fill();
+}
+// top view is already in world coordinates, so the river is just a band — no projection, nothing to clip
+function drawRiversTop(g){
+  for(const v of nearRivers(g,90,90)){
+    const p=v.p;
+    const band=(hf,fill)=>{ ctx.beginPath();
+      [[-REACH,-hf],[REACH,-hf],[REACH,hf],[-REACH,hf]].forEach(([s,o],k)=>{
+        const X=p.x+v.ax*s+p.tx*o, Y=p.y+v.ay*s+p.ty*o; k?ctx.lineTo(X,Y):ctx.moveTo(X,Y); });
+      ctx.closePath(); ctx.fillStyle=fill; ctx.fill(); };
+    band(v.hw+40,'#cbbc8e');       // bank
+    band(v.hw,'#5aa3c4');          // water
+  }
+}
 function roadRange(g){ const R=g.road, c=g.car;
   return { lo:Math.max(R.start, c.idx-24), hi:Math.min(R.pts.length, c.idx+70) }; }
 function drawRoad(g){
@@ -1970,7 +2270,8 @@ function drawRoad(g){
   for(const s of [1,-1]){
     for(let i=lo;i<hi-1;i++){ const p=R.pts[i]; const off=BARRIER*s; const x=p.x-p.ty*off, y=p.y+p.tx*off;
       const p2=R.pts[i+1]; const x2=p2.x-p2.ty*off, y2=p2.y+p2.tx*off;
-      ctx.strokeStyle=(i%2===0)?'#e5484d':'#ffffff'; ctx.lineWidth=8; ctx.lineCap='butt';
+      const br=bridgeAt(i,g.seed);
+      ctx.strokeStyle=br?'#d5dbdd':((i%2===0)?'#e5484d':'#ffffff'); ctx.lineWidth=br?11:8; ctx.lineCap='butt';
       ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x2,y2); ctx.stroke(); }
   }
 }
