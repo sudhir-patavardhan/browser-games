@@ -102,8 +102,8 @@
       <b>Touch:</b> hold the left / right side to steer — or swipe to turn the wheel in driver view.
       The car drives itself; a <b>second finger</b> anywhere is the brake<br>
       <b>To slide:</b> brake as you turn in — the tail steps out. Then get back on the power to hold it<br>
-      <b>Cruise:</b> <b>C</b>, or tap CRUISE on the dash — it holds your speed, but the corners are still yours.
-      Braking cancels it<br>
+      <b>Cruise:</b> the <b>left thumb pad on the wheel</b> (or <b>C</b>) — it holds your speed, but the corners
+      are still yours. Braking cancels it. The right pad skips a track<br>
       <b>Stereo:</b> tap the dash screen — art plays/pauses, middle skips, meter mutes &nbsp;·&nbsp;
       keys <b>K</b> / <b>N</b> / <b>P</b> / <b>M</b><br>
       <b>Views:</b> you drive from behind the wheel. Tap “Top view” (or press V) for a look down at the
@@ -197,7 +197,7 @@ function newGame(){
     score:0, mult:1, driftTime:0, grace:0, dist:0, onGrass:false, slip:0, speed:430,
     stall:0, chainScore:0, bestChain:0,
     skid:[], smoke:[], grassTufts:makeTufts(seed),
-    batt:1, kw:0, hitT:0, cc:0,               // the cabin: charge, power draw, last impact, cruise set-speed
+    batt:1, kw:0, hitT:0, cc:0, padCand:null,  // the cabin: charge, power, last impact, cruise set-speed
     scenery:makeScenery(seed),
     shake:0, time:0
   };
@@ -691,7 +691,6 @@ function clusterTop(g,x0,x1,y,s){
   // CRUISE: lit with the set speed when it's holding, dim when it isn't
   const on=g.cc>0, cw=Math.max(52,58*s), chh=Math.max(13,15*s);
   const cx2=(x0+x1)*0.5 - (x1-x0)*0.235, cy2=y-chh*0.72;
-  g.uiCruise={ x:cx2-cw*0.5, y:cy2, w:cw, h:chh };
   ctx.fillStyle=on?'rgba(127,226,255,.16)':'rgba(255,255,255,.05)';
   rr(cx2-cw*0.5, cy2, cw, chh, chh*0.5); ctx.fill();
   ctx.strokeStyle=on?'rgba(127,226,255,.6)':'rgba(190,215,235,.16)'; ctx.lineWidth=1;
@@ -701,11 +700,20 @@ function clusterTop(g,x0,x1,y,s){
   ctx.fillText(on? ('CC '+Math.round(g.cc*0.36)) : 'CRUISE', cx2, cy2+chh*0.54);
   ctx.textBaseline='alphabetic';
 }
-function cruiseTap(g,x,y){
-  const u=g.uiCruise; if(!u) return false;
-  if(x<u.x-6||x>u.x+u.w+6||y<u.y-6||y>u.y+u.h+6) return false;
-  toggleCruise(); return true;
+// which spoke pad is under this tap? The wheel turns, so the pads turn with it — rotate the point into the
+// wheel's own frame before testing. -1 = none. Generous slop, because these are thumb targets.
+function wheelPadAt(g,x,y){
+  const { cx, cy, rad }=wheelGeom();
+  const ang=(g.wheelSteer||0)*2.1;
+  const bw=rad*0.30, bh=rad*0.17, by=rad*0.085, bx=rad*0.52;
+  const dx=x-cx, dy=y-cy, c=Math.cos(-ang), sn=Math.sin(-ang);
+  const lx=dx*c-dy*sn, ly=dx*sn+dy*c;                        // into the wheel's own frame — the pads turn with it
+  for(const sgn of [-1,1]){
+    if(Math.abs(lx-sgn*bx)<=bw*0.80 && Math.abs(ly-by)<=bh*1.35) return sgn<0?0:1;   // 0 = cruise, 1 = media
+  }
+  return -1;
 }
+function pressPad(i){ if(i===0) toggleCruise(); else if(i===1){ if(MUSIC.length) musicSkip(1); else auxPick(); } }
 
 // one big, light numeral between two brackets. Airy is the whole point — a cluster is not a dashboard of tiles.
 function bigSpeed(g,cx2,cy2,h,s){
@@ -862,14 +870,29 @@ function drawWheel(g){
     ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(th)*rad*0.92, Math.sin(th)*rad*0.92); ctx.stroke(); }
   ctx.lineWidth=rad*0.13; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,flat); ctx.stroke();
 
-  // capacitive button pads on each spoke
+  // The spoke pads, and they are the controls — in a car the cluster reports and the WHEEL commands, and you
+  // never take a hand off it to set your speed. Left thumb: cruise. Right thumb: the stereo.
+  const bw=rad*0.30, bh=rad*0.17, by=rad*0.085;
+  const on=g.cc>0;
   for(const sgn of [-1,1]){
-    const bx=sgn*rad*0.52, by=rad*0.085, bw=rad*0.30, bh=rad*0.17;
-    ctx.fillStyle='#0d121b'; rr(bx-bw/2,by-bh/2,bw,bh,bh*0.34); ctx.fill();
-    ctx.strokeStyle='rgba(150,205,235,.18)'; ctx.lineWidth=Math.max(1,rad*0.008);
+    const bx=sgn*rad*0.52, cruise=(sgn<0);
+    const lit = cruise && on;
+    ctx.fillStyle=lit?'rgba(24,64,84,.95)':'#0d121b'; rr(bx-bw/2,by-bh/2,bw,bh,bh*0.34); ctx.fill();
+    ctx.strokeStyle=lit?'rgba(127,226,255,.75)':'rgba(150,205,235,.18)'; ctx.lineWidth=Math.max(1,rad*0.008);
     rr(bx-bw/2,by-bh/2,bw,bh,bh*0.34); ctx.stroke();
-    ctx.fillStyle='rgba(127,226,255,.55)';
-    for(const d of [-1,1]){ ctx.beginPath(); ctx.arc(bx+d*bw*0.19, by, rad*0.021, 0, TAU); ctx.fill(); }
+    ctx.fillStyle=lit?'#8fe3ff':'rgba(127,226,255,.55)';
+    if(cruise){
+      // a cruise telltale: the speedo arc with a set-point on it
+      ctx.strokeStyle=ctx.fillStyle; ctx.lineWidth=Math.max(1,rad*0.016); ctx.lineCap='round';
+      ctx.beginPath(); ctx.arc(bx, by+bh*0.10, bh*0.30, Math.PI*0.85, Math.PI*2.15); ctx.stroke();
+      ctx.beginPath(); ctx.arc(bx+bh*0.30*Math.cos(-Math.PI*0.35), by+bh*0.10+bh*0.30*Math.sin(-Math.PI*0.35),
+        Math.max(1,rad*0.018), 0, TAU); ctx.fill();
+    } else {
+      // skip-track: a triangle against a bar
+      ctx.beginPath(); ctx.moveTo(bx-bw*0.14, by-bh*0.22); ctx.lineTo(bx+bw*0.06, by);
+      ctx.lineTo(bx-bw*0.14, by+bh*0.22); ctx.closePath(); ctx.fill();
+      ctx.fillRect(bx+bw*0.10, by-bh*0.22, Math.max(1,rad*0.018), bh*0.44);
+    }
   }
   // hub, with a lit badge
   ctx.fillStyle='#0b0f16'; rr(-rad*0.30,-rad*0.19,rad*0.60,rad*0.38,rad*0.10); ctx.fill();
@@ -1313,7 +1336,6 @@ addEventListener('pointerdown',e=>{
   if(state!=='play') return;
   if(e.target.closest('.panel')||e.target===viewBtn) return;
   // the dash is an interface, not the road: a tap on the stereo works the stereo
-  if(game.view==='driver' && cruiseTap(game, e.clientX, e.clientY)){ pointers.set(e.pointerId,'ui'); return; }
   if(game.view==='driver' && stereoTap(game, e.clientX, e.clientY)){ pointers.set(e.pointerId,'ui'); return; }
   touchMode=true;
   // FIRST finger steers — hold a side (top view) or swipe the wheel (driver view).
@@ -1322,16 +1344,23 @@ addEventListener('pointerdown',e=>{
   if(steering){ pointers.set(e.pointerId,'brake'); return; }
   if(game.view==='driver'){
     pointers.set(e.pointerId,'wheel'); game.wheelPtr=e.pointerId; game.wheelStartX=e.clientX; game.wheelBase=game.wheelSteer||0;
+    const pad=wheelPadAt(game, e.clientX, e.clientY);
+    game.padCand = pad>=0 ? { id:e.pointerId, idx:pad } : null;   // a tap presses it; a drag steers instead
     return;
   }
   pointers.set(e.pointerId, e.clientX<W/2?'L':'R');
 });
 addEventListener('pointermove',e=>{ if(!pointers.has(e.pointerId)) return; const role=pointers.get(e.pointerId);
-  if(role==='wheel'){ game.wheelSteer=clamp(game.wheelBase+(e.clientX-game.wheelStartX)/WHEEL_RANGE(),-1,1); return; }
+  if(role==='wheel'){
+    if(game.padCand && game.padCand.id===e.pointerId && Math.abs(e.clientX-game.wheelStartX)>9) game.padCand=null;  // that's a drag, not a press
+    game.wheelSteer=clamp(game.wheelBase+(e.clientX-game.wheelStartX)/WHEEL_RANGE(),-1,1); return; }
   if(role==='L'||role==='R'){ pointers.set(e.pointerId, e.clientX<W/2?'L':'R'); }   // slide across to swap sides
 });
 function releasePointer(id){ const role=pointers.get(id);
-  if(role==='wheel'&&game) game.wheelPtr=null;
+  if(role==='wheel'&&game){
+    if(game.padCand && game.padCand.id===id) pressPad(game.padCand.idx);   // lifted without dragging: it's a press
+    game.padCand=null; game.wheelPtr=null;
+  }
   pointers.delete(id); }
 addEventListener('pointerup',e=>releasePointer(e.pointerId));
 addEventListener('pointercancel',e=>releasePointer(e.pointerId));

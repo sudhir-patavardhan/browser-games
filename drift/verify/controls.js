@@ -110,6 +110,35 @@
     // toggling off works too
     D2.cruise(); const onAgain=D2.game.cc>0; D2.cruise();
     rec("cruise toggles off", onAgain && D2.game.cc===0, "on->"+onAgain+" then off->"+(D2.game.cc===0));
+
+    // ---- the wheel's thumb pads ARE the controls (a car's cluster reports; the wheel commands)
+    D2.start(); D2.clearInput();
+    const gw=D2.game; gw.view='driver'; gw.wheelSteer=0;
+    const wg=wheelGeom();
+    const padPt=(sgn)=>({ x: wg.cx + sgn*wg.rad*0.52, y: wg.cy + wg.rad*0.085 });   // wheel centred => no rotation
+    const L=padPt(-1), R=padPt(1);
+    rec("the wheel has a cruise pad and a media pad", wheelPadAt(gw,L.x,L.y)===0 && wheelPadAt(gw,R.x,R.y)===1,
+        "left pad -> "+wheelPadAt(gw,L.x,L.y)+" (0=cruise), right pad -> "+wheelPadAt(gw,R.x,R.y)+" (1=media)");
+
+    for(let i=0;i<200;i++){ D2.setInput(0,1,0); D2.step(1); }   // get some pace on
+    D2.clearInput();
+    pd(9, L.x, L.y); pu(9);                                      // TAP the left thumb pad
+    rec("tapping the wheel's left pad sets cruise", D2.game.cc>0,
+        "cc="+Math.round(D2.game.cc*0.36)+" km/h after a thumb tap on the wheel");
+    pd(9, L.x, L.y); pu(9);
+    rec("tapping it again cancels cruise", D2.game.cc===0, "cc="+D2.game.cc);
+
+    // and the important one: you must be able to GRAB the wheel near a pad without setting cruise by accident
+    pd(9, L.x, L.y); pm(9, L.x+60, L.y); const dragSteer=S(); pu(9);
+    rec("dragging from a pad steers instead of pressing it", D2.game.cc===0 && Math.abs(dragSteer)>0.05,
+        "cc="+D2.game.cc+" (must stay 0) and the wheel turned to "+dragSteer.toFixed(2));
+
+    // the pads turn WITH the wheel — that's what makes them feel like they're on it
+    gw.wheelSteer=0.6;
+    const ang=0.6*2.1, lx=-wg.rad*0.52, ly=wg.rad*0.085;
+    const rot={ x: wg.cx + lx*Math.cos(ang) - ly*Math.sin(ang), y: wg.cy + lx*Math.sin(ang) + ly*Math.cos(ang) };
+    rec("the pads rotate with the wheel", wheelPadAt(gw,rot.x,rot.y)===0 && wheelPadAt(gw,L.x,L.y)!==0,
+        "with the wheel turned, the cruise pad has moved with it (and is no longer where it was)");
   }catch(e){ rows.push("THREW: "+(e&&e.stack||e)); fail.push("threw"); }
 
   rows.push("");
