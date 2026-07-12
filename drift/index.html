@@ -456,6 +456,13 @@ function drawWindshield(g,spd){
     ctx.closePath();
     const road=ctx.createLinearGradient(0,horizon,0,H); road.addColorStop(0,'#c1c6ce'); road.addColorStop(1,'#a1a7b3');
     ctx.fillStyle=road; ctx.fill();
+    // wheel-polished tracks — twin bands per lane where a million tyres have burnished the tarmac darker.
+    // strongest under the camera, hazing out with distance like the asphalt itself, so depth reads true.
+    const track=ctx.createLinearGradient(0,horizon,0,H); track.addColorStop(0,'rgba(74,76,84,0)'); track.addColorStop(1,'rgba(74,76,84,.26)');
+    const band=(o0,o1)=>{ const A=buildLine(i=>{const p=R.pts[i]; return {x:p.x+p.ty*o0, y:p.y-p.tx*o0};});
+      const B=buildLine(i=>{const p=R.pts[i]; return {x:p.x+p.ty*o1, y:p.y-p.tx*o1};}); ribbon(A,B,track); };
+    band(ROAD_HALF*0.21,ROAD_HALF*0.33); band(ROAD_HALF*0.66,ROAD_HALF*0.78);   // near lane
+    band(-ROAD_HALF*0.21,-ROAD_HALF*0.33); band(-ROAD_HALF*0.66,-ROAD_HALF*0.78); // oncoming lane
     // white edge lines — per-segment widths keep them steady near the camera
     segStroke(L,'#f6f8fb',4); segStroke(Rt,'#f6f8fb',4);
     // yellow centre dashes
@@ -467,6 +474,8 @@ function drawWindshield(g,spd){
   for(const sgn of [1,-1]){ for(let i=lo;i<hi-1;i++){ const p=R.pts[i]; const zs=zside(p.x-p.ty*BARRIER*sgn, p.y+p.tx*BARRIER*sgn);
     if(zs.z<NEARZ) continue; const b=toScreen(zs.z,zs.side); const w=clamp(6*b.sc,2,16), h=clamp(14*b.sc,4,40);
     ctx.fillStyle=(i%2===0)?'#e5484d':'#ffffff'; ctx.fillRect(b.x-w/2,b.y-h,w,h); } }
+  // distant traffic on the tarmac ahead — drawn after the road so it sits on it, before the horizon haze so it washes out
+  drawTraffic(g,proj,a);
   // skid marks projected
   ctx.lineCap='round';
   for(const s of g.skid){ const A=proj(s.ax,s.ay), B=proj(s.bx,s.by); if(!A||!B) continue;
@@ -900,6 +909,12 @@ function makeScenery(seed){
     S.flocks.push({ far, birds, b:rng()*TAU, h:(far?55:130)+rng()*(far?95:170), s:far?2.6:5,
       dr:(rng()<0.5?-1:1)*(0.010+rng()*0.03), rate:5+rng()*4, al:far?0.28:0.5 }); }
   S.pPeriod=46+rng()*22;    // one airliner slot every ~minute, and most slots come up empty
+  // distant traffic: a handful of vehicles out on the road. most come the other way, so they close on you;
+  // the rest share your lane and get overtaken. purely cosmetic — they never touch the physics.
+  S.traffic=[]; S.tSpan=340;                                   // long cycle => sparse, most of it past the horizon
+  const CARC=['#d0524e','#e4b048','#4f76c8','#e7e9ec','#5aa564','#c04f86','#3a3d44','#7c98b8'];
+  for(let i=0;i<6;i++) S.traffic.push({ onc:rng()<0.62, truck:rng()<0.26,
+    phase:rng(), v:0.5+rng()*1.1, lane:0.42+rng()*0.12, hue:CARC[rng()*CARC.length|0] });
   return S;
 }
 
@@ -1027,11 +1042,23 @@ function drawNearScenery(g,ca,sa,cx,hy){
   const poles=[], trees=[];
   for(let i=lo;i<hi;i++){ const p=R.pts[i];
     if(i%16===0){ const off=BARRIER+180+h01(i*3)*70;                     // telephone poles down one shoulder
-      const q=put(p.x-p.ty*off, p.y+p.tx*off); if(q){ q.h=205*q.sc; poles.push(q); } }
+      const wx=p.x-p.ty*off, wy=p.y+p.tx*off; const q=put(wx,wy); if(q){ q.h=205*q.sc; q.wx=wx; q.wy=wy; poles.push(q); } }
     if(h01(i*7+3)<0.42){ const sg=h01(i*11)<0.5?1:-1;                    // tree clumps out in the fields
       const off=(BARRIER+230+Math.pow(h01(i*17),0.7)*2200)*sg;
-      const q=put(p.x-p.ty*off, p.y+p.tx*off);
-      if(q){ q.hh=(120+h01(i*23)*115)*q.sc; q.c=h01(i*29); trees.push(q); } } }
+      const wx=p.x-p.ty*off, wy=p.y+p.tx*off; const q=put(wx,wy);
+      if(q){ q.hh=(120+h01(i*23)*115)*q.sc; q.c=h01(i*29); q.wx=wx; q.wy=wy; trees.push(q); } } }
+  // one sun lights the whole verge: everything drops a contact shadow away from it, cast on the grass and
+  // batched into a single fill. sunB is a world bearing, so the shadow tip is the base slid along the ground
+  // away from the sun and re-projected — it swings correctly as you turn, and shortens toward midday.
+  const sux=Math.cos(g.scenery.sunB), suy=Math.sin(g.scenery.sunB);
+  ctx.fillStyle='rgba(34,60,30,.17)'; ctx.beginPath();
+  for(const q of trees){ const wh=q.hh/q.sc, t=put(q.wx-sux*wh*0.55, q.wy-suy*wh*0.55);
+    const tx=t?t.x:q.x, ty=t?t.y:q.y, dx=tx-q.x, dy=ty-q.y; q.sdx=-dx;   // -dx points back toward the sun (for the highlight)
+    ctx.ellipse((q.x+tx)/2,(q.y+ty)/2,Math.max(Math.hypot(dx,dy)*0.5+q.hh*0.30,q.hh*0.15+2),q.hh*0.15+2,Math.atan2(dy,dx),0,TAU); }
+  for(const q of poles){ const wh=q.h/q.sc, t=put(q.wx-sux*wh*0.55, q.wy-suy*wh*0.55);
+    const tx=t?t.x:q.x, ty=t?t.y:q.y, dx=tx-q.x, dy=ty-q.y;
+    ctx.ellipse((q.x+tx)/2,(q.y+ty)/2,Math.hypot(dx,dy)*0.5+2,Math.max(1.5,2*q.sc),Math.atan2(dy,dx),0,TAU); }
+  ctx.fill();
   if(poles.length>1){ ctx.strokeStyle='rgba(52,64,74,.38)'; ctx.lineWidth=1.4;   // slack wires between them
     for(const k of [0.93,0.84]){ ctx.beginPath();
       for(let j=0;j<poles.length-1;j++){ const A=poles[j], B=poles[j+1];
@@ -1051,8 +1078,46 @@ function drawNearScenery(g,ca,sa,cx,hy){
       ctx.moveTo(q.x-r*0.75+r*0.6,ty+r*0.55); ctx.arc(q.x-r*0.75,ty+r*0.55,r*0.6,0,TAU);
       ctx.moveTo(q.x+r*0.78+r*0.58,ty+r*0.5); ctx.arc(q.x+r*0.78,ty+r*0.5,r*0.58,0,TAU); }
     ctx.fillStyle=k===0?'#4e9250':'#63a95a'; ctx.fill(); }
+  // a warm sunlit cap on the crown's sunward face — same light source that threw the shadows
+  ctx.fillStyle='rgba(224,242,188,.5)'; ctx.beginPath();
+  for(const q of trees){ const r=q.hh*0.34, ty=q.y-q.hh*0.62;
+    const hx=q.x+(q.sdx||0)/(Math.abs(q.sdx||0)+40)*r*1.1;               // slide toward the sun; damped so it never leaves the crown
+    ctx.moveTo(hx+r*0.46,ty-r*0.26); ctx.arc(hx,ty-r*0.26,r*0.46,0,TAU); }
+  ctx.fill();
 }
 
+function mixHex(h1,h2,t){ const a=parseInt(h1.slice(1),16), b=parseInt(h2.slice(1),16);
+  const r=lerp(a>>16,b>>16,t)|0, g=lerp(a>>8&255,b>>8&255,t)|0, l=lerp(a&255,b&255,t)|0;
+  return 'rgb('+r+','+g+','+l+')'; }
+// billboards on the road, positioned statelessly from time + the car's road index: a car closes on you from
+// both your own travel and its motion, washes toward the haze with distance, and wraps back once it slips past.
+function drawTraffic(g,proj,a){
+  const S=g.scenery, R=g.road, c=g.car, t=g.time, SPAN=S.tSpan, HZ='#c9dad7';
+  const sd=angWrap(S.sunB-a), sunx=W/2+FOCAL*Math.tan(clamp(sd,-1.4,1.4));   // where the sun sits, for the shadow throw
+  for(const V of S.traffic){
+    let rel=(V.phase*SPAN + (V.onc?-1:1)*V.v*t - c.idx)%SPAN; if(rel<0) rel+=SPAN;
+    if(rel<1.5 || rel>66) continue;                                          // off past the drawn tarmac, or already gone
+    const wf=c.idx+rel, i0=wf|0, fr=wf-i0; if(i0+1>=R.pts.length) continue;
+    const p0=R.pts[i0], p1=R.pts[i0+1], lane=V.lane*ROAD_HALF*(V.onc?-1:1);  // our lane is +normal, oncoming is -normal
+    const P=proj(lerp(p0.x,p1.x,fr)+p0.ty*lane, lerp(p0.y,p1.y,fr)-p0.tx*lane); if(!P) continue;
+    const x=P.x, base=P.y, sc=P.sc; if(x<-80||x>W+80) continue;
+    const h=(V.truck?60:33)*sc, w=(V.truck?44:38)*sc; if(h<1.6) continue;
+    const fade=clamp((rel-2)/6,0,1)*clamp((66-rel)/10,0,1);                  // fade in from the haze, fade out as it passes
+    const depth=clamp((rel-6)/56,0,1)*0.6;                                   // wash the paint toward haze with distance
+    ctx.globalAlpha=fade;
+    ctx.fillStyle='rgba(30,40,44,.26)'; ctx.beginPath();
+    ctx.ellipse(x+Math.sign(x-sunx)*w*0.22, base, w*0.62, Math.max(1,h*0.12), 0,0,TAU); ctx.fill();
+    const lowerH=h*(V.truck?0.6:0.52), cabW=w*(V.truck?0.9:0.66), cabH=h-lowerH;
+    ctx.fillStyle=mixHex(V.hue,HZ,depth); ctx.fillRect(x-w/2,base-lowerH,w,lowerH);   // body
+    ctx.fillRect(x-cabW/2,base-h,cabW,cabH);                                          // cabin / box
+    ctx.fillStyle=mixHex('#242a31',HZ,depth*0.9);                                     // glass
+    ctx.fillRect(x-cabW*0.42,base-h+cabH*0.2,cabW*0.84,cabH*0.56);
+    const lw=Math.max(1,w*0.15), lh=Math.max(1,h*0.12), ly=base-lowerH*0.42;          // head/tail lights
+    ctx.fillStyle=V.onc?'rgba(255,250,214,.95)':'#e0413f';
+    ctx.fillRect(x-w*0.4,ly,lw,lh); ctx.fillRect(x+w*0.4-lw,ly,lw,lh);
+    ctx.globalAlpha=1;
+  }
+}
 function roadRange(g){ const R=g.road, c=g.car;
   return { lo:Math.max(R.start, c.idx-24), hi:Math.min(R.pts.length, c.idx+70) }; }
 function drawRoad(g){
