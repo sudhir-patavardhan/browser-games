@@ -455,6 +455,13 @@ function drawWindshield(g,spd){
     ctx.closePath();
     const road=ctx.createLinearGradient(0,horizon,0,H); road.addColorStop(0,'#c1c6ce'); road.addColorStop(1,'#a1a7b3');
     ctx.fillStyle=road; ctx.fill();
+    // wheel-polished tracks — twin bands per lane where a million tyres have burnished the tarmac darker.
+    // strongest under the camera, hazing out with distance like the asphalt itself, so depth reads true.
+    const track=ctx.createLinearGradient(0,horizon,0,H); track.addColorStop(0,'rgba(74,76,84,0)'); track.addColorStop(1,'rgba(74,76,84,.26)');
+    const band=(o0,o1)=>{ const A=buildLine(i=>{const p=R.pts[i]; return {x:p.x+p.ty*o0, y:p.y-p.tx*o0};});
+      const B=buildLine(i=>{const p=R.pts[i]; return {x:p.x+p.ty*o1, y:p.y-p.tx*o1};}); ribbon(A,B,track); };
+    band(ROAD_HALF*0.21,ROAD_HALF*0.33); band(ROAD_HALF*0.66,ROAD_HALF*0.78);   // near lane
+    band(-ROAD_HALF*0.21,-ROAD_HALF*0.33); band(-ROAD_HALF*0.66,-ROAD_HALF*0.78); // oncoming lane
     // white edge lines — per-segment widths keep them steady near the camera
     segStroke(L,'#f6f8fb',4); segStroke(Rt,'#f6f8fb',4);
     // yellow centre dashes
