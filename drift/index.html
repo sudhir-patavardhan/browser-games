@@ -479,6 +479,28 @@ function drawWindshield(g,spd){
       const B=buildLine(i=>{const p=R.pts[i]; return {x:p.x+p.ty*o1, y:p.y-p.tx*o1};}); ribbon(A,B,track); };
     band(ROAD_HALF*0.21,ROAD_HALF*0.33); band(ROAD_HALF*0.66,ROAD_HALF*0.78);   // near lane
     band(-ROAD_HALF*0.21,-ROAD_HALF*0.33); band(-ROAD_HALF*0.66,-ROAD_HALF*0.78); // oncoming lane
+    // road-surface wear — the tarmac is a repaired rural road, not a clean grey ribbon: the odd resurfaced
+    // patch and irregular black crack-seal seams tarred over the cracks, seeded off the absolute road index
+    // so each stays put in the world (deterministic, never shakes) and streams toward you through the road's
+    // own projection. Laid under the paint, exactly as a real seal is. Only the near stretch, so the horizon
+    // stays clean and the far speck-shimmer never shows.
+    const surf=(i,u)=>{ const p=R.pts[i]; if(!p) return null; const zs=zside(p.x+u*ROAD_HALF*p.ty, p.y-u*ROAD_HALF*p.tx);
+      return zs.z<NEARZ?null:toScreen(zs.z,zs.side); };
+    const wHi=Math.min(hi-2,c.idx+50);
+    for(let i=Math.max(lo,c.idx);i<wHi;i++){                                     // resurfaced patches — a darker slab of newer asphalt
+      if(h01(i*151+9)>=0.028) continue; const len=1+(h01(i*67)*3|0);
+      const u0=-1+h01(i*83)*1.4, u1=u0+0.5+h01(i*97)*0.9, j=Math.min(i+len,wHi);
+      const A=surf(i,u0),B=surf(i,u1),D=surf(j,u1),E=surf(j,u0); if(!A||!B||!D||!E) continue;
+      ctx.fillStyle=h01(i*103)<0.5?'rgba(70,72,80,.30)':'rgba(150,154,162,.18)';  // fresh-dark or sun-bleached-pale
+      ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.lineTo(D.x,D.y); ctx.lineTo(E.x,E.y); ctx.closePath(); ctx.fill(); }
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    for(let i=Math.max(lo,c.idx);i<wHi;i++){                                     // crack-seal seams — thin black tar snaking across the lane
+      if(h01(i*53+11)>=0.075) continue; const sk=2;
+      const uA=-1.05+h01(i*19)*0.85, uB=1.05-h01(i*23)*0.85, uM=(uA+uB)*0.5+(h01(i*31)-0.5)*0.6;
+      const A=surf(i,uA),M=surf(i+1,uM),B=surf(i+sk,uB); if(!A||!M||!B) continue;
+      ctx.strokeStyle='rgba(36,38,44,'+clamp(0.05+0.14*Math.min(A.sc,1.2),0.05,0.20).toFixed(3)+')';
+      ctx.lineWidth=clamp(3*(A.sc+B.sc)*0.5,1,7); ctx.beginPath();
+      ctx.moveTo(A.x,A.y); ctx.quadraticCurveTo(M.x,M.y,B.x,B.y); ctx.stroke(); }
     // white edge lines — per-segment widths keep them steady near the camera
     segStroke(L,'#f6f8fb',4); segStroke(Rt,'#f6f8fb',4);
     // yellow centre dashes
