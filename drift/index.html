@@ -971,8 +971,15 @@ function drawSky(g,a,cx,hy,horizon){
   const sky=ctx.createLinearGradient(0,0,0,horizon+4);
   sky.addColorStop(0,'#79c6ff'); sky.addColorStop(.45,'#a6ddfb'); sky.addColorStop(.82,'#d9eeea'); sky.addColorStop(1,'#eaf6d8');
   ctx.fillStyle=sky; ctx.fillRect(0,0,W,horizon+2);
-  // sun: a soft warm bloom, no hard disc
+  // sun: forward-scattered daylight warms the sky it sits in (a wide soft veil that ties the whole dome to the
+  // same source throwing the verge shadows), then a tight warm bloom for the disc. no hard edge on either — a
+  // real sky has neither. both anchor to the sun bearing, so they pan with yaw and never scale by z.
   const sd=angWrap(S.sunB-a);
+  if(Math.abs(sd)<dmax+1.2){ const s=SEC(sd), x=cx+FOCAL*Math.tan(sd), y=hy-S.sunH*s, gr=Math.min(560*s,720);
+    const gg=ctx.createRadialGradient(x,y,0,x,y,gr);
+    gg.addColorStop(0,'rgba(255,248,214,.28)'); gg.addColorStop(.18,'rgba(255,242,200,.15)');
+    gg.addColorStop(.5,'rgba(255,236,190,.06)'); gg.addColorStop(1,'rgba(255,232,185,0)');
+    ctx.fillStyle=gg; ctx.fillRect(0,0,W,horizon+2); }
   if(Math.abs(sd)<dmax+0.35){ const s=SEC(sd), x=cx+FOCAL*Math.tan(sd), y=hy-S.sunH*s, r=175*s;
     const rg=ctx.createRadialGradient(x,y,0,x,y,r);
     rg.addColorStop(0,'rgba(255,253,231,.95)'); rg.addColorStop(.09,'rgba(255,245,196,.55)');
