@@ -401,7 +401,7 @@ function render(){
     const y=t.y+Math.round((g.cam.y-t.y)/4000)*4000;
     ctx.beginPath(); ctx.arc(x,y,t.r,0,TAU); ctx.fill();
   }
-  drawRoad(g); drawSkid(g); drawCar(g); drawSmoke(g);
+  drawRoad(g); drawBillboardsTop(g); drawSkid(g); drawCar(g); drawSmoke(g);
   ctx.restore();
   updateHUD();
 }
@@ -1139,6 +1139,38 @@ function drawNearScenery(g,ca,sa,cx,hy){
     const hx=q.x+(q.sdx||0)/(Math.abs(q.sdx||0)+40)*r*1.1;               // slide toward the sun; damped so it never leaves the crown
     ctx.moveTo(hx+r*0.46,ty-r*0.26); ctx.arc(hx,ty-r*0.26,r*0.46,0,TAU); }
   ctx.fill();
+  // advertising hoardings: a printed face on two steel posts, standing off the verge. World-anchored
+  // through the same projection as everything else, so a board swells and sweeps past with real
+  // perspective — and drops a contact shadow off the same one sun. At most one is ever on screen.
+  for(let blk=Math.floor(lo/BB_EVERY); blk*BB_EVERY<hi; blk++){
+    const at=bbIndex(blk); if(at<lo||at>=hi||at<100) continue;
+    const p=R.pts[at]; if(!p) continue;
+    const sg=bbSide(blk), off=bbOff(blk);
+    const wx=p.x-sg*p.ty*off, wy=p.y+sg*p.tx*off;
+    const dx=wx-c.x, dy=wy-c.y, z=dx*ca+dy*sa; if(z<70) continue;
+    const sc=FOCAL/z, x=cx+(-dx*sa+dy*ca)*sc; if(x<-460||x>W+460) continue;   // wide margin: boards are big
+    const y=hy+CAMH*sc;
+    const bw=clamp(BB_W*sc,6,640), bh=bw/BB_RATIO, legH=clamp(84*sc,2,168), top=y-legH-bh;
+    const wh=84+BB_W/BB_RATIO, t=put(wx-sux*wh*0.5, wy-suy*wh*0.5);           // world height → shadow tip, sun-slid and re-projected
+    ctx.fillStyle='rgba(34,60,30,.17)'; ctx.beginPath();
+    { const tx2=t?t.x:x, ty2=t?t.y:y, ddx=tx2-x, ddy=ty2-y;
+      ctx.ellipse((x+tx2)/2,(y+ty2)/2,Math.hypot(ddx,ddy)*0.5+bw*0.12,Math.max(1.6,2.6*sc),Math.atan2(ddy,ddx),0,TAU); }
+    ctx.fill();
+    const pw=clamp(6*sc,1,11);                                                // two galvanised legs
+    ctx.fillStyle='#5a5e66';
+    ctx.fillRect(x-bw*0.30-pw/2,top+bh,pw,legH); ctx.fillRect(x+bw*0.30-pw/2,top+bh,pw,legH);
+    const m=clamp(bw*0.022,1,7);                                              // dark frame round the face
+    ctx.fillStyle='#23262b'; ctx.fillRect(x-bw/2-m,top-m,bw+m*2,bh+m*2);
+    const ad=bbAd(blk);
+    try{ const cc=adCrop(ad); ctx.drawImage(ad,cc.sx,cc.sy,cc.sw,cc.sh,x-bw/2,top,bw,bh); }
+    catch(e){ ctx.fillStyle='#e9e4d2'; ctx.fillRect(x-bw/2,top,bw,bh); }
+    if(bw>40){                                                                // paper sheen: lit top edge falling to a shaded foot
+      const sh2=ctx.createLinearGradient(0,top,0,top+bh);
+      sh2.addColorStop(0,'rgba(255,255,255,.10)'); sh2.addColorStop(.25,'rgba(255,255,255,0)');
+      sh2.addColorStop(.75,'rgba(0,0,0,0)'); sh2.addColorStop(1,'rgba(0,0,0,.14)');
+      ctx.fillStyle=sh2; ctx.fillRect(x-bw/2,top,bw,bh);
+    }
+  }
   // roadside chevron alignment boards: black-on-yellow markers ranged along the OUTSIDE of a real bend,
   // pointing the way the road turns — the one bit of roadside furniture a driver genuinely reads. Gated on
   // curvature (cross product of adjacent unit tangents ~ sin dθ), so they only stand where there's a corner
@@ -1217,6 +1249,92 @@ function drawCar(g){
   ctx.restore();
 }
 function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+/* ============================ billboards ============================ */
+/* Roadside advertising hoardings. Placement is pure road geometry — a deterministic hash of the road
+   index, exactly like the poles and trees — so every board stands in the same spot on the same seed,
+   spaced BB_EVERY points (~7,800 px) apart: one rolls past every 10–15 s at cruising speeds.
+   The faces are ad images. Out of the box they're house ads for the other games in this repo, drawn
+   onto offscreen canvases at boot so the game stays a single offline file. Point AD_BUCKET (or a
+   ?ads=… query param, or localStorage 'drift.ads') at an S3 bucket and the remote set replaces them:
+   the bucket serves ads.json — a JSON array of image filenames (or {"ads":[…]}) next to the images. */
+const AD_BUCKET='';   // e.g. 'https://my-bucket.s3.amazonaws.com/drift-ads/'
+const BB_EVERY=300, BB_W=330, BB_RATIO=2.4;
+const bbIndex=blk=>blk*BB_EVERY+Math.floor(h01(blk*101+7)*40);   // jittered → 260–340-pt gaps
+const bbSide =blk=>h01(blk*7+1)<0.5?1:-1;
+const bbOff  =blk=>BARRIER+170+h01(blk*13)*70;
+function bbAd(blk){ const P=REMOTE_ADS.length?REMOTE_ADS:DEFAULT_ADS; return P[Math.floor(h01(blk*31+3)*997)%P.length]; }
+const GAME_ADS=[
+  ['DRIFT','SLIDE · CHAIN · SEND IT','#ffd24a','#ff5a2f','#3a1503'],
+  ['BLACKJACK','DEAL ME IN','#1e8c49','#0a3d20','#f4efdf'],
+  ['BREAK ROOM','RACK ’EM UP','#2f7d4f','#123a24','#eaf4ec'],
+  ['FAIRWAY FOUR','FORE!','#8fd05e','#2f7d3c','#123312'],
+  ['ENNEAD','X MEETS O','#3a86e0','#7a2fd0','#f2f6ff'],
+  ['CHROMA BLOCKS','STACK THE NEON','#12b8d8','#8a2fd0','#081018'],
+  ['LAST 16','GO FOR GLORY','#39b54a','#0b6623','#f2fff2'],
+  ['DAŚĀNANA','ANSWER THE ASTRA','#ff9d2f','#7a1f6e','#fff3d8'],
+  ['DEADPOINT','TRUST THE LATCH','#f2a65a','#8a4b2a','#2b1608'],
+  ['ROAD RUMBLE','RACE · BRAWL · SURVIVE','#3a86e0','#e0335e','#ffffff'],
+];
+function makePoster(name,tag,c0,c1,ink){
+  const c=document.createElement('canvas'); c.width=480; c.height=200; const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,480,200); gr.addColorStop(0,c0); gr.addColorStop(1,c1);
+  g.fillStyle=gr; g.fillRect(0,0,480,200);
+  g.globalAlpha=.13; g.fillStyle='#fff';                                   // one diagonal sweep = instant "printed poster"
+  g.beginPath(); g.moveTo(310,0); g.lineTo(480,0); g.lineTo(480,200); g.lineTo(395,200); g.closePath(); g.fill();
+  g.globalAlpha=1; g.fillStyle=ink; g.textAlign='center'; g.textBaseline='middle';
+  let fs=72; g.font='900 '+fs+'px '+FSANS;
+  while(g.measureText(name).width>436 && fs>20){ fs-=4; g.font='900 '+fs+'px '+FSANS; }
+  g.fillText(name,240,88);
+  g.font='800 21px '+FSANS; g.globalAlpha=.88; g.fillText(tag,240,146);
+  g.font='800 12px '+FSANS; g.globalAlpha=.62; g.fillText('BROWSER GAMES · FREE TO PLAY',240,180);
+  return c;
+}
+const DEFAULT_ADS=GAME_ADS.map(a=>makePoster(...a));
+const REMOTE_ADS=[];
+function adCrop(img){ const iw=img.width||img.naturalWidth||1, ih=img.height||img.naturalHeight||1;
+  let sx=0,sy=0,sw=iw,sh=ih;                                               // cover-fit: crop to the board's aspect, never squash
+  if(iw/ih>BB_RATIO){ sw=ih*BB_RATIO; sx=(iw-sw)/2; } else { sh=iw/BB_RATIO; sy=(ih-sh)/2; }
+  return {sx,sy,sw,sh}; }
+function loadRemoteAds(){
+  let base=''; try{ base=new URLSearchParams(location.search).get('ads')||localStorage.getItem('drift.ads')||AD_BUCKET; }catch(e){}
+  if(!base) return; base=base.replace(/\/?$/,'/');
+  fetch(base+'ads.json').then(r=>{ if(!r.ok) throw 0; return r.json(); }).then(list=>{
+    const files=(Array.isArray(list)?list:(list&&Array.isArray(list.ads)?list.ads:[])).slice(0,24);
+    return Promise.allSettled(files.map(f=>new Promise((res,rej)=>{
+      const url=/^https?:/i.test(f)?f:base+encodeURIComponent(f);
+      const im=new Image(); im.crossOrigin='anonymous';                    // CORS first (keeps the canvas clean)…
+      im.onload=()=>res(im);
+      im.onerror=()=>{ const im2=new Image(); im2.onload=()=>res(im2); im2.onerror=rej; im2.src=url; };  // …plain fallback
+      im.src=url;
+    })));
+  }).then(settled=>{ if(!settled) return;
+    const ok=settled.filter(s=>s.status==='fulfilled').map(s=>s.value);
+    if(ok.length){ REMOTE_ADS.length=0; REMOTE_ADS.push(...ok); }          // swap in once, after the whole manifest settles
+  }).catch(()=>{});
+}
+loadRemoteAds();
+// top view: the hoarding seen from above — an edge-on slab toed slightly in toward the road, on two posts
+function drawBillboardsTop(g){
+  const R=g.road, {lo,hi}=roadRange(g);
+  for(let blk=Math.floor(lo/BB_EVERY); blk*BB_EVERY<hi; blk++){
+    const at=bbIndex(blk); if(at<lo||at>=hi||at<100) continue;
+    const p=R.pts[at]; if(!p) continue;
+    const sg=bbSide(blk), off=bbOff(blk);
+    const wx=p.x-sg*p.ty*off, wy=p.y+sg*p.tx*off;
+    let dx=p.tx-sg*p.ty*0.4, dy=p.ty+sg*p.tx*0.4;                          // footprint: along the road, toed in
+    const dl=Math.hypot(dx,dy)||1; dx/=dl; dy/=dl;
+    const hw=BB_W/2;
+    ctx.strokeStyle='rgba(34,60,30,.20)'; ctx.lineWidth=9; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(wx-dx*hw+3,wy-dy*hw+4); ctx.lineTo(wx+dx*hw+3,wy+dy*hw+4); ctx.stroke();
+    ctx.strokeStyle='#23262b'; ctx.lineWidth=7;
+    ctx.beginPath(); ctx.moveTo(wx-dx*hw,wy-dy*hw); ctx.lineTo(wx+dx*hw,wy+dy*hw); ctx.stroke();
+    ctx.strokeStyle='#e9e4d2'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(wx-dx*hw*0.94,wy-dy*hw*0.94); ctx.lineTo(wx+dx*hw*0.94,wy+dy*hw*0.94); ctx.stroke();
+    ctx.fillStyle='#5a5e66';
+    ctx.beginPath(); ctx.arc(wx-dx*hw*0.6,wy-dy*hw*0.6,4,0,TAU); ctx.arc(wx+dx*hw*0.6,wy+dy*hw*0.6,4,0,TAU); ctx.fill();
+  }
+}
 
 /* ============================ HUD ============================ */
 function updateHUD(){
@@ -1463,6 +1581,8 @@ window.__drift={
   clearInput(){ if(game){ delete game.forceSteer; delete game.forceGas; delete game.forceBrake; } },
   step(n){ for(let i=0;i<(n||1);i++){ if(state==='play'){ game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); cruiseAdjust(game); step(1/120); } } },
   cruise(){ toggleCruise(); },
+  billboards:{ every:BB_EVERY, at:bbIndex, side:bbSide, off:bbOff,
+    defaults:()=>DEFAULT_ADS.length, remote:()=>REMOTE_ADS.length, reload:loadRemoteAds },
   autopilot(){ const g=game; if(!g) return; const R=g.road, c=g.car;
     // a tidy driver: pure-pursuit for the line, and a corner speed straight out of the grip budget (v ≤ sqrt(lat/curvature))
     const p=R.pts[c.idx];
