@@ -956,6 +956,16 @@ function makeScenery(seed){
       const mid=x*0.5; for(const p of puffs) p.dx-=mid;
       L.list.push({ b:(i+rng())/D.n*TAU, h:lerp(D.h[0],D.h[1],rng()), s:lerp(D.s[0],D.s[1],rng()), ph:rng()*TAU, p:puffs }); }
     S.decks.push(L); }
+  // high cirrus: thin mare's-tails miles above the cumulus. drawn first (furthest back), so the fair-weather
+  // decks float in front of them, and drifting slowest of all — that ordering + that crawl is what puts real
+  // altitude into the sky. each streak is a combed row of thin, tapering wisps along a slight tilt.
+  S.cirrus=[];
+  for(let i=0;i<7;i++){ const nw=7+(rng()*6|0), span=56+rng()*66, curve=(rng()-0.5)*0.5, rxB=13+rng()*10, w=[];
+    for(let j=0;j<nw;j++){ const u=j/(nw-1), env=Math.pow(Math.sin(Math.PI*u),0.7);
+      w.push({ du:(u-0.5)*2*span, dv:curve*(u-0.5)*2*span*u+(rng()-0.5)*2.2,
+               rx:rxB*(0.35+0.9*env), ry:(1.2+rng()*1.4)*(0.4+env), a:0.5+0.5*env }); }
+    S.cirrus.push({ b:rng()*TAU, h:230+rng()*118, tilt:(rng()-0.5)*0.5,
+      dr:(rng()<0.5?-1:1)*(0.0028+rng()*0.004), al:0.17+rng()*0.11, w }); }
   // bird flocks: the far four ride behind the hills, the near three pass in front of them
   S.flocks=[];
   for(let i=0;i<7;i++){ const far=i<4, n=3+(rng()*5|0), birds=[];
@@ -985,10 +995,21 @@ function drawSky(g,a,cx,hy,horizon){
     rg.addColorStop(0,'rgba(255,253,231,.95)'); rg.addColorStop(.09,'rgba(255,245,196,.55)');
     rg.addColorStop(.34,'rgba(255,233,170,.18)'); rg.addColorStop(1,'rgba(255,230,165,0)');
     ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); }
+  drawCirrus(S,a,cx,hy,t,dmax);                 // highest and furthest, so it goes down behind every cumulus
   drawDeck(S.decks[0],a,cx,hy,t,dmax); drawDeck(S.decks[1],a,cx,hy,t,dmax);
   drawPlane(S,a,cx,hy,t,dmax);                 // high up, so the near deck can pass in front of it
   drawBirds(S,a,cx,hy,t,false);
   drawDeck(S.decks[2],a,cx,hy,t,dmax);
+}
+// high cirrus: a comb of thin, tapering wisps laid out in screen space around a projected bearing, exactly
+// like the cumulus puffs (SEC scale, never 1/z) so it pans with yaw and can't shake. built up from many
+// low-alpha ellipses so the overlap feathers into a wisp instead of reading as a hard blob.
+function drawCirrus(S,a,cx,hy,t,dmax){ ctx.fillStyle='#fffefa';
+  for(const st of S.cirrus){ const d=angWrap(st.b+st.dr*t-a); if(Math.abs(d)>dmax+0.3) continue;
+    const s=SEC(d), x0=cx+FOCAL*Math.tan(d), y0=hy-st.h*s, co=Math.cos(st.tilt), si=Math.sin(st.tilt);
+    for(const p of st.w){ ctx.globalAlpha=p.a*st.al;
+      ctx.beginPath(); ctx.ellipse(x0+(p.du*co-p.dv*si)*s, y0+(p.du*si+p.dv*co)*s, p.rx*s, p.ry*s, st.tilt, 0, TAU); ctx.fill(); } }
+  ctx.globalAlpha=1;
 }
 // one path for the whole cloud → the puffs union instead of double-blending where they overlap
 function puffs(c,x,y,sx,sy,pad){ ctx.beginPath();
