@@ -486,6 +486,8 @@ function drawWindshield(g,spd){
     for(let i=0;i<C.length-1;i++){ if(i%2) continue; const A=C[i],B=C[i+1];
       ctx.strokeStyle='#ffd24a'; ctx.lineWidth=clamp((A.sc+B.sc)*2.5,1.6,20); ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke(); }
   }
+  // oncoming traffic — sits on the tarmac, so it goes on top of the road but under the roadside barriers
+  drawTraffic(g, proj);
   // barriers (red/white) — clamped so the nearest posts don't blow up or jitter
   for(const sgn of [1,-1]){ for(let i=lo;i<hi-1;i++){ const p=R.pts[i]; const zs=zside(p.x-p.ty*BARRIER*sgn, p.y+p.tx*BARRIER*sgn);
     if(zs.z<NEARZ) continue; const b=toScreen(zs.z,zs.side); const w=clamp(6*b.sc,2,16), h=clamp(14*b.sc,4,40);
@@ -1218,6 +1220,46 @@ function drawNearScenery(g,ca,sa,cx,hy){
       for(let j=0;j<n;j++){ const bx=x0+step*j; ctx.moveTo(bx,my-ah); ctx.lineTo(bx+dir*cw,my); ctx.lineTo(bx,my+ah); }
       ctx.stroke(); }
   }
+}
+/* oncoming traffic: cars in the far lane, closing on you. They flow along the road's own index axis with
+   g.time (exactly like the drifting clouds and the airliner — a pure function of seed + time, so it's
+   deterministic and can't shake), sit on the tarmac through the road's own projection, and swell and sweep
+   past the edge of the glass with real perspective. The far lane is the one the road's own wheel-track
+   shading calls oncoming (negative offset), so a car never bears down the player's own lane. Purely visual —
+   no collision — and sparse, one every ~8 s, so a rural road reads as travelled, not gridlocked. Front-on,
+   headlights lit, emerging out of the haze. */
+const TR_GAP=46, TR_FLOW=22, TR_DENS=0.22, TR_LANE=ROAD_HALF*0.5;   // slot spacing (idx), closing idx/s, hit-rate, oncoming-lane centre
+const TR_COLS=['#e9ecef','#c4c9d0','#7a808b','#b23a3a','#3a63a4','#3f6f52','#d9d3c5','#4a4e57'];
+function roadAt(R,fi){ const i=fi|0, p=R.pts[i], q=R.pts[i+1]||p, f=fi-i;
+  return { x:lerp(p.x,q.x,f), y:lerp(p.y,q.y,f), tx:lerp(p.tx,q.tx,f), ty:lerp(p.ty,q.ty,f) }; }
+function drawTraffic(g,proj){
+  const R=g.road, c=g.car, S=g.scenery, shift=TR_FLOW*g.time;
+  const nLo=Math.floor((c.idx-2+shift)/TR_GAP)-1, nHi=Math.ceil((c.idx+70+shift)/TR_GAP)+1;
+  const cars=[];
+  for(let n=nLo;n<=nHi;n++){
+    if(h01(S.ps^(n*2246822519|0))>=TR_DENS) continue;                     // most slots are empty
+    const fi=n*TR_GAP+(h01(n*40503+7)-0.5)*TR_GAP*0.72-shift;             // jittered so they never march in step
+    if(fi<c.idx-2||fi>c.idx+69) continue;
+    const w=roadAt(R,fi), o=-(TR_LANE+(h01(n*911+3)-0.5)*36);             // held in the oncoming lane, wandering a touch
+    const P=proj(w.x+w.ty*o, w.y-w.tx*o); if(!P||P.x<-90||P.x>W+90) continue;
+    P.col=TR_COLS[(h01(n*277+5)*TR_COLS.length)|0]; cars.push(P); }
+  cars.sort((A,B)=>B.z-A.z);                                             // far first, so nearer overlaps it
+  for(const P of cars){
+    const bw=clamp(42*P.sc,2,250), bh=bw*0.62, x=P.x, y=P.y+bw*0.04;
+    ctx.globalAlpha=clamp(1.62-P.z/1220,0.1,1);                         // fades up out of the aerial haze as it nears
+    ctx.fillStyle='rgba(28,42,24,.22)'; ctx.beginPath(); ctx.ellipse(x,y,bw*0.58,Math.max(1,bw*0.13),0,0,TAU); ctx.fill();
+    ctx.fillStyle='#20242b'; rr(x-bw*0.5,y-bh*0.28,bw,bh*0.28,Math.min(bw*0.06,3)); ctx.fill();   // shaded lower bumper
+    ctx.fillStyle=P.col; rr(x-bw*0.47,y-bh*0.98,bw*0.94,bh*0.78,Math.min(bw*0.12,7)); ctx.fill(); // body
+    ctx.fillStyle='#2b3038'; rr(x-bw*0.34,y-bh*1.42,bw*0.68,bh*0.56,Math.min(bw*0.11,6)); ctx.fill(); // cabin/roof
+    ctx.fillStyle='#3c4653'; rr(x-bw*0.29,y-bh*1.30,bw*0.58,bh*0.34,Math.min(bw*0.08,4)); ctx.fill(); // windscreen
+    if(bw>7){ ctx.fillStyle='#fff6d6';                                  // headlights, lit and facing you
+      const hw=Math.max(1,bw*0.11), hh=Math.max(1,bh*0.14), hy=y-bh*0.34;
+      ctx.fillRect(x-bw*0.40,hy,hw,hh); ctx.fillRect(x+bw*0.40-hw,hy,hw,hh);
+      if(bw>46){ const gl=ctx.createRadialGradient(x,hy,0,x,hy,bw*0.5);  // a soft glow once it's close enough to read
+        gl.addColorStop(0,'rgba(255,246,214,.5)'); gl.addColorStop(1,'rgba(255,246,214,0)');
+        ctx.fillStyle=gl; ctx.fillRect(x-bw*0.5,hy-bh*0.2,bw,bh*0.5); } }
+  }
+  ctx.globalAlpha=1;
 }
 
 function roadRange(g){ const R=g.road, c=g.car;
