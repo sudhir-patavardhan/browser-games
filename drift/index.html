@@ -526,6 +526,17 @@ function drawWindshield(g,spd){
   // haze at the horizon for depth
   const hz=ctx.createLinearGradient(0,horizon,0,horizon+70); hz.addColorStop(0,'rgba(234,246,216,.55)'); hz.addColorStop(1,'rgba(234,246,216,0)');
   ctx.fillStyle=hz; ctx.fillRect(0,horizon,W,70);
+  // forward sun-glare: heading into the sun, its light veils the far scene — a warm bloom pooling at the
+  // horizon under the disc and spilling down the road toward you, brightest dead ahead and gone by the edge
+  // of the forward arc. Same sun bearing as the sky's scatter and every verge shadow, so it pans with yaw and
+  // ties the lens to the one light source; pure screen-space, so nothing here scales by 1/z or can shake.
+  { const sd=angWrap(g.scenery.sunB-a), lim=DMAX()+0.9;
+    if(Math.abs(sd)<lim){ const s=SEC(sd), sx=px+FOCAL*Math.tan(sd), front=1-Math.abs(sd)/lim;
+      const r=Math.min(600*s,820), A=0.2*front*front, gl=ctx.createRadialGradient(sx,horizon,0,sx,horizon,r);
+      gl.addColorStop(0,'rgba(255,247,213,'+A.toFixed(3)+')');
+      gl.addColorStop(.45,'rgba(255,241,201,'+(A*0.45).toFixed(3)+')');
+      gl.addColorStop(1,'rgba(255,238,196,0)');
+      ctx.fillStyle=gl; ctx.fillRect(0,horizon-r*0.35,W,H-horizon+r*0.35); } }
   // speed streaks at high pace
   if(spd>420){ ctx.strokeStyle='rgba(255,255,255,'+clamp((spd-420)/500,0,.3)+')'; ctx.lineWidth=2;
     for(let i=0;i<6;i++){ const yy=horizon+40+Math.random()*(H-horizon-60); const xx=Math.random()<.5?20+Math.random()*60:W-80+Math.random()*60;
