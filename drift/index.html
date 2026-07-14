@@ -1170,6 +1170,33 @@ function drawNearScenery(g,ca,sa,cx,hy){
     ctx.fillRect(q.x-w/2,top,w,q.h);
     ctx.fillRect(q.x-aw/2,top+q.h*0.05,aw,Math.max(1,2.4*q.sc));
     ctx.fillRect(q.x-aw*0.35,top+q.h*0.14,aw*0.7,Math.max(1,2*q.sc)); }
+  // hedgerows: the field boundaries a flat green field is missing. Every so often a low run of bushes strikes
+  // out from the verge into the fields, roughly perpendicular to the road, splitting the land into a patchwork.
+  // World-anchored radial lines through the road's own projection, so each one recedes to the horizon and
+  // sweeps past with travel — the mid-field's strongest depth cue. Blobs shrink with distance (aerial
+  // perspective for free via sc), batched into two greens + one sun-side cap off the same one sun.
+  const hlx=Math.sign(suy*ca-sux*sa)||1;                                 // which screen side the sun is on
+  const hedge=[];
+  for(let blk=Math.floor(lo/30);blk*30<hi;blk++){
+    const at=blk*30+Math.floor(h01(blk*151+5)*20); if(at<lo||at>=hi||at<R.start+2) continue;
+    const p=R.pts[at]; if(!p) continue;
+    const sg=h01(blk*29+1)<0.5?1:-1, th=(h01(blk*67+4)-0.5)*0.5, co=Math.cos(th), si=Math.sin(th);
+    const nx=(-p.ty*co-p.tx*si)*sg, ny=(p.tx*co-p.ty*si)*sg;              // outward road-normal, tilted a touch
+    const d0=BARRIER+140, d1=d0+780+h01(blk*13+8)*1150;                  // some short field edges, some long
+    const nb=clamp(Math.round((d1-d0)/58)+3,8,32);                       // packed dense enough to read as one run
+    for(let j=0;j<nb;j++){ const d=d0+(d1-d0)*(j/(nb-1)); const q=put(p.x+nx*d,p.y+ny*d);
+      if(q){ q.r=clamp(29*q.sc,0.7,30); q.k=h01(blk*7+j)<0.5?0:1; hedge.push(q); } }
+  }
+  if(hedge.length){
+    ctx.fillStyle='rgba(34,60,30,.15)'; ctx.beginPath();                 // contact shadow, thrown off the sun
+    for(const q of hedge){ const r=q.r; ctx.ellipse(q.x-hlx*r*0.5,q.y,r*1.2,Math.max(1.1,r*0.28),0,0,TAU); } ctx.fill();
+    for(let k=0;k<2;k++){ ctx.beginPath();                               // two greens, a hair deeper than the trees
+      for(const q of hedge){ if(q.k!==k) continue; const r=q.r; ctx.moveTo(q.x+r,q.y-r*0.7); ctx.arc(q.x,q.y-r*0.7,r,0,TAU); }
+      ctx.fillStyle=k?'#4c8b4a':'#3a723d'; ctx.fill(); }
+    ctx.fillStyle='rgba(224,242,188,.42)'; ctx.beginPath();              // warm sun-side cap, same light as the trees
+    for(const q of hedge){ const r=q.r; ctx.moveTo(q.x+hlx*r*0.35+r*0.5,q.y-r*0.98); ctx.arc(q.x+hlx*r*0.35,q.y-r*0.98,r*0.5,0,TAU); }
+    ctx.fill();
+  }
   ctx.fillStyle='#6b5744';
   for(const q of trees){ const w=clamp(q.hh*0.08,0.8,13); ctx.fillRect(q.x-w/2,q.y-q.hh*0.45,w,q.hh*0.45); }
   for(let k=0;k<2;k++){ ctx.beginPath();                                 // two greens, batched into two fills
