@@ -69,6 +69,23 @@
   .aux:active{ background:rgba(23,50,74,.06); }
   .keys{ font-size:12.5px; color:#6a7a88; line-height:1.8; margin-top:16px; }
   .keys b{ color:#ff7a2f; }
+  /* the wallet, and the armory it pays for */
+  .cash{ font-size:13px; font-weight:900; color:#2e8f38; margin-top:3px; letter-spacing:.5px; }
+  .cash.pop{ animation:cashpop .5s ease; }
+  @keyframes cashpop{ 0%{transform:scale(1);} 30%{transform:scale(1.35); color:#1fae4a;} 100%{transform:scale(1);} }
+  .armoryBox{ margin-top:14px; }
+  .warow{ font-size:12px; font-weight:900; letter-spacing:1.5px; color:#48627a; margin-bottom:8px; }
+  .warow b{ color:#2e8f38; font-size:14px; margin-left:4px; }
+  .warow span{ display:block; font-weight:600; letter-spacing:0; color:#8a9aa8; font-size:11px; margin-top:2px; }
+  .gcard{ display:inline-flex; flex-direction:column; align-items:flex-start; gap:1px; margin:0 6px 6px 0;
+    background:#f2f5f2; border:1.5px solid rgba(23,50,74,.16); border-radius:12px; padding:7px 11px;
+    cursor:pointer; font-family:inherit; text-align:left; }
+  .gcard b{ font-size:11.5px; font-weight:900; letter-spacing:.5px; color:#17324a; }
+  .gcard span{ font-size:10px; color:#8a9aa8; font-weight:600; }
+  .gcard em{ font-style:normal; font-size:11px; font-weight:900; color:#c85a1a; margin-top:2px; }
+  .gcard.own em{ color:#48627a; }
+  .gcard.eq{ border-color:#2e8f38; background:#e9f6ea; } .gcard.eq em{ color:#2e8f38; }
+  .gcard.cant{ opacity:.45; }
 </style>
 </head>
 <body>
@@ -78,6 +95,7 @@
   <div class="pill">
     <div class="score" id="scoreEl">0</div>
     <div class="mult" id="multEl">x1.0</div>
+    <div class="cash" id="cashEl">$0</div>
   </div>
   <div class="pill rt">
     <div class="speed"><span id="speedEl">0</span> <small>km/h</small></div>
@@ -97,6 +115,7 @@
     <p class="lead">An endless sunlit road that keeps throwing tighter corners. Pin the throttle down the straights, brake into the bends — carry too much speed and the rear steps out. Hold the slide to build your multiplier; the wider and longer, the bigger the score.</p>
     <button class="go" id="startBtn">Drive</button>
     <div><button class="aux" id="auxBtn">♪ Load music from this device</button></div>
+    <div class="armoryBox"></div>
     <div class="keys">
       <b>Keyboard:</b> &larr; &rarr; (or A / D) steer &nbsp;·&nbsp; &uarr; / W throttle &nbsp;·&nbsp; &darr; / S brake<br>
       <b>Touch:</b> hold the left / right side to steer — or swipe to turn the wheel in driver view.
@@ -107,7 +126,10 @@
       <b>Stereo:</b> tap the dash screen — art plays/pauses, middle skips, meter mutes &nbsp;·&nbsp;
       keys <b>K</b> / <b>N</b> / <b>P</b> / <b>M</b><br>
       <b>Views:</b> you drive from behind the wheel. Tap “Top view” (or press V) for a look down at the
-      corner coming — the dash also has an AR guide and a nav map
+      corner coming — the dash also has an AR guide and a nav map<br>
+      <b>Zombies:</b> the road has a horde problem and the county pays a bounty — run them down for
+      <b>wallet cash</b> (it persists). The wallet buys guns above; an equipped gun <b>auto-fires</b> at the
+      shamblers out on the verge that the car can’t reach
     </div>
   </div>
 </div>
@@ -118,6 +140,8 @@
     <div class="final" id="finalScore">0</div>
     <div class="newbest" id="newBest" style="display:none">NEW BEST!</div>
     <div class="best" id="overBest" style="color:#5a7a5a; font-weight:700; font-size:14px; margin-top:6px">Best 0</div>
+    <div class="best" id="overCash" style="color:#2e8f38; font-weight:800; font-size:14px; margin-top:4px; display:none"></div>
+    <div class="armoryBox"></div>
     <div style="margin-top:22px"><button class="go" id="againBtn">Again</button></div>
   </div>
 </div>
@@ -199,6 +223,8 @@ function newGame(){
     skid:[], smoke:[], grassTufts:makeTufts(seed),
     batt:1, kw:0, hitT:0, cc:0, padCand:null,  // the cabin: charge, power, last impact, cruise set-speed
     scenery:makeScenery(seed),
+    zombies:[], splats:[], gibs:[], flecks:[], shots:[],   // the horde, and what's left of it
+    zrng:mulberry32(seed^0x2b1e), zNextIdx:0, gunCd:0, cashRun:0, goreT:0,
     shake:0, time:0
   };
 }
@@ -336,6 +362,8 @@ function step(dt){
   g.batt = clamp(g.batt - (load-regen+offRoad)*EV_BURN*dt, 0, 1);
   if(g.batt<=0) return gameOver('OUT OF CHARGE');
 
+  updateZombies(g,dt);   // the horde: spawn, shamble, bumper checks, the auto-gun — money and gore only, never physics
+
   // skid marks (rear wheels) — from the car's heading
   const fx=Math.cos(c.angle), fy=Math.sin(c.angle), rx=-Math.sin(c.angle), ry=Math.cos(c.angle);
   const rearX=c.x-fx*CAR_L*0.42, rearY=c.y-fy*CAR_L*0.42;
@@ -367,6 +395,10 @@ function gameOver(reason){
   document.getElementById('finalScore').textContent=sc.toLocaleString();
   document.getElementById('overBest').textContent='Best '+best.toLocaleString();
   document.getElementById('newBest').style.display=isBest?'inline-block':'none';
+  saveWallet(); renderArmory();                                  // bank the bounty, restock the shop
+  const oc=document.getElementById('overCash');
+  oc.style.display=game.cashRun>0?'block':'none';
+  oc.textContent='+$'+Math.round(game.cashRun).toLocaleString()+' in bounties this run';
   showHUD(false); document.getElementById('viewBtn').style.display='none';
   document.getElementById('hintL').style.display='none'; document.getElementById('hintR').style.display='none';
   setTimeout(()=>{ if(state==='over') document.getElementById('overPanel').classList.remove('hidden'); },420);
@@ -401,7 +433,7 @@ function render(){
     const y=t.y+Math.round((g.cam.y-t.y)/4000)*4000;
     ctx.beginPath(); ctx.arc(x,y,t.r,0,TAU); ctx.fill();
   }
-  drawRoad(g); drawBillboardsTop(g); drawSkid(g); drawCar(g); drawSmoke(g);
+  drawRoad(g); drawBillboardsTop(g); drawSkid(g); drawZombiesTop(g); drawCar(g); drawSmoke(g); drawGibs(g);
   ctx.restore();
   updateHUD();
 }
@@ -508,8 +540,8 @@ function drawWindshield(g,spd){
     for(let i=0;i<C.length-1;i++){ if(i%2) continue; const A=C[i],B=C[i+1];
       ctx.strokeStyle='#ffd24a'; ctx.lineWidth=clamp((A.sc+B.sc)*2.5,1.6,20); ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke(); }
   }
-  // oncoming traffic — sits on the tarmac, so it goes on top of the road but under the roadside barriers
-  drawTraffic(g, proj);
+  // the horde — splats bake into the tarmac, shamblers stand on it, both under the roadside barriers
+  drawZombiesDriver(g, proj);
   // barriers (red/white) — clamped so the nearest posts don't blow up or jitter
   for(const sgn of [1,-1]){ for(let i=lo;i<hi-1;i++){ const p=R.pts[i]; const zs=zside(p.x-p.ty*BARRIER*sgn, p.y+p.tx*BARRIER*sgn);
     if(zs.z<NEARZ) continue; const b=toScreen(zs.z,zs.side); const w=clamp(6*b.sc,2,16), h=clamp(14*b.sc,4,40);
@@ -523,6 +555,7 @@ function drawWindshield(g,spd){
   for(const s of g.smoke){ const P=proj(s.x,s.y); if(!P) continue; const al=clamp(s.life,0,1);
     ctx.fillStyle='rgba(255,'+Math.round(190+40*al)+','+Math.round(90+70*(1-al))+','+(al*0.5)+')';
     ctx.beginPath(); ctx.arc(P.x,P.y,Math.max(2,s.r*P.sc),0,TAU); ctx.fill(); }
+  drawGibs(g,proj);   // gore in flight
   // haze at the horizon for depth
   const hz=ctx.createLinearGradient(0,horizon,0,horizon+70); hz.addColorStop(0,'rgba(234,246,216,.55)'); hz.addColorStop(1,'rgba(234,246,216,0)');
   ctx.fillStyle=hz; ctx.fillRect(0,horizon,W,70);
@@ -543,6 +576,7 @@ function drawWindshield(g,spd){
       ctx.beginPath(); ctx.moveTo(xx,yy); ctx.lineTo(xx,yy+40); ctx.stroke(); } }
 
   if(g.nav) drawNav(g, proj, horizon);
+  drawFlecks(g);      // ichor on the glass — in front of the world, behind the dash
   drawDashboard(g);
   drawWheel(g);
 }
@@ -1372,45 +1406,179 @@ function drawNearScenery(g,ca,sa,cx,hy){
       ctx.stroke(); }
   }
 }
-/* oncoming traffic: cars in the far lane, closing on you. They flow along the road's own index axis with
-   g.time (exactly like the drifting clouds and the airliner — a pure function of seed + time, so it's
-   deterministic and can't shake), sit on the tarmac through the road's own projection, and swell and sweep
-   past the edge of the glass with real perspective. The far lane is the one the road's own wheel-track
-   shading calls oncoming (negative offset), so a car never bears down the player's own lane. Purely visual —
-   no collision — and sparse, one every ~8 s, so a rural road reads as travelled, not gridlocked. Front-on,
-   headlights lit, emerging out of the haze. */
-const TR_GAP=46, TR_FLOW=22, TR_DENS=0.22, TR_LANE=ROAD_HALF*0.5;   // slot spacing (idx), closing idx/s, hit-rate, oncoming-lane centre
-const TR_COLS=['#e9ecef','#c4c9d0','#7a808b','#b23a3a','#3a63a4','#3f6f52','#d9d3c5','#4a4e57'];
-function roadAt(R,fi){ const i=fi|0, p=R.pts[i], q=R.pts[i+1]||p, f=fi-i;
+/* ============================ zombie killer ============================
+   The road has a zombie problem, and the county pays a bounty. Shamblers spawn ahead — most lurching
+   across the tarmac, some out on the verge — carried in road coordinates (index along + offset across),
+   so they project through the road's own lens like everything else and can't shake. Mow one down and the
+   bounty lands in your WALLET (persisted; drifting is still what scores). The wallet buys guns in the
+   ARMORY on the start/over screens; an equipped gun auto-fires at shamblers OFF the tarmac — the ones the
+   car can't reach — while you drive. Hits are purely additive: money, gore and a shake, never physics,
+   so the committed verify thresholds don't move. Gore is deliberately comic-book: dark ichor splats on
+   the tarmac, a burst of gibs, a fleck or two up the glass when it's close. */
+let cash=0; try{ cash=+(localStorage.getItem('drift.cash')||0)||0; }catch(e){}
+let gunsOwned=[]; try{ gunsOwned=(localStorage.getItem('drift.guns')||'').split(',').filter(Boolean); }catch(e){}
+let gunEq=''; try{ gunEq=localStorage.getItem('drift.gun')||''; }catch(e){}
+const GUNS={ p9:{nm:'P9 SIDEARM', price:250, range:950, cd:1.0 },
+             sm2:{nm:'SM-2 AUTO', price:900, range:1100, cd:0.34 },
+             lr7:{nm:'LR-7 RIFLE', price:2200, range:1750, cd:0.7 } };
+if(!GUNS[gunEq]||gunsOwned.indexOf(gunEq)<0) gunEq=gunsOwned[0]||'';
+function saveWallet(){ try{ localStorage.setItem('drift.cash',Math.round(cash));
+  localStorage.setItem('drift.guns',gunsOwned.join(',')); localStorage.setItem('drift.gun',gunEq); }catch(e){} }
+const Z_MAX=9, Z_HIT=38, Z_H=60;                    // population cap, car-strike radius, body height (world px)
+const Z_SHIRT=['#6b7a5a','#7a6a58','#5a6b7a','#7a5a6b'], Z_SKIN='#8fae62';
+const GORE=['#8f1e12','#6f1610','#a5261a','#586b3a'];
+function roadAt(R,fi){ const i=clamp(fi|0,0,R.pts.length-1), p=R.pts[i], q=R.pts[i+1]||p, f=fi-i;
   return { x:lerp(p.x,q.x,f), y:lerp(p.y,q.y,f), tx:lerp(p.tx,q.tx,f), ty:lerp(p.ty,q.ty,f) }; }
-function drawTraffic(g,proj){
-  const R=g.road, c=g.car, S=g.scenery, shift=TR_FLOW*g.time;
-  const nLo=Math.floor((c.idx-2+shift)/TR_GAP)-1, nHi=Math.ceil((c.idx+70+shift)/TR_GAP)+1;
-  const cars=[];
-  for(let n=nLo;n<=nHi;n++){
-    if(h01(S.ps^(n*2246822519|0))>=TR_DENS) continue;                     // most slots are empty
-    const fi=n*TR_GAP+(h01(n*40503+7)-0.5)*TR_GAP*0.72-shift;             // jittered so they never march in step
-    if(fi<c.idx-2||fi>c.idx+69) continue;
-    const w=roadAt(R,fi), o=-(TR_LANE+(h01(n*911+3)-0.5)*36);             // held in the oncoming lane, wandering a touch
-    const P=proj(w.x+w.ty*o, w.y-w.tx*o); if(!P||P.x<-90||P.x>W+90) continue;
-    P.col=TR_COLS[(h01(n*277+5)*TR_COLS.length)|0]; cars.push(P); }
-  cars.sort((A,B)=>B.z-A.z);                                             // far first, so nearer overlaps it
-  for(const P of cars){
-    const bw=clamp(42*P.sc,2,250), bh=bw*0.62, x=P.x, y=P.y+bw*0.04;
-    ctx.globalAlpha=clamp(1.62-P.z/1220,0.1,1);                         // fades up out of the aerial haze as it nears
-    ctx.fillStyle='rgba(28,42,24,.22)'; ctx.beginPath(); ctx.ellipse(x,y,bw*0.58,Math.max(1,bw*0.13),0,0,TAU); ctx.fill();
-    ctx.fillStyle='#20242b'; rr(x-bw*0.5,y-bh*0.28,bw,bh*0.28,Math.min(bw*0.06,3)); ctx.fill();   // shaded lower bumper
-    ctx.fillStyle=P.col; rr(x-bw*0.47,y-bh*0.98,bw*0.94,bh*0.78,Math.min(bw*0.12,7)); ctx.fill(); // body
-    ctx.fillStyle='#2b3038'; rr(x-bw*0.34,y-bh*1.42,bw*0.68,bh*0.56,Math.min(bw*0.11,6)); ctx.fill(); // cabin/roof
-    ctx.fillStyle='#3c4653'; rr(x-bw*0.29,y-bh*1.30,bw*0.58,bh*0.34,Math.min(bw*0.08,4)); ctx.fill(); // windscreen
-    if(bw>7){ ctx.fillStyle='#fff6d6';                                  // headlights, lit and facing you
-      const hw=Math.max(1,bw*0.11), hh=Math.max(1,bh*0.14), hy=y-bh*0.34;
-      ctx.fillRect(x-bw*0.40,hy,hw,hh); ctx.fillRect(x+bw*0.40-hw,hy,hw,hh);
-      if(bw>46){ const gl=ctx.createRadialGradient(x,hy,0,x,hy,bw*0.5);  // a soft glow once it's close enough to read
-        gl.addColorStop(0,'rgba(255,246,214,.5)'); gl.addColorStop(1,'rgba(255,246,214,0)');
-        ctx.fillStyle=gl; ctx.fillRect(x-bw*0.5,hy-bh*0.2,bw,bh*0.5); } }
+function zPos(R,z){ const w=roadAt(R,z.fi); return { x:w.x-w.ty*z.o, y:w.y+w.tx*z.o, tx:w.tx, ty:w.ty }; }
+function spawnZombie(g,fi,o){
+  const r=g.zrng;
+  if(o===undefined) o = r()<0.62 ? (r()*2-1)*ROAD_HALF*0.72                     // on the tarmac, in a lane
+                                 : (r()<0.5?1:-1)*(BARRIER+60+r()*220);         // or out past the barrier
+  g.zombies.push({ fi, o, dir:(o>0?-1:1)*(r()<0.85?1:-1),                       // mostly shambling toward the road
+    sp:24+r()*30, ph:r()*TAU, shirt:Z_SHIRT[(r()*Z_SHIRT.length)|0], hp:1 });
+}
+function killZombie(g,z,by){
+  const R=g.road, p=zPos(R,z), spd=g.speed;
+  const pay = by==='car' ? 20+Math.round(spd*0.02) : 40;                        // gun targets pay a marksman bonus
+  cash+=pay; g.cashRun+=pay; cashPop(pay); saveWallet();                        // banked on the spot — a crash can't take it
+
+  g.splats.push({x:p.x,y:p.y,r:24+Math.random()*16,s:Math.random()*97|0,t:g.time});
+  if(g.splats.length>36) g.splats.shift();
+  const kx=by==='car'?g.car.vx*0.22:0, ky=by==='car'?g.car.vy*0.22:0;           // a car strike throws the gibs downroad
+  for(let i=0;i<12;i++){ const a=Math.random()*TAU, v=40+Math.random()*130;
+    g.gibs.push({x:p.x,y:p.y,vx:Math.cos(a)*v+kx,vy:Math.sin(a)*v+ky,r:2.5+Math.random()*3.5,
+      life:1,max:0.5+Math.random()*0.4,col:GORE[(Math.random()*GORE.length)|0]}); }
+  if(by==='car'){ g.shake=Math.max(g.shake,0.4); g.goreT=0.55; sfx('thud'); sfx('squelch');
+    if(g.view==='driver'){ const n=5+(Math.random()*4|0);                       // ichor up the windscreen
+      for(let i=0;i<n;i++) g.flecks.push({sx:W*(0.30+Math.random()*0.40),sy:H*(0.38+Math.random()*0.34),
+        r:W*(0.012+Math.random()*0.018),life:1,drip:10+Math.random()*26}); } }
+  else sfx('squelch');
+  z.hp=0;                                                                        // reaped by the update sweep
+}
+function updateZombies(g,dt){
+  const R=g.road, c=g.car;
+  // spawner: one shambler every ~45–90 points of road, up to the cap — seeded, so a seed replays its horde
+  if(g.zNextIdx===0) g.zNextIdx=c.idx+46+g.zrng()*40;
+  while(c.idx+70>g.zNextIdx){ if(g.zombies.length<Z_MAX) spawnZombie(g,g.zNextIdx);
+    g.zNextIdx+=45+g.zrng()*45; }
+  const gun=GUNS[gunEq]; g.gunCd-=dt;
+  let tgt=null, tgtD=1e9;
+  for(let i=g.zombies.length-1;i>=0;i--){ const z=g.zombies[i];
+    if(z.hp<=0 || z.fi<c.idx-4){ g.zombies.splice(i,1); continue; }              // reaped, or left behind
+    z.ph+=dt*3.4;
+    z.o+=z.dir*z.sp*dt;                                                          // the shamble is ACROSS the road
+    if(Math.abs(z.o)>BARRIER+250) z.dir=-Math.sign(z.o);                        // wander back toward the action
+    const dz=(z.fi-c.idx)*SEG;
+    if(Math.abs(z.fi-c.idx)<3){                                                  // close enough to check the bumper
+      const p=zPos(R,z), d2=(p.x-c.x)*(p.x-c.x)+(p.y-c.y)*(p.y-c.y);
+      if(d2<Z_HIT*Z_HIT){ killZombie(g,z,'car'); continue; } }
+    if(gun && Math.abs(z.o)>ROAD_HALF+10 && dz>60 && dz<gun.range && dz<tgtD){ tgt=z; tgtD=dz; }
   }
+  if(gun && tgt && g.gunCd<=0){ g.gunCd=gun.cd; const p=zPos(R,tgt);             // auto-fire at the verge
+    g.shots.push({x:p.x,y:p.y,t:g.time}); sfx('shot'); killZombie(g,tgt,'gun'); }
+  for(let i=g.splats.length-1;i>=0;i--) if(g.time-g.splats[i].t>10) g.splats.splice(i,1);
+  for(let i=g.gibs.length-1;i>=0;i--){ const s=g.gibs[i]; s.x+=s.vx*dt; s.y+=s.vy*dt;
+    s.vx*=0.9; s.vy*=0.9; s.life-=dt/s.max; if(s.life<=0) g.gibs.splice(i,1); }
+  for(let i=g.flecks.length-1;i>=0;i--){ const f=g.flecks[i]; f.sy+=f.drip*dt; f.life-=dt/1.6;
+    if(f.life<=0) g.flecks.splice(i,1); }
+  if(g.goreT>0) g.goreT-=dt;
+  for(let i=g.shots.length-1;i>=0;i--) if(g.time-g.shots[i].t>0.09) g.shots.splice(i,1);
+}
+// one shambler, front-on through the windshield: lurching gait, arms out, head lolled — comic, not clinical
+function drawZombieDriver(P,z){
+  const h=clamp(Z_H*P.sc,3,250), x=P.x, y=P.y;
+  ctx.fillStyle='rgba(28,42,24,.22)'; ctx.beginPath(); ctx.ellipse(x,y,h*0.22,Math.max(1,h*0.06),0,0,TAU); ctx.fill();
+  ctx.save(); ctx.translate(x,y); ctx.rotate(Math.sin(z.ph)*0.11);
+  const st=Math.sin(z.ph*2)*h*0.055, lw=Math.max(1,h*0.075);
+  ctx.fillStyle='#3d3630';                                                      // ragged trousers
+  ctx.fillRect(-h*0.10+st,-h*0.50,lw,h*0.50); ctx.fillRect(h*0.10-lw-st,-h*0.50,lw,h*0.50);
+  ctx.fillStyle=z.shirt; rr(-h*0.16,-h*0.86,h*0.32,h*0.40,h*0.05); ctx.fill();  // torso, slumped
+  ctx.strokeStyle=Z_SKIN; ctx.lineWidth=lw; ctx.lineCap='round';                // both arms out at the road
+  ctx.beginPath(); ctx.moveTo(-h*0.13,-h*0.76); ctx.lineTo(-h*0.30,-h*0.66+st);
+  ctx.moveTo(h*0.13,-h*0.76); ctx.lineTo(h*0.30,-h*0.66-st); ctx.stroke();
+  ctx.fillStyle=Z_SKIN; ctx.beginPath(); ctx.arc(h*0.02,-h*0.93,h*0.11,0,TAU); ctx.fill();  // lolled head
+  if(h>26){ ctx.fillStyle='#26301c'; ctx.fillRect(-h*0.035,-h*0.955,h*0.028,h*0.028);
+    ctx.fillRect(h*0.045,-h*0.955,h*0.028,h*0.028); ctx.fillRect(-h*0.02,-h*0.885,h*0.06,h*0.016); }
+  ctx.restore();
+}
+function drawZombiesDriver(g,proj){
+  const R=g.road, list=[];
+  for(const s of g.splats){ const P=proj(s.x,s.y); if(!P) continue;             // ichor baked into the tarmac
+    const al=clamp(1-(g.time-s.t)/10,0,1)*0.62, r=s.r*P.sc;
+    ctx.fillStyle='rgba(96,20,14,'+al.toFixed(3)+')';
+    ctx.beginPath(); ctx.ellipse(P.x,P.y,Math.max(1.5,r*1.5),Math.max(1,r*0.4),0,0,TAU);
+    ctx.ellipse(P.x+r*(((s.s%7)/7)-0.5)*1.6,P.y+r*0.14,Math.max(1,r*0.5),Math.max(1,r*0.16),0,0,TAU);
+    ctx.ellipse(P.x-r*(((s.s%5)/5)-0.5)*1.8,P.y-r*0.1,Math.max(1,r*0.4),Math.max(1,r*0.13),0,0,TAU); ctx.fill(); }
+  for(const z of g.zombies){ const p=zPos(R,z), P=proj(p.x,p.y);
+    if(P&&P.x>-120&&P.x<W+120) list.push({P,z}); }
+  list.sort((A,B)=>B.P.z-A.P.z);                                                // far first, near overlaps
+  for(const e of list) drawZombieDriver(e.P,e.z);
+  for(const s of g.shots){ const P=proj(s.x,s.y); if(!P) continue;              // tracer out of the fender
+    ctx.strokeStyle='rgba(255,240,180,.9)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(W*0.58,H*0.80); ctx.lineTo(P.x,P.y-Z_H*P.sc*0.6); ctx.stroke();
+    ctx.fillStyle='rgba(255,220,130,.8)'; ctx.beginPath(); ctx.arc(W*0.58,H*0.80,5,0,TAU); ctx.fill(); }
+}
+function drawZombiesTop(g){
+  const R=g.road;
+  for(const s of g.splats){ const al=clamp(1-(g.time-s.t)/10,0,1)*0.6;          // splats under everything that walks
+    ctx.fillStyle='rgba(96,20,14,'+al.toFixed(3)+')'; ctx.beginPath();
+    ctx.ellipse(s.x,s.y,s.r,s.r*0.7,(s.s%7),0,TAU);
+    ctx.ellipse(s.x+s.r*0.8,s.y+s.r*0.3,s.r*0.35,s.r*0.25,0,0,TAU); ctx.fill(); }
+  for(const z of g.zombies){ const p=zPos(R,z);
+    const ang=Math.atan2(p.tx*z.dir,-p.ty*z.dir)+Math.PI/2;                     // it shambles along the road normal; sprite is drawn nose-up
+    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang);
+    ctx.fillStyle='rgba(20,40,20,.25)'; ctx.beginPath(); ctx.ellipse(2,3,10,8,0,0,TAU); ctx.fill();
+    ctx.strokeStyle=Z_SKIN; ctx.lineWidth=3.4; ctx.lineCap='round';             // arms reaching ahead of it
+    const st=Math.sin(z.ph*2)*3; ctx.beginPath();
+    ctx.moveTo(-5,-3); ctx.lineTo(-7,-12+st); ctx.moveTo(5,-3); ctx.lineTo(7,-12-st); ctx.stroke();
+    ctx.fillStyle=z.shirt; ctx.beginPath(); ctx.ellipse(0,0,8,6.2,0,0,TAU); ctx.fill();
+    ctx.fillStyle=Z_SKIN; ctx.beginPath(); ctx.arc(0,-4.5,4.2,0,TAU); ctx.fill();
+    ctx.restore(); }
+  for(const s of g.shots){ const c=g.car; ctx.strokeStyle='rgba(255,240,180,.85)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(s.x,s.y); ctx.stroke(); }
+}
+function drawGibs(g,proj){                                                       // gore particles, either lens
+  for(const s of g.gibs){ const al=clamp(s.life,0,1);
+    let x=s.x,y=s.y,r=s.r; if(proj){ const P=proj(s.x,s.y); if(!P) continue; x=P.x; y=P.y; r=Math.max(1.2,s.r*P.sc*2.4); }
+    ctx.fillStyle=s.col; ctx.globalAlpha=al*0.9;
+    ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); }
   ctx.globalAlpha=1;
+}
+function drawFlecks(g){                                                          // ichor on the glass, sliding down
+  for(const f of g.flecks){ const al=clamp(f.life,0,1);
+    ctx.fillStyle='rgba(110,22,16,'+(al*0.72).toFixed(3)+')';
+    ctx.beginPath(); ctx.ellipse(f.sx,f.sy,f.r*0.72,f.r*1.15,0,0,TAU); ctx.fill();
+    ctx.fillRect(f.sx-f.r*0.18,f.sy,f.r*0.36,f.r*2.6);                           // the run-down streak
+    ctx.fillStyle='rgba(150,36,24,'+(al*0.5).toFixed(3)+')';                     // a wet core catching the light
+    ctx.beginPath(); ctx.arc(f.sx-f.r*0.18,f.sy-f.r*0.3,f.r*0.3,0,TAU); ctx.fill(); }
+  if(g.goreT>0){                                                                 // the hit itself: one red pulse round the glass
+    const k=clamp(g.goreT/0.55,0,1), a=k*k*0.5;                                  // sharp attack, quick fade
+    const v=ctx.createRadialGradient(W/2,H*0.46,H*0.16,W/2,H*0.46,H*0.55);
+    v.addColorStop(0,'rgba(130,16,10,'+(a*0.22).toFixed(3)+')');
+    v.addColorStop(1,'rgba(130,16,10,'+a.toFixed(3)+')');
+    ctx.fillStyle=v; ctx.fillRect(0,0,W,H);
+  }
+}
+function cashPop(pay){ const el=document.getElementById('cashEl'); if(!el) return;
+  el.textContent='$'+Math.round(cash).toLocaleString();
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+/* the armory: same card, both panels. Bounty money buys a gun; owning one arms the auto-turret. */
+function buyGun(id){ const gn=GUNS[id]; if(!gn) return false;
+  if(gunsOwned.indexOf(id)>=0){ gunEq = gunEq===id ? '' : id; saveWallet(); renderArmory(); return true; }
+  if(cash<gn.price) return false;
+  cash-=gn.price; gunsOwned.push(id); gunEq=id; saveWallet(); renderArmory(); return true;
+}
+function renderArmory(){
+  const tags={p9:'steady · near',sm2:'fast · mid',lr7:'hard · far'};
+  for(const box of document.querySelectorAll('.armoryBox')){
+    let h='<div class="warow">WALLET <b>$'+Math.round(cash).toLocaleString()+'</b><span>run zombies down to earn — a gun hunts the verge for you</span></div>';
+    for(const id in GUNS){ const gn=GUNS[id], own=gunsOwned.indexOf(id)>=0;
+      const cls=own?(gunEq===id?'gcard eq':'gcard own'):(cash>=gn.price?'gcard':'gcard cant');
+      h+='<button class="'+cls+'" data-g="'+id+'"><b>'+gn.nm+'</b><span>'+tags[id]+'</span><em>'+
+        (own?(gunEq===id?'EQUIPPED':'EQUIP'):'$'+gn.price)+'</em></button>'; }
+    box.innerHTML=h;
+    for(const b of box.querySelectorAll('.gcard')) b.onclick=e=>{ e.stopPropagation(); audioInit(); buyGun(b.dataset.g); };
+  }
 }
 
 function roadRange(g){ const R=g.road, c=g.car;
@@ -1558,6 +1726,7 @@ function updateHUD(){
   mel.classList.toggle('big', g.mult>=4);
   document.getElementById('speedEl').textContent=Math.round(g.speed*0.36);
   document.getElementById('bestEl').textContent='BEST '+best.toLocaleString();
+  document.getElementById('cashEl').textContent='$'+Math.round(cash).toLocaleString();
 }
 function showHUD(v){ document.getElementById('hud').style.display=v?'flex':'none'; }
 
@@ -1635,9 +1804,24 @@ document.getElementById('auxBtn').onclick=e=>{ e.stopPropagation(); auxPick(); }
 /* ============================ audio ============================ */
 let actx=null, skidNode=null, skidGain=null;
 function audioInit(){ if(actx) return; try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+function noiseBurst(dur,vol,f0,f1,q){ if(!actx) return; const t=actx.currentTime;
+  const n=Math.max(1,Math.floor(actx.sampleRate*dur)), buf=actx.createBuffer(1,n,actx.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
+  const src=actx.createBufferSource(); src.buffer=buf;
+  const f=actx.createBiquadFilter(); f.type='bandpass'; f.Q.value=q||0.9;
+  f.frequency.setValueAtTime(f0,t); f.frequency.exponentialRampToValueAtTime(Math.max(40,f1),t+dur);
+  const gg=actx.createGain(); gg.gain.setValueAtTime(vol,t); gg.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  src.connect(f); f.connect(gg); gg.connect(actx.destination); src.start(t); src.stop(t+dur); }
 function sfx(kind){ if(!actx) return; const t=actx.currentTime, o=actx.createOscillator(), gg=actx.createGain(); o.connect(gg); gg.connect(actx.destination);
   if(kind==='crash'){ o.type='sawtooth'; o.frequency.setValueAtTime(160,t); o.frequency.exponentialRampToValueAtTime(50,t+.4); gg.gain.setValueAtTime(.2,t); gg.gain.exponentialRampToValueAtTime(.0001,t+.5); o.start(t); o.stop(t+.5); }
-  else if(kind==='chain'){ o.type='triangle'; o.frequency.setValueAtTime(520,t); o.frequency.exponentialRampToValueAtTime(880,t+.12); gg.gain.setValueAtTime(.14,t); gg.gain.exponentialRampToValueAtTime(.0001,t+.2); o.start(t); o.stop(t+.2); } }
+  else if(kind==='chain'){ o.type='triangle'; o.frequency.setValueAtTime(520,t); o.frequency.exponentialRampToValueAtTime(880,t+.12); gg.gain.setValueAtTime(.14,t); gg.gain.exponentialRampToValueAtTime(.0001,t+.2); o.start(t); o.stop(t+.2); }
+  else if(kind==='thud'){ o.type='sine'; o.frequency.setValueAtTime(88,t); o.frequency.exponentialRampToValueAtTime(34,t+.16);   // the bumper: a dead low knock
+    gg.gain.setValueAtTime(.30,t); gg.gain.exponentialRampToValueAtTime(.0001,t+.20); o.start(t); o.stop(t+.20); }
+  else if(kind==='squelch'){ gg.gain.value=0; noiseBurst(0.20,0.22,340,110,0.7); }                                               // the wet part
+  else if(kind==='shot'){ gg.gain.value=0; noiseBurst(0.07,0.24,2600,700,0.5);                                                   // crack + a little body
+    const o2=actx.createOscillator(), g2=actx.createGain(); o2.type='square'; o2.frequency.setValueAtTime(190,t);
+    o2.frequency.exponentialRampToValueAtTime(90,t+.05); g2.gain.setValueAtTime(.10,t); g2.gain.exponentialRampToValueAtTime(.0001,t+.06);
+    o2.connect(g2); g2.connect(actx.destination); o2.start(t); o2.stop(t+.06); } }
 function skidSound(on,intensity){
   if(!actx) return;
   if(on && !skidNode){ skidNode=actx.createBufferSource(); const buf=actx.createBuffer(1,actx.sampleRate,actx.sampleRate); const d=buf.getChannelData(0); for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1; skidNode.buffer=buf; skidNode.loop=true; skidGain=actx.createGain(); skidGain.gain.value=0; const f=actx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1400; skidNode.connect(f); f.connect(skidGain); skidGain.connect(actx.destination); skidNode.start(); }
@@ -1786,6 +1970,7 @@ function startGame(){
 document.getElementById('startBtn').onclick=startGame;
 document.getElementById('againBtn').onclick=startGame;
 document.getElementById('startPanel').addEventListener('pointerdown',e=>{ if(e.target.id==='startPanel') startGame(); });
+renderArmory();   // the shop is open before the first drive
 
 /* ============================ test hooks ============================ */
 window.__drift={
@@ -1795,6 +1980,10 @@ window.__drift={
   clearInput(){ if(game){ delete game.forceSteer; delete game.forceGas; delete game.forceBrake; } },
   step(n){ for(let i=0;i<(n||1);i++){ if(state==='play'){ game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); cruiseAdjust(game); step(1/120); } } },
   cruise(){ toggleCruise(); },
+  horde:{ count:()=>game?game.zombies.length:0, cash:()=>cash, run:()=>game?game.cashRun:0,
+    gun:()=>gunEq, owned:()=>gunsOwned.slice(), give:n=>{ cash+=n; saveWallet(); renderArmory(); },
+    buy:buyGun, spawn:(fi,o)=>spawnZombie(game,fi,o),
+    wipe:()=>{ cash=0; gunsOwned=[]; gunEq=''; saveWallet(); renderArmory(); } },
   billboards:{ every:BB_EVERY, at:bbIndex, side:bbSide, off:bbOff,
     defaults:()=>DEFAULT_ADS.length, remote:()=>REMOTE_ADS.length, reload:loadRemoteAds },
   autopilot(){ const g=game; if(!g) return; const R=g.road, c=g.car;
