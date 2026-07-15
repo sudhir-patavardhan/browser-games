@@ -1183,6 +1183,32 @@ function drawNearScenery(g,ca,sa,cx,hy){
   const put=(wx,wy)=>{ const dx=wx-c.x, dy=wy-c.y, z=dx*ca+dy*sa; if(z<70) return null;
     const sc=FOCAL/z, x=cx+(-dx*sa+dy*ca)*sc;
     return (x<-140||x>W+140)? null : { x, y:hy+CAMH*sc, sc }; };
+  // one sun, reused by every verge highlight/shadow below
+  const sux=Math.cos(g.scenery.sunB), suy=Math.sin(g.scenery.sunB);
+  const hlx=Math.sign(suy*ca-sux*sa)||1;                                 // which screen side the sun is on
+  // roadside grass tussocks: the near verge is otherwise a flat green wash — real roadside grass is wild
+  // and clumped. A scatter of little blade-clumps down both verges, world-anchored through the road's own
+  // projection so they stream past underfoot (the ground-level motion the flat verge lacked), keyed to the
+  // road index so each clump holds its shape as it approaches and never shimmers, near stretch only so the
+  // far verge stays clean. Batched into two stroked passes — deep base blades, one warm sun-side blade — off
+  // the same one sun as everything else on the verge.
+  const tufts=[], tHi=Math.min(hi,c.idx+34);
+  for(let i=Math.max(lo,c.idx);i<tHi;i++){ const p=R.pts[i];
+    for(const sg of [1,-1]){ if(h01(i*131+sg*17+9)<0.5) continue;         // roughly every other index, per side
+      const m=2+(h01(i*57+sg*5)*3|0);                                     // a few clumps where they land
+      for(let j=0;j<m;j++){ const off=(ROAD_HALF+46+h01(i*13+j*7+sg)*44+Math.pow(h01(i*29+j*3+sg),4)*180)*sg;
+        const q=put(p.x-p.ty*off,p.y+p.tx*off);
+        if(q){ q.h=clamp((9+h01(i*17+j)*9)*q.sc,0.8,18); q.n=2+(h01(i*11+j)*2|0); q.seed=(i*7+j)|0; tufts.push(q); } } } }
+  if(tufts.length){ ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.strokeStyle='#3f8b3c'; ctx.lineWidth=1.5; ctx.beginPath();        // deep base blades
+    for(const q of tufts){ const h=q.h;
+      for(let b=0;b<q.n;b++){ const dx=(h01(q.seed*11+b)-0.5)*h*0.8, lean=(h01(q.seed*17+b)-0.5)*h*0.7;
+        ctx.moveTo(q.x+dx,q.y); ctx.quadraticCurveTo(q.x+dx+lean*0.4,q.y-h*0.55,q.x+dx+lean,q.y-h); } }
+    ctx.stroke();
+    ctx.strokeStyle='rgba(210,234,150,.5)'; ctx.lineWidth=1.1; ctx.beginPath();   // warm sun-side blade
+    for(const q of tufts){ const h=q.h, dx=(h01(q.seed*11)-0.5)*h*0.8;
+      ctx.moveTo(q.x+dx,q.y-h*0.14); ctx.quadraticCurveTo(q.x+dx+hlx*h*0.24,q.y-h*0.58,q.x+dx+hlx*h*0.52,q.y-h); }
+    ctx.stroke(); }
   const poles=[], trees=[];
   for(let i=lo;i<hi;i++){ const p=R.pts[i];
     if(i%16===0){ const off=BARRIER+180+h01(i*3)*70;                     // telephone poles down one shoulder
@@ -1194,7 +1220,6 @@ function drawNearScenery(g,ca,sa,cx,hy){
   // one sun lights the whole verge: everything drops a contact shadow away from it, cast on the grass and
   // batched into a single fill. sunB is a world bearing, so the shadow tip is the base slid along the ground
   // away from the sun and re-projected — it swings correctly as you turn, and shortens toward midday.
-  const sux=Math.cos(g.scenery.sunB), suy=Math.sin(g.scenery.sunB);
   ctx.fillStyle='rgba(34,60,30,.17)'; ctx.beginPath();
   for(const q of trees){ const wh=q.hh/q.sc, t=put(q.wx-sux*wh*0.55, q.wy-suy*wh*0.55);
     const tx=t?t.x:q.x, ty=t?t.y:q.y, dx=tx-q.x, dy=ty-q.y; q.sdx=-dx;   // -dx points back toward the sun (for the highlight)
@@ -1219,7 +1244,6 @@ function drawNearScenery(g,ca,sa,cx,hy){
   // World-anchored radial lines through the road's own projection, so each one recedes to the horizon and
   // sweeps past with travel — the mid-field's strongest depth cue. Blobs shrink with distance (aerial
   // perspective for free via sc), batched into two greens + one sun-side cap off the same one sun.
-  const hlx=Math.sign(suy*ca-sux*sa)||1;                                 // which screen side the sun is on
   const hedge=[];
   for(let blk=Math.floor(lo/30);blk*30<hi;blk++){
     const at=blk*30+Math.floor(h01(blk*151+5)*20); if(at<lo||at>=hi||at<R.start+2) continue;
