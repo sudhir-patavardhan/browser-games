@@ -979,12 +979,14 @@ function makeScenery(seed){
   for(const k of ['shed','shed','shed','shed','tank','tank','pylon','pylon','pylon','pylon','pylon','silo','silo','spire'])
     S.marks.push({ k, b:rng()*TAU, s:0.75+rng()*0.6 });
   // three cloud decks. the low deck is miles off (small, hazy, barely drifts); the high deck is overhead
-  // and close (big, bright, drifts fastest) — that spread of size + drift is what reads as parallax.
+  // and close (big, bright, drifts fastest) — that spread of size + drift is what reads as parallax. the two
+  // near decks carry a `shade` (a cool grey flank the sun can't reach); the far deck stays flat, too hazy and
+  // small to read a shadow side, and darkening it would only muddy the horizon.
   S.decks=[];
   const DK=[{n:20,h:[14,58],s:[9,17],dr:.004,core:'rgba(255,255,255,.5)',base:'rgba(214,229,228,.45)',halo:0},
-            {n:12,h:[66,165],s:[16,29],dr:.010,core:'rgba(255,255,255,.85)',base:'rgba(228,224,221,.7)',halo:.1},
-            {n:7, h:[180,330],s:[28,48],dr:.019,core:'rgba(255,255,255,.96)',base:'rgba(234,219,203,.85)',halo:.16}];
-  for(const D of DK){ const L={dr:D.dr,core:D.core,base:D.base,halo:D.halo,list:[]};
+            {n:12,h:[66,165],s:[16,29],dr:.010,core:'rgba(255,255,255,.85)',base:'rgba(228,224,221,.7)',halo:.1,shade:'rgba(171,187,205,.5)'},
+            {n:7, h:[180,330],s:[28,48],dr:.019,core:'rgba(255,255,255,.96)',base:'rgba(234,219,203,.85)',halo:.16,shade:'rgba(166,180,201,.58)'}];
+  for(const D of DK){ const L={dr:D.dr,core:D.core,base:D.base,halo:D.halo,shade:D.shade,list:[]};
     for(let i=0;i<D.n;i++){ const puffs=[], np=4+(rng()*4|0); let x=0;
       for(let j=0;j<np;j++){ const rx=0.42+rng()*0.58, ry=rx*(0.52+rng()*0.3);
         puffs.push({dx:x, dy:-ry+(rng()-0.5)*0.12, rx, ry}); x+=rx*1.02; }   // flat-bottomed, lumpy on top
@@ -1041,10 +1043,10 @@ function drawSky(g,a,cx,hy,horizon){
     rg.addColorStop(.34,'rgba(255,233,170,.18)'); rg.addColorStop(1,'rgba(255,230,165,0)');
     ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); }
   drawCirrus(S,a,cx,hy,t,dmax);                 // highest and furthest, so it goes down behind every cumulus
-  drawDeck(S.decks[0],a,cx,hy,t,dmax); drawDeck(S.decks[1],a,cx,hy,t,dmax);
+  drawDeck(S.decks[0],a,cx,hy,t,dmax,sd); drawDeck(S.decks[1],a,cx,hy,t,dmax,sd);
   drawPlane(S,a,cx,hy,t,dmax);                 // high up, so the near deck can pass in front of it
   drawBirds(S,a,cx,hy,t,false);
-  drawDeck(S.decks[2],a,cx,hy,t,dmax);
+  drawDeck(S.decks[2],a,cx,hy,t,dmax,sd);
 }
 // high cirrus: a comb of thin, tapering wisps laid out in screen space around a projected bearing, exactly
 // like the cumulus puffs (SEC scale, never 1/z) so it pans with yaw and can't shake. built up from many
@@ -1059,13 +1061,18 @@ function drawCirrus(S,a,cx,hy,t,dmax){ ctx.fillStyle='#fffefa';
 // one path for the whole cloud → the puffs union instead of double-blending where they overlap
 function puffs(c,x,y,sx,sy,pad){ ctx.beginPath();
   for(const p of c.p) ctx.ellipse(x+p.dx*sx, y+p.dy*sy, p.rx*sx+pad, p.ry*sy+pad, 0, 0, TAU); }
-function drawDeck(L,a,cx,hy,t,dmax){
+function drawDeck(L,a,cx,hy,t,dmax,sd){
   for(const c of L.list){ const d=angWrap(c.b+L.dr*t-a); if(Math.abs(d)>dmax) continue;
     const s=SEC(d), x=cx+FOCAL*Math.tan(d), y=hy-(c.h+Math.sin(t*0.06+c.ph)*3)*s;
     const sx=c.s*s*1.15, sy=c.s*s;         // a touch of wide-angle stretch — the full sec² would tear the edges apart
+    // one sun lights the whole dome: the lit mass leans into the sun and a cool flank the light can't reach
+    // peeks out on the far side, so a flat white sticker reads as a rounded cloud. dir tracks the sun's bearing,
+    // so it stays true as the cloud drifts and as you yaw — the same source that throws the verge shadows.
+    const dir=Math.sin(sd-d)>=0?1:-1;      // +1: sun off to screen-right of this cloud
     if(L.halo){ puffs(c,x,y,sx,sy,3.5*s); ctx.fillStyle='rgba(255,255,255,'+L.halo+')'; ctx.fill(); }
+    if(L.shade){ puffs(c,x-dir*0.13*sx,y+0.05*sy,sx,sy,0); ctx.fillStyle=L.shade; ctx.fill(); }   // shaded flank away from the sun
     puffs(c,x,y+0.11*sy,sx*0.97,sy,0); ctx.fillStyle=L.base; ctx.fill();   // sunlit underside peeking out below
-    puffs(c,x,y,sx,sy,0); ctx.fillStyle=L.core; ctx.fill(); }
+    puffs(c,x+dir*0.05*sx,y,sx,sy,0); ctx.fillStyle=L.core; ctx.fill(); }  // lit mass leaning into the sun
 }
 function drawBirds(S,a,cx,hy,t,near){
   const dmax=DMAX();
