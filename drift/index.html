@@ -591,7 +591,10 @@ function drawWindshield(g,spd){
 const FSANS='-apple-system,Segoe UI,Roboto,sans-serif';
 const FMONO='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
 const CYAN='#7fe2ff', DIM='rgba(178,205,228,.5)', LOW='#ffb454';
-function wheelGeom(){ const rad=Math.min(W*0.20,92); return { cx:W*0.5, cy:H-rad*0.70-4, rad }; }
+// the cabin used to eat 37% of a portrait screen and leave only ~21% of it as road between the horizon and
+// the dash — a shambler ducked under the cowl while still 120 px out. A slimmer wheel and cluster put the
+// dash top at ~0.72H: ~30% of the screen is road now, and you keep sight of a zombie down to ~76 px.
+function wheelGeom(){ const rad=Math.min(W*0.165,72); return { cx:W*0.5, cy:H-rad*0.62-4, rad }; }
 
 // a housing that leans away from you: narrower along its top edge than its foot
 function trap(x0,x1,y0,y1,lean){
@@ -665,8 +668,8 @@ function drawNav(g, proj, horizon){
 
 function drawDashboard(g){
   const { cx, cy, rad }=wheelGeom();
-  const wheelTop=cy-rad, ch=clamp(H*0.155,84,136);
-  const topY=wheelTop-ch-26, lip=topY+16;
+  const wheelTop=cy-rad, ch=clamp(H*0.125,74,106);
+  const topY=wheelTop-ch-16, lip=topY+13;
 
   // dash body — matte, unlit, and darker as it falls away from the glass
   const grd=ctx.createLinearGradient(0,topY,0,H);
@@ -1424,7 +1427,11 @@ const GUNS={ p9:{nm:'P9 SIDEARM', price:250, range:950, cd:1.0 },
 if(!GUNS[gunEq]||gunsOwned.indexOf(gunEq)<0) gunEq=gunsOwned[0]||'';
 function saveWallet(){ try{ localStorage.setItem('drift.cash',Math.round(cash));
   localStorage.setItem('drift.guns',gunsOwned.join(',')); localStorage.setItem('drift.gun',gunEq); }catch(e){} }
-const Z_MAX=9, Z_HIT=38, Z_H=60;                    // population cap, car-strike radius, body height (world px)
+const Z_MAX=9, Z_HIT=55, Z_H=92;                    // population cap, bumper-strike radius, body height (world px)
+// Z_H is sized against the CAMERA, not a tape measure: the eye sits CAMH=112 up, so a 92-px shambler's
+// head rides at ~82% of the horizon line at every distance — an adult seen from an SUV seat. The old 60
+// put heads at half eye-height and the whole horde read as toddlers. Z_HIT is a bumper radius: the car is
+// 24 wide, so 55 means catching one with a wing counts — a clean miss is still a miss.
 const Z_SHIRT=['#6b7a5a','#7a6a58','#5a6b7a','#7a5a6b'], Z_SKIN='#8fae62';
 const GORE=['#8f1e12','#6f1610','#a5261a','#586b3a'];
 function roadAt(R,fi){ const i=clamp(fi|0,0,R.pts.length-1), p=R.pts[i], q=R.pts[i+1]||p, f=fi-i;
@@ -1442,7 +1449,7 @@ function killZombie(g,z,by){
   const pay = by==='car' ? 20+Math.round(spd*0.02) : 40;                        // gun targets pay a marksman bonus
   cash+=pay; g.cashRun+=pay; cashPop(pay); saveWallet();                        // banked on the spot — a crash can't take it
 
-  g.splats.push({x:p.x,y:p.y,r:24+Math.random()*16,s:Math.random()*97|0,t:g.time});
+  g.splats.push({x:p.x,y:p.y,r:30+Math.random()*18,s:Math.random()*97|0,t:g.time});
   if(g.splats.length>36) g.splats.shift();
   const kx=by==='car'?g.car.vx*0.22:0, ky=by==='car'?g.car.vy*0.22:0;           // a car strike throws the gibs downroad
   for(let i=0;i<12;i++){ const a=Math.random()*TAU, v=40+Math.random()*130;
@@ -1470,7 +1477,8 @@ function updateZombies(g,dt){
     if(Math.abs(z.o)>BARRIER+250) z.dir=-Math.sign(z.o);                        // wander back toward the action
     const dz=(z.fi-c.idx)*SEG;
     if(Math.abs(z.fi-c.idx)<3){                                                  // close enough to check the bumper
-      const p=zPos(R,z), d2=(p.x-c.x)*(p.x-c.x)+(p.y-c.y)*(p.y-c.y);
+      const bx=c.x+Math.cos(c.angle)*CAR_L*0.45, by=c.y+Math.sin(c.angle)*CAR_L*0.45;   // the strike happens at the NOSE
+      const p=zPos(R,z), d2=(p.x-bx)*(p.x-bx)+(p.y-by)*(p.y-by);
       if(d2<Z_HIT*Z_HIT){ killZombie(g,z,'car'); continue; } }
     if(gun && Math.abs(z.o)>ROAD_HALF+10 && dz>60 && dz<gun.range && dz<tgtD){ tgt=z; tgtD=dz; }
   }
@@ -1527,12 +1535,12 @@ function drawZombiesTop(g){
   for(const z of g.zombies){ const p=zPos(R,z);
     const ang=Math.atan2(p.tx*z.dir,-p.ty*z.dir)+Math.PI/2;                     // it shambles along the road normal; sprite is drawn nose-up
     ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang);
-    ctx.fillStyle='rgba(20,40,20,.25)'; ctx.beginPath(); ctx.ellipse(2,3,10,8,0,0,TAU); ctx.fill();
-    ctx.strokeStyle=Z_SKIN; ctx.lineWidth=3.4; ctx.lineCap='round';             // arms reaching ahead of it
-    const st=Math.sin(z.ph*2)*3; ctx.beginPath();
-    ctx.moveTo(-5,-3); ctx.lineTo(-7,-12+st); ctx.moveTo(5,-3); ctx.lineTo(7,-12-st); ctx.stroke();
-    ctx.fillStyle=z.shirt; ctx.beginPath(); ctx.ellipse(0,0,8,6.2,0,0,TAU); ctx.fill();
-    ctx.fillStyle=Z_SKIN; ctx.beginPath(); ctx.arc(0,-4.5,4.2,0,TAU); ctx.fill();
+    ctx.fillStyle='rgba(20,40,20,.25)'; ctx.beginPath(); ctx.ellipse(2,3,12,9.5,0,0,TAU); ctx.fill();
+    ctx.strokeStyle=Z_SKIN; ctx.lineWidth=4; ctx.lineCap='round';               // arms reaching ahead of it
+    const st=Math.sin(z.ph*2)*3.5; ctx.beginPath();
+    ctx.moveTo(-6,-3.5); ctx.lineTo(-8.5,-14.5+st); ctx.moveTo(6,-3.5); ctx.lineTo(8.5,-14.5-st); ctx.stroke();
+    ctx.fillStyle=z.shirt; ctx.beginPath(); ctx.ellipse(0,0,9.5,7.4,0,0,TAU); ctx.fill();
+    ctx.fillStyle=Z_SKIN; ctx.beginPath(); ctx.arc(0,-5.4,5,0,TAU); ctx.fill();
     ctx.restore(); }
   for(const s of g.shots){ const c=g.car; ctx.strokeStyle='rgba(255,240,180,.85)'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(s.x,s.y); ctx.stroke(); }
