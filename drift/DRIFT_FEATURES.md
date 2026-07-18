@@ -3,6 +3,29 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## The horde gets ranks — runners and brutes (2026-07-18)
+
+**What.** The horde is no longer uniform. **Runners** (10%) sprint for your lane at ~3× shamble speed,
+red-shirted with a pumping gait, and pay **2× bounty** — they turn a quiet straight into a snap
+decision, and shaving one is the scariest shave there is. **Brutes** (5%) are a head taller and wider,
+soak **two gun rounds** (the first is a visible flinch, not a kill), pay **3×** — and running one down
+costs ~14% of your speed, so the plow-in is a real momentum decision when you're holding a chain. All
+rolled from the horde's seeded rng: a daily road raises the identical horde for everyone.
+
+**Why.** Variety in the moment-to-moment threat mix is what keeps an endless runner's minutes fresh —
+uniform hazards fade into scenery. The ranks also deepen two existing systems for free: the bounty
+ladder gives the wallet richer texture, and the brute finally gives the SM-2/LR-7 upgrades a target
+that justifies them.
+
+**Fix in the same pass.** The start card had outgrown small screens and `.panel` didn't scroll, leaving
+the Drive button unreachable on short viewports (a real tap at 500×560 timed out). The panel now
+scrolls with the card centred by auto margins; real taps verified at 500×900, 500×560, and 900×500.
+
+**How it's defended.** `./verify/run.sh horde` — the seeded mix (330/44/26 of 400), runner speed,
+the bounty ladder proven on choreographed hits at matched speed (walker $33 / runner $66 / brute $99),
+the brute's momentum tax (227→207 km/h vs a walker's 227→229), the two-round soak observed hp 2→1→0,
+and same-seed determinism.
+
 ## Weather — some days it rains (2026-07-18)
 
 **What.** ~1 day in 3 (34%), Today's Road is **wet**: the grip budget drops 12% and the brakes 15%, rain

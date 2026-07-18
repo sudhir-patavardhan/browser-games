@@ -49,11 +49,13 @@
   body.driver-view .rt{ display:none; }
 
   /* overlays */
-  .panel{ position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;
+  /* the card has outgrown small screens: the panel must SCROLL, or the Drive button ends up off-screen.
+     flex + margin:auto centres a short card and still lets a tall one scroll from its top edge. */
+  .panel{ position:fixed; inset:0; z-index:10; display:flex; overflow-y:auto;
     background:radial-gradient(circle at 50% 34%, rgba(255,240,190,.5), rgba(60,120,60,.55)); backdrop-filter:blur(4px); padding:20px; }
   .panel.hidden{ display:none; }
   .card{ background:rgba(255,255,255,.94); border-radius:24px; padding:30px 30px 26px; max-width:400px; width:100%;
-    text-align:center; box-shadow:0 24px 60px rgba(20,50,20,.35); }
+    margin:auto; text-align:center; box-shadow:0 24px 60px rgba(20,50,20,.35); }
   h1{ font-size:clamp(40px,13vw,68px); font-weight:900; letter-spacing:2px; line-height:.95;
     background:linear-gradient(180deg,#ff8a2f,#ff4d3d); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .tag{ font-size:13px; font-weight:700; letter-spacing:3px; color:#5a7a5a; margin:4px 0 18px; }
@@ -165,7 +167,9 @@
       Its <b>today’s best</b> resets at midnight, and it never touches your endless BEST.
       Your best run comes back as a <b>ghost</b> — race the phantom, watch the ±m gap.
       Some days it <b>rains</b>: grip and brakes are down, and the whole county drives the same weather<br>
-      <b>Zombies:</b> the road has a horde problem and the county pays a bounty — run them down for
+      <b>Zombies:</b> the horde has ranks — <b>runners</b> sprint for your lane and pay double,
+      <b>brutes</b> soak two rounds, pay triple, and cost you real speed if you plow one.
+      The road has a horde problem and the county pays a bounty — run them down for
       <b>wallet cash</b> (it persists). The wallet buys guns above; an equipped gun <b>auto-fires</b> at the
       shamblers out on the verge that the car can’t reach. Brushing <b>past</b> one at speed without
       touching it is a <b>CLOSE SHAVE</b> — it feeds your multiplier and keeps a drift chain alive
@@ -1582,17 +1586,30 @@ const GORE=['#8f1e12','#6f1610','#a5261a','#586b3a'];
 function roadAt(R,fi){ const i=clamp(fi|0,0,R.pts.length-1), p=R.pts[i], q=R.pts[i+1]||p, f=fi-i;
   return { x:lerp(p.x,q.x,f), y:lerp(p.y,q.y,f), tx:lerp(p.tx,q.tx,f), ty:lerp(p.ty,q.ty,f) }; }
 function zPos(R,z){ const w=roadAt(R,z.fi); return { x:w.x-w.ty*z.o, y:w.y+w.tx*z.o, tx:w.tx, ty:w.ty }; }
+/* the horde has RANKS now. A walker is scenery until you're close; a RUNNER is coming for your lane and
+   pays double for the nerve; a BRUTE is a head taller, soaks two rounds, pays triple — and running one
+   down costs you real momentum, which is a decision when you're holding a chain. All rolled from the
+   horde's own seeded rng, so a daily road replays the identical horde. */
 function spawnZombie(g,fi,o){
   const r=g.zrng;
+  const roll=r();
+  const kind = roll<0.05 ? 'brute' : roll<0.15 ? 'runner' : 'walker';
   if(o===undefined) o = r()<0.62 ? (r()*2-1)*ROAD_HALF*0.72                     // on the tarmac, in a lane
                                  : (r()<0.5?1:-1)*(BARRIER+60+r()*220);         // or out past the barrier
-  g.zombies.push({ fi, o, dir:(o>0?-1:1)*(r()<0.85?1:-1),                       // mostly shambling toward the road
-    sp:24+r()*30, ph:r()*TAU, shirt:Z_SHIRT[(r()*Z_SHIRT.length)|0], hp:1 });
+  const z={ fi, o, dir:(o>0?-1:1)*(r()<0.85?1:-1),                              // mostly shambling toward the road
+    sp:24+r()*30, ph:r()*TAU, shirt:Z_SHIRT[(r()*Z_SHIRT.length)|0], hp:1,
+    kind, sc:1, r:Z_HIT };
+  if(kind==='runner'){ z.sp=(z.sp)*3.1; z.dir=(o>0?-1:1); z.sc=0.94; z.shirt='#a03a2a'; }   // fast, and ALWAYS inbound
+  else if(kind==='brute'){ z.sp*=0.6; z.hp=2; z.sc=1.35; z.r=68; z.shirt='#3a4048'; }
+  g.zombies.push(z);
 }
 function killZombie(g,z,by){
   const R=g.road, p=zPos(R,z), spd=g.speed;
-  const pay = by==='car' ? 20+Math.round(spd*0.02) : 40;                        // gun targets pay a marksman bonus
+  const rank = z.kind==='brute' ? 3 : z.kind==='runner' ? 2 : 1;                // the county pays by the head
+  const pay = (by==='car' ? 20+Math.round(spd*0.02) : 40)*rank;                 // gun targets pay a marksman bonus
   cash+=pay; g.cashRun+=pay; cashPop(pay); saveWallet();                        // banked on the spot — a crash can't take it
+  if(by==='car' && z.kind==='brute'){ g.car.vx*=0.86; g.car.vy*=0.86;           // a brute has MASS: the hit is paid in momentum
+    g.shake=Math.max(g.shake,0.8); }
 
   g.splats.push({x:p.x,y:p.y,r:30+Math.random()*18,s:Math.random()*97|0,t:g.time});
   if(g.splats.length>36) g.splats.shift();
@@ -1617,14 +1634,14 @@ function updateZombies(g,dt){
   let tgt=null, tgtD=1e9;
   for(let i=g.zombies.length-1;i>=0;i--){ const z=g.zombies[i];
     if(z.hp<=0 || z.fi<c.idx-4){ g.zombies.splice(i,1); continue; }              // reaped, or left behind
-    z.ph+=dt*3.4;
+    z.ph+=dt*(z.kind==='runner'?6.2:z.kind==='brute'?2.4:3.4);                  // a runner's legs actually pump
     z.o+=z.dir*z.sp*dt;                                                          // the shamble is ACROSS the road
     if(Math.abs(z.o)>BARRIER+250) z.dir=-Math.sign(z.o);                        // wander back toward the action
     const dz=(z.fi-c.idx)*SEG;
     if(Math.abs(z.fi-c.idx)<3){                                                  // close enough to check the bumper
       const bx=c.x+Math.cos(c.angle)*CAR_L*0.45, by=c.y+Math.sin(c.angle)*CAR_L*0.45;   // the strike happens at the NOSE
       const p=zPos(R,z), d2=(p.x-bx)*(p.x-bx)+(p.y-by)*(p.y-by);
-      if(d2<Z_HIT*Z_HIT){ killZombie(g,z,'car'); continue; }
+      if(d2<z.r*z.r){ killZombie(g,z,'car'); continue; }                        // a brute's bulk is a bigger target
       const d=Math.sqrt(d2);
       if(d<(z.minD||1e9)){ z.minD=d; z.minSpd=g.speed; } }                      // the closest the nose came, and how fast it was going THEN
     // the near-miss, judged once it's actually behind you: a hit is a bounty, a SHAVE is nerve —
@@ -1634,7 +1651,12 @@ function updateZombies(g,dt){
     if(gun && Math.abs(z.o)>ROAD_HALF+10 && dz>60 && dz<gun.range && dz<tgtD){ tgt=z; tgtD=dz; }
   }
   if(gun && tgt && g.gunCd<=0){ g.gunCd=gun.cd; const p=zPos(R,tgt);             // auto-fire at the verge
-    g.shots.push({x:p.x,y:p.y,t:g.time}); sfx('shot'); killZombie(g,tgt,'gun'); }
+    g.shots.push({x:p.x,y:p.y,t:g.time}); sfx('shot');
+    if(--tgt.hp<=0) killZombie(g,tgt,'gun');
+    else { sfx('squelch');                                                       // a brute SOAKS the first round
+      for(let k=0;k<4;k++){ const a=Math.random()*TAU, v=30+Math.random()*70;
+        g.gibs.push({x:p.x,y:p.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:2+Math.random()*2.5,
+          life:1,max:0.35+Math.random()*0.25,col:GORE[(Math.random()*GORE.length)|0]}); } } }
   for(let i=g.splats.length-1;i>=0;i--) if(g.time-g.splats[i].t>10) g.splats.splice(i,1);
   for(let i=g.gibs.length-1;i>=0;i--){ const s=g.gibs[i]; s.x+=s.vx*dt; s.y+=s.vy*dt;
     s.vx*=0.9; s.vy*=0.9; s.life-=dt/s.max; if(s.life<=0) g.gibs.splice(i,1); }
@@ -1645,7 +1667,7 @@ function updateZombies(g,dt){
 }
 // one shambler, front-on through the windshield: lurching gait, arms out, head lolled — comic, not clinical
 function drawZombieDriver(P,z){
-  const h=clamp(Z_H*P.sc,3,250), x=P.x, y=P.y;
+  const h=clamp(Z_H*(z.sc||1)*P.sc,3,320), x=P.x, y=P.y;
   ctx.fillStyle='rgba(28,42,24,.22)'; ctx.beginPath(); ctx.ellipse(x,y,h*0.22,Math.max(1,h*0.06),0,0,TAU); ctx.fill();
   ctx.save(); ctx.translate(x,y); ctx.rotate(Math.sin(z.ph)*0.11);
   const st=Math.sin(z.ph*2)*h*0.055, lw=Math.max(1,h*0.075);
@@ -1685,7 +1707,7 @@ function drawZombiesTop(g){
     ctx.ellipse(s.x+s.r*0.8,s.y+s.r*0.3,s.r*0.35,s.r*0.25,0,0,TAU); ctx.fill(); }
   for(const z of g.zombies){ const p=zPos(R,z);
     const ang=Math.atan2(p.tx*z.dir,-p.ty*z.dir)+Math.PI/2;                     // it shambles along the road normal; sprite is drawn nose-up
-    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang);
+    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang); ctx.scale(z.sc||1,z.sc||1);
     ctx.fillStyle='rgba(20,40,20,.25)'; ctx.beginPath(); ctx.ellipse(2,3,12,9.5,0,0,TAU); ctx.fill();
     ctx.strokeStyle=Z_SKIN; ctx.lineWidth=4; ctx.lineCap='round';               // arms reaching ahead of it
     const st=Math.sin(z.ph*2)*3.5; ctx.beginPath();
