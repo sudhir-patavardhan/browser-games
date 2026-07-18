@@ -3,6 +3,25 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## The Ghost — race today's best line (2026-07-18)
+
+**What.** On Today's Road, your best run is recorded (~7 Hz: time, position, heading, distance) and
+replayed on every later daily start as a **translucent cyan phantom** driving its exact line — visible
+in both views, drawn as a hologram so it never reads as traffic. The HUD shows the live gap:
+`GHOST +12 m` (ahead, green) / `−34 m` (behind, red), and `FINISHED` once the phantom's run ends. Only
+a run that takes today's best keeps its ghost; the line voids at midnight with the daily ledger.
+Endless runs record nothing.
+
+**Why.** A daily best as a number is bookkeeping; a car you can *see* is a race. Ghost racing is the
+proven mechanic for making a fixed course compulsive (every kart and time-trial game since the 90s) —
+it turns "one more go" into "I was 40 m up at the second bend and threw it away". It's the payoff the
+Daily Road was built for, at zero cost to the endless mode.
+
+**How it's defended.** `./verify/run.sh ghost` — endless runs lay down no line, a best daily run stores
+one under today's key, the next daily start loads it, `ghostAt()` reproduces the recorded samples to
+<2 px, a coasting driver reads BEHIND on the HUD meter, a worse run can't overwrite the line, and a
+stale day's ghost is ignored.
+
 ## Today's Road — one seeded road per day (2026-07-18)
 
 **What.** A second button on the start card: **⚑ Today's Road**. The seed is a pure hash of the calendar

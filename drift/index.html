@@ -100,6 +100,9 @@
     font-weight:900; font-size:clamp(15px,4vw,22px); color:#ffd24a; opacity:0; letter-spacing:2px;
     text-shadow:0 2px 0 rgba(180,60,20,.8), 0 4px 12px rgba(0,0,0,.3); }
   .buzzpop.show{ animation:pop .8s ease forwards; }
+  /* the race against the phantom, one signed number */
+  .ghostrow{ margin-top:5px; font-size:11px; font-weight:900; letter-spacing:.6px; color:#2996a8; }
+  .ghostrow b{ color:#1fae4a; } .ghostrow b.beh{ color:#e5484d; }
 </style>
 </head>
 <body>
@@ -111,6 +114,7 @@
     <div class="mult" id="multEl">x1.0</div>
     <div class="cash" id="cashEl">$0</div>
     <div class="ctrbox" id="ctrEl"></div>
+    <div class="ghostrow" id="ghostEl" style="display:none"></div>
   </div>
   <div class="pill rt">
     <div class="speed"><span id="speedEl">0</span> <small>km/h</small></div>
@@ -148,7 +152,8 @@
       <b>Contracts:</b> the county posts <b>three jobs</b> every run — top-left, under your wallet.
       Cross one mid-run and the cash lands on the spot<br>
       <b>Today’s Road:</b> one road per day — same corners, same horde, same jobs for everyone.
-      Its <b>today’s best</b> resets at midnight, and it never touches your endless BEST<br>
+      Its <b>today’s best</b> resets at midnight, and it never touches your endless BEST.
+      Your best run comes back as a <b>ghost</b> — race the phantom, watch the ±m gap<br>
       <b>Zombies:</b> the road has a horde problem and the county pays a bounty — run them down for
       <b>wallet cash</b> (it persists). The wallet buys guns above; an equipped gun <b>auto-fires</b> at the
       shamblers out on the verge that the car can’t reach. Brushing <b>past</b> one at speed without
@@ -246,6 +251,25 @@ function daySeed(k){ let h=5381; for(let i=0;i<k.length;i++) h=(h*33 ^ k.charCod
 function loadDailyBest(){ let s=''; try{ s=localStorage.getItem('drift.dbest')||''; }catch(e){}
   const i=s.indexOf('|'); if(i<0 || s.slice(0,i)!==dayKey()) return 0; return +s.slice(i+1)||0; }
 function saveDailyBest(v){ try{ localStorage.setItem('drift.dbest', dayKey()+'|'+Math.round(v)); }catch(e){} }
+/* the GHOST: the daily road is the same all day, so today's best run can be REPLAYED — a translucent
+   phantom driving its recorded line while you drive yours, with a live ahead/behind meter. Beating a
+   number is bookkeeping; beating a car you can see is a race. Recorded at ~7Hz (time, x, y, angle,
+   dist), saved only when a daily run takes today's best, voided at midnight along with the ledger. */
+const REC_DT=0.15, REC_MAX=8000;   // ~20 min of line; past that the run is its own reward
+function saveGhost(rec,score){ try{
+  const flat=rec.map(s=>[+s[0].toFixed(2),Math.round(s[1]),Math.round(s[2]),+s[3].toFixed(3),Math.round(s[4])]);
+  localStorage.setItem('drift.dghost', dayKey()+'|'+Math.round(score)+'|'+JSON.stringify(flat)); }catch(e){} }
+function loadGhost(){ let s=''; try{ s=localStorage.getItem('drift.dghost')||''; }catch(e){}
+  const a=s.indexOf('|'); if(a<0 || s.slice(0,a)!==dayKey()) return null;
+  const b=s.indexOf('|',a+1); if(b<0) return null;
+  try{ const pts=JSON.parse(s.slice(b+1));
+    return (Array.isArray(pts)&&pts.length>1) ? { pts, score:+s.slice(a+1,b)||0 } : null; }catch(e){ return null; } }
+function ghostAt(g){ const gh=g.ghost; if(!gh) return null;
+  const P=gh.pts, t=g.time;
+  if(t>=P[P.length-1][0]) { const e=P[P.length-1]; return { x:e[1],y:e[2],a:e[3],dist:e[4],ended:true }; }
+  while(g.ghostIdx<P.length-2 && P[g.ghostIdx+1][0]<=t) g.ghostIdx++;
+  const A=P[g.ghostIdx], B=P[g.ghostIdx+1], f=clamp((t-A[0])/Math.max(B[0]-A[0],1e-6),0,1);
+  return { x:lerp(A[1],B[1],f), y:lerp(A[2],B[2],f), a:A[3]+angWrap(B[3]-A[3])*f, dist:lerp(A[4],B[4],f), ended:false }; }
 
 /* ============================ new game ============================ */
 function newGame(forceSeed){
@@ -266,6 +290,7 @@ function newGame(forceSeed){
     zombies:[], splats:[], gibs:[], flecks:[], shots:[],   // the horde, and what's left of it
     zrng:mulberry32(seed^0x2b1e), zNextIdx:0, gunCd:0, cashRun:0, goreT:0,
     vmax:0, zCarKills:0, gunKills:0, buzzes:0, contracts:makeContracts(seed), mod:carMods(),
+    rec:[], recT:0, ghost:dailyMode?loadGhost():null, ghostIdx:0,   // today's line, and the one to beat
     shake:0, time:0
   };
 }
@@ -425,6 +450,12 @@ function step(dt){
   for(let i=g.smoke.length-1;i>=0;i--){ const s=g.smoke[i]; s.x+=s.vx*dt; s.y+=s.vy*dt; s.vx*=0.92; s.vy*=0.92;
     s.r+=26*dt; s.life-=dt/s.max; if(s.life<=0) g.smoke.splice(i,1); }
 
+  // the daily line, taken down as it's driven — only a best run ever keeps it
+  if(dailyMode && g.rec.length<REC_MAX){
+    g.recT-=dt;
+    if(g.recT<=0){ g.rec.push([g.time,c.x,c.y,c.angle,g.dist]); g.recT=REC_DT; }
+  }
+
   g.nav=navAhead(g);          // one read of the road ahead, shared by the AR overlay and the cluster map
   if(g.shake>0) g.shake-=dt*4;
 }
@@ -434,7 +465,7 @@ function gameOver(reason){
   const sc=Math.round(game.score);
   // two ledgers: the endless best, and today's — a daily run only ever settles against today's
   let isBest;
-  if(dailyMode){ isBest=sc>loadDailyBest(); if(isBest) saveDailyBest(sc); dbCache=loadDailyBest(); }
+  if(dailyMode){ isBest=sc>loadDailyBest(); if(isBest){ saveDailyBest(sc); saveGhost(game.rec,sc); } dbCache=loadDailyBest(); }
   else { isBest=sc>best; if(isBest){ best=sc; try{ localStorage.setItem('drift.best',best); }catch(e){} } }
   document.getElementById('overReason').textContent=(dailyMode?'TODAY’S ROAD · ':'')+reason;
   document.getElementById('finalScore').textContent=sc.toLocaleString();
@@ -483,7 +514,7 @@ function render(){
     const y=t.y+Math.round((g.cam.y-t.y)/4000)*4000;
     ctx.beginPath(); ctx.arc(x,y,t.r,0,TAU); ctx.fill();
   }
-  drawRoad(g); drawBillboardsTop(g); drawSkid(g); drawZombiesTop(g); drawCar(g); drawSmoke(g); drawGibs(g);
+  drawRoad(g); drawBillboardsTop(g); drawSkid(g); drawZombiesTop(g); drawGhostTop(g); drawCar(g); drawSmoke(g); drawGibs(g);
   ctx.restore();
   updateHUD();
 }
@@ -592,6 +623,7 @@ function drawWindshield(g,spd){
   }
   // the horde — splats bake into the tarmac, shamblers stand on it, both under the roadside barriers
   drawZombiesDriver(g, proj);
+  drawGhostDriver(g, proj);   // the phantom runs the same tarmac, under the same barriers
   // barriers (red/white) — clamped so the nearest posts don't blow up or jitter
   for(const sgn of [1,-1]){ for(let i=lo;i<hi-1;i++){ const p=R.pts[i]; const zs=zside(p.x-p.ty*BARRIER*sgn, p.y+p.tx*BARRIER*sgn);
     if(zs.z<NEARZ) continue; const b=toScreen(zs.z,zs.side); const w=clamp(6*b.sc,2,16), h=clamp(14*b.sc,4,40);
@@ -1752,6 +1784,28 @@ function drawSmoke(g){
     ctx.fillStyle='rgba(255,'+Math.round(190+40*a)+','+Math.round(90+70*(1-a))+','+(a*0.5)+')';
     ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,TAU); ctx.fill(); }
 }
+/* the phantom: today's best line, driven again. Drawn as a hologram, not a car — it must never be
+   mistaken for traffic, and it must never obscure the road you're actually reading. */
+function drawGhostTop(g){
+  const gp=ghostAt(g); if(!gp||gp.ended) return;
+  ctx.save(); ctx.translate(gp.x,gp.y); ctx.rotate(gp.a+Math.PI/2); ctx.globalAlpha=0.38;
+  ctx.fillStyle='#59d6e8';
+  rr(-CAR_W/2,-CAR_L/2,CAR_W,CAR_L,7); ctx.fill();
+  ctx.fillStyle='#bdf2fa'; rr(-CAR_W*0.32,-CAR_L*0.16,CAR_W*0.64,CAR_L*0.36,4); ctx.fill();   // glasshouse
+  ctx.globalAlpha=1; ctx.restore();
+}
+function drawGhostDriver(g,proj){
+  const gp=ghostAt(g); if(!gp||gp.ended) return;
+  const P=proj(gp.x,gp.y); if(!P) return;
+  const w=clamp(CAR_W*2.1*P.sc,3,190), h=w*0.72;
+  ctx.save(); ctx.globalAlpha=clamp(0.5*Math.min(P.sc*3,1),0.12,0.5);
+  ctx.fillStyle='rgba(40,150,170,.5)';                                            // a soft holographic shell
+  ctx.beginPath(); ctx.ellipse(P.x,P.y,w*0.62,Math.max(1,h*0.14),0,0,TAU); ctx.fill();   // its shadow keeps it grounded
+  ctx.fillStyle='#59d6e8';
+  rr(P.x-w/2,P.y-h,w,h*0.97,w*0.16); ctx.fill();
+  ctx.fillStyle='#bdf2fa'; rr(P.x-w*0.34,P.y-h*0.92,w*0.68,h*0.34,w*0.10); ctx.fill();    // rear glass
+  ctx.globalAlpha=1; ctx.restore();
+}
 function drawCar(g){
   const c=g.car;
   ctx.save(); ctx.translate(c.x,c.y); ctx.rotate(c.angle+Math.PI/2);
@@ -1866,6 +1920,12 @@ function updateHUD(){
   document.getElementById('cashEl').textContent='$'+Math.round(cash).toLocaleString();
   const rows=contractRows(g,false);
   if(rows!==g._ctrHtml){ document.getElementById('ctrEl').innerHTML=rows; g._ctrHtml=rows; }
+  const ge=document.getElementById('ghostEl');
+  if(g.ghost){
+    const gp=ghostAt(g), d=Math.round((g.dist-gp.dist)*0.1);   // 1px ~ 0.1m, same scale as the trip meter
+    const h='GHOST '+(gp.ended?'FINISHED · ':'')+(d>=0?'<b>+'+d+' m</b>':'<b class="beh">−'+Math.abs(d)+' m</b>');
+    if(h!==g._ghHtml){ ge.style.display='block'; ge.innerHTML=h; g._ghHtml=h; }
+  } else if(ge.style.display!=='none') ge.style.display='none';
 }
 function showHUD(v){ document.getElementById('hud').style.display=v?'flex':'none'; }
 
@@ -2121,6 +2181,8 @@ window.__drift={
   start(){ startGame(false); },
   startDaily(){ startGame(true); },
   daily:{ key:dayKey, seed:daySeed, best:loadDailyBest },
+  ghostAt(){ return game?ghostAt(game):null; },
+  hud(){ updateHUD(); },   // probes step the sim synchronously, so no frame paints the HUD for them
   setInput(steer,gas,brake){ if(game){ game.forceSteer=steer; game.forceGas=gas; game.forceBrake=brake; } },
   clearInput(){ if(game){ delete game.forceSteer; delete game.forceGas; delete game.forceBrake; } },
   step(n){ for(let i=0;i<(n||1);i++){ if(state==='play'){ game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); cruiseAdjust(game); step(1/120); } } },

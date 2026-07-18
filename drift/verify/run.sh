@@ -7,6 +7,7 @@
 #   ./drift/verify/run.sh garage     # wallet-bought car hardware, proven A/B on pinned roads
 #   ./drift/verify/run.sh nearmiss   # the CLOSE SHAVE: choreographed passes, paid in heat only
 #   ./drift/verify/run.sh daily      # today's road: one seed per day, its own best, resets at midnight
+#   ./drift/verify/run.sh ghost      # the daily ghost: recorded on a best run, raced faithfully after
 #   ./drift/verify/run.sh plane      # scenery build + airliner reachability
 #   ./drift/verify/run.sh music      # the playlist actually loads in a browser
 #
@@ -52,9 +53,10 @@ case "$PROBE" in
   garage) JS="$HERE/garage.js"; DIV="RESULTS" ;;
   nearmiss) JS="$HERE/nearmiss.js"; DIV="RESULTS" ;;
   daily) JS="$HERE/daily.js"; DIV="RESULTS" ;;
+  ghost) JS="$HERE/ghost.js"; DIV="RESULTS" ;;
   plane)  JS="$HERE/plane.js";  DIV="PLANE" ;;
   music)  JS="$HERE/music.js";  DIV="RESULTS" ;;
-  *) echo "unknown probe '$PROBE' (want: assert | controls | contracts | garage | nearmiss | daily | plane | music)" >&2; exit 2 ;;
+  *) echo "unknown probe '$PROBE' (want: assert | controls | contracts | garage | nearmiss | daily | ghost | plane | music)" >&2; exit 2 ;;
 esac
 
 # splice the probe in just before </body>, after the game's own script has defined window.__drift
