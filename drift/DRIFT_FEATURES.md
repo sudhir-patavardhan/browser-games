@@ -3,6 +3,24 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## Weather — some days it rains (2026-07-18)
+
+**What.** ~1 day in 3 (34%), Today's Road is **wet**: the grip budget drops 12% and the brakes 15%, rain
+streaks the windshield (raked flatter the faster you drive), a cool veil mutes the palette, the tarmac
+darkens in both views, and the HUD flies `🌧 WET ROAD · GRIP −12%`. The forecast is a pure function of
+the day's seed — everyone drives the same sky, and the ghost you race recorded its line in the same
+rain. **Endless mode is always dry**, so the canonical car stays exactly as the physics suite pins it.
+
+**Why.** A daily mode lives on variety: if every day feels the same, "come back tomorrow" decays. Rain
+days re-price every corner the player thought they knew — same road knowledge, new grip budget — which
+is the cheapest honest way to make a known-quantity mode feel fresh. Weather gated to the seeded daily
+keeps the competitive frame fair (one sky per day) and the physics canon intact.
+
+**How it's defended.** `./verify/run.sh weather` — the forecast is pure and rains 97/300 seeds, endless
+starts are always dry, the daily road matches the day's forecast, and the physics is proven A/B with
+identical forced inputs on pinned roads where the only variable flipped is the sky: the same corner
+breaks away sooner (slip 0.602→0.628) and the same 1.5 s stop leaves more speed on (81→88 km/h).
+
 ## Run Report + chain ratings (2026-07-18)
 
 **What.** Two doses of arcade juice. Banked chains now have **names** — CLEAN ≥1,000, SLICK ≥2,500,

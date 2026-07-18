@@ -124,6 +124,7 @@
     <div class="cash" id="cashEl">$0</div>
     <div class="ctrbox" id="ctrEl"></div>
     <div class="ghostrow" id="ghostEl" style="display:none"></div>
+    <div class="ghostrow" id="wetEl" style="display:none; color:#5878a0">🌧 WET ROAD · GRIP −12%</div>
   </div>
   <div class="pill rt">
     <div class="speed"><span id="speedEl">0</span> <small>km/h</small></div>
@@ -162,7 +163,8 @@
       Cross one mid-run and the cash lands on the spot<br>
       <b>Today’s Road:</b> one road per day — same corners, same horde, same jobs for everyone.
       Its <b>today’s best</b> resets at midnight, and it never touches your endless BEST.
-      Your best run comes back as a <b>ghost</b> — race the phantom, watch the ±m gap<br>
+      Your best run comes back as a <b>ghost</b> — race the phantom, watch the ±m gap.
+      Some days it <b>rains</b>: grip and brakes are down, and the whole county drives the same weather<br>
       <b>Zombies:</b> the road has a horde problem and the county pays a bounty — run them down for
       <b>wallet cash</b> (it persists). The wallet buys guns above; an equipped gun <b>auto-fires</b> at the
       shamblers out on the verge that the car can’t reach. Brushing <b>past</b> one at speed without
@@ -258,6 +260,11 @@ let dailyMode=false, dbCache=0;   // today's best, cached so the HUD isn't hitti
 function dayKey(){ const d=new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function daySeed(k){ let h=5381; for(let i=0;i<k.length;i++) h=(h*33 ^ k.charCodeAt(i))|0; return h>>>0; }
+/* WEATHER: some days it rains. Drawn from the day's seed — pure, so everyone gets the same sky and the
+   ghost you race recorded its line in the same rain. Wet tarmac cuts the grip budget 12% and the brakes
+   15%, which moves every threshold the drift is balanced on: the same corner asks for more respect.
+   Endless mode is always dry — the canonical car stays exactly as the physics suite pins it. */
+function seedWet(seed){ return mulberry32(seed^0x7e47)()<0.34; }
 function loadDailyBest(){ let s=''; try{ s=localStorage.getItem('drift.dbest')||''; }catch(e){}
   const i=s.indexOf('|'); if(i<0 || s.slice(0,i)!==dayKey()) return 0; return +s.slice(i+1)||0; }
 function saveDailyBest(v){ try{ localStorage.setItem('drift.dbest', dayKey()+'|'+Math.round(v)); }catch(e){} }
@@ -301,6 +308,7 @@ function newGame(forceSeed){
     zrng:mulberry32(seed^0x2b1e), zNextIdx:0, gunCd:0, cashRun:0, goreT:0,
     vmax:0, zCarKills:0, gunKills:0, buzzes:0, contracts:makeContracts(seed), mod:carMods(),
     rec:[], recT:0, ghost:dailyMode?loadGhost():null, ghostIdx:0,   // today's line, and the one to beat
+    wet: dailyMode && seedWet(seed),                                // today's sky came with the road
     shake:0, time:0
   };
 }
@@ -370,7 +378,7 @@ function step(dt){
 
   // weight transfer: on the brakes the nose goes down and the rear goes light. lifting does a milder version of it.
   const wf=clamp(brk+(thr>0?0:LIFT),0,1);
-  let lat=lerp(LAT0,LAT1,diff)*g.mod.lat;                 // track tyres raise the whole grip budget
+  let lat=lerp(LAT0,LAT1,diff)*g.mod.lat*(g.wet?0.88:1);  // track tyres raise the whole grip budget; rain taxes it
   lat *= 1-(1-BRAKE_GRIP)*wf;                           // trail-braking is what unloads the rear — this is the drift trigger
   lat *= 1-(1-GAS_GRIP)*thr;                            // and power lights the rears up
   if(g.onGrass) lat*=0.45;
@@ -395,7 +403,7 @@ function step(dt){
   // speed: your right foot, drag, grass drag, and the scrub of a slide (power keeps it lit, braking kills it)
   let mag = spd;
   mag += thr*ACCEL*clamp(1-mag/VTOP,0,1)*dt;
-  mag -= (brk*BRAKEF + (thr>0?0:COAST))*dt;
+  mag -= (brk*BRAKEF*(g.wet?0.85:1) + (thr>0?0:COAST))*dt;   // wet pads bite later too
   mag -= mag*DRAG*dt;
   if(g.onGrass) mag -= 300*dt;
   mag -= mag*Math.abs(slip)*(brk>0?0.45:(thr>0?0.30:0.55))*dt;
@@ -610,7 +618,9 @@ function drawWindshield(g,spd){
     for(let i=1;i<L.length;i++) ctx.lineTo(L[i].x,L[i].y);
     for(let i=Rt.length-1;i>=0;i--) ctx.lineTo(Rt[i].x,Rt[i].y);
     ctx.closePath();
-    const road=ctx.createLinearGradient(0,horizon,0,H); road.addColorStop(0,'#c1c6ce'); road.addColorStop(1,'#a1a7b3');
+    const road=ctx.createLinearGradient(0,horizon,0,H);
+    if(g.wet){ road.addColorStop(0,'#aeb5c1'); road.addColorStop(1,'#878e9c'); }   // rain-dark, sheened
+    else     { road.addColorStop(0,'#c1c6ce'); road.addColorStop(1,'#a1a7b3'); }
     ctx.fillStyle=road; ctx.fill();
     // wheel-polished tracks — twin bands per lane where a million tyres have burnished the tarmac darker.
     // strongest under the camera, hazing out with distance like the asphalt itself, so depth reads true.
@@ -685,6 +695,7 @@ function drawWindshield(g,spd){
       ctx.beginPath(); ctx.moveTo(xx,yy); ctx.lineTo(xx,yy+40); ctx.stroke(); } }
 
   if(g.nav) drawNav(g, proj, horizon);
+  if(g.wet) drawRain(g, horizon);   // the weather, on the glass — over the world, under the ichor
   drawFlecks(g);      // ichor on the glass — in front of the world, behind the dash
   drawDashboard(g);
   drawWheel(g);
@@ -1692,6 +1703,19 @@ function drawGibs(g,proj){                                                      
     ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); }
   ctx.globalAlpha=1;
 }
+/* the rain: streaks raked by your own speed — near-vertical at a crawl, driven toward you flat-out —
+   plus a cool veil that mutes the sunlit palette. Random per frame on purpose: rain doesn't replay. */
+function drawRain(g,horizon){
+  const n=64, lean=clamp(g.speed/790,0,1)*10;
+  ctx.strokeStyle='rgba(190,205,220,.34)'; ctx.lineWidth=1.1; ctx.lineCap='round';
+  ctx.beginPath();
+  for(let i=0;i<n;i++){ const x=Math.random()*W, y=Math.random()*H*0.86, l=7+Math.random()*13;
+    ctx.moveTo(x,y); ctx.lineTo(x-l*0.22-lean, y+l); }
+  ctx.stroke();
+  const veil=ctx.createLinearGradient(0,0,0,H);
+  veil.addColorStop(0,'rgba(88,104,124,.16)'); veil.addColorStop(1,'rgba(88,104,124,.07)');
+  ctx.fillStyle=veil; ctx.fillRect(0,0,W,H);
+}
 function drawFlecks(g){                                                          // ichor on the glass, sliding down
   for(const f of g.flecks){ const al=clamp(f.life,0,1);
     ctx.fillStyle='rgba(110,22,16,'+(al*0.72).toFixed(3)+')';
@@ -1782,7 +1806,7 @@ function drawRoad(g){
   ctx.beginPath();
   for(let i=lo;i<hi;i++){ const p=R.pts[i]; ctx.lineTo(p.x-p.ty*ROAD_HALF, p.y+p.tx*ROAD_HALF); }
   for(let i=hi-1;i>=lo;i--){ const p=R.pts[i]; ctx.lineTo(p.x+p.ty*ROAD_HALF, p.y-p.tx*ROAD_HALF); }
-  ctx.closePath(); ctx.fillStyle='#adb3bd'; ctx.fill();
+  ctx.closePath(); ctx.fillStyle=game&&game.wet?'#99a0ac':'#adb3bd'; ctx.fill();
   ctx.lineJoin='round';
   for(const s of [1,-1]){
     ctx.beginPath();
@@ -1953,6 +1977,8 @@ function updateHUD(){
     const h='GHOST '+(gp.ended?'FINISHED · ':'')+(d>=0?'<b>+'+d+' m</b>':'<b class="beh">−'+Math.abs(d)+' m</b>');
     if(h!==g._ghHtml){ ge.style.display='block'; ge.innerHTML=h; g._ghHtml=h; }
   } else if(ge.style.display!=='none') ge.style.display='none';
+  const we=document.getElementById('wetEl'), wetShow=g.wet?'block':'none';
+  if(we.style.display!==wetShow) we.style.display=wetShow;
 }
 function showHUD(v){ document.getElementById('hud').style.display=v?'flex':'none'; }
 
@@ -2209,7 +2235,7 @@ window.__drift={
   get dailyMode(){ return dailyMode; },
   start(){ startGame(false); },
   startDaily(){ startGame(true); },
-  daily:{ key:dayKey, seed:daySeed, best:loadDailyBest },
+  daily:{ key:dayKey, seed:daySeed, best:loadDailyBest, wet:seedWet },
   ghostAt(){ return game?ghostAt(game):null; },
   hud(){ updateHUD(); },   // probes step the sim synchronously, so no frame paints the HUD for them
   tier:chainTier,
