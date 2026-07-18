@@ -68,7 +68,14 @@
         "gas="+G()+" after a keypress with no keys held (auto-throttle must not linger)");
 
     // ---- CRUISE: it owns the right foot and nothing else
+    // newGame() draws its road from Math.random(), and whether 220 km/h is even holdable depends on the
+    // road: a seed whose early corners are tighter than the grip budget allows at that speed makes the
+    // grip-limited autopilot run wide and eat barrier hits — failing the stint on road luck, not cruise.
+    // Pin a seed (31337 is one of the physics suite's canon roads) so this measures the cruise, every run.
     const D2=window.__drift;
+    const seedRandom=(s)=>{ let a=s|0; Math.random=function(){ a=a+0x6D2B79F5|0;
+      let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; };
+    seedRandom(31337);
     D2.start();
     const gg=D2.game;
     // get some pace on, then set cruise at it
@@ -112,6 +119,7 @@
     rec("cruise toggles off", onAgain && D2.game.cc===0, "on->"+onAgain+" then off->"+(D2.game.cc===0));
 
     // ---- the wheel's thumb pads ARE the controls (a car's cluster reports; the wheel commands)
+    seedRandom(31337);
     D2.start(); D2.clearInput();
     const gw=D2.game; gw.view='driver'; gw.wheelSteer=0;
     const wg=wheelGeom();

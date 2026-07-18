@@ -3,6 +3,7 @@
 #
 #   ./drift/verify/run.sh            # physics + behaviour suite (exits non-zero on any FAIL)
 #   ./drift/verify/run.sh controls   # the touch + keyboard control scheme, both cameras
+#   ./drift/verify/run.sh contracts  # the county job board: seeded draw, live progress, cash on the spot
 #   ./drift/verify/run.sh plane      # scenery build + airliner reachability
 #   ./drift/verify/run.sh music      # the playlist actually loads in a browser
 #
@@ -44,9 +45,10 @@ fi
 case "$PROBE" in
   assert) JS="$HERE/assert.js"; DIV="RESULTS" ;;
   controls) JS="$HERE/controls.js"; DIV="RESULTS" ;;
+  contracts) JS="$HERE/contracts.js"; DIV="RESULTS" ;;
   plane)  JS="$HERE/plane.js";  DIV="PLANE" ;;
   music)  JS="$HERE/music.js";  DIV="RESULTS" ;;
-  *) echo "unknown probe '$PROBE' (want: assert | controls | plane | music)" >&2; exit 2 ;;
+  *) echo "unknown probe '$PROBE' (want: assert | controls | contracts | plane | music)" >&2; exit 2 ;;
 esac
 
 # splice the probe in just before </body>, after the game's own script has defined window.__drift

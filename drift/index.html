@@ -86,6 +86,15 @@
   .gcard.own em{ color:#48627a; }
   .gcard.eq{ border-color:#2e8f38; background:#e9f6ea; } .gcard.eq em{ color:#2e8f38; }
   .gcard.cant{ opacity:.45; }
+  /* the county's job board: three short goals a run, tracked in the corner of your eye */
+  .ctrbox{ margin-top:6px; border-top:1px solid rgba(23,50,74,.12); padding-top:5px; }
+  .ctr{ font-size:10.5px; font-weight:700; color:#48627a; letter-spacing:.3px; line-height:1.55; white-space:nowrap; }
+  .ctr b{ color:#c85a1a; font-weight:900; }
+  .ctr.done{ color:#2e8f38; }
+  .ctrpop{ position:fixed; left:50%; top:31%; transform:translateX(-50%); z-index:4; pointer-events:none;
+    font-weight:900; font-size:clamp(16px,4.5vw,24px); color:#b6ffdd; opacity:0; letter-spacing:1px;
+    text-shadow:0 2px 0 rgba(20,80,40,.75), 0 4px 14px rgba(0,0,0,.3); }
+  .ctrpop.show{ animation:pop 1.4s ease forwards; }
 </style>
 </head>
 <body>
@@ -96,6 +105,7 @@
     <div class="score" id="scoreEl">0</div>
     <div class="mult" id="multEl">x1.0</div>
     <div class="cash" id="cashEl">$0</div>
+    <div class="ctrbox" id="ctrEl"></div>
   </div>
   <div class="pill rt">
     <div class="speed"><span id="speedEl">0</span> <small>km/h</small></div>
@@ -103,6 +113,7 @@
   </div>
 </div>
 <div class="driftpop" id="driftpop"></div>
+<div class="ctrpop" id="ctrPop"></div>
 <div class="steerhint" id="hintL" style="display:none">‹</div>
 <div class="steerhint" id="hintR" style="display:none">›</div>
 <button id="viewBtn" style="display:none">DRIVER VIEW</button>
@@ -127,6 +138,8 @@
       keys <b>K</b> / <b>N</b> / <b>P</b> / <b>M</b><br>
       <b>Views:</b> you drive from behind the wheel. Tap “Top view” (or press V) for a look down at the
       corner coming — the dash also has an AR guide and a nav map<br>
+      <b>Contracts:</b> the county posts <b>three jobs</b> every run — top-left, under your wallet.
+      Cross one mid-run and the cash lands on the spot<br>
       <b>Zombies:</b> the road has a horde problem and the county pays a bounty — run them down for
       <b>wallet cash</b> (it persists). The wallet buys guns above; an equipped gun <b>auto-fires</b> at the
       shamblers out on the verge that the car can’t reach
@@ -141,6 +154,7 @@
     <div class="newbest" id="newBest" style="display:none">NEW BEST!</div>
     <div class="best" id="overBest" style="color:#5a7a5a; font-weight:700; font-size:14px; margin-top:6px">Best 0</div>
     <div class="best" id="overCash" style="color:#2e8f38; font-weight:800; font-size:14px; margin-top:4px; display:none"></div>
+    <div id="overCtr" style="margin-top:8px"></div>
     <div class="armoryBox"></div>
     <div style="margin-top:22px"><button class="go" id="againBtn">Again</button></div>
   </div>
@@ -225,6 +239,7 @@ function newGame(){
     scenery:makeScenery(seed),
     zombies:[], splats:[], gibs:[], flecks:[], shots:[],   // the horde, and what's left of it
     zrng:mulberry32(seed^0x2b1e), zNextIdx:0, gunCd:0, cashRun:0, goreT:0,
+    vmax:0, zCarKills:0, gunKills:0, contracts:makeContracts(seed),
     shake:0, time:0
   };
 }
@@ -326,7 +341,7 @@ function step(dt){
   if(mag<0) mag=0;
   c.vx=Math.cos(velAng)*mag; c.vy=Math.sin(velAng)*mag;
   c.x+=c.vx*dt; c.y+=c.vy*dt;
-  g.speed=mag; g.slip=slip;
+  g.speed=mag; g.slip=slip; g.vmax=Math.max(g.vmax,mag);
   const ad=Math.abs(g.slip);
   const drifting = g.speed>240 && ad>0.16 && !g.onGrass;
   if(drifting){
@@ -363,6 +378,7 @@ function step(dt){
   if(g.batt<=0) return gameOver('OUT OF CHARGE');
 
   updateZombies(g,dt);   // the horde: spawn, shamble, bumper checks, the auto-gun — money and gore only, never physics
+  updateContracts(g);    // the job board: pays out the moment a goal is crossed — money and fanfare only, never physics
 
   // skid marks (rear wheels) — from the car's heading
   const fx=Math.cos(c.angle), fy=Math.sin(c.angle), rx=-Math.sin(c.angle), ry=Math.cos(c.angle);
@@ -398,7 +414,8 @@ function gameOver(reason){
   saveWallet(); renderArmory();                                  // bank the bounty, restock the shop
   const oc=document.getElementById('overCash');
   oc.style.display=game.cashRun>0?'block':'none';
-  oc.textContent='+$'+Math.round(game.cashRun).toLocaleString()+' in bounties this run';
+  oc.textContent='+$'+Math.round(game.cashRun).toLocaleString()+' earned this run';
+  document.getElementById('overCtr').innerHTML=contractRows(game,true);   // the job board, settled
   showHUD(false); document.getElementById('viewBtn').style.display='none';
   document.getElementById('hintL').style.display='none'; document.getElementById('hintR').style.display='none';
   setTimeout(()=>{ if(state==='over') document.getElementById('overPanel').classList.remove('hidden'); },420);
@@ -1455,11 +1472,11 @@ function killZombie(g,z,by){
   for(let i=0;i<12;i++){ const a=Math.random()*TAU, v=40+Math.random()*130;
     g.gibs.push({x:p.x,y:p.y,vx:Math.cos(a)*v+kx,vy:Math.sin(a)*v+ky,r:2.5+Math.random()*3.5,
       life:1,max:0.5+Math.random()*0.4,col:GORE[(Math.random()*GORE.length)|0]}); }
-  if(by==='car'){ g.shake=Math.max(g.shake,0.4); g.goreT=0.55; sfx('thud'); sfx('squelch');
+  if(by==='car'){ g.zCarKills++; g.shake=Math.max(g.shake,0.4); g.goreT=0.55; sfx('thud'); sfx('squelch');
     if(g.view==='driver'){ const n=5+(Math.random()*4|0);                       // ichor up the windscreen
       for(let i=0;i<n;i++) g.flecks.push({sx:W*(0.30+Math.random()*0.40),sy:H*(0.38+Math.random()*0.34),
         r:W*(0.012+Math.random()*0.018),life:1,drip:10+Math.random()*26}); } }
-  else sfx('squelch');
+  else{ g.gunKills++; sfx('squelch'); }
   z.hp=0;                                                                        // reaped by the update sweep
 }
 function updateZombies(g,dt){
@@ -1570,6 +1587,45 @@ function drawFlecks(g){                                                         
 function cashPop(pay){ const el=document.getElementById('cashEl'); if(!el) return;
   el.textContent='$'+Math.round(cash).toLocaleString();
   el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+
+/* ============================ contracts ============================ */
+/* The county job board: every run posts THREE short goals that pay wallet cash the moment they're crossed.
+   They're the run's second axis besides score — always something within reach in the next minute — and the
+   economy's other faucet: a player who can't crack a big chain yet is still saving toward a gun. Drawn from
+   the road's own seed, so the same road always posts the same jobs, which also makes them testable. */
+function makeContracts(seed){
+  const rng=mulberry32(seed^0x51c7);
+  const pool=[
+    { id:'slide', label:'HOLD ONE SLIDE 4s',    rew:60, tgt:4,    prog:g=>g.driftTime,      fmt:v=>v.toFixed(1)+'s' },
+    { id:'chain', label:'BUILD A 1,500 CHAIN',  rew:80, tgt:1500, prog:g=>Math.max(g.bestChain,g.chainScore), fmt:v=>''+Math.round(v) },
+    { id:'vmax',  label:'TOUCH 225 km/h',       rew:40, tgt:225,  prog:g=>g.vmax*0.36,      fmt:v=>''+Math.round(v) },
+    { id:'horde', label:'RUN DOWN 3 SHAMBLERS', rew:70, tgt:3,    prog:g=>g.zCarKills,      fmt:v=>''+Math.round(v) },
+    { id:'range', label:'COVER 2.5 km',         rew:50, tgt:2.5,  prog:g=>g.dist/10000,     fmt:v=>v.toFixed(1)+'km' },
+  ];
+  // a marksman job only makes sense with a gun on the door card
+  if(GUNS[gunEq] && gunsOwned.indexOf(gunEq)>=0)
+    pool.push({ id:'marks', label:'BAG 3 FROM THE VERGE', rew:70, tgt:3, prog:g=>g.gunKills, fmt:v=>''+Math.round(v) });
+  for(let i=pool.length-1;i>0;i--){ const j=(rng()*(i+1))|0; const t=pool[i]; pool[i]=pool[j]; pool[j]=t; }
+  return pool.slice(0,3).map(c=>Object.assign({},c,{done:false}));
+}
+function updateContracts(g){
+  for(const c of g.contracts){
+    if(c.done || c.prog(g)<c.tgt) continue;
+    c.done=true;
+    cash+=c.rew; g.cashRun+=c.rew; saveWallet(); cashPop(c.rew);   // banked on the spot, same as a bounty
+    const el=document.getElementById('ctrPop');
+    if(el){ el.textContent='CONTRACT PAID · +$'+c.rew;
+      el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+    sfx('chain');
+  }
+}
+function contractRows(g,final){
+  return g.contracts.map(c=>{
+    if(c.done) return '<div class="ctr done">✓ '+c.label+' +$'+c.rew+'</div>';
+    if(final)  return '<div class="ctr">✗ '+c.label+'</div>';
+    return '<div class="ctr">◇ '+c.label+' <b>'+c.fmt(clamp(c.prog(g),0,c.tgt))+'</b></div>';
+  }).join('');
+}
 /* the armory: same card, both panels. Bounty money buys a gun; owning one arms the auto-turret. */
 function buyGun(id){ const gn=GUNS[id]; if(!gn) return false;
   if(gunsOwned.indexOf(id)>=0){ gunEq = gunEq===id ? '' : id; saveWallet(); renderArmory(); return true; }
@@ -1735,6 +1791,8 @@ function updateHUD(){
   document.getElementById('speedEl').textContent=Math.round(g.speed*0.36);
   document.getElementById('bestEl').textContent='BEST '+best.toLocaleString();
   document.getElementById('cashEl').textContent='$'+Math.round(cash).toLocaleString();
+  const rows=contractRows(g,false);
+  if(rows!==g._ctrHtml){ document.getElementById('ctrEl').innerHTML=rows; g._ctrHtml=rows; }
 }
 function showHUD(v){ document.getElementById('hud').style.display=v?'flex':'none'; }
 
