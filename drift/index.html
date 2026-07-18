@@ -142,7 +142,9 @@
       Cross one mid-run and the cash lands on the spot<br>
       <b>Zombies:</b> the road has a horde problem and the county pays a bounty — run them down for
       <b>wallet cash</b> (it persists). The wallet buys guns above; an equipped gun <b>auto-fires</b> at the
-      shamblers out on the verge that the car can’t reach
+      shamblers out on the verge that the car can’t reach<br>
+      <b>Garage:</b> bigger money buys <b>car hardware</b> — a longer-range pack, a regen tune, track
+      tyres. Fitted once, driven on every run after
     </div>
   </div>
 </div>
@@ -239,7 +241,7 @@ function newGame(){
     scenery:makeScenery(seed),
     zombies:[], splats:[], gibs:[], flecks:[], shots:[],   // the horde, and what's left of it
     zrng:mulberry32(seed^0x2b1e), zNextIdx:0, gunCd:0, cashRun:0, goreT:0,
-    vmax:0, zCarKills:0, gunKills:0, contracts:makeContracts(seed),
+    vmax:0, zCarKills:0, gunKills:0, contracts:makeContracts(seed), mod:carMods(),
     shake:0, time:0
   };
 }
@@ -289,7 +291,7 @@ function step(dt){
       // the IMPACT: one hit, one cost. This used to run every step, i.e. 0.74^120 a second, so brushing a
       // wall didn't cost you speed — it pinned you to a standstill.
       c.vx*=0.74; c.vy*=0.74;
-      g.batt=clamp(g.batt-0.07,0,1); g.shake=1.1; sfx('crash'); g.hitT=0.55;
+      g.batt=clamp(g.batt-0.07/g.mod.cap,0,1); g.shake=1.1; sfx('crash'); g.hitT=0.55;   // same dent, bigger pack = smaller %
     } else {
       const k=clamp(1-1.6*dt,0,1); c.vx*=k; c.vy*=k;           // still scraping along it: that just drags
     }
@@ -309,7 +311,7 @@ function step(dt){
 
   // weight transfer: on the brakes the nose goes down and the rear goes light. lifting does a milder version of it.
   const wf=clamp(brk+(thr>0?0:LIFT),0,1);
-  let lat=lerp(LAT0,LAT1,diff);
+  let lat=lerp(LAT0,LAT1,diff)*g.mod.lat;                 // track tyres raise the whole grip budget
   lat *= 1-(1-BRAKE_GRIP)*wf;                           // trail-braking is what unloads the rear — this is the drift trigger
   lat *= 1-(1-GAS_GRIP)*thr;                            // and power lights the rears up
   if(g.onGrass) lat*=0.45;
@@ -354,7 +356,7 @@ function step(dt){
     if(g.grace<=0){
       if(g.chainScore>240){
         // land a chain and you recover charge. This is the loop: drive well, drive longer.
-        const back=clamp(g.chainScore/11000,0,0.055);
+        const back=clamp(g.chainScore/11000,0,0.055)/g.mod.cap;   // same energy back — a bigger pack counts it as fewer %
         g.batt=clamp(g.batt+back,0,1);
         driftPop(g.chainScore, back);
       }
@@ -373,8 +375,8 @@ function step(dt){
   const load=(0.30+1.30*thr)*(0.32+0.88*mag/VTOP);
   const regen=1.05*brk*clamp(mag/VTOP,0,1);
   const offRoad=g.onGrass?OFFROAD_BURN:0;
-  g.kw = lerp(g.kw, thr*EV_KW*clamp(0.35+mag/VTOP,0,1) - brk*REGEN_KW*clamp(mag/VTOP,0,1), 0.12);
-  g.batt = clamp(g.batt - (load-regen+offRoad)*EV_BURN*dt, 0, 1);
+  g.kw = lerp(g.kw, thr*EV_KW*clamp(0.35+mag/VTOP,0,1) - brk*REGEN_KW*g.mod.regen*clamp(mag/VTOP,0,1), 0.12);
+  g.batt = clamp(g.batt - (load - regen*g.mod.regen + offRoad)*EV_BURN/g.mod.cap*dt, 0, 1);   // the garage: harder claw-back, and every % is more clock
   if(g.batt<=0) return gameOver('OUT OF CHARGE');
 
   updateZombies(g,dt);   // the horde: spawn, shamble, bumper checks, the auto-gun — money and gore only, never physics
@@ -879,7 +881,7 @@ function rangeBlock(g,x,y,s){
   ctx.fillRect(x+1.4*s, by+1.4*s, Math.max(1,(bw-2.8*s)*g.batt), bh-2.8*s);
   ctx.textAlign='left'; ctx.textBaseline='alphabetic';
   ctx.fillStyle=col; ctx.font='800 '+Math.round(15*s)+'px '+FMONO;
-  ctx.fillText(Math.round(g.batt*EV_RANGE)+' km', x+bw+7*s, by+bh);
+  ctx.fillText(Math.round(g.batt*EV_RANGE*g.mod.cap)+' km', x+bw+7*s, by+bh);   // the dash reports the pack you actually fitted
   ctx.fillStyle=DIM; ctx.font='700 '+Math.round(8*s)+'px '+FSANS;
   ctx.fillText('RANGE · '+Math.round(g.batt*100)+'%', x, y);
 }
@@ -1442,8 +1444,20 @@ const GUNS={ p9:{nm:'P9 SIDEARM', price:250, range:950, cd:1.0 },
              sm2:{nm:'SM-2 AUTO', price:900, range:1100, cd:0.34 },
              lr7:{nm:'LR-7 RIFLE', price:2200, range:1750, cd:0.7 } };
 if(!GUNS[gunEq]||gunsOwned.indexOf(gunEq)<0) gunEq=gunsOwned[0]||'';
+/* the garage: wallet cash bolts hardware onto the CAR, permanently. Guns are a sidearm; these change the
+   run itself — a longer pack is more clock, a regen tune claws harder on the brakes, stickier tyres move
+   the grip budget the whole game is balanced around. The stock car is untouched until you pay. */
+const MODS={ pack: {nm:'LONG-RANGE PACK', tag:'+30% battery',      price:900,  },
+             regen:{nm:'REGEN TUNE',      tag:'+50% brake regen',  price:1400, },
+             tyres:{nm:'TRACK TYRES',     tag:'+8% lateral grip',  price:2600, } };
+let modsOwned=[]; try{ modsOwned=(localStorage.getItem('drift.mods')||'').split(',').filter(Boolean); }catch(e){}
+function carMods(){ const has=id=>modsOwned.indexOf(id)>=0;
+  return { cap:has('pack')?1.30:1, regen:has('regen')?1.50:1, lat:has('tyres')?1.08:1 }; }
+function buyMod(id){ const m=MODS[id]; if(!m||modsOwned.indexOf(id)>=0||cash<m.price) return false;
+  cash-=m.price; modsOwned.push(id); saveWallet(); renderArmory(); return true; }
 function saveWallet(){ try{ localStorage.setItem('drift.cash',Math.round(cash));
-  localStorage.setItem('drift.guns',gunsOwned.join(',')); localStorage.setItem('drift.gun',gunEq); }catch(e){} }
+  localStorage.setItem('drift.guns',gunsOwned.join(',')); localStorage.setItem('drift.gun',gunEq);
+  localStorage.setItem('drift.mods',modsOwned.join(',')); }catch(e){} }
 const Z_MAX=9, Z_HIT=55, Z_H=92;                    // population cap, bumper-strike radius, body height (world px)
 // Z_H is sized against the CAMERA, not a tape measure: the eye sits CAMH=112 up, so a 92-px shambler's
 // head rides at ~82% of the horizon line at every distance — an adult seen from an SUV seat. The old 60
@@ -1640,8 +1654,14 @@ function renderArmory(){
       const cls=own?(gunEq===id?'gcard eq':'gcard own'):(cash>=gn.price?'gcard':'gcard cant');
       h+='<button class="'+cls+'" data-g="'+id+'"><b>'+gn.nm+'</b><span>'+tags[id]+'</span><em>'+
         (own?(gunEq===id?'EQUIPPED':'EQUIP'):'$'+gn.price)+'</em></button>'; }
+    h+='<div class="warow" style="margin-top:10px">THE GARAGE<span>hardware bolts onto the car for good — every run after is driven on it</span></div>';
+    for(const id in MODS){ const m=MODS[id], own=modsOwned.indexOf(id)>=0;
+      const cls=own?'gcard eq':(cash>=m.price?'gcard':'gcard cant');
+      h+='<button class="'+cls+'" data-m="'+id+'"><b>'+m.nm+'</b><span>'+m.tag+'</span><em>'+
+        (own?'FITTED':'$'+m.price)+'</em></button>'; }
     box.innerHTML=h;
-    for(const b of box.querySelectorAll('.gcard')) b.onclick=e=>{ e.stopPropagation(); audioInit(); buyGun(b.dataset.g); };
+    for(const b of box.querySelectorAll('.gcard')) b.onclick=e=>{ e.stopPropagation(); audioInit();
+      b.dataset.m ? buyMod(b.dataset.m) : buyGun(b.dataset.g); };
   }
 }
 
@@ -2050,6 +2070,8 @@ window.__drift={
     gun:()=>gunEq, owned:()=>gunsOwned.slice(), give:n=>{ cash+=n; saveWallet(); renderArmory(); },
     buy:buyGun, spawn:(fi,o)=>spawnZombie(game,fi,o),
     wipe:()=>{ cash=0; gunsOwned=[]; gunEq=''; saveWallet(); renderArmory(); } },
+  garage:{ owned:()=>modsOwned.slice(), buy:buyMod,
+    wipe:()=>{ modsOwned=[]; saveWallet(); renderArmory(); } },
   billboards:{ every:BB_EVERY, at:bbIndex, side:bbSide, off:bbOff,
     defaults:()=>DEFAULT_ADS.length, remote:()=>REMOTE_ADS.length, reload:loadRemoteAds },
   autopilot(){ const g=game; if(!g) return; const R=g.road, c=g.car;

@@ -3,6 +3,25 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## The Garage — permanent car hardware (2026-07-18)
+
+**What.** Wallet cash now buys **car upgrades**, not just guns: LONG-RANGE PACK (+30% battery, $900),
+REGEN TUNE (+50% brake regen, $1,400), TRACK TYRES (+8% lateral grip, $2,600). Fitted once, driven on
+every run after — the dash reports the pack you actually fitted, wall impacts and chain claw-backs count
+in % of the pack you own. The stock car is untouched until you pay, so every physics claim the suite
+pins still holds for a fresh player.
+
+**Why.** Contracts and bounties opened the cash faucet, but the armory capped the sink at $3,350 —
+after three guns, money stopped mattering. The garage adds a $4,900 progression ladder on top, and the
+upgrades bend the core loop rather than sitting beside it: more pack is more clock, more regen rewards
+the trail-braking the game teaches, stickier tyres move the grip budget the whole risk/reward gradient
+is built on. Long-term saving goals are the classic retention lever.
+
+**How it's defended.** `./verify/run.sh garage` — shop rules (no credit, no double-buys, persistence,
+stock-until-paid) plus each part measured **fitted alone** against stock on pinned roads with identical
+forced inputs: battery state never steers the car, so the pack's drain ratio is held to its 1.30 spec
+±0.02, peak regen kW to ~1.5x, and the tyres' provoked corner must break away measurably less.
+
 ## Contracts — the county job board (2026-07-18)
 
 **What.** Every run posts **three short contracts** drawn from the road's own seed — e.g. *HOLD ONE
