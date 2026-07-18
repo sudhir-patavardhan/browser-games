@@ -95,6 +95,11 @@
     font-weight:900; font-size:clamp(16px,4.5vw,24px); color:#b6ffdd; opacity:0; letter-spacing:1px;
     text-shadow:0 2px 0 rgba(20,80,40,.75), 0 4px 14px rgba(0,0,0,.3); }
   .ctrpop.show{ animation:pop 1.4s ease forwards; }
+  /* the near-miss: a flash of nerve rewarded, styled hot like the multiplier it feeds */
+  .buzzpop{ position:fixed; left:50%; top:29%; transform:translateX(-50%); z-index:4; pointer-events:none;
+    font-weight:900; font-size:clamp(15px,4vw,22px); color:#ffd24a; opacity:0; letter-spacing:2px;
+    text-shadow:0 2px 0 rgba(180,60,20,.8), 0 4px 12px rgba(0,0,0,.3); }
+  .buzzpop.show{ animation:pop .8s ease forwards; }
 </style>
 </head>
 <body>
@@ -114,6 +119,7 @@
 </div>
 <div class="driftpop" id="driftpop"></div>
 <div class="ctrpop" id="ctrPop"></div>
+<div class="buzzpop" id="buzzEl"></div>
 <div class="steerhint" id="hintL" style="display:none">‹</div>
 <div class="steerhint" id="hintR" style="display:none">›</div>
 <button id="viewBtn" style="display:none">DRIVER VIEW</button>
@@ -142,7 +148,9 @@
       Cross one mid-run and the cash lands on the spot<br>
       <b>Zombies:</b> the road has a horde problem and the county pays a bounty — run them down for
       <b>wallet cash</b> (it persists). The wallet buys guns above; an equipped gun <b>auto-fires</b> at the
-      shamblers out on the verge that the car can’t reach<br>
+      shamblers out on the verge that the car can’t reach. Brushing <b>past</b> one at speed without
+      touching it is a <b>CLOSE SHAVE</b> — it feeds your multiplier and keeps a drift chain alive
+      between corners<br>
       <b>Garage:</b> bigger money buys <b>car hardware</b> — a longer-range pack, a regen tune, track
       tyres. Fitted once, driven on every run after
     </div>
@@ -241,7 +249,7 @@ function newGame(){
     scenery:makeScenery(seed),
     zombies:[], splats:[], gibs:[], flecks:[], shots:[],   // the horde, and what's left of it
     zrng:mulberry32(seed^0x2b1e), zNextIdx:0, gunCd:0, cashRun:0, goreT:0,
-    vmax:0, zCarKills:0, gunKills:0, contracts:makeContracts(seed), mod:carMods(),
+    vmax:0, zCarKills:0, gunKills:0, buzzes:0, contracts:makeContracts(seed), mod:carMods(),
     shake:0, time:0
   };
 }
@@ -1459,6 +1467,19 @@ function saveWallet(){ try{ localStorage.setItem('drift.cash',Math.round(cash));
   localStorage.setItem('drift.guns',gunsOwned.join(',')); localStorage.setItem('drift.gun',gunEq);
   localStorage.setItem('drift.mods',modsOwned.join(',')); }catch(e){} }
 const Z_MAX=9, Z_HIT=55, Z_H=92;                    // population cap, bumper-strike radius, body height (world px)
+/* the CLOSE SHAVE: pass a live shambler with the nose inside BUZZ_R (but outside the strike) at speed and
+   you're paid in HEAT — half a multiplier step, and the chain's grace window refreshed. That refresh is the
+   real mechanic: a shave can BRIDGE a chain across the straight between two corners, so the horde stops
+   being only targets and becomes apexes. No score is paid directly — nerve feeds the drift, it doesn't
+   replace it. */
+const BUZZ_R=120;
+function buzz(g){
+  g.buzzes++; g.mult=clamp(g.mult+0.5,1,8);
+  g.grace=Math.max(g.grace,0.7);
+  const el=document.getElementById('buzzEl');
+  if(el){ el.textContent='CLOSE SHAVE'; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+  sfx('whoosh');
+}
 // Z_H is sized against the CAMERA, not a tape measure: the eye sits CAMH=112 up, so a 92-px shambler's
 // head rides at ~82% of the horizon line at every distance — an adult seen from an SUV seat. The old 60
 // put heads at half eye-height and the whole horde read as toddlers. Z_HIT is a bumper radius: the car is
@@ -1510,7 +1531,13 @@ function updateZombies(g,dt){
     if(Math.abs(z.fi-c.idx)<3){                                                  // close enough to check the bumper
       const bx=c.x+Math.cos(c.angle)*CAR_L*0.45, by=c.y+Math.sin(c.angle)*CAR_L*0.45;   // the strike happens at the NOSE
       const p=zPos(R,z), d2=(p.x-bx)*(p.x-bx)+(p.y-by)*(p.y-by);
-      if(d2<Z_HIT*Z_HIT){ killZombie(g,z,'car'); continue; } }
+      if(d2<Z_HIT*Z_HIT){ killZombie(g,z,'car'); continue; }
+      const d=Math.sqrt(d2);
+      if(d<(z.minD||1e9)){ z.minD=d; z.minSpd=g.speed; } }                      // the closest the nose came, and how fast it was going THEN
+    // the near-miss, judged once it's actually behind you: a hit is a bounty, a SHAVE is nerve —
+    // and nerve is paid in heat, not money
+    if(!z.buzzed && z.fi<c.idx-1){ z.buzzed=true;
+      if((z.minD||1e9)<BUZZ_R && (z.minSpd||0)>280) buzz(g); }
     if(gun && Math.abs(z.o)>ROAD_HALF+10 && dz>60 && dz<gun.range && dz<tgtD){ tgt=z; tgtD=dz; }
   }
   if(gun && tgt && g.gunCd<=0){ g.gunCd=gun.cd; const p=zPos(R,tgt);             // auto-fire at the verge
@@ -1614,6 +1641,7 @@ function makeContracts(seed){
     { id:'chain', label:'BUILD A 1,500 CHAIN',  rew:80, tgt:1500, prog:g=>Math.max(g.bestChain,g.chainScore), fmt:v=>''+Math.round(v) },
     { id:'vmax',  label:'TOUCH 225 km/h',       rew:40, tgt:225,  prog:g=>g.vmax*0.36,      fmt:v=>''+Math.round(v) },
     { id:'horde', label:'RUN DOWN 3 SHAMBLERS', rew:70, tgt:3,    prog:g=>g.zCarKills,      fmt:v=>''+Math.round(v) },
+    { id:'shave', label:'SHAVE 4 SHAMBLERS',    rew:60, tgt:4,    prog:g=>g.buzzes,         fmt:v=>''+Math.round(v) },
     { id:'range', label:'COVER 2.5 km',         rew:50, tgt:2.5,  prog:g=>g.dist/10000,     fmt:v=>v.toFixed(1)+'km' },
   ];
   // a marksman job only makes sense with a gun on the door card
@@ -1904,6 +1932,7 @@ function sfx(kind){ if(!actx) return; const t=actx.currentTime, o=actx.createOsc
   else if(kind==='thud'){ o.type='sine'; o.frequency.setValueAtTime(88,t); o.frequency.exponentialRampToValueAtTime(34,t+.16);   // the bumper: a dead low knock
     gg.gain.setValueAtTime(.30,t); gg.gain.exponentialRampToValueAtTime(.0001,t+.20); o.start(t); o.stop(t+.20); }
   else if(kind==='squelch'){ gg.gain.value=0; noiseBurst(0.20,0.22,340,110,0.7); }                                               // the wet part
+  else if(kind==='whoosh'){ gg.gain.value=0; noiseBurst(0.16,0.18,2400,500,0.6); }                                               // something close going past, fast
   else if(kind==='shot'){ gg.gain.value=0; noiseBurst(0.07,0.24,2600,700,0.5);                                                   // crack + a little body
     const o2=actx.createOscillator(), g2=actx.createGain(); o2.type='square'; o2.frequency.setValueAtTime(190,t);
     o2.frequency.exponentialRampToValueAtTime(90,t+.05); g2.gain.setValueAtTime(.10,t); g2.gain.exponentialRampToValueAtTime(.0001,t+.06);

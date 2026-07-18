@@ -3,6 +3,25 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## CLOSE SHAVE — near-misses pay in heat (2026-07-18)
+
+**What.** Passing a live shambler with the nose inside 120 px (but outside the 55 px strike radius) at
+over ~100 km/h — judged at closest approach — pops **CLOSE SHAVE**, bumps the multiplier +0.5, and
+refreshes the drift chain's 0.7 s grace window. That refresh is the real mechanic: a shave can **bridge
+a chain** across the straight between two corners, so the horde stops being only targets and becomes
+apexes. A new SHAVE contract (4 shaves, $60) joins the job board. Each shambler pays at most once; a hit
+stays a bounty and never doubles as a shave.
+
+**Why.** The game paid for hitting zombies but gave nothing for the scarier, more skilled line —
+threading past one flat out. Near-miss rewards are proven moment-to-moment juice (Burnout made a genre
+of them), and paying in *heat* rather than score keeps the suite's core invariant intact: tidy driving
+still scores ~nothing, because the multiplier only matters while a drift chain is alive.
+
+**How it's defended.** `./verify/run.sh nearmiss` — choreographed passes with the spawner stood down:
+close-at-speed pays, wide pays nothing, slow (coasting past at 31 km/h) pays nothing, one shave per
+shambler, hit-vs-shave never double up, and the bridge is proven A/B: the same 0.45 s-of-grace chain
+dies over a 0.7 s straight bare, and survives it shaved.
+
 ## The Garage — permanent car hardware (2026-07-18)
 
 **What.** Wallet cash now buys **car upgrades**, not just guns: LONG-RANGE PACK (+30% battery, $900),

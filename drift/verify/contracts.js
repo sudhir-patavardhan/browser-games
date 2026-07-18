@@ -71,7 +71,7 @@
         D.horde.cash()-cash0===dueNow && D.horde.run()===dueNow,
         "wallet delta="+(D.horde.cash()-cash0)+" cashRun="+D.horde.run()+" vs completed rewards="+dueNow);
     rec("progress is live while a job is open",
-        board.every(c=>c.done || c.prog(D.game)>0 || c.id==='horde' || c.id==='marks' || c.id==='chain' || c.id==='slide'),
+        board.every(c=>c.done || c.prog(D.game)>0 || c.id==='horde' || c.id==='marks' || c.id==='chain' || c.id==='slide' || c.id==='shave'),
         board.map(c=>c.id+"="+(c.done?"done":c.fmt(c.prog(D.game)))).join(", "));
 
     // ---- the over panel settles the board
