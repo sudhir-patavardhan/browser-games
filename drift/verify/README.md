@@ -17,6 +17,7 @@ Chrome/Chromium. The game exposes `window.__drift` (`start()`, `setInput(steer, 
 ./drift/verify/run.sh nearmiss     # the CLOSE SHAVE: choreographed passes, paid in heat only
 ./drift/verify/run.sh daily        # today's road: one seed per day, its own best, resets at midnight
 ./drift/verify/run.sh ghost        # the daily ghost: recorded on a best run, raced faithfully after
+./drift/verify/run.sh report       # chain tier names + the end-of-run report card
 ./drift/verify/run.sh plane        # scenery built, and the rare airliner is actually reachable
 ./drift/verify/shoot.sh driver f.png   # screenshot the car mid-drive, so you can LOOK at it
 ```

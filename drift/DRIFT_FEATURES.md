@@ -3,6 +3,24 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## Run Report + chain ratings (2026-07-18)
+
+**What.** Two doses of arcade juice. Banked chains now have **names** — CLEAN ≥1,000, SLICK ≥2,500,
+SICK ≥5,000, OUTRAGEOUS ≥10,000, LEGENDARY ≥20,000 — worn in the drift pop as a gradient title, with
+the bank chime singing higher (and slightly longer) the bigger the name. And the over panel now opens
+with a **six-tile run report**: top speed, longest chain (with its tier), drift time, distance, close
+shaves, shamblers. A chain you *died holding* is folded into the books before the card is written.
+
+**Why.** Peak-end rule: a run that ends on one bare number is remembered as a number; a run that ends
+on "231 km/h, an OUTRAGEOUS 11,000 chain, 2 shaves" is remembered as a drive. The named ladder also
+gives chains a vocabulary — a target ("I've never hit SICK") that raw score can't offer.
+
+**How it's defended.** `./verify/run.sh report` — the ladder names chains at exactly its thresholds,
+the pop announces the tier on a real bank, `driftTotal` accumulates sliding (2.27 s) and not straight
+driving (0.00 s), the card's numbers match the run's real state, died-holding chains count name-and-all,
+and every run gets six tiles. (Writing the probe re-proved the game's own loop: a chain that banks
+mid-death claws back 5.5% charge and saves the car — the death choreography had to outlast the grace.)
+
 ## The Ghost — race today's best line (2026-07-18)
 
 **What.** On Today's Road, your best run is recorded (~7 Hz: time, position, heading, distance) and

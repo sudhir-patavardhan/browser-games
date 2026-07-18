@@ -103,6 +103,15 @@
   /* the race against the phantom, one signed number */
   .ghostrow{ margin-top:5px; font-size:11px; font-weight:900; letter-spacing:.6px; color:#2996a8; }
   .ghostrow b{ color:#1fae4a; } .ghostrow b.beh{ color:#e5484d; }
+  /* the run report: how the drive actually went, told at the end where it lands hardest */
+  .statgrid{ display:grid; grid-template-columns:1fr 1fr; gap:5px 8px; margin-top:12px; text-align:left; }
+  .stat{ background:#f2f5f2; border-radius:10px; padding:6px 10px; }
+  .stat b{ display:block; font-size:15px; font-weight:900; color:#17324a; line-height:1.2; }
+  .stat span{ font-size:9.5px; font-weight:800; letter-spacing:1px; color:#8a9aa8; }
+  .stat em{ font-style:normal; font-size:9.5px; font-weight:900; letter-spacing:1px; color:#c85a1a; margin-left:5px; }
+  /* the chain's NAME, worn like a title belt */
+  .tierword{ font-size:.52em; vertical-align:middle; font-weight:900; letter-spacing:2px; margin-right:6px;
+    background:linear-gradient(180deg,#ffd24a,#ff4d3d); -webkit-background-clip:text; background-clip:text; color:transparent; }
 </style>
 </head>
 <body>
@@ -172,6 +181,7 @@
     <div class="newbest" id="newBest" style="display:none">NEW BEST!</div>
     <div class="best" id="overBest" style="color:#5a7a5a; font-weight:700; font-size:14px; margin-top:6px">Best 0</div>
     <div class="best" id="overCash" style="color:#2e8f38; font-weight:800; font-size:14px; margin-top:4px; display:none"></div>
+    <div class="statgrid" id="overStats"></div>
     <div id="overCtr" style="margin-top:8px"></div>
     <div class="armoryBox"></div>
     <div style="margin-top:22px"><button class="go" id="againBtn">Again</button></div>
@@ -283,7 +293,7 @@ function newGame(forceSeed){
     cam:{ x:p0.x, y:p0.y }, view:driftView, camAngle:R.ga,
     steer:0, steerPos:0, gas:0, brake:0, wheelSteer:0, wheelPtr:null, wheelStartX:0, wheelBase:0,
     score:0, mult:1, driftTime:0, grace:0, dist:0, onGrass:false, slip:0, speed:430,
-    stall:0, chainScore:0, bestChain:0,
+    stall:0, chainScore:0, bestChain:0, driftTotal:0,
     skid:[], smoke:[], grassTufts:makeTufts(seed),
     batt:1, kw:0, hitT:0, cc:0, padCand:null,  // the cabin: charge, power, last impact, cruise set-speed
     scenery:makeScenery(seed),
@@ -396,7 +406,7 @@ function step(dt){
   const ad=Math.abs(g.slip);
   const drifting = g.speed>240 && ad>0.16 && !g.onGrass;
   if(drifting){
-    g.driftTime+=dt; g.grace=0.7;                        // enough slack to link one corner into the next
+    g.driftTime+=dt; g.driftTotal+=dt; g.grace=0.7;      // enough slack to link one corner into the next
     g.mult=clamp(g.mult+dt*0.85,1,8);
     const add=g.speed*ad*g.mult*0.5*dt;
     g.score+=add; g.chainScore+=add;
@@ -407,7 +417,7 @@ function step(dt){
         // land a chain and you recover charge. This is the loop: drive well, drive longer.
         const back=clamp(g.chainScore/11000,0,0.055)/g.mod.cap;   // same energy back — a bigger pack counts it as fewer %
         g.batt=clamp(g.batt+back,0,1);
-        driftPop(g.chainScore, back);
+        driftPop(g.chainScore, back, chainTier(g.chainScore));
       }
       g.bestChain=Math.max(g.bestChain,g.chainScore);
       g.chainScore=0; g.mult=1; g.driftTime=0; }
@@ -462,6 +472,7 @@ function step(dt){
 
 function gameOver(reason){
   state='over'; game.overReason=reason; game.shake=1.4;
+  game.bestChain=Math.max(game.bestChain,game.chainScore);   // a chain you died holding still counts on the report
   const sc=Math.round(game.score);
   // two ledgers: the endless best, and today's — a daily run only ever settles against today's
   let isBest;
@@ -479,15 +490,31 @@ function gameOver(reason){
   const oc=document.getElementById('overCash');
   oc.style.display=game.cashRun>0?'block':'none';
   oc.textContent='+$'+Math.round(game.cashRun).toLocaleString()+' earned this run';
+  // the run report — the drive, told in six numbers (peak-end: the run should END on something rich)
+  const tier=chainTier(game.bestChain);
+  const st=[ ['TOP SPEED', Math.round(game.vmax*0.36)+' km/h', ''],
+             ['LONGEST CHAIN', Math.round(game.bestChain).toLocaleString(), tier],
+             ['DRIFT TIME', game.driftTotal.toFixed(1)+' s', ''],
+             ['DISTANCE', (game.dist/10000).toFixed(1)+' km', ''],
+             ['CLOSE SHAVES', ''+game.buzzes, ''],
+             ['SHAMBLERS', ''+(game.zCarKills+game.gunKills), ''] ];
+  document.getElementById('overStats').innerHTML=st.map(s=>
+    '<div class="stat"><span>'+s[0]+'</span><b>'+s[1]+(s[2]?'<em>'+s[2]+'</em>':'')+'</b></div>').join('');
   document.getElementById('overCtr').innerHTML=contractRows(game,true);   // the job board, settled
   showHUD(false); document.getElementById('viewBtn').style.display='none';
   document.getElementById('hintL').style.display='none'; document.getElementById('hintR').style.display='none';
   setTimeout(()=>{ if(state==='over') document.getElementById('overPanel').classList.remove('hidden'); },420);
   sfx('crash');
 }
-function driftPop(v,charge){ const el=document.getElementById('driftpop');
-  el.innerHTML='+'+Math.round(v)+(charge>0.002?' <span class="chg">+'+(charge*100).toFixed(0)+'%</span>':'');
-  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); sfx('chain'); }
+/* the chain's name: a banked chain isn't a number, it's a REPUTATION — and the game says it out loud.
+   The ladder is steep on purpose: CLEAN is a good corner, LEGENDARY is a story you tell someone. */
+const CHAIN_TIERS=[[20000,'LEGENDARY'],[10000,'OUTRAGEOUS'],[5000,'SICK'],[2500,'SLICK'],[1000,'CLEAN']];
+function chainTier(v){ for(const t of CHAIN_TIERS) if(v>=t[0]) return t[1]; return ''; }
+function driftPop(v,charge,tier){ const el=document.getElementById('driftpop');
+  el.innerHTML=(tier?'<span class="tierword">'+tier+'</span>':'')+'+'+Math.round(v).toLocaleString()
+    +(charge>0.002?' <span class="chg">+'+(charge*100).toFixed(0)+'%</span>':'');
+  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+  sfx('chain', tier?CHAIN_TIERS.length-CHAIN_TIERS.findIndex(t=>t[1]===tier):0); }   // the bigger the name, the higher it sings
 
 /* ============================ rendering ============================ */
 function render(){
@@ -2011,9 +2038,11 @@ function noiseBurst(dur,vol,f0,f1,q){ if(!actx) return; const t=actx.currentTime
   f.frequency.setValueAtTime(f0,t); f.frequency.exponentialRampToValueAtTime(Math.max(40,f1),t+dur);
   const gg=actx.createGain(); gg.gain.setValueAtTime(vol,t); gg.gain.exponentialRampToValueAtTime(.0001,t+dur);
   src.connect(f); f.connect(gg); gg.connect(actx.destination); src.start(t); src.stop(t+dur); }
-function sfx(kind){ if(!actx) return; const t=actx.currentTime, o=actx.createOscillator(), gg=actx.createGain(); o.connect(gg); gg.connect(actx.destination);
+function sfx(kind,opt){ if(!actx) return; const t=actx.currentTime, o=actx.createOscillator(), gg=actx.createGain(); o.connect(gg); gg.connect(actx.destination);
   if(kind==='crash'){ o.type='sawtooth'; o.frequency.setValueAtTime(160,t); o.frequency.exponentialRampToValueAtTime(50,t+.4); gg.gain.setValueAtTime(.2,t); gg.gain.exponentialRampToValueAtTime(.0001,t+.5); o.start(t); o.stop(t+.5); }
-  else if(kind==='chain'){ o.type='triangle'; o.frequency.setValueAtTime(520,t); o.frequency.exponentialRampToValueAtTime(880,t+.12); gg.gain.setValueAtTime(.14,t); gg.gain.exponentialRampToValueAtTime(.0001,t+.2); o.start(t); o.stop(t+.2); }
+  else if(kind==='chain'){ const k=1+0.14*(opt||0);                                                                              // a named chain sings higher, and a touch longer
+    o.type='triangle'; o.frequency.setValueAtTime(520*k,t); o.frequency.exponentialRampToValueAtTime(880*k,t+.12);
+    gg.gain.setValueAtTime(.14,t); gg.gain.exponentialRampToValueAtTime(.0001,t+.2+0.04*(opt||0)); o.start(t); o.stop(t+.2+0.04*(opt||0)); }
   else if(kind==='thud'){ o.type='sine'; o.frequency.setValueAtTime(88,t); o.frequency.exponentialRampToValueAtTime(34,t+.16);   // the bumper: a dead low knock
     gg.gain.setValueAtTime(.30,t); gg.gain.exponentialRampToValueAtTime(.0001,t+.20); o.start(t); o.stop(t+.20); }
   else if(kind==='squelch'){ gg.gain.value=0; noiseBurst(0.20,0.22,340,110,0.7); }                                               // the wet part
@@ -2183,6 +2212,7 @@ window.__drift={
   daily:{ key:dayKey, seed:daySeed, best:loadDailyBest },
   ghostAt(){ return game?ghostAt(game):null; },
   hud(){ updateHUD(); },   // probes step the sim synchronously, so no frame paints the HUD for them
+  tier:chainTier,
   setInput(steer,gas,brake){ if(game){ game.forceSteer=steer; game.forceGas=gas; game.forceBrake=brake; } },
   clearInput(){ if(game){ delete game.forceSteer; delete game.forceGas; delete game.forceBrake; } },
   step(n){ for(let i=0;i<(n||1);i++){ if(state==='play'){ game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); cruiseAdjust(game); step(1/120); } } },
