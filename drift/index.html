@@ -131,6 +131,7 @@
     <div class="tag">SLIDE · CHAIN · SEND IT</div>
     <p class="lead">An endless sunlit road that keeps throwing tighter corners. Pin the throttle down the straights, brake into the bends — carry too much speed and the rear steps out. Hold the slide to build your multiplier; the wider and longer, the bigger the score.</p>
     <button class="go" id="startBtn">Drive</button>
+    <div><button class="aux" id="dailyBtn" style="border-color:rgba(200,90,26,.5); color:#c85a1a; font-size:13px">⚑ Today’s Road</button></div>
     <div><button class="aux" id="auxBtn">♪ Load music from this device</button></div>
     <div class="armoryBox"></div>
     <div class="keys">
@@ -146,6 +147,8 @@
       corner coming — the dash also has an AR guide and a nav map<br>
       <b>Contracts:</b> the county posts <b>three jobs</b> every run — top-left, under your wallet.
       Cross one mid-run and the cash lands on the spot<br>
+      <b>Today’s Road:</b> one road per day — same corners, same horde, same jobs for everyone.
+      Its <b>today’s best</b> resets at midnight, and it never touches your endless BEST<br>
       <b>Zombies:</b> the road has a horde problem and the county pays a bounty — run them down for
       <b>wallet cash</b> (it persists). The wallet buys guns above; an equipped gun <b>auto-fires</b> at the
       shamblers out on the verge that the car can’t reach. Brushing <b>past</b> one at speed without
@@ -231,9 +234,22 @@ function nearestIdx(R,x,y,from){
   return bi;
 }
 
+/* ============================ the daily road ============================ */
+/* One road per calendar day, seeded off the date: same corners, same horde, same contract board for
+   everyone who drives it, and a TODAY'S BEST that resets at midnight. The endless mode can't be learned —
+   this one can, and that's the point: mastery gets a target, and tomorrow there's a new one. Daily runs
+   keep their own best so grinding a known road never inflates the endless leaderboard. */
+let dailyMode=false, dbCache=0;   // today's best, cached so the HUD isn't hitting localStorage every frame
+function dayKey(){ const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function daySeed(k){ let h=5381; for(let i=0;i<k.length;i++) h=(h*33 ^ k.charCodeAt(i))|0; return h>>>0; }
+function loadDailyBest(){ let s=''; try{ s=localStorage.getItem('drift.dbest')||''; }catch(e){}
+  const i=s.indexOf('|'); if(i<0 || s.slice(0,i)!==dayKey()) return 0; return +s.slice(i+1)||0; }
+function saveDailyBest(v){ try{ localStorage.setItem('drift.dbest', dayKey()+'|'+Math.round(v)); }catch(e){} }
+
 /* ============================ new game ============================ */
-function newGame(){
-  const seed=(Math.random()*1e9)|0;
+function newGame(forceSeed){
+  const seed=forceSeed===undefined ? (Math.random()*1e9)|0 : forceSeed;
   const R=makeRoad(seed);
   const p0=R.pts[3];
   game={
@@ -416,11 +432,18 @@ function step(dt){
 function gameOver(reason){
   state='over'; game.overReason=reason; game.shake=1.4;
   const sc=Math.round(game.score);
-  const isBest=sc>best; if(isBest){ best=sc; try{ localStorage.setItem('drift.best',best); }catch(e){} }
-  document.getElementById('overReason').textContent=reason;
+  // two ledgers: the endless best, and today's — a daily run only ever settles against today's
+  let isBest;
+  if(dailyMode){ isBest=sc>loadDailyBest(); if(isBest) saveDailyBest(sc); dbCache=loadDailyBest(); }
+  else { isBest=sc>best; if(isBest){ best=sc; try{ localStorage.setItem('drift.best',best); }catch(e){} } }
+  document.getElementById('overReason').textContent=(dailyMode?'TODAY’S ROAD · ':'')+reason;
   document.getElementById('finalScore').textContent=sc.toLocaleString();
-  document.getElementById('overBest').textContent='Best '+best.toLocaleString();
-  document.getElementById('newBest').style.display=isBest?'inline-block':'none';
+  document.getElementById('overBest').textContent=dailyMode
+    ? 'Today’s best '+loadDailyBest().toLocaleString()+' · resets at midnight'
+    : 'Best '+best.toLocaleString();
+  const nb=document.getElementById('newBest');
+  nb.textContent=dailyMode?'NEW DAILY BEST!':'NEW BEST!';
+  nb.style.display=isBest?'inline-block':'none';
   saveWallet(); renderArmory();                                  // bank the bounty, restock the shop
   const oc=document.getElementById('overCash');
   oc.style.display=game.cashRun>0?'block':'none';
@@ -1837,7 +1860,9 @@ function updateHUD(){
   const mel=document.getElementById('multEl'); mel.textContent='x'+g.mult.toFixed(1);
   mel.classList.toggle('big', g.mult>=4);
   document.getElementById('speedEl').textContent=Math.round(g.speed*0.36);
-  document.getElementById('bestEl').textContent='BEST '+best.toLocaleString();
+  document.getElementById('bestEl').textContent=dailyMode
+    ? 'TODAY '+dbCache.toLocaleString()
+    : 'BEST '+best.toLocaleString();
   document.getElementById('cashEl').textContent='$'+Math.round(cash).toLocaleString();
   const rows=contractRows(g,false);
   if(rows!==g._ctrHtml){ document.getElementById('ctrEl').innerHTML=rows; g._ctrHtml=rows; }
@@ -2074,23 +2099,28 @@ function brakeInput(){
 }
 
 /* ============================ flow ============================ */
-function startGame(){
-  audioInit(); newGame(); state='play'; last=performance.now(); acc=0;
+function startGame(daily){
+  dailyMode = daily===true; dbCache=dailyMode?loadDailyBest():0;
+  audioInit(); newGame(dailyMode ? daySeed(dayKey()) : undefined); state='play'; last=performance.now(); acc=0;
   if(MUSIC.length && !mPlaying) musicPlay();   // the Drive click is the gesture autoplay policy wants
   document.getElementById('startPanel').classList.add('hidden');
   document.getElementById('overPanel').classList.add('hidden');
   showHUD(true);
   viewBtn.style.display='block'; setViewButton();   // sets the driver-view body class + the tap hints
 }
-document.getElementById('startBtn').onclick=startGame;
-document.getElementById('againBtn').onclick=startGame;
-document.getElementById('startPanel').addEventListener('pointerdown',e=>{ if(e.target.id==='startPanel') startGame(); });
+document.getElementById('startBtn').onclick=()=>startGame(false);
+document.getElementById('dailyBtn').onclick=e=>{ e.stopPropagation(); startGame(true); };
+document.getElementById('againBtn').onclick=()=>startGame(dailyMode);   // Again replays the mode you died in
+document.getElementById('startPanel').addEventListener('pointerdown',e=>{ if(e.target.id==='startPanel') startGame(false); });
 renderArmory();   // the shop is open before the first drive
 
 /* ============================ test hooks ============================ */
 window.__drift={
   get state(){ return state; }, get game(){ return game; }, get best(){ return best; },
-  start(){ startGame(); },
+  get dailyMode(){ return dailyMode; },
+  start(){ startGame(false); },
+  startDaily(){ startGame(true); },
+  daily:{ key:dayKey, seed:daySeed, best:loadDailyBest },
   setInput(steer,gas,brake){ if(game){ game.forceSteer=steer; game.forceGas=gas; game.forceBrake=brake; } },
   clearInput(){ if(game){ delete game.forceSteer; delete game.forceGas; delete game.forceBrake; } },
   step(n){ for(let i=0;i<(n||1);i++){ if(state==='play'){ game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); cruiseAdjust(game); step(1/120); } } },

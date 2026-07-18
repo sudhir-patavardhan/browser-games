@@ -15,6 +15,7 @@ Chrome/Chromium. The game exposes `window.__drift` (`start()`, `setInput(steer, 
 ./drift/verify/run.sh contracts    # the job board: seeded draw, live progress, cash paid on the spot
 ./drift/verify/run.sh garage       # wallet-bought car hardware, each part proven A/B on pinned roads
 ./drift/verify/run.sh nearmiss     # the CLOSE SHAVE: choreographed passes, paid in heat only
+./drift/verify/run.sh daily        # today's road: one seed per day, its own best, resets at midnight
 ./drift/verify/run.sh plane        # scenery built, and the rare airliner is actually reachable
 ./drift/verify/shoot.sh driver f.png   # screenshot the car mid-drive, so you can LOOK at it
 ```

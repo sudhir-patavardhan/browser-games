@@ -3,6 +3,25 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## Today's Road — one seeded road per day (2026-07-18)
+
+**What.** A second button on the start card: **⚑ Today's Road**. The seed is a pure hash of the calendar
+date, so everyone who drives it gets the same corners, the same horde, and the same contract board all
+day. It keeps its own **today's best** (HUD shows `TODAY`, the over panel settles against it, "NEW DAILY
+BEST!") which resets at midnight — and it never touches the endless `BEST`, so grinding a known road
+can't inflate the real leaderboard. *Again* replays whichever mode you died in; plain *Drive* stays
+random-seeded.
+
+**Why.** Endless mode can't be learned — every run is a new road, so mastery has no target. A daily road
+gives short-session players a fair, learnable arena and a reason to come back tomorrow (the Wordle
+lever). It composes with everything already shipped: the day's fixed contract board becomes a puzzle,
+and the fixed horde layout makes shave lines repeatable.
+
+**How it's defended.** `./verify/run.sh daily` — seed is a pure function of the date (adjacent days
+differ), two daily starts give the identical road and board, plain Drive differs and stays out of the
+daily ledger, the two bests never cross, worse runs don't overwrite, Again preserves mode both ways, and
+a stale ledger from another day reads as zero then yields to the new day's first run.
+
 ## CLOSE SHAVE — near-misses pay in heat (2026-07-18)
 
 **What.** Passing a live shambler with the nose inside 120 px (but outside the 55 px strike radius) at
