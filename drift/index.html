@@ -892,7 +892,12 @@ function drawNav(g, proj, horizon){
 
 function drawDashboard(g){
   const { cx, cy, rad }=wheelGeom();
-  const wheelTop=cy-rad, ch=clamp(H*0.125,74,106*cabK());
+  // the cluster used to size off H*0.125 alone, capped at 106*cabK() — a cap that almost never bound, because
+  // a normal window's height fraction sat well under it. cabK grew the WHEEL (its cap is what actually binds
+  // there) but left the CLUSTER — and every number drawn inside it — exactly as small as on a phone, even on
+  // a wide desktop monitor. Tying the cluster's height straight to the wheel's own radius (a real binnacle's
+  // height tracks the wheel it sits over) makes it grow in lockstep instead.
+  const wheelTop=cy-rad, ch=clamp(rad*1.5,74,250);
   const topY=wheelTop-ch-16, lip=topY+13;
 
   // dash body — matte, unlit, and darker as it falls away from the glass
@@ -963,7 +968,7 @@ function drawBinnacle(g, y0, h, cx, rad){
   ctx.fillStyle=lit; ctx.fillRect(x0,y0,wd,h);
 
   clusterTop(g, x0, x1, y0+13*s, s);
-  tripBlock(g, x1-9*s, y0+34*s, s);                       // under the temp, where a cluster keeps its trip
+  tripBlock(g, x1-9*s, y0+50*s, s);                       // under the temp, where a cluster keeps its trip
   bigSpeed(g, gcx, y0+h*0.50, h, s);
   navMap(g, x0+9*s, y0+h*0.30, wd*0.235, h*0.42, s);      // the map, where a real cluster puts it
   rangeBlock(g, x0+9*s, y1-10*s, s);
@@ -984,20 +989,20 @@ function clusterTop(g,x0,x1,y,s){
   const hh=d.getHours(), mm=String(d.getMinutes()).padStart(2,'0');
   const clock=((hh%12)||12)+':'+mm+' '+(hh<12?'AM':'PM');
   ctx.textBaseline='alphabetic';
-  ctx.textAlign='left'; ctx.fillStyle=DIM; ctx.font='600 '+Math.round(9*s)+'px '+FMONO;
+  ctx.textAlign='left'; ctx.fillStyle='#c3dcee'; ctx.font='600 '+Math.round(11*s)+'px '+FMONO;
   ctx.fillText(clock, x0+10*s, y);
   ctx.textAlign='right'; ctx.fillText((18+(g.seed%11))+'°C', x1-10*s, y);
-  ctx.textAlign='center'; ctx.fillStyle='#dff2ff'; ctx.font='800 '+Math.round(10*s)+'px '+FSANS;
+  ctx.textAlign='center'; ctx.fillStyle='#dff2ff'; ctx.font='800 '+Math.round(13*s)+'px '+FSANS;
   ctx.fillText('D', (x0+x1)*0.5, y);
   // CRUISE: lit with the set speed when it's holding, dim when it isn't
-  const on=g.cc>0, cw=Math.max(52,58*s), chh=Math.max(13,15*s);
+  const on=g.cc>0, cw=Math.max(64,70*s), chh=Math.max(17,19*s);
   const cx2=(x0+x1)*0.5 - (x1-x0)*0.235, cy2=y-chh*0.72;
-  ctx.fillStyle=on?'rgba(127,226,255,.16)':'rgba(255,255,255,.05)';
+  ctx.fillStyle=on?'rgba(127,226,255,.16)':'rgba(255,255,255,.06)';
   rr(cx2-cw*0.5, cy2, cw, chh, chh*0.5); ctx.fill();
-  ctx.strokeStyle=on?'rgba(127,226,255,.6)':'rgba(190,215,235,.16)'; ctx.lineWidth=1;
+  ctx.strokeStyle=on?'rgba(127,226,255,.6)':'rgba(190,215,235,.2)'; ctx.lineWidth=1;
   rr(cx2-cw*0.5, cy2, cw, chh, chh*0.5); ctx.stroke();
   ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillStyle=on?CYAN:DIM; ctx.font='800 '+Math.round(7.5*s)+'px '+FSANS;
+  ctx.fillStyle=on?CYAN:'#c3dcee'; ctx.font='800 '+Math.round(9.5*s)+'px '+FSANS;
   ctx.fillText(on? ('CC '+Math.round(g.cc*0.36)) : 'CRUISE', cx2, cy2+chh*0.54);
   ctx.textBaseline='alphabetic';
 }
@@ -1072,55 +1077,66 @@ function navMap(g,x,y,w,h,s){
   ctx.fillStyle='#ff6a3d';
   ctx.beginPath(); ctx.moveTo(px,py-6*s); ctx.lineTo(px+4.6*s,py+4*s); ctx.lineTo(px,py+1.8*s);
   ctx.lineTo(px-4.6*s,py+4*s); ctx.closePath(); ctx.fill();
+  // NAV, on its own dark ribbon across the top of the card — floating text over a live route line disappears
+  // the moment the road under it turns pale, a ribbon never does
   ctx.textAlign='left'; ctx.textBaseline='alphabetic';
-  ctx.fillStyle=DIM; ctx.font='700 '+Math.round(6.5*s)+'px '+FSANS;
-  ctx.fillText('NAV', x+4*s, y+9*s);
-  // the next bay, the way a real EV nav flags the next charger — and amber the moment the pack can't
-  // cover the distance, because that's the number that decides whether pause is still an option
+  const capH=Math.max(16,18*s);
+  ctx.fillStyle='rgba(4,7,11,.62)'; rr(x,y,w,capH,4*s); ctx.fill();
+  ctx.fillStyle='#cfe8f7'; ctx.font='800 '+Math.round(10*s)+'px '+FSANS;
+  ctx.fillText('NAV', x+7*s, y+capH*0.72);
+  // the next bay, the way a real EV nav flags the next charger — a ribbon across the foot of the card now,
+  // not text squeezed under the route, and amber the moment the pack can't cover the distance
+  const footH=Math.max(21,24*s);
   const rm=(g.rest&&g.rest.ahead!=null) ? (g.rest.ahead-g.car.idx)*SEG*0.1 : null;
-  ctx.fillStyle=(rm!=null && rm>g.batt*EV_RANGE*g.mod.cap*1000) ? '#ff8a5c' : CYAN;
-  ctx.font='700 '+Math.round(7*s)+'px '+FSANS;
-  ctx.fillText('⚡ '+restFmt(rm), x+4*s, y+h-4*s);
+  const hot=(rm!=null && rm>g.batt*EV_RANGE*g.mod.cap*1000);
+  ctx.fillStyle='rgba(4,7,11,.7)'; rr(x,y+h-footH,w,footH,4*s); ctx.fill();
+  ctx.fillStyle=hot?'#ff8a5c':CYAN; ctx.font='800 '+Math.round(12*s)+'px '+FSANS;
+  ctx.fillText('⚡ '+restFmt(rm), x+7*s, y+h-footH*0.28);
 }
 
 // the trip odometer, top-right column — how far this run has actually gone, on the same 1px≈0.1m scale
-// the ghost meter and the contract board already count in
+// the ghost meter and the contract board already count in. It used to be bare text dropped in the corner,
+// which is unreadable the moment anything busy sits behind it — so now it gets the same lit chip RANGE and
+// the charger distance get: a solid backing sized to the number, not a hope that the glass stays dark there.
 function tripBlock(g,x,y,s){
+  const bw=Math.max(70,78*s), bh=Math.max(34,38*s), bx=x-bw, by=y-bh+8*s;
+  ctx.fillStyle='rgba(255,255,255,.07)'; rr(bx,by,bw,bh,bh*0.22); ctx.fill();
+  ctx.strokeStyle='rgba(190,215,235,.18)'; ctx.lineWidth=1; rr(bx,by,bw,bh,bh*0.22); ctx.stroke();
   ctx.textAlign='right'; ctx.textBaseline='alphabetic';
-  ctx.fillStyle='#dfeefb'; ctx.font='800 '+Math.round(13*s)+'px '+FMONO;
-  ctx.fillText((g.dist/10000).toFixed(1)+' km', x, y);
-  ctx.fillStyle=DIM; ctx.font='700 '+Math.round(8*s)+'px '+FSANS;
-  ctx.fillText('TRIP', x, y+10*s);
+  ctx.fillStyle='#f4fbff'; ctx.font='800 '+Math.round(17*s)+'px '+FMONO;
+  ctx.fillText((g.dist/10000).toFixed(1)+' km', x-9*s, y-13*s);
+  ctx.fillStyle=CYAN; ctx.font='800 '+Math.round(9.5*s)+'px '+FSANS;
+  ctx.fillText('TRIP', x-9*s, y);
 }
 
 // range, bottom-left, in amber — the way a real EV cluster shouts about what's left
 function rangeBlock(g,x,y,s){
   const low=g.batt<0.15, col=low?'#ff8a5c':'#ffb454';
-  const bw=13*s, bh=7*s, by=y-16*s;
-  ctx.strokeStyle=col; ctx.lineWidth=Math.max(1,1.1*s);
-  rr(x,by,bw,bh,1.6*s); ctx.stroke();
-  ctx.fillStyle=col; ctx.fillRect(x+bw+1*s, by+bh*0.28, 1.6*s, bh*0.44);
-  ctx.fillRect(x+1.4*s, by+1.4*s, Math.max(1,(bw-2.8*s)*g.batt), bh-2.8*s);
+  const bw=15*s, bh=8*s, by=y-19*s;
+  ctx.strokeStyle=col; ctx.lineWidth=Math.max(1.2,1.3*s);
+  rr(x,by,bw,bh,1.8*s); ctx.stroke();
+  ctx.fillStyle=col; ctx.fillRect(x+bw+1.2*s, by+bh*0.28, 1.8*s, bh*0.44);
+  ctx.fillRect(x+1.6*s, by+1.6*s, Math.max(1,(bw-3.2*s)*g.batt), bh-3.2*s);
   ctx.textAlign='left'; ctx.textBaseline='alphabetic';
-  ctx.fillStyle=col; ctx.font='800 '+Math.round(15*s)+'px '+FMONO;
-  ctx.fillText(Math.round(g.batt*EV_RANGE*g.mod.cap)+' km', x+bw+7*s, by+bh);   // the dash reports the pack you actually fitted
-  ctx.fillStyle=DIM; ctx.font='700 '+Math.round(8*s)+'px '+FSANS;
+  ctx.fillStyle=col; ctx.font='800 '+Math.round(18*s)+'px '+FMONO;
+  ctx.fillText(Math.round(g.batt*EV_RANGE*g.mod.cap)+' km', x+bw+8*s, by+bh);   // the dash reports the pack you actually fitted
+  ctx.fillStyle='#c3dcee'; ctx.font='700 '+Math.round(9.5*s)+'px '+FSANS;
   ctx.fillText('RANGE · '+Math.round(g.batt*100)+'%', x, y);
 }
 
 // power / regen, bottom-right, stepped like an instrument
 function powerBlock(g,x,y,w,s){
-  const n=10, mid=3, gap=Math.max(1.2,w*0.014), sw=(w-gap*(n-1))/n;
-  const bh=Math.max(3.5,5*s), by=y-15*s, x0=x-w;
+  const n=10, mid=3, gap=Math.max(1.4,w*0.016), sw=(w-gap*(n-1))/n;
+  const bh=Math.max(4.5,6.5*s), by=y-18*s, x0=x-w;
   for(let i=0;i<n;i++){
-    let col='rgba(150,180,205,.13)';
+    let col='rgba(150,180,205,.14)';
     if(i<mid){ if((mid-i)/mid<=clamp(-g.kw/REGEN_KW,0,1)) col='#63e6a4'; }
     else if((i-mid+1)/(n-mid)<=clamp(g.kw/EV_KW,0,1)) col=CYAN;
-    ctx.fillStyle=col; rr(x0+i*(sw+gap), by, sw, bh, Math.min(1.6,sw*0.3)); ctx.fill();
+    ctx.fillStyle=col; rr(x0+i*(sw+gap), by, sw, bh, Math.min(1.8,sw*0.3)); ctx.fill();
   }
   ctx.fillStyle='rgba(255,255,255,.28)'; ctx.fillRect(x0+mid*(sw+gap)-gap*0.5-0.5, by-2*s, 1, bh+4*s);
   ctx.textAlign='right'; ctx.textBaseline='alphabetic';
-  ctx.fillStyle=DIM; ctx.font='700 '+Math.round(8*s)+'px '+FSANS;
+  ctx.fillStyle='#c3dcee'; ctx.font='700 '+Math.round(9.5*s)+'px '+FSANS;
   ctx.fillText((g.kw<-2?'REGEN':'POWER')+' · '+Math.round(Math.abs(g.kw))+' kW', x, y);
 }
 
