@@ -119,6 +119,12 @@
     font-weight:900; font-size:clamp(15px,4.2vw,22px); color:#ffe9ad; opacity:0; letter-spacing:1.5px;
     text-shadow:0 2px 0 rgba(122,82,0,.85), 0 4px 14px rgba(0,0,0,.35); }
   .badgepop.show{ animation:pop 1.15s ease forwards; }
+  /* the county radio: a wave called, cleared, or let slip by */
+  .wavepop{ position:fixed; left:50%; top:24%; transform:translateX(-50%); z-index:5; pointer-events:none;
+    font-weight:900; font-size:clamp(17px,5vw,26px); color:#ffb3a0; opacity:0; letter-spacing:1.5px;
+    text-shadow:0 2px 0 rgba(140,30,10,.9), 0 5px 16px rgba(0,0,0,.35); }
+  .wavepop.show{ animation:pop 1.3s ease forwards; }
+  .waverow{ margin-top:5px; font-size:11px; font-weight:900; letter-spacing:.6px; color:#c8442a; }
   /* the chain's NAME, worn like a title belt */
   .tierword{ font-size:.52em; vertical-align:middle; font-weight:900; letter-spacing:2px; margin-right:6px;
     background:linear-gradient(180deg,#ffd24a,#ff4d3d); -webkit-background-clip:text; background-clip:text; color:transparent; }
@@ -135,6 +141,7 @@
     <div class="ctrbox" id="ctrEl"></div>
     <div class="ghostrow" id="ghostEl" style="display:none"></div>
     <div class="ghostrow" id="wetEl" style="display:none; color:#5878a0">🌧 WET ROAD · GRIP −12%</div>
+    <div class="waverow" id="waveEl" style="display:none"></div>
   </div>
   <div class="pill rt">
     <div class="speed"><span id="speedEl">0</span> <small>km/h</small></div>
@@ -145,6 +152,7 @@
 <div class="ctrpop" id="ctrPop"></div>
 <div class="buzzpop" id="buzzEl"></div>
 <div class="badgepop" id="badgePop"></div>
+<div class="wavepop" id="wavePop"></div>
 <div class="steerhint" id="hintL" style="display:none">‹</div>
 <div class="steerhint" id="hintR" style="display:none">›</div>
 <button id="viewBtn" style="display:none">DRIVER VIEW</button>
@@ -179,6 +187,8 @@
       Some days it <b>rains</b>: grip and brakes are down, and the whole county drives the same weather<br>
       <b>Zombies:</b> the horde has ranks — <b>runners</b> sprint for your lane and pay double,
       <b>brutes</b> soak two rounds, pay triple, and cost you real speed if you plow one.
+      Every couple of klicks the radio calls a <b>BOUNTY WAVE</b> — a dense pack, double pay for 18s,
+      and five heads inside the window clears it for a <b>+$120</b> bonus.
       The road has a horde problem and the county pays a bounty — run them down for
       <b>wallet cash</b> (it persists). The wallet buys guns above; an equipped gun <b>auto-fires</b> at the
       shamblers out on the verge that the car can’t reach. Brushing <b>past</b> one at speed without
@@ -308,6 +318,7 @@ function ghostAt(g){ const gh=g.ghost; if(!gh) return null;
 /* ============================ new game ============================ */
 function newGame(forceSeed){
   const seed=forceSeed===undefined ? (Math.random()*1e9)|0 : forceSeed;
+  const wrng=mulberry32(seed^0x33aa);   // the county radio's own dice: wave timing must not disturb the horde's
   const R=makeRoad(seed);
   const p0=R.pts[3];
   game={
@@ -326,6 +337,7 @@ function newGame(forceSeed){
     vmax:0, zCarKills:0, gunKills:0, buzzes:0, contracts:makeContracts(seed), mod:carMods(),
     rec:[], recT:0, ghost:dailyMode?loadGhost():null, ghostIdx:0,   // today's line, and the one to beat
     wet: dailyMode && seedWet(seed),                                // today's sky came with the road
+    wrng, waveNext:12000+wrng()*6000, waveT:0, waveKills:0, waveGoal:5,   // the radio's first call, ~30s out
     shake:0, time:0
   };
 }
@@ -541,6 +553,8 @@ function gameOver(reason){
    The ladder is steep on purpose: CLEAN is a good corner, LEGENDARY is a story you tell someone. */
 const CHAIN_TIERS=[[20000,'LEGENDARY'],[10000,'OUTRAGEOUS'],[5000,'SICK'],[2500,'SLICK'],[1000,'CLEAN']];
 function chainTier(v){ for(const t of CHAIN_TIERS) if(v>=t[0]) return t[1]; return ''; }
+function wavePop(msg){ const el=document.getElementById('wavePop'); if(!el) return;
+  el.textContent=msg; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
 function driftPop(v,charge,tier){ const el=document.getElementById('driftpop');
   el.innerHTML=(tier?'<span class="tierword">'+tier+'</span>':'')+'+'+Math.round(v).toLocaleString()
     +(charge>0.002?' <span class="chg">+'+(charge*100).toFixed(0)+'%</span>':'');
@@ -1697,7 +1711,8 @@ function spawnZombie(g,fi,o){
 function killZombie(g,z,by){
   const R=g.road, p=zPos(R,z), spd=g.speed;
   const rank = z.kind==='brute' ? 3 : z.kind==='runner' ? 2 : 1;                // the county pays by the head
-  const pay = (by==='car' ? 20+Math.round(spd*0.02) : 40)*rank;                 // gun targets pay a marksman bonus
+  let pay = (by==='car' ? 20+Math.round(spd*0.02) : 40)*rank;                   // gun targets pay a marksman bonus
+  if(g.waveT>0){ pay*=2; g.waveKills++; }                                       // wave rates: double, and it counts toward the clear
   cash+=pay; g.cashRun+=pay; cashPop(pay); saveWallet();                        // banked on the spot — a crash can't take it
   if(by==='car' && z.kind==='brute'){ g.car.vx*=0.86; g.car.vy*=0.86;           // a brute has MASS: the hit is paid in momentum
     g.shake=Math.max(g.shake,0.8); }
@@ -1718,9 +1733,28 @@ function killZombie(g,z,by){
 }
 function updateZombies(g,dt){
   const R=g.road, c=g.car;
+  /* BOUNTY WAVES: every ~1.6 km the county radio calls one — a dense pack dropped on the road ahead,
+     every bounty DOUBLED for 18 seconds, and five heads inside the window pays a clear bonus. The wave
+     rides the run's own seed, so a daily road calls the same waves for everyone. Gated on the spawner
+     being live: when a probe stands the horde down, the radio is off too. */
+  if(g.zNextIdx<1e8){
+    if(g.waveT<=0 && g.dist>=g.waveNext){
+      g.waveT=18; g.waveKills=0;
+      for(let i=0;i<8;i++) if(g.zombies.length<14) spawnZombie(g, c.idx+26+((g.wrng()*46)|0));
+      wavePop('⚑ BOUNTY WAVE · DOUBLE PAY'); sfx('klaxon');
+    } else if(g.waveT>0){
+      g.waveT-=dt;
+      if(g.waveT<=0){
+        if(g.waveKills>=g.waveGoal){ cash+=120; g.cashRun+=120; saveWallet(); cashPop(120);
+          wavePop('WAVE CLEARED · +$120'); sfx('chain',4); }
+        else wavePop('WAVE PASSED');
+        g.waveNext=g.dist+16000+g.wrng()*6000;
+      }
+    }
+  }
   // spawner: one shambler every ~45–90 points of road, up to the cap — seeded, so a seed replays its horde
   if(g.zNextIdx===0) g.zNextIdx=c.idx+46+g.zrng()*40;
-  while(c.idx+70>g.zNextIdx){ if(g.zombies.length<Z_MAX) spawnZombie(g,g.zNextIdx);
+  while(c.idx+70>g.zNextIdx){ if(g.zombies.length<(g.waveT>0?14:Z_MAX)) spawnZombie(g,g.zNextIdx);
     g.zNextIdx+=45+g.zrng()*45; }
   const gun=GUNS[gunEq]; g.gunCd-=dt;
   let tgt=null, tgtD=1e9;
@@ -2095,6 +2129,11 @@ function updateHUD(){
   } else if(ge.style.display!=='none') ge.style.display='none';
   const we=document.getElementById('wetEl'), wetShow=g.wet?'block':'none';
   if(we.style.display!==wetShow) we.style.display=wetShow;
+  const wv=document.getElementById('waveEl');
+  if(g.waveT>0){
+    const h='⚑ WAVE '+Math.ceil(g.waveT)+'s · '+g.waveKills+'/'+g.waveGoal;
+    if(h!==g._wvHtml){ wv.style.display='block'; wv.textContent=h; g._wvHtml=h; }
+  } else if(wv.style.display!=='none') wv.style.display='none';
 }
 function showHUD(v){ document.getElementById('hud').style.display=v?'flex':'none'; }
 
@@ -2189,6 +2228,9 @@ function sfx(kind,opt){ if(!actx) return; const t=actx.currentTime, o=actx.creat
     gg.gain.setValueAtTime(.30,t); gg.gain.exponentialRampToValueAtTime(.0001,t+.20); o.start(t); o.stop(t+.20); }
   else if(kind==='squelch'){ gg.gain.value=0; noiseBurst(0.20,0.22,340,110,0.7); }                                               // the wet part
   else if(kind==='whoosh'){ gg.gain.value=0; noiseBurst(0.16,0.18,2400,500,0.6); }                                               // something close going past, fast
+  else if(kind==='klaxon'){ o.type='square'; o.frequency.setValueAtTime(392,t); o.frequency.setValueAtTime(311,t+.16);            // the county radio's two-tone call
+    o.frequency.setValueAtTime(392,t+.32); o.frequency.setValueAtTime(311,t+.48);
+    gg.gain.setValueAtTime(.10,t); gg.gain.exponentialRampToValueAtTime(.0001,t+.62); o.start(t); o.stop(t+.62); }
   else if(kind==='shot'){ gg.gain.value=0; noiseBurst(0.07,0.24,2600,700,0.5);                                                   // crack + a little body
     const o2=actx.createOscillator(), g2=actx.createGain(); o2.type='square'; o2.frequency.setValueAtTime(190,t);
     o2.frequency.exponentialRampToValueAtTime(90,t+.05); g2.gain.setValueAtTime(.10,t); g2.gain.exponentialRampToValueAtTime(.0001,t+.06);

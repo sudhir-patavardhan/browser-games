@@ -3,6 +3,26 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## Bounty Waves — the county radio calls (2026-07-19)
+
+**What.** Every ~1.6–2.2 km (seeded off the run, first call ~30 s in), the radio calls a **BOUNTY
+WAVE**: a two-tone klaxon, a dense pack of 8 dropped on the road ahead (population cap lifted to 14
+for the duration), every bounty **doubled** for 18 seconds, and **five heads inside the window pays a
++$120 clear bonus**. The HUD counts it down (`⚑ WAVE 12s · 3/5`); banners call the arrival, the clear,
+or the pass. Daily roads call the same waves for everyone. When a probe stands the horde down, the
+radio is off too — so every cash-arithmetic test stays exact.
+
+**Why.** The run had hazard variety but no *rhythm* — nothing escalated, peaked, or released. Waves
+give the session a pulse: anticipation between calls, a 18-second skill spike that leans on everything
+already built (guns, brutes' two-round soak, shave lines through a dense pack), and a clear bonus that
+makes the wallet loop breathe.
+
+**How it's defended.** `./verify/run.sh waves` — seeded schedule (same seed, same call), the wave
+arrives on it and drops a real pack (0→9 on the road), base pay $33 vs in-wave $56+ on the same
+choreographed mow (placed on the car's actual line — the autopilot cuts corners, so road-centre can
+miss in a bend), the clear pays exactly +$120 at five heads, a passed wave pays nothing, the radio
+re-arms ~2 km out, and a stood-down horde silences it entirely.
+
 ## The Trophy Shelf — badges and streaks (2026-07-19)
 
 **What.** Fifteen persistent badges, shown as a shelf on the start and over panels with a gold toast
