@@ -11,6 +11,7 @@
 #   ./drift/verify/run.sh report     # chain tier names + the end-of-run report card
 #   ./drift/verify/run.sh weather    # rain days: seed-pure forecast, wet grip/brakes proven A/B
 #   ./drift/verify/run.sh horde      # zombie ranks: the mix, the bounty ladder, the brute's momentum tax
+#   ./drift/verify/run.sh badges     # the trophy shelf: feats award once, streaks count days, all persists
 #   ./drift/verify/run.sh plane      # scenery build + airliner reachability
 #   ./drift/verify/run.sh music      # the playlist actually loads in a browser
 #
@@ -60,9 +61,10 @@ case "$PROBE" in
   report) JS="$HERE/report.js"; DIV="RESULTS" ;;
   weather) JS="$HERE/weather.js"; DIV="RESULTS" ;;
   horde) JS="$HERE/horde.js"; DIV="RESULTS" ;;
+  badges) JS="$HERE/badges.js"; DIV="RESULTS" ;;
   plane)  JS="$HERE/plane.js";  DIV="PLANE" ;;
   music)  JS="$HERE/music.js";  DIV="RESULTS" ;;
-  *) echo "unknown probe '$PROBE' (want: assert | controls | contracts | garage | nearmiss | daily | ghost | report | weather | horde | plane | music)" >&2; exit 2 ;;
+  *) echo "unknown probe '$PROBE' (want: assert | controls | contracts | garage | nearmiss | daily | ghost | report | weather | horde | badges | plane | music)" >&2; exit 2 ;;
 esac
 
 # splice the probe in just before </body>, after the game's own script has defined window.__drift

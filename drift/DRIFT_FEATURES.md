@@ -3,6 +3,26 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## The Trophy Shelf — badges and streaks (2026-07-19)
+
+**What.** Fifteen persistent badges, shown as a shelf on the start and over panels with a gold toast
+when one lands: firsts (SIDEWAYS — first banked chain), the chain-tier ladder (CLEAN COLLAR /
+CERTIFIED SICK / COUNTY LEGEND), feats (225 CLUB, LONG HAULER 5 km, THE BARBER 5 shaves, PEST CONTROL
+10 shamblers, BIG GAME — a brute), daily-mode glory (FASTER THAN YESTERDAY — beat your ghost;
+RAIN DANCER — a wet-day best), completion (FULLY ARMED, GEARHEAD), and the habit itself: REGULAR and
+LOCAL FIXTURE for 3- and 7-day **streaks** on Today's Road. Chains you died holding still count.
+
+**Why.** Every other system settles when the run ends; badges are the layer that *remembers*. They give
+the long horizon goals cash can't (cash runs out of sinks; "I've never hit LEGENDARY" doesn't), and
+streak badges are the industry's most reliable comeback lever, riding on the daily road that's already
+there.
+
+**How it's defended.** `./verify/run.sh badges` — every badge is claimed through the game's own paths
+(real banked chains, a real brute under the bumper, real purchases, real daily starts — never by poking
+storage): feats pay once, the toast announces, the report awards died-holding chains, two guns is not
+FULLY ARMED, streaks continue from yesterday / break after a lapse / hit REGULAR at 3 and LOCAL FIXTURE
+at 7, and the shelf persists and gilds.
+
 ## The horde gets ranks — runners and brutes (2026-07-18)
 
 **What.** The horde is no longer uniform. **Runners** (10%) sprint for your lane at ~3× shamble speed,

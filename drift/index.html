@@ -111,6 +111,14 @@
   .stat b{ display:block; font-size:15px; font-weight:900; color:#17324a; line-height:1.2; }
   .stat span{ font-size:9.5px; font-weight:800; letter-spacing:1px; color:#8a9aa8; }
   .stat em{ font-style:normal; font-size:9.5px; font-weight:900; letter-spacing:1px; color:#c85a1a; margin-left:5px; }
+  /* the trophy shelf: earned in gold, unearned in outline */
+  .bdg{ display:inline-block; margin:0 4px 5px 0; padding:3.5px 8px; border-radius:9px; font-size:9.5px;
+    font-weight:900; letter-spacing:.6px; color:#a8b4be; border:1px solid rgba(23,50,74,.14); background:#f4f6f4; }
+  .bdg.got{ color:#7a5200; border-color:#e8c25a; background:linear-gradient(180deg,#fff3d0,#ffe49a); }
+  .badgepop{ position:fixed; left:50%; top:36%; transform:translateX(-50%); z-index:5; pointer-events:none;
+    font-weight:900; font-size:clamp(15px,4.2vw,22px); color:#ffe9ad; opacity:0; letter-spacing:1.5px;
+    text-shadow:0 2px 0 rgba(122,82,0,.85), 0 4px 14px rgba(0,0,0,.35); }
+  .badgepop.show{ animation:pop 1.15s ease forwards; }
   /* the chain's NAME, worn like a title belt */
   .tierword{ font-size:.52em; vertical-align:middle; font-weight:900; letter-spacing:2px; margin-right:6px;
     background:linear-gradient(180deg,#ffd24a,#ff4d3d); -webkit-background-clip:text; background-clip:text; color:transparent; }
@@ -136,6 +144,7 @@
 <div class="driftpop" id="driftpop"></div>
 <div class="ctrpop" id="ctrPop"></div>
 <div class="buzzpop" id="buzzEl"></div>
+<div class="badgepop" id="badgePop"></div>
 <div class="steerhint" id="hintL" style="display:none">‹</div>
 <div class="steerhint" id="hintR" style="display:none">›</div>
 <button id="viewBtn" style="display:none">DRIVER VIEW</button>
@@ -150,6 +159,7 @@
     <div><button class="aux" id="dailyBtn" style="border-color:rgba(200,90,26,.5); color:#c85a1a; font-size:13px">⚑ Today’s Road</button></div>
     <div><button class="aux" id="auxBtn">♪ Load music from this device</button></div>
     <div class="armoryBox"></div>
+    <div class="shelfBox"></div>
     <div class="keys">
       <b>Keyboard:</b> &larr; &rarr; (or A / D) steer &nbsp;·&nbsp; &uarr; / W throttle &nbsp;·&nbsp; &darr; / S brake<br>
       <b>Touch:</b> hold the left / right side to steer — or swipe to turn the wheel in driver view.
@@ -175,7 +185,9 @@
       touching it is a <b>CLOSE SHAVE</b> — it feeds your multiplier and keeps a drift chain alive
       between corners<br>
       <b>Garage:</b> bigger money buys <b>car hardware</b> — a longer-range pack, a regen tune, track
-      tyres. Fitted once, driven on every run after
+      tyres. Fitted once, driven on every run after<br>
+      <b>Trophies:</b> firsts and feats land on the <b>shelf</b> above, for good — and driving
+      Today’s Road day after day builds a <b>streak</b> the shelf pays out on
     </div>
   </div>
 </div>
@@ -190,6 +202,7 @@
     <div class="statgrid" id="overStats"></div>
     <div id="overCtr" style="margin-top:8px"></div>
     <div class="armoryBox"></div>
+    <div class="shelfBox"></div>
     <div style="margin-top:22px"><button class="go" id="againBtn">Again</button></div>
   </div>
 </div>
@@ -429,7 +442,12 @@ function step(dt){
         // land a chain and you recover charge. This is the loop: drive well, drive longer.
         const back=clamp(g.chainScore/11000,0,0.055)/g.mod.cap;   // same energy back — a bigger pack counts it as fewer %
         g.batt=clamp(g.batt+back,0,1);
-        driftPop(g.chainScore, back, chainTier(g.chainScore));
+        const tn=chainTier(g.chainScore);
+        driftPop(g.chainScore, back, tn);
+        awardBadge('sideways');
+        if(tn==='CLEAN'||g.chainScore>=1000) awardBadge('clean');
+        if(g.chainScore>=5000) awardBadge('sick');
+        if(g.chainScore>=20000) awardBadge('legend');
       }
       g.bestChain=Math.max(g.bestChain,g.chainScore);
       g.chainScore=0; g.mult=1; g.driftTime=0; }
@@ -490,6 +508,7 @@ function gameOver(reason){
   let isBest;
   if(dailyMode){ isBest=sc>loadDailyBest(); if(isBest){ saveDailyBest(sc); saveGhost(game.rec,sc); } dbCache=loadDailyBest(); }
   else { isBest=sc>best; if(isBest){ best=sc; try{ localStorage.setItem('drift.best',best); }catch(e){} } }
+  checkRunBadges(game,isBest);   // the shelf remembers what the score forgets
   document.getElementById('overReason').textContent=(dailyMode?'TODAY’S ROAD · ':'')+reason;
   document.getElementById('finalScore').textContent=sc.toLocaleString();
   document.getElementById('overBest').textContent=dailyMode
@@ -1559,10 +1578,82 @@ let modsOwned=[]; try{ modsOwned=(localStorage.getItem('drift.mods')||'').split(
 function carMods(){ const has=id=>modsOwned.indexOf(id)>=0;
   return { cap:has('pack')?1.30:1, regen:has('regen')?1.50:1, lat:has('tyres')?1.08:1 }; }
 function buyMod(id){ const m=MODS[id]; if(!m||modsOwned.indexOf(id)>=0||cash<m.price) return false;
-  cash-=m.price; modsOwned.push(id); saveWallet(); renderArmory(); return true; }
+  cash-=m.price; modsOwned.push(id); saveWallet(); renderArmory();
+  if(modsOwned.length>=Object.keys(MODS).length) awardBadge('geared');
+  return true; }
 function saveWallet(){ try{ localStorage.setItem('drift.cash',Math.round(cash));
   localStorage.setItem('drift.guns',gunsOwned.join(',')); localStorage.setItem('drift.gun',gunEq);
   localStorage.setItem('drift.mods',modsOwned.join(',')); }catch(e){} }
+
+/* ============================ the trophy shelf ============================ */
+/* Badges remember what the score forgets. Every other system in this game settles at the end of the
+   run; these persist — firsts, feats, and the habit itself (streaks). Earned once, kept forever. */
+const BADGES={
+  sideways:{ nm:'SIDEWAYS',        hint:'bank your first drift chain' },
+  clean:   { nm:'CLEAN COLLAR',    hint:'bank a CLEAN chain (1,000+)' },
+  sick:    { nm:'CERTIFIED SICK',  hint:'bank a SICK chain (5,000+)' },
+  legend:  { nm:'COUNTY LEGEND',   hint:'bank a LEGENDARY chain (20,000+)' },
+  tonup:   { nm:'225 CLUB',        hint:'touch 225 km/h' },
+  hauler:  { nm:'LONG HAULER',     hint:'cover 5 km on one pack' },
+  barber:  { nm:'THE BARBER',      hint:'5 close shaves in one run' },
+  pest:    { nm:'PEST CONTROL',    hint:'10 shamblers in one run' },
+  biggame: { nm:'BIG GAME',        hint:'fell a brute' },
+  ghostwin:{ nm:'FASTER THAN YESTERDAY', hint:'beat your ghost on Today’s Road' },
+  rain:    { nm:'RAIN DANCER',     hint:'take today’s best on a wet road' },
+  armed:   { nm:'FULLY ARMED',     hint:'own all three guns' },
+  geared:  { nm:'GEARHEAD',        hint:'fit all three garage mods' },
+  reg3:    { nm:'REGULAR',         hint:'drive Today’s Road 3 days running' },
+  reg7:    { nm:'LOCAL FIXTURE',   hint:'7 days running' },
+};
+let badgesOwned=[]; try{ badgesOwned=(localStorage.getItem('drift.badges')||'').split(',').filter(Boolean); }catch(e){}
+const badgeQ=[]; let badgeT=null;
+function badgeToast(){ const id=badgeQ.shift(); if(id===undefined){ badgeT=null; return; }
+  const el=document.getElementById('badgePop');
+  if(el){ el.textContent='🏆 '+BADGES[id].nm;
+    el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+  sfx('chain',3); badgeT=setTimeout(badgeToast,1200);
+}
+function awardBadge(id){
+  if(!BADGES[id] || badgesOwned.indexOf(id)>=0) return false;
+  badgesOwned.push(id);
+  try{ localStorage.setItem('drift.badges',badgesOwned.join(',')); }catch(e){}
+  badgeQ.push(id); if(!badgeT) badgeToast();
+  renderShelf(); return true;
+}
+function renderShelf(){
+  for(const box of document.querySelectorAll('.shelfBox')){
+    let h='<div class="warow" style="margin-top:10px">TROPHY SHELF <b>'+badgesOwned.length+'/'+Object.keys(BADGES).length+'</b>'+
+      '<span>earned once, kept forever — hold one for the how</span></div>';
+    for(const id in BADGES){ const got=badgesOwned.indexOf(id)>=0;
+      h+='<span class="bdg'+(got?' got':'')+'" title="'+BADGES[id].hint+'">'+(got?'🏆 ':'')+BADGES[id].nm+'</span>'; }
+    box.innerHTML=h;
+  }
+}
+function checkRunBadges(g,isBest){
+  if(g.bestChain>240)   awardBadge('sideways');
+  if(g.bestChain>=1000) awardBadge('clean');
+  if(g.bestChain>=5000) awardBadge('sick');
+  if(g.bestChain>=20000)awardBadge('legend');
+  if(g.vmax*0.36>=225)  awardBadge('tonup');
+  if(g.dist>=50000)     awardBadge('hauler');
+  if(g.buzzes>=5)       awardBadge('barber');
+  if(g.zCarKills+g.gunKills>=10) awardBadge('pest');
+  if(dailyMode && isBest && g.ghost) awardBadge('ghostwin');   // there was a line to beat, and you beat it
+  if(dailyMode && isBest && g.wet)   awardBadge('rain');
+}
+/* the habit itself: consecutive days on Today's Road */
+function prevDayKey(k){ const a=k.split('-'); const t=new Date(+a[0],+a[1]-1,+a[2]); t.setDate(t.getDate()-1);
+  return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); }
+function bumpStreak(){
+  let s=''; try{ s=localStorage.getItem('drift.streak')||''; }catch(e){}
+  const i=s.indexOf('|'), lastK=i<0?'':s.slice(0,i), n=i<0?0:(+s.slice(i+1)||0);
+  const today=dayKey();
+  let count = lastK===today ? n : (lastK===prevDayKey(today) ? n+1 : 1);
+  try{ localStorage.setItem('drift.streak', today+'|'+count); }catch(e){}
+  if(count>=3) awardBadge('reg3');
+  if(count>=7) awardBadge('reg7');
+  return count;
+}
 const Z_MAX=9, Z_HIT=55, Z_H=92;                    // population cap, bumper-strike radius, body height (world px)
 /* the CLOSE SHAVE: pass a live shambler with the nose inside BUZZ_R (but outside the strike) at speed and
    you're paid in HEAT — half a multiplier step, and the chain's grace window refreshed. That refresh is the
@@ -1610,6 +1701,7 @@ function killZombie(g,z,by){
   cash+=pay; g.cashRun+=pay; cashPop(pay); saveWallet();                        // banked on the spot — a crash can't take it
   if(by==='car' && z.kind==='brute'){ g.car.vx*=0.86; g.car.vy*=0.86;           // a brute has MASS: the hit is paid in momentum
     g.shake=Math.max(g.shake,0.8); }
+  if(z.kind==='brute') awardBadge('biggame');
 
   g.splats.push({x:p.x,y:p.y,r:30+Math.random()*18,s:Math.random()*97|0,t:g.time});
   if(g.splats.length>36) g.splats.shift();
@@ -1800,7 +1892,9 @@ function contractRows(g,final){
 function buyGun(id){ const gn=GUNS[id]; if(!gn) return false;
   if(gunsOwned.indexOf(id)>=0){ gunEq = gunEq===id ? '' : id; saveWallet(); renderArmory(); return true; }
   if(cash<gn.price) return false;
-  cash-=gn.price; gunsOwned.push(id); gunEq=id; saveWallet(); renderArmory(); return true;
+  cash-=gn.price; gunsOwned.push(id); gunEq=id; saveWallet(); renderArmory();
+  if(gunsOwned.length>=Object.keys(GUNS).length) awardBadge('armed');
+  return true;
 }
 function renderArmory(){
   const tags={p9:'steady · near',sm2:'fast · mid',lr7:'hard · far'};
@@ -2238,6 +2332,7 @@ function brakeInput(){
 /* ============================ flow ============================ */
 function startGame(daily){
   dailyMode = daily===true; dbCache=dailyMode?loadDailyBest():0;
+  if(dailyMode) bumpStreak();   // showing up is the feat the streak badges pay
   audioInit(); newGame(dailyMode ? daySeed(dayKey()) : undefined); state='play'; last=performance.now(); acc=0;
   if(MUSIC.length && !mPlaying) musicPlay();   // the Drive click is the gesture autoplay policy wants
   document.getElementById('startPanel').classList.add('hidden');
@@ -2249,7 +2344,7 @@ document.getElementById('startBtn').onclick=()=>startGame(false);
 document.getElementById('dailyBtn').onclick=e=>{ e.stopPropagation(); startGame(true); };
 document.getElementById('againBtn').onclick=()=>startGame(dailyMode);   // Again replays the mode you died in
 document.getElementById('startPanel').addEventListener('pointerdown',e=>{ if(e.target.id==='startPanel') startGame(false); });
-renderArmory();   // the shop is open before the first drive
+renderArmory(); renderShelf();   // the shop is open and the shelf is dusted before the first drive
 
 /* ============================ test hooks ============================ */
 window.__drift={
@@ -2271,6 +2366,9 @@ window.__drift={
     wipe:()=>{ cash=0; gunsOwned=[]; gunEq=''; saveWallet(); renderArmory(); } },
   garage:{ owned:()=>modsOwned.slice(), buy:buyMod,
     wipe:()=>{ modsOwned=[]; saveWallet(); renderArmory(); } },
+  shelf:{ owned:()=>badgesOwned.slice(),
+    streak:()=>{ let s=''; try{ s=localStorage.getItem('drift.streak')||''; }catch(e){} return s; },
+    wipe:()=>{ badgesOwned=[]; try{ localStorage.removeItem('drift.badges'); localStorage.removeItem('drift.streak'); }catch(e){} renderShelf(); } },
   billboards:{ every:BB_EVERY, at:bbIndex, side:bbSide, off:bbOff,
     defaults:()=>DEFAULT_ADS.length, remote:()=>REMOTE_ADS.length, reload:loadRemoteAds },
   autopilot(){ const g=game; if(!g) return; const R=g.road, c=g.car;

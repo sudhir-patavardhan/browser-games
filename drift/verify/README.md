@@ -20,6 +20,7 @@ Chrome/Chromium. The game exposes `window.__drift` (`start()`, `setInput(steer, 
 ./drift/verify/run.sh report       # chain tier names + the end-of-run report card
 ./drift/verify/run.sh weather      # rain days: seed-pure forecast, wet grip/brakes proven A/B
 ./drift/verify/run.sh horde        # zombie ranks: the mix, the bounty ladder, the brute's momentum tax
+./drift/verify/run.sh badges       # the trophy shelf: feats award once, streaks count days, all persists
 ./drift/verify/run.sh plane        # scenery built, and the rare airliner is actually reachable
 ./drift/verify/shoot.sh driver f.png   # screenshot the car mid-drive, so you can LOOK at it
 ```
