@@ -2102,7 +2102,7 @@ function buzz(g){
 // head rides at ~82% of the horizon line at every distance — an adult seen from an SUV seat. The old 60
 // put heads at half eye-height and the whole horde read as toddlers. Z_HIT is a bumper radius: the car is
 // 24 wide, so 55 means catching one with a wing counts — a clean miss is still a miss.
-const Z_SHIRT=['#6b7a5a','#7a6a58','#5a6b7a','#7a5a6b'], Z_SKIN='#8fae62';
+const Z_SHIRT=['#6b7a5a','#7a6a58','#5a6b7a','#7a5a6b','#c2691e','#c9c3ae'], Z_SKIN='#7fbb4e';
 const GORE=['#8f1e12','#6f1610','#a5261a','#586b3a'];
 function roadAt(R,fi){ const i=clamp(fi|0,0,R.pts.length-1), p=R.pts[i], q=R.pts[i+1]||p, f=fi-i;
   return { x:lerp(p.x,q.x,f), y:lerp(p.y,q.y,f), tx:lerp(p.tx,q.tx,f), ty:lerp(p.ty,q.ty,f) }; }
@@ -2207,7 +2207,9 @@ function updateZombies(g,dt){
   if(g.goreT>0) g.goreT-=dt;
   for(let i=g.shots.length-1;i>=0;i--) if(g.time-g.shots[i].t>0.09) g.shots.splice(i,1);
 }
-// one shambler, front-on through the windshield: lurching gait, arms out, head lolled — comic, not clinical
+// one shambler, front-on through the windshield: lurching gait, clawed reach, spiky hair, head lolled —
+// comic, not clinical. Hair/eyes are seeded off z.fi (the road index it spawned at, already stable for its
+// life), not Math.random() — a per-frame draw can't roll new hair every frame without flickering it.
 function drawZombieDriver(P,z){
   const h=clamp(Z_H*(z.sc||1)*P.sc,3,320), x=P.x, y=P.y;
   ctx.fillStyle='rgba(28,42,24,.22)'; ctx.beginPath(); ctx.ellipse(x,y,h*0.22,Math.max(1,h*0.06),0,0,TAU); ctx.fill();
@@ -2216,12 +2218,45 @@ function drawZombieDriver(P,z){
   ctx.fillStyle='#3d3630';                                                      // ragged trousers
   ctx.fillRect(-h*0.10+st,-h*0.50,lw,h*0.50); ctx.fillRect(h*0.10-lw-st,-h*0.50,lw,h*0.50);
   ctx.fillStyle=z.shirt; rr(-h*0.16,-h*0.86,h*0.32,h*0.40,h*0.05); ctx.fill();  // torso, slumped
-  ctx.strokeStyle=Z_SKIN; ctx.lineWidth=lw; ctx.lineCap='round';                // both arms out at the road
-  ctx.beginPath(); ctx.moveTo(-h*0.13,-h*0.76); ctx.lineTo(-h*0.30,-h*0.66+st);
-  ctx.moveTo(h*0.13,-h*0.76); ctx.lineTo(h*0.30,-h*0.66-st); ctx.stroke();
-  ctx.fillStyle=Z_SKIN; ctx.beginPath(); ctx.arc(h*0.02,-h*0.93,h*0.11,0,TAU); ctx.fill();  // lolled head
-  if(h>26){ ctx.fillStyle='#26301c'; ctx.fillRect(-h*0.035,-h*0.955,h*0.028,h*0.028);
-    ctx.fillRect(h*0.045,-h*0.955,h*0.028,h*0.028); ctx.fillRect(-h*0.02,-h*0.885,h*0.06,h*0.016); }
+  ctx.fillStyle='rgba(20,26,16,.55)'; ctx.beginPath();                          // a torn V collar — the shirt is old, not new
+  ctx.moveTo(-h*0.05,-h*0.86); ctx.lineTo(h*0.05,-h*0.86); ctx.lineTo(0,-h*0.70); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle=Z_SKIN; ctx.lineWidth=lw; ctx.lineCap='round';                // both arms out at the road, clawed
+  for(const s of [-1,1]){
+    const ax=s*h*0.13, ay=-h*0.76, bx=s*h*0.30, by=-h*0.66-s*st;
+    ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
+    ctx.lineWidth=Math.max(1,lw*0.32);
+    const cl=h*0.065; ctx.beginPath();
+    ctx.moveTo(bx,by); ctx.lineTo(bx+s*cl*0.9,by+cl*0.6);
+    ctx.moveTo(bx,by); ctx.lineTo(bx+s*cl*1.05,by+cl*0.2);
+    ctx.moveTo(bx,by); ctx.lineTo(bx+s*cl*0.7,by+cl*0.95); ctx.stroke();
+    ctx.lineWidth=lw;
+  }
+  const hcx=h*0.02, hcy=-h*0.93, hr=h*0.11;
+  ctx.fillStyle=Z_SKIN; ctx.beginPath(); ctx.arc(hcx,hcy,hr,0,TAU); ctx.fill();  // lolled head
+  if(h>12){                                                                     // messy spiky hair
+    ctx.fillStyle = h01(z.fi*23)<0.5 ? '#171b10' : '#241608';
+    ctx.beginPath();
+    for(let i=0;i<4;i++){
+      const ang=-2.7+i*0.62+(h01(z.fi*29+i)-0.5)*0.35, len=hr*(0.45+h01(z.fi*31+i)*0.55);
+      const bx=hcx+Math.cos(ang)*hr*0.85, by=hcy+Math.sin(ang)*hr*0.85;
+      const tx=hcx+Math.cos(ang)*(hr+len), ty=hcy+Math.sin(ang)*(hr+len);
+      const px=hcx+Math.cos(ang+0.30)*hr*0.85, py=hcy+Math.sin(ang+0.30)*hr*0.85;
+      ctx.moveTo(bx,by); ctx.lineTo(tx,ty); ctx.lineTo(px,py); ctx.closePath();
+    }
+    ctx.fill();
+  }
+  if(h>26){                                                                     // bulging eyes, a screaming mouth
+    const ex=hr*0.5, ey=hcy-hr*0.05;
+    ctx.fillStyle='#eef2c6'; ctx.beginPath();
+    ctx.ellipse(hcx-ex,ey,hr*0.34,hr*0.30,0,0,TAU); ctx.ellipse(hcx+ex,ey,hr*0.34,hr*0.30,0,0,TAU); ctx.fill();
+    ctx.fillStyle = h01(z.fi*37)<0.5 ? '#7a1e14' : '#1c1f16';
+    ctx.beginPath(); ctx.arc(hcx-ex,ey,hr*0.15,0,TAU); ctx.arc(hcx+ex,ey,hr*0.15,0,TAU); ctx.fill();
+    ctx.fillStyle='#1c140f'; ctx.beginPath();
+    ctx.moveTo(hcx-hr*0.5,hcy+hr*0.42); ctx.lineTo(hcx+hr*0.5,hcy+hr*0.42);
+    ctx.lineTo(hcx+hr*0.3,hcy+hr*0.95); ctx.lineTo(hcx-hr*0.3,hcy+hr*0.95); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#eee8d8';                                                    // a couple of ragged teeth
+    ctx.fillRect(hcx-hr*0.38,hcy+hr*0.42,hr*0.18,hr*0.22); ctx.fillRect(hcx+hr*0.14,hcy+hr*0.42,hr*0.18,hr*0.22);
+  }
   ctx.restore();
 }
 function drawZombiesDriver(g,proj){
@@ -2256,6 +2291,13 @@ function drawZombiesTop(g){
     ctx.moveTo(-6,-3.5); ctx.lineTo(-8.5,-14.5+st); ctx.moveTo(6,-3.5); ctx.lineTo(8.5,-14.5-st); ctx.stroke();
     ctx.fillStyle=z.shirt; ctx.beginPath(); ctx.ellipse(0,0,9.5,7.4,0,0,TAU); ctx.fill();
     ctx.fillStyle=Z_SKIN; ctx.beginPath(); ctx.arc(0,-5.4,5,0,TAU); ctx.fill();
+    ctx.fillStyle = h01(z.fi*23)<0.5 ? '#171b10' : '#241608';                   // a spiky head reads better than a bald one
+    ctx.beginPath();
+    ctx.moveTo(-3.5,-9.2); ctx.lineTo(-5.0,-13.5); ctx.lineTo(-1.2,-10.0); ctx.closePath();
+    ctx.moveTo(-0.6,-10.0); ctx.lineTo(-0.3,-14.2); ctx.lineTo(1.4,-10.2); ctx.closePath();
+    ctx.moveTo(2.0,-9.6); ctx.lineTo(4.3,-13.0); ctx.lineTo(2.6,-9.0); ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle=Z_SKIN; ctx.beginPath(); ctx.arc(-8.5,-14.5+st,1.7,0,TAU); ctx.arc(8.5,-14.5-st,1.7,0,TAU); ctx.fill();  // clawed fists
     ctx.restore(); }
   for(const s of g.shots){ const c=g.car; ctx.strokeStyle='rgba(255,240,180,.85)'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(s.x,s.y); ctx.stroke(); }
