@@ -128,6 +128,34 @@
   /* the chain's NAME, worn like a title belt */
   .tierword{ font-size:.52em; vertical-align:middle; font-weight:900; letter-spacing:2px; margin-right:6px;
     background:linear-gradient(180deg,#ffd24a,#ff4d3d); -webkit-background-clip:text; background-clip:text; color:transparent; }
+
+  /* pause lives next to the view key, and reads like the rest of the console rather than like a menu */
+  #pauseBtn{ position:fixed; bottom:16px; right:50%; transform:translateX(50%) translateY(-42px); z-index:6;
+    background:rgba(255,255,255,.82); border:none; border-radius:14px; padding:8px 14px; cursor:pointer;
+    font-weight:800; font-size:12.5px; letter-spacing:1px; color:#17324a; backdrop-filter:blur(6px);
+    box-shadow:0 6px 18px rgba(20,40,20,.18); touch-action:manipulation; }
+  body.driver-view #pauseBtn{ right:9px; bottom:15px; transform:none; padding:7px 9px; font-size:10.5px;
+    letter-spacing:.5px; border-radius:9px; color:#a9e9ff; background:rgba(14,18,26,.78);
+    border:1px solid rgba(160,225,255,.22); box-shadow:0 2px 10px rgba(0,0,0,.35); }
+  body.driver-view #pauseBtn:active{ transform:translateY(1px); background:rgba(24,32,44,.92); }
+  /* no full-screen scrim: the whole point of stopping here is to SEE the car parked at the charger */
+  #pullPill, #pauseCard{ position:fixed; left:50%; transform:translateX(-50%); z-index:8;
+    background:rgba(14,18,26,.86); border:1px solid rgba(160,225,255,.22); backdrop-filter:blur(6px);
+    color:#dff2ff; box-shadow:0 12px 40px rgba(0,0,0,.45); text-align:center; }
+  #pullPill{ top:12%; border-radius:11px; padding:7px 14px; font-size:11px; font-weight:800; letter-spacing:2px;
+    color:#7fe2ff; }
+  #pauseCard{ top:22%; width:min(300px,78vw); border-radius:18px; padding:16px 18px 14px; }
+  #pauseCard.hidden{ display:none; }
+  #pauseCard .ptitle{ font-size:11.5px; font-weight:800; letter-spacing:2.5px; color:#7fe2ff; }
+  #pauseCard .pbar{ height:9px; border-radius:5px; background:rgba(255,255,255,.12); margin:11px 0 9px; overflow:hidden; }
+  #pauseCard .pfill{ height:100%; border-radius:5px; background:linear-gradient(90deg,#7fe2ff,#8affc1); width:0; }
+  #pauseCard .pkm{ font-size:24px; font-weight:900; color:#f4fbff; line-height:1; }
+  #pauseCard .psub{ font-size:11px; color:#8fb0c8; margin-top:7px; font-weight:700; line-height:1.5; }
+  #pauseCard .cost{ color:#ffb454; }
+  #resumeBtn{ margin-top:13px; width:100%; background:linear-gradient(180deg,#7fe2ff,#4bb8e0); color:#06283a;
+    border:none; border-radius:11px; padding:11px 0; font-weight:900; font-size:13px; letter-spacing:1.5px;
+    cursor:pointer; touch-action:manipulation; }
+  #resumeBtn:active{ transform:translateY(1px); }
 </style>
 </head>
 <body>
@@ -156,6 +184,15 @@
 <div class="steerhint" id="hintL" style="display:none">‹</div>
 <div class="steerhint" id="hintR" style="display:none">›</div>
 <button id="viewBtn" style="display:none">DRIVER VIEW</button>
+<button id="pauseBtn" style="display:none">PAUSE</button>
+<div id="pullPill" style="display:none">PULLING IN…</div>
+<div id="pauseCard" class="hidden">
+  <div class="ptitle" id="pauseTitle">CHARGING</div>
+  <div class="pbar"><div class="pfill" id="pauseFill"></div></div>
+  <div class="pkm" id="pauseKm">0 km</div>
+  <div class="psub" id="pauseSub"></div>
+  <button id="resumeBtn">RESUME</button>
+</div>
 <input id="auxIn" type="file" accept="audio/*" multiple hidden>
 
 <div class="panel" id="startPanel">
@@ -240,7 +277,7 @@ const TOPZOOM=0.72;      // top view is pulled back — it's there to read the r
 const CAR_L=46, CAR_W=24;
 
 /* ============================ state ============================ */
-let state='start';               // start | play | over
+let state='start';               // start | play | paused | over
 let game=null;
 let best=+(localStorage.getItem('drift.best')||0);
 // you drive from the driver's seat. Top view is the glance you take to read a corner, not the game.
@@ -331,6 +368,7 @@ function newGame(forceSeed){
     stall:0, chainScore:0, bestChain:0, driftTotal:0,
     skid:[], smoke:[], grassTufts:makeTufts(seed),
     batt:1, kw:0, hitT:0, cc:0, padCand:null,  // the cabin: charge, power, last impact, cruise set-speed
+    pullIn:null, parked:null,                  // heading for a rest area / sat at the charger
     scenery:makeScenery(seed),
     zombies:[], splats:[], gibs:[], flecks:[], shots:[],   // the horde, and what's left of it
     zrng:mulberry32(seed^0x2b1e), zNextIdx:0, gunCd:0, cashRun:0, goreT:0,
@@ -374,12 +412,13 @@ function step(dt){
   const p=R.pts[c.idx];
   const nx=-p.ty, ny=p.tx;
   const lateral=(c.x-p.x)*nx+(c.y-p.y)*ny;
-  // off the tarmac is grass — except on a bridge, where what you can see out to the parapet is deck. The car
-  // has to agree with the picture: concrete grips like road and doesn't drink the pack the way a field does.
-  g.onGrass=Math.abs(lateral)>ROAD_HALF && !bridgeAt(c.idx,g.seed);
+  // off the tarmac is grass — but a bridge deck and a rest area's apron are not fields, they're paved, and the
+  // car has to agree with the picture: they grip like road and don't drink the pack the way a ploughed verge does
+  g.onGrass=!paved(c.idx,lateral,g.seed);
   // the barrier doesn't end you any more — it costs you. Scrub back onto the tarmac, lose the speed you
   // carried into it, and take a bite out of the pack. Enough hits will flatten it; one mistake won't.
-  const lim=BARRIER-CAR_W*0.4;
+  // At a rest area the wall stands back to let you in, which is the only reason you can pull off the road.
+  const lim=wallAt(c.idx,lateral,g.seed)-CAR_W*0.4;
   if(Math.abs(lateral)>lim){
     const sgn=lateral<0?-1:1, over=Math.abs(lateral)-lim;
     c.x-=nx*over*sgn; c.y-=ny*over*sgn;                       // put the car back inside the wall
@@ -467,8 +506,9 @@ function step(dt){
       g.chainScore=0; g.mult=1; g.driftTime=0; }
   }
 
-  // stall / spun-out — a hard stop on corner entry is fine, crawling is not
-  if(g.speed<95){ g.stall+=dt; if(g.stall>3.5) return gameOver('SPUN OUT'); }
+  // stall / spun-out — a hard stop on corner entry is fine, crawling is not. Pulling into a rest area is the
+  // one time coming to a halt is the POINT, so the spin-out clock doesn't run while the car is parking itself.
+  if(g.speed<95 && !g.pullIn){ g.stall+=dt; if(g.stall>3.5) return gameOver('SPUN OUT'); }
   else g.stall=Math.max(0,g.stall-dt*2);
 
   g.dist+=g.speed*dt; g.time+=dt;
@@ -546,7 +586,9 @@ function gameOver(reason){
   document.getElementById('overStats').innerHTML=st.map(s=>
     '<div class="stat"><span>'+s[0]+'</span><b>'+s[1]+(s[2]?'<em>'+s[2]+'</em>':'')+'</b></div>').join('');
   document.getElementById('overCtr').innerHTML=contractRows(game,true);   // the job board, settled
+  game.pullIn=null; game.parked=null; setPauseUI();
   showHUD(false); document.getElementById('viewBtn').style.display='none';
+  document.getElementById('pauseBtn').style.display='none';
   document.getElementById('hintL').style.display='none'; document.getElementById('hintR').style.display='none';
   setTimeout(()=>{ if(state==='over') document.getElementById('overPanel').classList.remove('hidden'); },420);
   sfx('crash');
@@ -1182,6 +1224,56 @@ function forestAt(i,seed){
   return clamp((v+0.12)*1.45,0,1)*onset;
 }
 
+/* ---------------------------- rest areas ---------------------------- */
+/* Somewhere to stop. Same rule as the rivers: the road is endless and made as you drive it, so a rest area
+   can't be a thing we remember putting somewhere — it has to fall out of the road index and the seed. What
+   makes them different is that they're also GEOMETRY THE CAR CAN USE: the barrier opens, the tarmac widens,
+   and the lateral limit in step() has to agree with the apron you can see, or you'd be stopped by a wall
+   that isn't drawn. */
+const REST_EVERY=210, REST_W=340;
+const _rest=new Map();     // memo of a pure function: the bridge check below is far too dear to pay per frame
+function restBlock(b,seed){
+  const key=seed+':'+b; let v=_rest.get(key);
+  if(v===undefined){
+    const s=(Math.imul(b,7919)^Math.imul(seed,0x85ebca6b))|0;
+    v={ c: b*REST_EVERY + 55 + Math.floor(h01(s)*110),        // where the bay sits
+        side: h01(s^0x51ed270b)<0.5? 1:-1,                    // which shoulder it's cut into
+        len: 20+Math.floor(h01(s^0x27220a95)*8) };            // how far it runs, in road points
+    v.ok=true;   // nobody builds a services half-way out over a river, so a stop that fouls a bridge isn't built
+    for(let i=v.c-v.len-30;i<=v.c+v.len+30 && v.ok;i++) if(bridgeAt(i,seed)) v.ok=false;
+    _rest.set(key,v);
+  }
+  return v;
+}
+function restAt(i,seed){
+  const b=Math.floor(i/REST_EVERY);
+  for(let k=b-1;k<=b+1;k++){
+    const r=restBlock(k,seed); if(!r.ok) continue;
+    const d=i-r.c;
+    if(Math.abs(d)<=r.len) return { r, d, t:1-Math.abs(d)/r.len };
+  }
+  return null;
+}
+// how far the tarmac reaches past the barrier line at road point i — full width across the bay, tapering to
+// nothing at either end so the barrier has somewhere to pick up again
+function apronAt(i,seed){
+  const R=restAt(i,seed); if(!R) return null;
+  return { side:R.r.side, w:REST_W*clamp(R.t*2.6,0,1), r:R.r, t:R.t };
+}
+// What is actually under the tyres? Tarmac gives you grip and costs you nothing; everything else is a field.
+// The car has to answer this the same way the renderer does, or the picture and the physics part company.
+function paved(i,lateral,seed){
+  if(Math.abs(lateral)<=ROAD_HALF) return true;                       // the road
+  if(bridgeAt(i,seed)) return true;                                   // the deck, out to the parapet
+  const ap=apronAt(i,seed);                                           // and the apron of a rest area
+  return !!(ap && (lateral>0?1:-1)===ap.side && Math.abs(lateral)<=BARRIER+ap.w);
+}
+// how far off the centre line the wall is, on the side you're leaning — it opens up at a rest area
+function wallAt(i,lateral,seed){
+  const ap=apronAt(i,seed);
+  return (ap && (lateral>0?1:-1)===ap.side) ? BARRIER+ap.w : BARRIER;
+}
+
 // The rivers near the car, each reduced to its own frame: an origin p on the road, a unit axis a running
 // across it, and the road tangent t, along which distance from the crossing IS distance across the water.
 // Built once, then everything — the water, the banks, and what refuses to grow in them — asks it questions.
@@ -1252,6 +1344,55 @@ function drawRivers(g,proj,zside,toScreen){
       ctx.strokeStyle='rgba(255,255,255,'+(0.10+0.10*Math.sin(g.time*1.7+k))+')';
       ctx.lineWidth=Math.max(1,2.5*A.sc); ctx.lineCap='round';
       ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke();
+    }
+  }
+}
+// The apron: a tongue of tarmac off the shoulder, widening to the bay and tapering back so the barrier can
+// pick up again. It's laid TWICE — once on the ground before the trees (or it would paint over the trunks of
+// the trees standing behind it), and again over the gravel verge, which would otherwise leave a stripe of
+// grit running straight across the entrance.
+function drawApron(g,zside,toScreen,lo,hi,outerOf){
+  const R=g.road, seed=g.seed;
+  ctx.beginPath();
+  for(let i=lo;i<hi-1;i++){
+    const a=apronAt(i,seed), b=apronAt(i+1,seed);
+    if(!a||!b||a.side!==b.side) continue;
+    const p=R.pts[i], q=R.pts[i+1], s=a.side, o1=outerOf(a), o2=outerOf(b);
+    groundPoly([ zside(p.x-p.ty*ROAD_HALF*s, p.y+p.tx*ROAD_HALF*s),
+                 zside(q.x-q.ty*ROAD_HALF*s, q.y+q.tx*ROAD_HALF*s),
+                 zside(q.x-q.ty*o2*s,        q.y+q.tx*o2*s),
+                 zside(p.x-p.ty*o1*s,        p.y+p.tx*o1*s) ], toScreen);
+  }
+  ctx.fillStyle='#9ba2ac'; ctx.fill();
+}
+// The furniture that tells you what this place IS at a glance: bay markings, and a charging post with a light
+// on it. Drawn after the road, like the barriers, because they stand up out of the ground rather than lie on it.
+function drawRestStop(g,zside,toScreen,lo,hi){
+  const R=g.road, seed=g.seed;
+  for(let i=lo;i<hi-1;i++){
+    const a=apronAt(i,seed); if(!a) continue;
+    if(i%3!==0 || a.t<0.35) continue;                                  // bay markings, every third point
+    const p=R.pts[i], s=a.side;
+    const i0=BARRIER+a.w*0.16, i1=BARRIER+a.w*0.86;
+    const A=zside(p.x-p.ty*i0*s, p.y+p.tx*i0*s), B=zside(p.x-p.ty*i1*s, p.y+p.tx*i1*s);
+    if(A.z<NEARZ||B.z<NEARZ) continue;
+    const sa=toScreen(A.z,A.side), sb=toScreen(B.z,B.side);
+    ctx.strokeStyle='rgba(245,248,250,.5)'; ctx.lineWidth=Math.max(1,2.2*sa.sc);
+    ctx.beginPath(); ctx.moveTo(sa.x,sa.y); ctx.lineTo(sb.x,sb.y); ctx.stroke();
+  }
+  for(let i=lo;i<hi-1;i++){
+    const a=apronAt(i,seed); if(!a || a.t<0.985) continue;             // one post, at the bay
+    const p=R.pts[i], s=a.side, off=(BARRIER+a.w*0.93)*s;
+    const zs=zside(p.x-p.ty*off, p.y+p.tx*off);
+    if(zs.z<NEARZ) continue;
+    const b=toScreen(zs.z,zs.side);
+    const w=clamp(13*b.sc,2,26), h=clamp(112*b.sc,6,150);
+    ctx.fillStyle='#2b333d'; ctx.fillRect(b.x-w/2,b.y-h,w,h);          // the post
+    ctx.fillStyle='#7fe2ff'; ctx.fillRect(b.x-w*0.30,b.y-h*0.92,w*0.60,h*0.26);   // its lit face
+    if(game && game.parked && game.parked.charger){                     // plugged in: it breathes
+      ctx.globalAlpha=0.35+0.25*Math.sin(g.time*3.4);
+      ctx.fillStyle='#8affc1'; ctx.fillRect(b.x-w*0.30,b.y-h*0.92,w*0.60,h*0.26);
+      ctx.globalAlpha=1;
     }
   }
 }
@@ -2542,6 +2683,110 @@ function skidSound(on,intensity){
   if(skidGain) skidGain.gain.value = on? clamp(intensity*0.09,0,0.1) : 0;
 }
 
+/* ============================ pause: pulling in to charge ============================ */
+/* Pause doesn't freeze the world mid-corner — the car pulls off at the next rest area, parks, and plugs in.
+   That means pausing is a thing you DO in the fiction, and it has a price: you have to get there. The pack
+   keeps draining on the way in, so hitting pause at 2% will not necessarily save you.
+
+   Charging is not free either, and the game already told us what charge is worth. Land a drift chain and it
+   pays you back `chainScore/11000` of the pack — so the game's own exchange rate is 11,000 points to a full
+   charge. The charger sells it back at exactly that price. Electricity you didn't earn by driving well comes
+   straight out of the score you're playing for, which is what stops "pause, top up, resume" from quietly
+   deleting the fail state the whole run is built on. */
+const CHARGE_RATE=0.06;                      // pack per second, in real time — you have to actually sit there
+const CHARGE_CAP=0.80;                       // roadside chargers taper hard; nobody waits out the last fifth
+const CHARGE_PRICE=11000;                    // score per full pack: the drift payback rate, run backwards
+function nextRest(g){
+  const c=g.car, R=g.road;
+  for(let i=c.idx+10;i<c.idx+520;i++){
+    ensureAhead(R,i+4);
+    const a=apronAt(i,g.seed);
+    if(a && a.t>0.9) return { c:i, side:a.side, off:(BARRIER+REST_W*0.55)*a.side };
+  }
+  return null;                                // nothing within reach: we'll take the hard shoulder instead
+}
+function togglePause(){
+  const g=game;
+  if(state==='paused'){ resumeDrive(); return; }
+  if(state!=='play' || !g) return;
+  if(g.pullIn){ g.pullIn=null; g.stall=0; setPauseUI(); return; }    // pressed again on the way in: carry on
+  const r=nextRest(g);
+  g.cc=0;                                                            // cruise doesn't get a say in this
+  g.pullIn = r || { c:g.car.idx+34, side:(h01(g.car.idx)<0.5?1:-1), off:(BARRIER-64)*(h01(g.car.idx)<0.5?1:-1), shoulder:true };
+  setPauseUI();
+}
+// The drive in: the same pure-pursuit line the road wants, but with the lateral target easing out onto the
+// apron as the bay comes up, and a speed target off the braking curve (v² = 2ad) so we ARRIVE stopped rather
+// than stopping and then crawling in.
+function pullInDrive(g){
+  const R=g.road, c=g.car, P=g.pullIn;
+  ensureAhead(R,P.c+6);
+  const p=R.pts[c.idx], nx=-p.ty, ny=p.tx;
+  const off=(c.x-p.x)*nx+(c.y-p.y)*ny;
+  const to=P.c-c.idx;
+  const want=lerp(0,P.off,clamp((30-to)/24,0,1));                    // slide off the road only once it's in reach
+  const lead=Math.round(clamp(4+g.speed/90,4,12));
+  const look=R.pts[Math.min(R.pts.length-1,c.idx+lead)];
+  const err=angWrap(Math.atan2(look.y-c.y,look.x-c.x)-c.angle) + clamp((want-off)/240,-0.55,0.55);
+  const over=Math.max(0,Math.abs(g.slip)-0.22)*Math.sign(g.slip);
+  g.steer=clamp(clamp(err*2.8,-1,1) - over*1.8,-1,1);
+  const vWant=Math.min(VTOP, Math.sqrt(2*230*Math.max(0,to*SEG-24)));
+  g.gas   = (to>34 && g.speed<vWant-70) ? 0.4 : 0;                   // don't coast to a halt half a mile short
+  g.brake = g.speed>vWant ? clamp((g.speed-vWant)/90,0,1) : 0;
+  if(to<=2) g.brake=1;
+  if(g.speed<16 && (to<=3 || to<0)) parkUp(g);
+}
+function parkUp(g){
+  const c=g.car, R=g.road, p=R.pts[c.idx];
+  c.vx=0; c.vy=0; g.speed=0; g.slip=0; g.kw=0; g.stall=0;
+  c.angle=Math.atan2(p.ty,p.tx);                                     // straighten up in the bay
+  const ap=apronAt(c.idx,g.seed);
+  const lateral=(c.x-p.x)*(-p.ty)+(c.y-p.y)*p.tx;
+  const onApron=!!(ap && (lateral>0?1:-1)===ap.side && Math.abs(lateral)>ROAD_HALF);
+  g.parked={ charger:onApron, taken:0, paid:0 };                     // no apron under you means no charger: hard shoulder
+  g.pullIn=null;
+  state='paused';
+  setPauseUI();
+}
+// Sitting at the post. The clock, the score and the distance are all stopped — the ONLY thing that moves is
+// the pack going up and the score coming down to pay for it.
+function chargeStep(dt){
+  const g=game; if(!g||!g.parked) return;
+  if(!g.parked.charger || g.batt>=CHARGE_CAP) return;
+  const add=Math.min(CHARGE_CAP-g.batt, CHARGE_RATE*dt);
+  g.batt+=add;
+  g.parked.taken+=add;
+  g.parked.paid += add*CHARGE_PRICE;
+  g.score=Math.max(0, g.score-add*CHARGE_PRICE);
+  g.kw=lerp(g.kw, 74, 0.1);                                          // the dash should show it drinking
+  setPauseUI();
+}
+function resumeDrive(){
+  const g=game; if(!g||state!=='paused') return;
+  g.parked=null; g.stall=0; g.kw=0;
+  state='play'; last=performance.now(); acc=0;                       // don't hand the sim a huge dt on the way back
+  setPauseUI();
+}
+function setPauseUI(){
+  const g=game, card=document.getElementById('pauseCard'), pill=document.getElementById('pullPill');
+  const btn=document.getElementById('pauseBtn');
+  const pulling=!!(g&&g.pullIn&&state==='play');
+  pill.style.display=pulling?'block':'none';
+  if(btn) btn.textContent=pulling?'CANCEL':'PAUSE';
+  if(!g||state!=='paused'){ card.classList.add('hidden'); return; }
+  card.classList.remove('hidden');
+  const P=g.parked||{};
+  const full=g.batt>=CHARGE_CAP;
+  document.getElementById('pauseTitle').textContent =
+    !P.charger ? 'HARD SHOULDER' : full ? 'CHARGED' : 'CHARGING';
+  document.getElementById('pauseFill').style.width=Math.round(g.batt*100)+'%';
+  document.getElementById('pauseKm').textContent=Math.round(g.batt*EV_RANGE*g.mod.cap)+' km';
+  document.getElementById('pauseSub').innerHTML =
+    !P.charger ? 'no charger out here — you stopped short of the services'
+    : full ? ('charged to '+Math.round(CHARGE_CAP*100)+'% — the last fifth takes all night')
+    : ('charging to '+Math.round(CHARGE_CAP*100)+'% · <span class="cost">−'+Math.round(P.paid||0).toLocaleString()+' pts</span>');
+}
+
 /* ============================ loop ============================ */
 let last=0, acc=0;
 function frame(t){
@@ -2550,11 +2795,14 @@ function frame(t){
   if(state==='play' && game){
     // wheel springs back to centre when released and no keys held
     if(game.view==='driver' && game.wheelPtr==null && !(keys['arrowleft']||keys['a']||keys['arrowright']||keys['d'])) game.wheelSteer*=0.72;
-    game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); cruiseAdjust(game);
+    // once you've asked to stop, the car drives itself in — your hands are off the wheel until it's parked
+    if(game.pullIn) pullInDrive(game);
+    else { game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); cruiseAdjust(game); }
     acc+=dt; const h=1/120;
     while(acc>=h){ if(state==='play') step(h); acc-=h; }
     if(game){ const ad=Math.abs(game.slip); skidSound(!game.onGrass&&game.speed>180&&ad>0.18, game.speed/500); }
-  } else skidSound(false,0);
+  } else if(state==='paused' && game){ chargeStep(dt); skidSound(false,0); }
+  else skidSound(false,0);
   render();
 }
 requestAnimationFrame(frame);
@@ -2566,7 +2814,8 @@ addEventListener('keydown',e=>{ const k=e.key.toLowerCase();
   keys[k]=true;
   // touch a driving key and the right foot is yours again — no auto-throttle behind your back
   if(['arrowup','w','arrowdown','s','arrowleft','a','arrowright','d'].includes(k)) touchMode=false;
-  if((k===' '||k==='enter')&&state!=='play'){ startGame(); }
+  if((k===' '||k==='enter')&&state!=='play'&&state!=='paused'){ startGame(); }
+  if(k==='escape'&&(state==='play'||state==='paused')) togglePause();
   if(k==='v'&&state==='play'){ toggleDriftView(); }
   if(k==='c'&&state==='play') toggleCruise();
   if(k==='m') musicMute();
@@ -2602,6 +2851,7 @@ addEventListener('pointerdown',e=>{
   audioInit();
   if(state!=='play') return;
   if(e.target.closest('.panel')||e.target===viewBtn) return;
+  if(e.target.closest('#pauseCard')||e.target.id==='pauseBtn') return;   // the console isn't the road either
   // the dash is an interface, not the road: a tap on the stereo works the stereo
   if(game.view==='driver' && stereoTap(game, e.clientX, e.clientY)){ pointers.set(e.pointerId,'ui'); return; }
   touchMode=true;
@@ -2682,10 +2932,14 @@ function startGame(daily){
   document.getElementById('overPanel').classList.add('hidden');
   showHUD(true);
   viewBtn.style.display='block'; setViewButton();   // sets the driver-view body class + the tap hints
+  document.getElementById('pauseBtn').style.display='block';
+  setPauseUI();
 }
 document.getElementById('startBtn').onclick=()=>startGame(false);
 document.getElementById('dailyBtn').onclick=e=>{ e.stopPropagation(); startGame(true); };
 document.getElementById('againBtn').onclick=()=>startGame(dailyMode);   // Again replays the mode you died in
+document.getElementById('pauseBtn').onclick=e=>{ e.stopPropagation(); togglePause(); };
+document.getElementById('resumeBtn').onclick=e=>{ e.stopPropagation(); resumeDrive(); };
 document.getElementById('startPanel').addEventListener('pointerdown',e=>{ if(e.target.id==='startPanel') startGame(false); });
 renderArmory(); renderShelf();   // the shop is open and the shelf is dusted before the first drive
 
@@ -2701,7 +2955,10 @@ window.__drift={
   tier:chainTier,
   setInput(steer,gas,brake){ if(game){ game.forceSteer=steer; game.forceGas=gas; game.forceBrake=brake; } },
   clearInput(){ if(game){ delete game.forceSteer; delete game.forceGas; delete game.forceBrake; } },
-  step(n){ for(let i=0;i<(n||1);i++){ if(state==='play'){ game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); cruiseAdjust(game); step(1/120); } } },
+  step(n){ for(let i=0;i<(n||1);i++){ if(state==='play'){
+    if(game.pullIn) pullInDrive(game);
+    else { game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); cruiseAdjust(game); }
+    step(1/120); } } },
   cruise(){ toggleCruise(); },
   horde:{ count:()=>game?game.zombies.length:0, cash:()=>cash, run:()=>game?game.cashRun:0,
     gun:()=>gunEq, owned:()=>gunsOwned.slice(), give:n=>{ cash+=n; saveWallet(); renderArmory(); },
@@ -2714,6 +2971,10 @@ window.__drift={
     wipe:()=>{ badgesOwned=[]; try{ localStorage.removeItem('drift.badges'); localStorage.removeItem('drift.streak'); }catch(e){} renderShelf(); } },
   billboards:{ every:BB_EVERY, at:bbIndex, side:bbSide, off:bbOff,
     defaults:()=>DEFAULT_ADS.length, remote:()=>REMOTE_ADS.length, reload:loadRemoteAds },
+  pause(){ togglePause(); },
+  resume(){ resumeDrive(); },
+  // charging only advances on the wall clock, which a probe doesn't have — so let it hand us the seconds
+  charge(secs){ for(let t=0;t<secs;t+=1/60) chargeStep(1/60); },
   autopilot(){ const g=game; if(!g) return; const R=g.road, c=g.car;
     // a tidy driver: pure-pursuit for the line, and a corner speed straight out of the grip budget (v ≤ sqrt(lat/curvature))
     const p=R.pts[c.idx];
