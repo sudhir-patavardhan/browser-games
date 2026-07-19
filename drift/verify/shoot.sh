@@ -5,6 +5,7 @@
 #   ./drift/verify/shoot.sh top out.png 20000       # top-down, 20s of virtual game time
 #   ./drift/verify/shoot.sh driver b.png 14000 500,900 70 bridge   # ...and drive until a bridge is ahead
 #   ./drift/verify/shoot.sh driver s.png 14000 500,900 70 span     # ...or until you are out over the water
+#   ./drift/verify/shoot.sh driver z.png 14000 500,900 70 zombie   # ...or until a shambler is dead ahead
 #
 # Boots the game, forces the requested camera, then DRIVES THE SIM FORWARD SYNCHRONOUSLY before handing back
 # to the render loop — Chrome's virtual clock doesn't fire anywhere near enough rAF callbacks to advance the
@@ -61,7 +62,8 @@ const harness=`
     // side before the picture is taken. So pin the car and let the world keep rendering around it.
     const AT={
       bridge: gg=> !bridgeAt(gg.car.idx,gg.seed) && !!bridgeAt(gg.car.idx+22,gg.seed),  // the span, dead ahead
-      span:   gg=>{ const b=bridgeAt(gg.car.idx,gg.seed); return !!b && b.t>0.6; }      // out over the water
+      span:   gg=>{ const b=bridgeAt(gg.car.idx,gg.seed); return !!b && b.t>0.6; },     // out over the water
+      zombie: gg=> gg.zombies.some(z=>z.fi-gg.car.idx>3 && z.fi-gg.car.idx<9)            // one dead ahead, close up
     }[${JSON.stringify(until)}];
     let pinned=null;
     if(AT){
