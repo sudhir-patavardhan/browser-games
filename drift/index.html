@@ -36,13 +36,15 @@
   #hintL{ left:22px; } #hintR{ right:22px; }
   /* the only button left, and it's out of the road: bottom of the screen in top view, and in driver view
      it becomes a console key down on the dash, tucked to the left of the wheel */
+  /* the console keys size in em off a clamp()ed font: phone sizes are the floor, and on a big pane they
+     grow with the screen the same way the drawn cabin now does */
   #viewBtn{ position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:6;
-    background:rgba(255,255,255,.82); border:none; border-radius:14px; padding:8px 14px; cursor:pointer;
-    font-weight:800; font-size:12.5px; letter-spacing:1px; color:#17324a; backdrop-filter:blur(6px);
+    background:rgba(255,255,255,.82); border:none; border-radius:1.12em; padding:.64em 1.12em; cursor:pointer;
+    font-weight:800; font-size:clamp(12.5px,1.5vmin,19px); letter-spacing:1px; color:#17324a; backdrop-filter:blur(6px);
     box-shadow:0 6px 18px rgba(20,40,20,.18); touch-action:manipulation; }
   #viewBtn:active{ transform:translateX(-50%) translateY(1px); }
-  body.driver-view #viewBtn{ left:9px; bottom:15px; transform:none; padding:7px 9px; font-size:10.5px;
-    letter-spacing:.5px; border-radius:9px; color:#a9e9ff; background:rgba(14,18,26,.78);
+  body.driver-view #viewBtn{ left:9px; bottom:15px; transform:none; padding:.67em .86em; font-size:clamp(10.5px,1.3vmin,17px);
+    letter-spacing:.5px; border-radius:.86em; color:#a9e9ff; background:rgba(14,18,26,.78);
     border:1px solid rgba(160,225,255,.22); box-shadow:0 2px 10px rgba(0,0,0,.35); }
   body.driver-view #viewBtn:active{ transform:translateY(1px); background:rgba(24,32,44,.92); }
   /* driver view: the dash reports your speed, so the HUD's speed pill would just be saying it twice */
@@ -130,21 +132,21 @@
     background:linear-gradient(180deg,#ffd24a,#ff4d3d); -webkit-background-clip:text; background-clip:text; color:transparent; }
 
   /* pause lives next to the view key, and reads like the rest of the console rather than like a menu */
-  #pauseBtn{ position:fixed; bottom:16px; right:50%; transform:translateX(50%) translateY(-42px); z-index:6;
-    background:rgba(255,255,255,.82); border:none; border-radius:14px; padding:8px 14px; cursor:pointer;
-    font-weight:800; font-size:12.5px; letter-spacing:1px; color:#17324a; backdrop-filter:blur(6px);
+  #pauseBtn{ position:fixed; bottom:16px; right:50%; transform:translateX(50%) translateY(-3.4em); z-index:6;
+    background:rgba(255,255,255,.82); border:none; border-radius:1.12em; padding:.64em 1.12em; cursor:pointer;
+    font-weight:800; font-size:clamp(12.5px,1.5vmin,19px); letter-spacing:1px; color:#17324a; backdrop-filter:blur(6px);
     box-shadow:0 6px 18px rgba(20,40,20,.18); touch-action:manipulation; }
-  body.driver-view #pauseBtn{ right:9px; bottom:15px; transform:none; padding:7px 9px; font-size:10.5px;
-    letter-spacing:.5px; border-radius:9px; color:#a9e9ff; background:rgba(14,18,26,.78);
+  body.driver-view #pauseBtn{ right:9px; bottom:15px; transform:none; padding:.67em .86em; font-size:clamp(10.5px,1.3vmin,17px);
+    letter-spacing:.5px; border-radius:.86em; color:#a9e9ff; background:rgba(14,18,26,.78);
     border:1px solid rgba(160,225,255,.22); box-shadow:0 2px 10px rgba(0,0,0,.35); }
   body.driver-view #pauseBtn:active{ transform:translateY(1px); background:rgba(24,32,44,.92); }
   /* no full-screen scrim: the whole point of stopping here is to SEE the car parked at the charger */
   #pullPill, #pauseCard{ position:fixed; left:50%; transform:translateX(-50%); z-index:8;
     background:rgba(14,18,26,.86); border:1px solid rgba(160,225,255,.22); backdrop-filter:blur(6px);
     color:#dff2ff; box-shadow:0 12px 40px rgba(0,0,0,.45); text-align:center; }
-  #pullPill{ top:12%; border-radius:11px; padding:7px 14px; font-size:11px; font-weight:800; letter-spacing:2px;
+  #pullPill{ top:12%; border-radius:1em; padding:.64em 1.27em; font-size:clamp(11px,1.2vmin,16px); font-weight:800; letter-spacing:2px;
     color:#7fe2ff; }
-  #pauseCard{ top:22%; width:min(300px,78vw); border-radius:18px; padding:16px 18px 14px; }
+  #pauseCard{ top:22%; width:min(clamp(300px,26vmin,380px),78vw); border-radius:18px; padding:16px 18px 14px; }
   #pauseCard.hidden{ display:none; }
   #pauseCard .ptitle{ font-size:11.5px; font-weight:800; letter-spacing:2.5px; color:#7fe2ff; }
   #pauseCard .pbar{ height:9px; border-radius:5px; background:rgba(255,255,255,.12); margin:11px 0 9px; overflow:hidden; }
@@ -811,7 +813,12 @@ const CYAN='#7fe2ff', DIM='rgba(178,205,228,.5)', LOW='#ffb454';
 // the cabin used to eat 37% of a portrait screen and leave only ~21% of it as road between the horizon and
 // the dash — a shambler ducked under the cowl while still 120 px out. A slimmer wheel and cluster put the
 // dash top at ~0.72H: ~30% of the screen is road now, and you keep sight of a zombie down to ~76 px.
-function wheelGeom(){ const rad=Math.min(W*0.165,72); return { cx:W*0.5, cy:H-rad*0.62-4, rad }; }
+// That slimming was phone maths, though: carried to a desktop pane, the same pixel caps left a toy wheel
+// adrift in a metre of glass. So the caps scale — past a comfortable screen size the whole cabin grows
+// together, the way a real wheel and cluster actually fill your lower view. Phones are untouched: at phone
+// sizes cabK()=1 (the W- and H-fractions bind first there anyway), and the road band stays the road band.
+const cabK=()=>clamp(Math.min(W*0.5,H)/520,1,2.2);
+function wheelGeom(){ const rad=Math.min(W*0.165,72*cabK()); return { cx:W*0.5, cy:H-rad*0.62-4, rad }; }
 
 // a housing that leans away from you: narrower along its top edge than its foot
 function trap(x0,x1,y0,y1,lean){
@@ -885,7 +892,7 @@ function drawNav(g, proj, horizon){
 
 function drawDashboard(g){
   const { cx, cy, rad }=wheelGeom();
-  const wheelTop=cy-rad, ch=clamp(H*0.125,74,106);
+  const wheelTop=cy-rad, ch=clamp(H*0.125,74,106*cabK());
   const topY=wheelTop-ch-16, lip=topY+13;
 
   // dash body — matte, unlit, and darker as it falls away from the glass
@@ -909,7 +916,7 @@ function drawDashboard(g){
   ctx.strokeStyle=tg; ctx.lineWidth=2.4; roll(17); ctx.stroke();
 
   // vents flanking the column
-  const vh=Math.min(24,rad*0.30), vy=cy-rad*0.55;
+  const vh=Math.min(24*cabK(),rad*0.30), vy=cy-rad*0.55;
   vent(11, vy, cx-rad-22, vh);
   vent(cx+rad+11, vy, W-11-(cx+rad+11), vh);
 
@@ -932,7 +939,7 @@ function vent(x,y,w,h){
 
 function drawBinnacle(g, y0, h, cx, rad){
   const pad=W*0.04, x0=pad, x1=W-pad, wd=x1-x0, y1=y0+h;
-  const s=h/136, r=Math.min(14,h*0.11);
+  const s=h/136, r=Math.min(14*cabK(),h*0.11);
 
   // the hood: the binnacle stands proud of the crash pad and throws a shadow onto its own glass
   ctx.fillStyle='rgba(0,0,0,.55)';
