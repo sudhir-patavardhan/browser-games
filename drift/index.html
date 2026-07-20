@@ -71,8 +71,25 @@
   .aux{ margin-top:14px; background:none; border:1px solid rgba(23,50,74,.22); color:#48627a; cursor:pointer;
     border-radius:12px; padding:9px 16px; font-weight:800; font-size:12px; letter-spacing:.5px; }
   .aux:active{ background:rgba(23,50,74,.06); }
-  .keys{ font-size:12.5px; color:#6a7a88; line-height:1.8; margin-top:16px; }
-  .keys b{ color:#ff7a2f; }
+  .aux.hot{ border-color:rgba(200,90,26,.5); color:#c85a1a; font-size:13px; }
+  .modeRow{ display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap; }
+  /* controls at a glance — chips, not paragraphs */
+  .ctl{ display:flex; flex-wrap:wrap; justify-content:center; gap:5px 13px; margin-top:18px;
+    font-size:11.5px; font-weight:700; color:#5a6a78; }
+  .ctl kbd{ font-family:inherit; font-size:10.5px; font-weight:900; color:#48627a; background:#f2f5f2;
+    border:1px solid rgba(23,50,74,.2); border-bottom-width:2px; border-radius:5px; padding:1px 5.5px; margin-right:1px; }
+  .ctlnote{ font-size:11px; color:#8a9aa8; font-weight:600; line-height:1.55; margin-top:7px; }
+  /* the rest of the manual, folded away until asked for */
+  .more{ margin-top:14px; border-top:1px solid rgba(23,50,74,.1); padding-top:10px; text-align:left; }
+  .more summary{ list-style:none; cursor:pointer; text-align:center; font-size:11px; font-weight:800;
+    letter-spacing:1.5px; color:#48627a; }
+  .more summary::-webkit-details-marker{ display:none; }
+  .more summary::after{ content:" ▾"; color:#8a9aa8; }
+  .more[open] summary::after{ content:" ▴"; }
+  .feat{ font-size:12px; color:#5a6a78; line-height:1.55; margin-top:9px; }
+  .feat b{ color:#17324a; font-weight:900; }
+  .feat i{ font-style:normal; font-weight:800; color:#c85a1a; }
+  .more + .armoryBox{ border-top:1px solid rgba(23,50,74,.1); margin-top:10px; padding-top:4px; }
   /* the wallet, and the armory it pays for */
   .cash{ font-size:13px; font-weight:900; color:#2e8f38; margin-top:3px; letter-spacing:.5px; }
   .cash.pop{ animation:cashpop .5s ease; }
@@ -203,43 +220,43 @@
   <div class="card">
     <h1>DRIFT</h1>
     <div class="tag">SLIDE · CHAIN · SEND IT</div>
-    <p class="lead">An endless sunlit road that keeps throwing tighter corners. Pin the throttle down the straights, brake into the bends — carry too much speed and the rear steps out. Hold the slide to build your multiplier; the wider and longer, the bigger the score.</p>
+    <p class="lead">An endless sunlit road with a horde problem. Brake into the bend, hold the slide to
+      build your multiplier — and the county pays cash for every zombie under the bumper.</p>
     <button class="go" id="startBtn">Drive</button>
-    <div><button class="aux" id="dailyBtn" style="border-color:rgba(200,90,26,.5); color:#c85a1a; font-size:13px">⚑ Today’s Road</button></div>
-    <div><button class="aux" id="auxBtn">♪ Load music from this device</button></div>
+    <div class="modeRow">
+      <button class="aux hot" id="dailyBtn">⚑ Today’s Road</button>
+      <button class="aux" id="auxBtn">♪ Your music</button>
+    </div>
+    <div class="ctl">
+      <span><kbd>←</kbd><kbd>→</kbd> steer</span>
+      <span><kbd>↑</kbd> throttle</span>
+      <span><kbd>↓</kbd> brake</span>
+      <span><kbd>C</kbd> cruise</span>
+      <span><kbd>V</kbd> view</span>
+    </div>
+    <div class="ctlnote">Arrows or WASD · touch: hold a side, second finger brakes<br>
+      Slide: brake as you turn in, then power to hold it</div>
+    <details class="more">
+      <summary>THE FULL TOUR</summary>
+      <p class="feat"><b>Zombies.</b> Bounties in wallet cash — <i>runners</i> sprint for your lane and pay
+        2×, <i>brutes</i> soak two rounds and pay 3×. Brushing past one at speed is a <i>close shave</i>:
+        it feeds the multiplier and keeps a chain alive between corners. Every couple of klicks the radio
+        calls a <i>bounty wave</i> — double pay for 18 s, five heads clears it for +$120.</p>
+      <p class="feat"><b>Contracts.</b> Three county jobs a run, top-left under your wallet — cross a
+        target and the cash lands on the spot.</p>
+      <p class="feat"><b>Today’s Road.</b> One seeded road a day: same corners, horde and jobs for
+        everyone, with its own best that resets at midnight. Your best run comes back as a <i>ghost</i> to
+        race — and some days it <i>rains</i>.</p>
+      <p class="feat"><b>The wallet.</b> Buys guns that auto-fire at shamblers on the verge, then garage
+        hardware — a longer-range pack, a regen tune, track tyres — fitted once, driven on for good.</p>
+      <p class="feat"><b>Trophies.</b> Firsts and feats land on the shelf below, for keeps — and driving
+        Today’s Road day after day builds a <i>streak</i> it pays out on.</p>
+      <p class="feat"><b>The cabin.</b> You drive from behind the wheel; <i>V</i> glances down at a top
+        view. The wheel’s left thumb pad holds cruise, the right skips a track, and the dash stereo plays
+        your own music — tap it, or keys <i>K</i> / <i>N</i> / <i>P</i> / <i>M</i>.</p>
+    </details>
     <div class="armoryBox"></div>
     <div class="shelfBox"></div>
-    <div class="keys">
-      <b>Keyboard:</b> &larr; &rarr; (or A / D) steer &nbsp;·&nbsp; &uarr; / W throttle &nbsp;·&nbsp; &darr; / S brake<br>
-      <b>Touch:</b> hold the left / right side to steer — or swipe to turn the wheel in driver view.
-      The car drives itself; a <b>second finger</b> anywhere is the brake<br>
-      <b>To slide:</b> brake as you turn in — the tail steps out. Then get back on the power to hold it<br>
-      <b>Cruise:</b> the <b>left thumb pad on the wheel</b> (or <b>C</b>) — it holds your speed, but the corners
-      are still yours. Braking cancels it. The right pad skips a track<br>
-      <b>Stereo:</b> tap the dash screen — art plays/pauses, middle skips, meter mutes &nbsp;·&nbsp;
-      keys <b>K</b> / <b>N</b> / <b>P</b> / <b>M</b><br>
-      <b>Views:</b> you drive from behind the wheel. Tap “Top view” (or press V) for a look down at the
-      corner coming — the dash also has an AR guide and a nav map<br>
-      <b>Contracts:</b> the county posts <b>three jobs</b> every run — top-left, under your wallet.
-      Cross one mid-run and the cash lands on the spot<br>
-      <b>Today’s Road:</b> one road per day — same corners, same horde, same jobs for everyone.
-      Its <b>today’s best</b> resets at midnight, and it never touches your endless BEST.
-      Your best run comes back as a <b>ghost</b> — race the phantom, watch the ±m gap.
-      Some days it <b>rains</b>: grip and brakes are down, and the whole county drives the same weather<br>
-      <b>Zombies:</b> the horde has ranks — <b>runners</b> sprint for your lane and pay double,
-      <b>brutes</b> soak two rounds, pay triple, and cost you real speed if you plow one.
-      Every couple of klicks the radio calls a <b>BOUNTY WAVE</b> — a dense pack, double pay for 18s,
-      and five heads inside the window clears it for a <b>+$120</b> bonus.
-      The road has a horde problem and the county pays a bounty — run them down for
-      <b>wallet cash</b> (it persists). The wallet buys guns above; an equipped gun <b>auto-fires</b> at the
-      shamblers out on the verge that the car can’t reach. Brushing <b>past</b> one at speed without
-      touching it is a <b>CLOSE SHAVE</b> — it feeds your multiplier and keeps a drift chain alive
-      between corners<br>
-      <b>Garage:</b> bigger money buys <b>car hardware</b> — a longer-range pack, a regen tune, track
-      tyres. Fitted once, driven on every run after<br>
-      <b>Trophies:</b> firsts and feats land on the <b>shelf</b> above, for good — and driving
-      Today’s Road day after day builds a <b>streak</b> the shelf pays out on
-    </div>
   </div>
 </div>
 
