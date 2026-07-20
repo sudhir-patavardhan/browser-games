@@ -3,6 +3,39 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## The county's wildlife — deer crossings (2026-07-20)
+
+**What.** A rarer, faster hazard than the horde: every ~1.5–2.5 km (seeded, an event not a fixture) a deer
+breaks from the verge and bolts the full width of the road in a couple of seconds flat — occasionally a
+fawn follows a beat behind. Reuses the horde's own machinery (a live entity array, `zPos`/`roadAt` for its
+line, the same nose-strike math) because "something crosses your path and you have to react" was already
+built; only the tone and the stakes are new. A real strike costs real speed and a bite of the pack — no
+bounty, no gore, a startled bound and a puff of dust, not a splat, tracked on its own counter. Read it and
+dodge it clean at speed and the same nerve the horde already pays for pays again: **DEER DODGE**, heat and
+a grace refresh, exactly like a close shave. New `GAME WARDEN` badge (3 clean dodges) and `DODGE 2 DEER
+CLEAN` contract, both reading the counter the toast increments. Never spawned on a bridge, in a tunnel, or
+across a services apron.
+
+**Why.** Every hazard so far either builds slowly into view (the horde, read from a distance) or sits
+fixed in the world (a wall, a slick, a bore). Nothing tests pure reaction — see it, decide, act, in under a
+second. A rural county road runs through someone else's territory too, and wildlife is the natural way to
+ask for that without inventing a new mechanic: reusing the horde's proximity/strike/near-miss shape means
+the only genuinely new code is *what* crosses and *what it costs*, not *how crossing works*.
+
+**Fix in the same pass.** Deer inherit the horde's own "spawner live" gate (`zNextIdx<1e8`) on purpose — so
+any existing probe that stands the horde down for a clean measurement correctly silences deer too, without
+needing to know deer exist. Caught the sharp edge of that while writing this feature's own probe: a
+sub-test that stands the horde down to avoid unrelated noise *also* silences the very crossings it's
+trying to observe. Not a game bug — the shared gate is the right design — just something the test itself
+had to account for.
+
+**How it's defended.** `./verify/run.sh deer` — crossings actually happen on a long enough drive and never
+land on a bridge or a services apron, a real strike costs speed and charge but pays no bounty, a clean
+pass at speed pays DEER DODGE exactly once per crossing (never on top of an actual hit, never on ordinary
+driving nowhere near one), the badge/contract read the same counter, and — checked directly against the
+resolution this suite actually runs at, not assumed — a deer at a fair ~65m reaction distance genuinely
+clears the dashboard rather than rendering invisible behind it.
+
 ## Rest areas get real — a schedule and an exit (2026-07-20)
 
 **What.** Services now sit on the county's own schedule — the **3rd, 7th, 12th, 18th… kilometre**, each

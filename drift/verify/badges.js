@@ -18,8 +18,8 @@
     try{ localStorage.removeItem('drift.dbest'); localStorage.removeItem('drift.dghost'); }catch(e){}
 
     // ---- clean slate renders a bare shelf
-    rec("a bare shelf shows 0 of the lot", document.querySelector('.shelfBox').textContent.indexOf('0/15')>=0,
-        "'TROPHY SHELF 0/15' on the card");
+    rec("a bare shelf shows 0 of the lot", document.querySelector('.shelfBox').textContent.indexOf('0/16')>=0,
+        "'TROPHY SHELF 0/16' on the card");
 
     // ---- bank a CLEAN chain: two badges, one toast each, never twice
     seedRandom(31337); D.start(); D.game.zNextIdx=1e9; D.game.zombies.length=0;
