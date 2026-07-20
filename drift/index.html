@@ -764,6 +764,11 @@ function drawWindshield(g,spd){
     if(zs.z<NEARZ) continue; const b=toScreen(zs.z,zs.side); const w=clamp(6*b.sc,2,16), h=clamp(14*b.sc,4,40);
     ctx.fillStyle=(i%2===0)?'#e5484d':'#ffffff'; ctx.fillRect(b.x-w/2,b.y-h,w,h); } }
   drawBridge(g,zside,toScreen,lo,hi);
+  // the rest stop itself — bay markings and the charger post. This used to be defined and never CALLED: the
+  // apron was real pavement (paved()/wallAt() already let the car drive onto it, which is what made pause
+  // work at all) but nothing painted it, so a stop you could physically park in was invisible until you did.
+  drawRestStop(g,zside,toScreen,lo,hi);
+  drawRestSigns(g,zside,toScreen,lo,hi);
   // skid marks projected
   ctx.lineCap='round';
   for(const s of g.skid){ const A=proj(s.ax,s.ay), B=proj(s.bx,s.by); if(!A||!B) continue;
@@ -818,7 +823,10 @@ const CYAN='#7fe2ff', DIM='rgba(178,205,228,.5)', LOW='#ffb454';
 // together, the way a real wheel and cluster actually fill your lower view. Phones are untouched: at phone
 // sizes cabK()=1 (the W- and H-fractions bind first there anyway), and the road band stays the road band.
 const cabK=()=>clamp(Math.min(W*0.5,H)/520,1,2.2);
-function wheelGeom(){ const rad=Math.min(W*0.165,72*cabK()); return { cx:W*0.5, cy:H-rad*0.62-4, rad }; }
+// bigger again: a wheel this close to camera reads as a toy if it stays clear of everything else. It's
+// drawn LAST (after drawDashboard), so growing it just means its rim and hub sit further up over the
+// cluster glass — the bottom of the speed numeral going under the wheel is the real thing, not a bug.
+function wheelGeom(){ const rad=Math.min(W*0.20,100*cabK()); return { cx:W*0.5, cy:H-rad*0.62-4, rad }; }
 
 // a housing that leans away from you: narrower along its top edge than its foot
 function trap(x0,x1,y0,y1,lean){
@@ -1448,6 +1456,55 @@ function drawRestStop(g,zside,toScreen,lo,hi){
       ctx.globalAlpha=0.35+0.25*Math.sin(g.time*3.4);
       ctx.fillStyle='#8affc1'; ctx.fillRect(b.x-w*0.30,b.y-h*0.92,w*0.60,h*0.26);
       ctx.globalAlpha=1;
+    }
+  }
+}
+// Countdown signage: a post every kilometre in the run-up to a stop, the way a real highway plants
+// SERVICES · 3 KM · 2 KM · 1 KM so you know it's coming before you're already alongside it. Placed by
+// walking back from the BAY'S OWN centre in fixed 1km steps rather than scanning forward from wherever the
+// car happens to be — pure on (index, seed) like the bay itself, so a given post always reads the same
+// number, on every pass, not one keyed to your current position. Never within reach of a bridge: a sign
+// planted where the shoulder is actually open water would stand in mid-air over the river.
+const KM_PTS=Math.round(1000/(SEG*0.1));            // road points per kilometre (SEG px/point, 1px≈0.1m)
+function signAt(i,seed){
+  const b=Math.floor(i/REST_EVERY);
+  for(let k=b-1;k<=b+2;k++){                        // a sign can sit a block or two before its own bay
+    const r=restBlock(k,seed); if(!r.ok) continue;
+    for(let km=1;km<=3;km++){
+      if(i!==r.c-KM_PTS*km) continue;
+      for(let j=i-8;j<=i+8;j++) if(bridgeAt(j,seed)) return null;   // no post standing over the water
+      return { km, side:r.side };
+    }
+  }
+  return null;
+}
+// A real services sign is the one piece of roadside furniture built to be seen from a long way off: big,
+// planted CLEAR of the barrier posts and the curve-chevron boards (which crowd the verge right at
+// BARRIER+34..40 — this used to sit right on top of them), twin-posted, and reflective white on deep green.
+function drawRestSigns(g,zside,toScreen,lo,hi){
+  const seed=g.seed;
+  for(let i=lo;i<hi-1;i++){
+    const sg=signAt(i,seed); if(!sg) continue;
+    const p=g.road.pts[i], off=(BARRIER+108)*sg.side;         // well clear of the barrier/chevron clutter
+    const zs=zside(p.x-p.ty*off, p.y+p.tx*off);
+    if(zs.z<NEARZ) continue;
+    const b=toScreen(zs.z,zs.side);
+    const w=clamp(96*b.sc,16,220), h=clamp(62*b.sc,10,140), postH=clamp(100*b.sc,12,210);
+    const pw=clamp(3.8*b.sc,1.6,7.5);
+    ctx.fillStyle='#454d57';                                   // twin posts — how a panel this size is actually held up
+    ctx.fillRect(b.x-w*0.32-pw*0.5, b.y-postH, pw, postH);
+    ctx.fillRect(b.x+w*0.32-pw*0.5, b.y-postH, pw, postH);
+    const py=b.y-postH-h;
+    ctx.fillStyle='#0c4a2e'; rr(b.x-w*0.5-3*b.sc,py-3*b.sc,w+6*b.sc,h+6*b.sc,Math.min(7,h*0.14)); ctx.fill();  // shadow edge, for depth
+    ctx.fillStyle='#1a8452'; rr(b.x-w*0.5,py,w,h,Math.min(7,h*0.14)); ctx.fill();                              // the panel — highway green
+    ctx.strokeStyle='#ffffff'; ctx.lineWidth=Math.max(1.6,2.4*b.sc); rr(b.x-w*0.5,py,w,h,Math.min(7,h*0.14)); ctx.stroke();
+    if(b.sc>0.09){
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillStyle='#ffffff'; ctx.font='800 '+Math.round(h*0.24)+'px '+FSANS;
+      ctx.fillText('⚡ REST AREA', b.x, py+h*0.28);
+      ctx.font='900 '+Math.round(h*0.46)+'px '+FMONO;
+      ctx.fillText(sg.km+' KM', b.x, py+h*0.75);
+      ctx.textBaseline='alphabetic';
     }
   }
 }
