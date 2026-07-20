@@ -3,6 +3,27 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## The county buys better signage (2026-07-20)
+
+**What.** Three tiers of rest-area signage, because a stop you can drive straight past isn't a stop. The
+**pylon**: a services totem at the bay itself, tall enough to read over the treeline, fading up out of the
+haze from ~1.3 km (the road points that far ahead are minted on demand — same rng stream, same road, just
+built a moment early). The **banner gantry**: a full-width overhead panel astride the road at the exit's
+gore, arrowed into the lane — you drive *under* it, not past it. And the 3-2-1 km countdown boards grown
+to motorway size. The countdown itself is fixed: a post that landed near a bridge used to be silently
+**dropped**, so a bay could announce itself with nothing but a lone “1 KM” out of nowhere — posts are now
+minted with the bay (memoized in `restBlock`) and *nudged* along the road until they stand on dry land,
+never dropped.
+
+**Why.** Field report: “drove 5 km and couldn’t find the rest stop … the signs keep telling it’s 1 km
+away.” The countdown was real but leaky (dropped posts made it stutter), and it *terminated in nothing* —
+at the bay there was no landmark bigger than a charger post, so the exit slid by unnoticed. Signage is a
+promise; the pylon and the gantry are the promise being kept where the player is actually looking.
+
+**How it's defended.** `./verify/run.sh restnav` — every bay carries its full set (gore gantry + 3-2-1),
+every post answers `signAt` at its own index, stands clear of any bridge, and sits within a nudge (≤90
+points) of its true kilometre. The full suite stays green.
+
 ## Rest areas get real — a schedule and an exit (2026-07-20)
 
 **What.** Services now sit on the county's own schedule — the **3rd, 7th, 12th, 18th… kilometre**, each
