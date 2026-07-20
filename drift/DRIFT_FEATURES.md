@@ -3,6 +3,35 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## Rest areas get real — a schedule and an exit (2026-07-20)
+
+**What.** Services now sit on the county's own schedule — the **3rd, 7th, 12th, 18th… kilometre**, each
+gap one km longer than the last (bay n at n(n+5)/2 km), nudged deterministically off any bridge — instead
+of a random bay every half-km. And each one finally *looks* like somewhere you can stop: a **real exit**
+(a ~145 m deceleration tongue smoothstepped off the shoulder, lane-drop dashes across the mouth where the
+solid edge line stands down, a white edge out along the tongue, a shorter merge back), the barrier
+standing back around the apron exactly where `wallAt()` puts the wall, bay markings, the charger post,
+and a **gore sign arrowed into the lane** on top of the 3-2-1 km countdown — in **both views** (the top
+view previously drew no rest area at all), with nothing growing through the pavement: tufts, poles, trees
+and chevron boards all stand clear. The dash now always knows the distance to the next services, however
+far out.
+
+**Why.** The apron was real physics (`paved()`/`wallAt()` let the car in; pause parked on it) but
+`drawApron` was never called and the barrier posts were drawn straight across the entrance — a stop you
+could use but not see. And a bay every ~500 m made stopping meaningless: no anticipation, no planning,
+nothing for the signage to promise. A fixed, learnable, widening schedule turns range into a decision the
+long haul keeps re-asking.
+
+**Fix in the same pass.** The pull-in autopilot could strand itself: grass drag (a flat 300) eats a crawl
+throttle (0.32×760) whole, so a car that clipped the verge mid-U-turn sat at 0 km/h draining its pack to
+death. The crawl now digs (0.75) whenever it's aground on grass, and a shoulder stop is allowed to park
+from the crawl speed grass kills anyway.
+
+**How it's defended.** `./verify/run.sh restnav` — the schedule (bays at km 3/7/12/18, ± the river
+nudge), the exit geometry (plain road before the gore, a ramp half-way down the lane, a full-width
+stand), and the turn-back trip now runs against the real schedule — plus `pause`, which still proves a
+stop far from services parks on the hard shoulder, unplugged.
+
 ## Bounty Waves — the county radio calls (2026-07-19)
 
 **What.** Every ~1.6–2.2 km (seeded off the run, first call ~30 s in), the radio calls a **BOUNTY
