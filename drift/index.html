@@ -121,6 +121,11 @@
     font-weight:900; font-size:clamp(15px,4vw,22px); color:#ffd24a; opacity:0; letter-spacing:2px;
     text-shadow:0 2px 0 rgba(180,60,20,.8), 0 4px 12px rgba(0,0,0,.3); }
   .buzzpop.show{ animation:pop .8s ease forwards; }
+  /* the wall ride: same nerve-fed reward, paid by the tunnel instead of the horde — stone-cool where the shave is hot */
+  .wallpop{ position:fixed; left:50%; top:33%; transform:translateX(-50%); z-index:4; pointer-events:none;
+    font-weight:900; font-size:clamp(15px,4vw,22px); color:#ffb454; opacity:0; letter-spacing:2px;
+    text-shadow:0 2px 0 rgba(70,40,10,.85), 0 4px 12px rgba(0,0,0,.35); }
+  .wallpop.show{ animation:pop .8s ease forwards; }
   /* the race against the phantom, one signed number */
   .ghostrow{ margin-top:5px; font-size:11px; font-weight:900; letter-spacing:.6px; color:#2996a8; }
   .ghostrow b{ color:#1fae4a; } .ghostrow b.beh{ color:#e5484d; }
@@ -188,6 +193,7 @@
     <div class="ctrbox" id="ctrEl"></div>
     <div class="ghostrow" id="ghostEl" style="display:none"></div>
     <div class="ghostrow" id="wetEl" style="display:none; color:#5878a0">🌧 WET ROAD · GRIP −12%</div>
+    <div class="ghostrow" id="tunnelEl" style="display:none; color:#8a6a3a">🚇 TUNNEL · WALLS CLOSE</div>
     <div class="waverow" id="waveEl" style="display:none"></div>
   </div>
   <div class="pill rt">
@@ -200,6 +206,7 @@
 <div class="driftpop" id="driftpop"></div>
 <div class="ctrpop" id="ctrPop"></div>
 <div class="buzzpop" id="buzzEl"></div>
+<div class="wallpop" id="wallEl"></div>
 <div class="badgepop" id="badgePop"></div>
 <div class="wavepop" id="wavePop"></div>
 <div class="steerhint" id="hintL" style="display:none">‹</div>
@@ -393,7 +400,7 @@ function newGame(forceSeed){
     scenery:makeScenery(seed),
     zombies:[], splats:[], gibs:[], flecks:[], shots:[],   // the horde, and what's left of it
     zrng:mulberry32(seed^0x2b1e), zNextIdx:0, gunCd:0, cashRun:0, goreT:0,
-    vmax:0, zCarKills:0, gunKills:0, buzzes:0, contracts:makeContracts(seed), mod:carMods(),
+    vmax:0, zCarKills:0, gunKills:0, buzzes:0, wallRides:0, wallWasClose:false, inTunnel:false, contracts:makeContracts(seed), mod:carMods(),
     rec:[], recT:0, ghost:dailyMode?loadGhost():null, ghostIdx:0,   // today's line, and the one to beat
     wet: dailyMode && seedWet(seed),                                // today's sky came with the road
     wrng, waveNext:12000+wrng()*6000, waveT:0, waveKills:0, waveGoal:5,   // the radio's first call, ~30s out
@@ -504,6 +511,13 @@ function step(dt){
   g.speed=mag; g.slip=slip; g.vmax=Math.max(g.vmax,mag);
   const ad=Math.abs(g.slip);
   const drifting = g.speed>240 && ad>0.16 && !g.onGrass;
+  // TUNNEL WALL RIDE: the same skill-reward shape as a close shave — hug the bore's tighter wall at speed,
+  // while actually sliding, and it pays heat. g.hitT<=0 keeps an actual clip (already charged above) from
+  // ALSO paying a reward for it — that's a mistake, not nerve.
+  const inTunnel=!!tunnelAt(c.idx,g.seed);
+  const wallClose=inTunnel && g.hitT<=0 && Math.abs(lateral)>lim*0.78 && g.speed>260;
+  if(wallClose && !g.wallWasClose && drifting) wallRide(g);
+  g.wallWasClose=wallClose; g.inTunnel=inTunnel;
   if(drifting){
     g.driftTime+=dt; g.driftTotal+=dt; g.grace=0.7;      // enough slack to link one corner into the next
     g.mult=clamp(g.mult+dt*0.85,1,8);
@@ -814,6 +828,10 @@ function drawWindshield(g,spd){
   if(spd>420){ ctx.strokeStyle='rgba(255,255,255,'+clamp((spd-420)/500,0,.3)+')'; ctx.lineWidth=2;
     for(let i=0;i<6;i++){ const yy=horizon+40+Math.random()*(H-horizon-60); const xx=Math.random()<.5?20+Math.random()*60:W-80+Math.random()*60;
       ctx.beginPath(); ctx.moveTo(xx,yy); ctx.lineTo(xx,yy+40); ctx.stroke(); } }
+  tunnelLighting(g,horizon);   // darkness — over the whole world, so nothing drawn earlier escapes it
+  // the bore's own structure, lit by its own ceiling lights rather than the daylight the overlay just
+  // took away — drawn ON TOP of the darkness for exactly that reason, or the walls crush to black with it
+  drawTunnel(g,zside,toScreen,lo,hi);
 
   if(g.nav) drawNav(g, proj, horizon);
   if(g.wet) drawRain(g, horizon);   // the weather, on the glass — over the world, under the ichor
@@ -1294,6 +1312,37 @@ function forestAt(i,seed){
   return clamp((v+0.12)*1.45,0,1)*onset;
 }
 
+/* ---------------------------- tunnels ---------------------------- */
+/* A hill the road punches straight through. Same rule as everything else out here — pure function of the
+   index and the seed. Unlike a rest area, a tunnel makes the road NARROWER, not wider: the rock is close
+   enough on both sides that the existing barrier-hit physics (scrub the speed, take the charge, bounce back
+   onto the tarmac) is exactly right for clipping a tunnel wall — wallAt just has to answer with a tighter
+   number in here, no new collision code, the wall already knows what to do with one. */
+const TUNNEL_EVERY=640, TUNNEL_HALF=280;   // bore margin is 35px past the lane edge, vs the open road's 85
+const _tunnel=new Map();
+function tunnelBlock(b,seed){
+  const key=seed+':'+b; let v=_tunnel.get(key);
+  if(v===undefined){
+    const s=(Math.imul(b,668265263)^Math.imul(seed,374761393))|0;
+    v={ c: b*TUNNEL_EVERY+120+Math.floor(h01(s)*160),          // where the bore sits
+        len: 55+Math.floor(h01(s^0x27d4eb2f)*35) };            // ~140-235m: long enough for the dark to mean something
+    v.ok=true;   // never punched through a riverbank
+    for(let i=v.c-v.len-40;i<=v.c+v.len+40 && v.ok;i++) if(bridgeAt(i,seed)) v.ok=false;
+    _tunnel.set(key,v);
+  }
+  return v;
+}
+// t=1 dead centre of the bore, 0 at either portal — the same linear taper riverBlock/restBlock use, doing
+// double duty here for both the wall narrowing and how dark the world reads.
+function tunnelAt(i,seed){
+  const b=Math.floor(i/TUNNEL_EVERY);
+  for(let k=b-1;k<=b+1;k++){
+    const v=tunnelBlock(k,seed); if(!v.ok) continue;
+    const d=i-v.c; if(Math.abs(d)<=v.len) return { v, t:1-Math.abs(d)/v.len };
+  }
+  return null;
+}
+
 /* ---------------------------- rest areas ---------------------------- */
 /* Somewhere to stop. Same rule as the rivers: the road is endless and made as you drive it, so a rest area
    can't be a thing we remember putting somewhere — it has to fall out of the road index and the seed. What
@@ -1309,8 +1358,8 @@ function restBlock(b,seed){
     v={ c: b*REST_EVERY + 55 + Math.floor(h01(s)*110),        // where the bay sits
         side: h01(s^0x51ed270b)<0.5? 1:-1,                    // which shoulder it's cut into
         len: 20+Math.floor(h01(s^0x27220a95)*8) };            // how far it runs, in road points
-    v.ok=true;   // nobody builds a services half-way out over a river, so a stop that fouls a bridge isn't built
-    for(let i=v.c-v.len-30;i<=v.c+v.len+30 && v.ok;i++) if(bridgeAt(i,seed)) v.ok=false;
+    v.ok=true;   // nobody builds a services half-way out over a river, or widens a lane inside a bore
+    for(let i=v.c-v.len-30;i<=v.c+v.len+30 && v.ok;i++) if(bridgeAt(i,seed)||tunnelAt(i,seed)) v.ok=false;
     _rest.set(key,v);
   }
   return v;
@@ -1345,11 +1394,14 @@ function restFmt(m){ return m==null ? '—' : m<1000 ? Math.round(m/10)*10+' m' 
 function paved(i,lateral,seed){
   if(Math.abs(lateral)<=ROAD_HALF) return true;                       // the road
   if(bridgeAt(i,seed)) return true;                                   // the deck, out to the parapet
+  if(tunnelAt(i,seed) && Math.abs(lateral)<=TUNNEL_HALF) return true; // the bore floor, wall to wall — no verge to have in a tunnel
   const ap=apronAt(i,seed);                                           // and the apron of a rest area
   return !!(ap && (lateral>0?1:-1)===ap.side && Math.abs(lateral)<=BARRIER+ap.w);
 }
-// how far off the centre line the wall is, on the side you're leaning — it opens up at a rest area
+// how far off the centre line the wall is, on the side you're leaning — it opens up at a rest area,
+// and it closes in inside a tunnel: same wall, same collision code, just a different number to hit
 function wallAt(i,lateral,seed){
+  if(tunnelAt(i,seed)) return TUNNEL_HALF;
   const ap=apronAt(i,seed);
   return (ap && (lateral>0?1:-1)===ap.side) ? BARRIER+ap.w : BARRIER;
 }
@@ -1594,6 +1646,50 @@ function drawBridge(g,zside,toScreen,lo,hi){
     ctx.strokeStyle='rgba(40,46,54,.55)'; ctx.lineWidth=Math.max(1,3*A.sc);
     ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke();
   }
+}
+// The bore itself: two rock walls close enough to actually squeeze the line, and a single string of
+// ceiling lights down the crown — real tunnels don't bother lighting both walls, one line reads just as
+// well and is half the draws. The darkness overlay does the rest of the "you're inside a mountain" work.
+function drawTunnel(g,zside,toScreen,lo,hi){
+  const R=g.road, seed=g.seed;
+  for(const sgn of [1,-1]){
+    ctx.beginPath();
+    for(let i=lo;i<hi-1;i++){
+      const T=tunnelAt(i,seed); if(!T) continue;
+      const p=R.pts[i], q=R.pts[i+1];
+      const z1=zside(p.x-p.ty*TUNNEL_HALF*sgn, p.y+p.tx*TUNNEL_HALF*sgn), z2=zside(q.x-q.ty*TUNNEL_HALF*sgn, q.y+q.tx*TUNNEL_HALF*sgn);
+      if(z1.z<NEARZ||z2.z<NEARZ) continue;
+      const A=toScreen(z1.z,z1.side), B=toScreen(z2.z,z2.side);
+      // tall: the dash now covers most of the lower frame (the cabin scaled up to fill it on purpose), so a
+      // wall sized like the old, shorter barrier/parapet posts spent almost its whole height hidden behind
+      // it. This has to clear that same dash from well down the tunnel, not just at arm's length.
+      const h1=clamp(480*A.sc,20,560), h2=clamp(480*B.sc,20,560);
+      ctx.moveTo(A.x,A.y); ctx.lineTo(A.x,A.y-h1); ctx.lineTo(B.x,B.y-h2); ctx.lineTo(B.x,B.y); ctx.closePath();
+    }
+    ctx.fillStyle='#2b2822'; ctx.fill();
+  }
+  for(let i=lo;i<hi-1;i++){
+    const T=tunnelAt(i,seed); if(!T || i%9!==0) continue;
+    const zs=zside(R.pts[i].x,R.pts[i].y); if(zs.z<NEARZ) continue;
+    const b=toScreen(zs.z,zs.side), h=clamp(460*b.sc,18,540), r=clamp(5*b.sc,1,11);
+    ctx.fillStyle='rgba(255,214,140,'+clamp(0.35+0.45*T.t,0,1).toFixed(2)+')';
+    ctx.beginPath(); ctx.arc(b.x,b.y-h,r,0,TAU); ctx.fill();
+  }
+}
+// Inside the bore the world goes dark — not the sky's own dusk, the actual absence of daylight — and the
+// car answers with real headlights: a cone of light pooling on the road ahead. Screen-space, like the
+// sun-glare bloom, so it never scales by 1/z or shakes with the car. Ramped to fully dark well inside the
+// mouth (not at the exact centre), so the plunge reads as arriving somewhere, not a slow dimmer switch.
+function tunnelLighting(g,horizon){
+  const T=tunnelAt(g.car.idx,g.seed); if(!T) return;
+  const dk=clamp(T.t*3.2,0,1);
+  ctx.fillStyle='rgba(6,6,10,'+(0.86*dk).toFixed(2)+')'; ctx.fillRect(0,0,W,H);
+  const cy=horizon+(H-horizon)*0.38, r=Math.max(W,H)*0.55;
+  const gl=ctx.createRadialGradient(W*0.5,cy,0,W*0.5,cy,r);
+  gl.addColorStop(0,'rgba(255,250,225,'+(0.55*dk).toFixed(2)+')');
+  gl.addColorStop(.35,'rgba(255,244,205,'+(0.22*dk).toFixed(2)+')');
+  gl.addColorStop(1,'rgba(255,244,205,0)');
+  ctx.fillStyle=gl; ctx.fillRect(0,0,W,H);
 }
 
 /* ============================ driver-view scenery ============================ */
@@ -2155,6 +2251,7 @@ const BADGES={
   tonup:   { nm:'225 CLUB',        hint:'touch 225 km/h' },
   hauler:  { nm:'LONG HAULER',     hint:'cover 5 km on one pack' },
   barber:  { nm:'THE BARBER',      hint:'5 close shaves in one run' },
+  tunnelrat:{ nm:'TUNNEL RAT',     hint:'hug a tunnel wall 3 times in one run' },
   pest:    { nm:'PEST CONTROL',    hint:'10 shamblers in one run' },
   biggame: { nm:'BIG GAME',        hint:'fell a brute' },
   ghostwin:{ nm:'FASTER THAN YESTERDAY', hint:'beat your ghost on Today’s Road' },
@@ -2196,6 +2293,7 @@ function checkRunBadges(g,isBest){
   if(g.vmax*0.36>=225)  awardBadge('tonup');
   if(g.dist>=50000)     awardBadge('hauler');
   if(g.buzzes>=5)       awardBadge('barber');
+  if(g.wallRides>=3)    awardBadge('tunnelrat');
   if(g.zCarKills+g.gunKills>=10) awardBadge('pest');
   if(dailyMode && isBest && g.ghost) awardBadge('ghostwin');   // there was a line to beat, and you beat it
   if(dailyMode && isBest && g.wet)   awardBadge('rain');
@@ -2225,6 +2323,15 @@ function buzz(g){
   g.grace=Math.max(g.grace,0.7);
   const el=document.getElementById('buzzEl');
   if(el){ el.textContent='CLOSE SHAVE'; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+  sfx('whoosh');
+}
+/* the WALL RIDE: the same heat/grace reward as a close shave, paid by the rock instead of the horde — you
+   carried a slide right up against the bore's tighter wall, on purpose, and held it off the concrete. */
+function wallRide(g){
+  g.wallRides++; g.mult=clamp(g.mult+0.5,1,8);
+  g.grace=Math.max(g.grace,0.7);
+  const el=document.getElementById('wallEl');
+  if(el){ el.textContent='WALL RIDE'; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
   sfx('whoosh');
 }
 // Z_H is sized against the CAMERA, not a tape measure: the eye sits CAMH=112 up, so a 92-px shambler's
@@ -2483,6 +2590,7 @@ function makeContracts(seed){
     { id:'vmax',  label:'TOUCH 225 km/h',       rew:40, tgt:225,  prog:g=>g.vmax*0.36,      fmt:v=>''+Math.round(v) },
     { id:'horde', label:'RUN DOWN 3 SHAMBLERS', rew:70, tgt:3,    prog:g=>g.zCarKills,      fmt:v=>''+Math.round(v) },
     { id:'shave', label:'SHAVE 4 SHAMBLERS',    rew:60, tgt:4,    prog:g=>g.buzzes,         fmt:v=>''+Math.round(v) },
+    { id:'wallride', label:'HUG THE BORE 2x',   rew:70, tgt:2,    prog:g=>g.wallRides,      fmt:v=>''+Math.round(v) },
     { id:'range', label:'COVER 2.5 km',         rew:50, tgt:2.5,  prog:g=>g.dist/10000,     fmt:v=>v.toFixed(1)+'km' },
   ];
   // a marksman job only makes sense with a gun on the door card
@@ -2745,6 +2853,8 @@ function updateHUD(){
   } else if(ge.style.display!=='none') ge.style.display='none';
   const we=document.getElementById('wetEl'), wetShow=g.wet?'block':'none';
   if(we.style.display!==wetShow) we.style.display=wetShow;
+  const tn=document.getElementById('tunnelEl'), tnShow=g.inTunnel?'block':'none';
+  if(tn.style.display!==tnShow) tn.style.display=tnShow;
   const wv=document.getElementById('waveEl');
   if(g.waveT>0){
     const h='⚑ WAVE '+Math.ceil(g.waveT)+'s · '+g.waveKills+'/'+g.waveGoal;
