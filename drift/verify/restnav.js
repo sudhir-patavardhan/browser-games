@@ -32,7 +32,7 @@
     // ---- the schedule: the county builds at the 3rd, 7th, 12th, 18th… km — each gap one km longer —
     // nudged off a river only, never scattered. And each bay has a REAL exit: a tongue that ramps in off
     // the shoulder, a full-width stand, and an end (no apron before the lane starts).
-    let sched=true, taper=true;
+    let sched=true, taper=true, signs=true;
     for(let n=1;n<=4;n++){
       const r=restBlock(n,g.seed), want=Math.round(restKm(n)*KM_PTS);
       if(!r.ok || Math.abs(r.c-want)>180) sched=false;
@@ -40,11 +40,22 @@
       const lane=apronAt(r.c-r.len-Math.round(REST_IN/2),g.seed);        // half-way down the exit lane
       const before=apronAt(r.c-r.len-REST_IN-4,g.seed);                  // upstream of the gore: plain road
       if(!bay || bay.w<REST_W*0.99 || !lane || lane.w<=0 || lane.w>=REST_W*0.95 || before) taper=false;
+      // every bay announces itself: the gore gantry plus a full 3-2-1 countdown, each post standing on
+      // dry land (nudged off a bridge, never dropped) and answering signAt at its own index
+      if(!r.signs || r.signs.length!==4) signs=false;
+      else for(const s of r.signs){
+        const got=signAt(s.at,g.seed);
+        if(!got || got.km!==s.km) signs=false;
+        for(let j=s.at-8;j<=s.at+8;j++) if(bridgeAt(j,g.seed)) signs=false;
+        if(s.km>0 && Math.abs(s.at-(r.c-KM_PTS*s.km))>90) signs=false;   // nudged, not wandered
+      }
     }
     rec("bays keep the county's schedule: km 3, 7, 12, 18 (± a nudge off a river)", sched,
         [1,2,3,4].map(n=>{const r=restBlock(n,g.seed);return "n"+n+"@"+r.c+" (milestone "+Math.round(restKm(n)*KM_PTS)+")";}).join(", "));
     rec("each bay has a real exit: ramp in, full-width stand, and an end", taper,
         "apron checked before the gore, half-way down the lane, and at the stand, bays 1-4");
+    rec("every bay carries its full signage: gore gantry + 3-2-1 km, all on dry land", signs,
+        [1,2,3,4].map(n=>"n"+n+":"+restBlock(n,g.seed).signs.map(s=>s.km).sort().join("/")).join("  "));
 
     // ---- the decision: drive just past a bay, and pause should choose to go BACK to it
     let setup=null;

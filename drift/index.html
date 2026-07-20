@@ -1349,6 +1349,16 @@ function restBlock(n,seed){
     const clear=cc=>{ for(let i=cc-v.len-REST_IN-12;i<=cc+v.len+REST_OUT+12;i++) if(bridgeAt(i,seed)) return false; return true; };
     let sh=0; while(!clear(c0+sh) && Math.abs(sh)<=180){ sh = sh>=0 ? -(sh+15) : -sh; }
     v.c=c0+sh; v.ok=clear(v.c);
+    // the bay's signage, planted with it: the gore gantry at the exit's split, and a 3-2-1 km countdown.
+    // Each countdown post is NUDGED off a bridge rather than dropped — a dropped sign is how a player ends
+    // up meeting a services with no warning, or a countdown that opens at '1 KM' out of nowhere.
+    const sClear=cc=>{ for(let j=cc-8;j<=cc+8;j++) if(bridgeAt(j,seed)) return false; return true; };
+    v.signs=[{ km:0, at:v.c-(v.len+REST_IN+8) }];               // the gore: inside the bay's own cleared zone
+    for(let km=1;km<=3;km++){
+      const at=v.c-KM_PTS*km; let s2=0;
+      while(!sClear(at+s2) && Math.abs(s2)<=90){ s2 = s2>=0 ? -(s2+15) : -s2; }
+      if(sClear(at+s2)) v.signs.push({ km, at:at+s2 });
+    }
     _rest.set(key,v);
   }
   return v;
@@ -1538,52 +1548,105 @@ function drawRestStop(g,zside,toScreen,lo,hi){
 }
 // Countdown signage: a post every kilometre in the run-up to a stop, the way a real highway plants
 // SERVICES · 3 KM · 2 KM · 1 KM so you know it's coming before you're already alongside it — plus the gore
-// sign, planted right where the exit lane leaves the road, arrowed into it. Placed by walking back from the
-// BAY'S OWN centre rather than scanning forward from wherever the car happens to be — pure on (index, seed)
-// like the bay itself, so a given post always reads the same number, on every pass, not one keyed to your
-// current position. Never within reach of a bridge: a sign planted where the shoulder is actually open
-// water would stand in mid-air over the river.
+// gantry, planted right where the exit lane leaves the road. Positions are minted WITH the bay (restBlock
+// memoizes them) by walking back from the bay's own centre — pure on (index, seed), so a given post always
+// reads the same number on every pass — and a post that would stand in open water is nudged along the
+// road, never dropped.
 function signAt(i,seed){
   const nc=restNof(i/KM_PTS);
   for(let n=Math.max(1,nc-1);n<=nc+2;n++){          // a sign can belong to the bay after next
     const r=restBlock(n,seed); if(!r.ok) continue;
-    if(i===r.c-(r.len+REST_IN+8)) return { km:0, side:r.side };   // the gore: km 0, take the lane
-    for(let km=1;km<=3;km++){
-      if(i!==r.c-KM_PTS*km) continue;
-      for(let j=i-8;j<=i+8;j++) if(bridgeAt(j,seed)) return null;   // no post standing over the water
-      return { km, side:r.side };
-    }
+    for(const s of r.signs) if(s.at===i) return { km:s.km, side:r.side };
   }
   return null;
 }
 // A real services sign is the one piece of roadside furniture built to be seen from a long way off: big,
 // planted CLEAR of the barrier posts and the curve-chevron boards (which crowd the verge right at
 // BARRIER+34..40 — this used to sit right on top of them), twin-posted, and reflective white on deep green.
+// Three tiers of it now, because a stop you can drive straight past isn't a stop:
+//   · the 3-2-1 km countdown boards on the verge (motorway-sized),
+//   · a BANNER GANTRY astride the whole road at the exit's gore — you drive under it, not past it,
+//   · and the pylon: a services totem at the bay itself, readable from over a kilometre out.
 function drawRestSigns(g,zside,toScreen,lo,hi){
-  const seed=g.seed;
+  const seed=g.seed, R=g.road;
+  const panel=(x,y,w,h,sc)=>{                                  // one green highway panel, shadow edge and all
+    ctx.fillStyle='#0c4a2e'; rr(x-3*sc,y-3*sc,w+6*sc,h+6*sc,Math.min(8,h*0.14)); ctx.fill();
+    ctx.fillStyle='#1a8452'; rr(x,y,w,h,Math.min(8,h*0.14)); ctx.fill();
+    ctx.strokeStyle='#ffffff'; ctx.lineWidth=Math.max(1.5,2.4*sc); rr(x,y,w,h,Math.min(8,h*0.14)); ctx.stroke();
+  };
   for(let i=lo;i<hi-1;i++){
     const sg=signAt(i,seed); if(!sg) continue;
-    const p=g.road.pts[i], off=(BARRIER+108)*sg.side;         // well clear of the barrier/chevron clutter
+    const p=R.pts[i];
+    if(sg.km===0){
+      // the banner: two legs astride the road, one long panel over your lane, arrowed into the exit
+      const oo=ROAD_HALF+64;
+      const A=zside(p.x-p.ty*oo, p.y+p.tx*oo), B=zside(p.x+p.ty*oo, p.y-p.tx*oo);
+      if(A.z<NEARZ||B.z<NEARZ) continue;
+      const a=toScreen(A.z,A.side), b=toScreen(B.z,B.side);
+      const sc=(a.sc+b.sc)*0.5;
+      const legH=clamp(200*sc,14,430), pw=clamp(8*sc,1.6,14), ph=clamp(92*sc,9,200);
+      ctx.fillStyle='#454d57';
+      ctx.fillRect(a.x-pw/2, a.y-legH, pw, legH);
+      ctx.fillRect(b.x-pw/2, b.y-legH, pw, legH);
+      const x0=Math.min(a.x,b.x)-pw, x1=Math.max(a.x,b.x)+pw;
+      const py=Math.min(a.y,b.y)-legH-ph;
+      panel(x0,py,x1-x0,ph,sc);
+      if(sc>0.06){
+        ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#ffffff';
+        ctx.font='900 '+Math.round(ph*0.42)+'px '+FSANS;
+        ctx.fillText(sg.side===1 ? '⚡ REST AREA  ↗' : '↖  ⚡ REST AREA', (x0+x1)/2, py+ph*0.52);
+        ctx.textBaseline='alphabetic';
+      }
+      continue;
+    }
+    const off=(BARRIER+108)*sg.side;                           // well clear of the barrier/chevron clutter
     const zs=zside(p.x-p.ty*off, p.y+p.tx*off);
     if(zs.z<NEARZ) continue;
     const b=toScreen(zs.z,zs.side);
-    const w=clamp(96*b.sc,16,220), h=clamp(62*b.sc,10,140), postH=clamp(100*b.sc,12,210);
-    const pw=clamp(3.8*b.sc,1.6,7.5);
+    const w=clamp(150*b.sc,20,320), h=clamp(96*b.sc,13,200), postH=clamp(120*b.sc,14,250);
+    const pw=clamp(4.6*b.sc,1.6,9);
     ctx.fillStyle='#454d57';                                   // twin posts — how a panel this size is actually held up
     ctx.fillRect(b.x-w*0.32-pw*0.5, b.y-postH, pw, postH);
     ctx.fillRect(b.x+w*0.32-pw*0.5, b.y-postH, pw, postH);
-    const py=b.y-postH-h;
-    ctx.fillStyle='#0c4a2e'; rr(b.x-w*0.5-3*b.sc,py-3*b.sc,w+6*b.sc,h+6*b.sc,Math.min(7,h*0.14)); ctx.fill();  // shadow edge, for depth
-    ctx.fillStyle='#1a8452'; rr(b.x-w*0.5,py,w,h,Math.min(7,h*0.14)); ctx.fill();                              // the panel — highway green
-    ctx.strokeStyle='#ffffff'; ctx.lineWidth=Math.max(1.6,2.4*b.sc); rr(b.x-w*0.5,py,w,h,Math.min(7,h*0.14)); ctx.stroke();
-    if(b.sc>0.09){
+    panel(b.x-w*0.5, b.y-postH-h, w, h, b.sc);
+    if(b.sc>0.07){
+      const py=b.y-postH-h;
       ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillStyle='#ffffff'; ctx.font='800 '+Math.round(h*0.24)+'px '+FSANS;
       ctx.fillText('⚡ REST AREA', b.x, py+h*0.28);
       ctx.font='900 '+Math.round(h*0.46)+'px '+FMONO;
-      ctx.fillText(sg.km===0 ? (sg.side===1?'↗':'↖') : sg.km+' KM', b.x, py+h*0.75);   // the gore sign points into the lane
+      ctx.fillText(sg.km+' KM', b.x, py+h*0.75);
       ctx.textBaseline='alphabetic';
     }
+  }
+  // THE PYLON: a totem at the bay itself, tall enough to read from a county away — the fix for driving
+  // five km and never spotting the services. It stands beyond the apron on the bay's own side, fades up
+  // out of the haze from ~1.3 km, and the road points that far ahead are minted on demand (same rng
+  // stream, same road — just built a moment early).
+  const ncp=restNof(g.car.idx/KM_PTS);
+  for(let n=Math.max(1,ncp-1);n<=ncp+2;n++){
+    const r=restBlock(n,seed); if(!r.ok) continue;
+    const dd=r.c-g.car.idx; if(dd<-40 || dd>520) continue;
+    while(R.pts.length<=r.c+1) genPoint(R);
+    const pp=R.pts[r.c], off=(BARRIER+REST_W+130)*r.side;
+    const zs=zside(pp.x-pp.ty*off, pp.y+pp.tx*off);
+    if(zs.z<NEARZ) continue;
+    const b=toScreen(zs.z,zs.side);
+    const al=clamp((13800-zs.z)/2600,0,1); if(al<=0.02) continue;
+    ctx.globalAlpha=al;
+    const ph=clamp(2500*b.sc,28,560), pw=clamp(26*b.sc,2.5,30);
+    ctx.fillStyle='#454d57'; ctx.fillRect(b.x-pw/2, b.y-ph, pw, ph);
+    const bw=clamp(620*b.sc,22,340), bh=clamp(330*b.sc,13,190);
+    panel(b.x-bw/2, b.y-ph, bw, bh, b.sc);
+    if(b.sc>0.03){
+      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#ffffff';
+      ctx.font='900 '+Math.max(7,Math.round(bh*0.4))+'px '+FSANS;
+      ctx.fillText('⚡ REST', b.x, b.y-ph+bh*0.32);
+      ctx.font='800 '+Math.max(6,Math.round(bh*0.3))+'px '+FSANS;
+      ctx.fillText('AREA', b.x, b.y-ph+bh*0.7);
+      ctx.textBaseline='alphabetic';
+    }
+    ctx.globalAlpha=1;
   }
 }
 // The deck you actually drive on: concrete right out to the parapet, because over a river there is no verge
