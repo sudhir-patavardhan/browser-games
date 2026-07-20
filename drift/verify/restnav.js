@@ -29,6 +29,23 @@
     rec("...and the next rest stop is on it, in metres you can trust", rTxt===rWant,
         "hud says '"+rTxt+"', road says '"+rWant+"'");
 
+    // ---- the schedule: the county builds at the 3rd, 7th, 12th, 18th… km — each gap one km longer —
+    // nudged off a river only, never scattered. And each bay has a REAL exit: a tongue that ramps in off
+    // the shoulder, a full-width stand, and an end (no apron before the lane starts).
+    let sched=true, taper=true;
+    for(let n=1;n<=4;n++){
+      const r=restBlock(n,g.seed), want=Math.round(restKm(n)*KM_PTS);
+      if(!r.ok || Math.abs(r.c-want)>180) sched=false;
+      const bay=apronAt(r.c,g.seed);
+      const lane=apronAt(r.c-r.len-Math.round(REST_IN/2),g.seed);        // half-way down the exit lane
+      const before=apronAt(r.c-r.len-REST_IN-4,g.seed);                  // upstream of the gore: plain road
+      if(!bay || bay.w<REST_W*0.99 || !lane || lane.w<=0 || lane.w>=REST_W*0.95 || before) taper=false;
+    }
+    rec("bays keep the county's schedule: km 3, 7, 12, 18 (± a nudge off a river)", sched,
+        [1,2,3,4].map(n=>{const r=restBlock(n,g.seed);return "n"+n+"@"+r.c+" (milestone "+Math.round(restKm(n)*KM_PTS)+")";}).join(", "));
+    rec("each bay has a real exit: ramp in, full-width stand, and an end", taper,
+        "apron checked before the gore, half-way down the lane, and at the stand, bays 1-4");
+
     // ---- the decision: drive just past a bay, and pause should choose to go BACK to it
     let setup=null;
     for(let guard=0; guard<24000 && !setup; guard++){

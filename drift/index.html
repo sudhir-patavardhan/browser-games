@@ -249,6 +249,8 @@
         race — and some days it <i>rains</i>.</p>
       <p class="feat"><b>The wallet.</b> Buys guns that auto-fire at shamblers on the verge, then garage
         hardware — a longer-range pack, a regen tune, track tyres — fitted once, driven on for good.</p>
+      <p class="feat"><b>Rest areas.</b> Services at the <i>3rd, 7th, 12th… km</i>, signed from 3 km out,
+        each with a real exit lane. Pause pulls you in; the charger sells range back for score.</p>
       <p class="feat"><b>Trophies.</b> Firsts and feats land on the shelf below, for keeps — and driving
         Today’s Road day after day builds a <i>streak</i> it pays out on.</p>
       <p class="feat"><b>The cabin.</b> You drive from behind the wheel; <i>V</i> glances down at a top
@@ -572,9 +574,9 @@ function step(dt){
   }
 
   g.nav=navAhead(g);          // one read of the road ahead, shared by the AR overlay and the cluster map
-  // the charger lookahead, re-asked only when the road index actually moves — restNear is pure, but no
-  // point scanning a kilometre of bays 120 times a second while the car sits inside one road point
-  if(g._restAt!==c.idx){ g._restAt=c.idx; g.rest=restNear(g,1600); }
+  // the charger lookahead, re-asked only when the road index actually moves — restNear is pure and asks
+  // the schedule directly now, so the dash can afford to always know the next services, however far out
+  if(g._restAt!==c.idx){ g._restAt=c.idx; g.rest=restNear(g,1e9); }
   if(g.shake>0) g.shake-=dt*4;
 }
 
@@ -654,7 +656,7 @@ function render(){
     const y=t.y+Math.round((g.cam.y-t.y)/4000)*4000;
     ctx.beginPath(); ctx.arc(x,y,t.r,0,TAU); ctx.fill();
   }
-  drawRiversTop(g); drawBridgeTop(g); drawRoad(g); drawBillboardsTop(g); drawSkid(g); drawZombiesTop(g); drawGhostTop(g); drawCar(g); drawSmoke(g); drawGibs(g);
+  drawRiversTop(g); drawBridgeTop(g); drawRoad(g); drawRestTop(g); drawBillboardsTop(g); drawSkid(g); drawZombiesTop(g); drawGhostTop(g); drawCar(g); drawSmoke(g); drawGibs(g);
   ctx.restore();
   updateHUD();
 }
@@ -691,6 +693,10 @@ function drawWindshield(g,spd){
   // the river lies on the ground, so it goes down BEFORE anything that stands up out of it: the trees on its
   // banks then paint over the water, which is what makes them read as being in front of it rather than under it
   drawRivers(g,proj,zside,toScreen);
+  // the visible road strip's bounds — needed here already, because the rest area's apron is ground too
+  const lo=Math.max(R.start,c.idx-2), hi=Math.min(R.pts.length,c.idx+70);
+  // the services apron, laid on the ground before the trees so their trunks stand in front of it
+  drawApron(g,zside,toScreen,lo,hi,a=>BARRIER+a.w);
   // the fields we're actually driving past — anchored in the world, so they stream by with travel
   drawNearScenery(g,ca,sa,px,py);
   // wash the far fields into the treeline so the horizon reads as distance, not as a cut
@@ -698,16 +704,19 @@ function drawWindshield(g,spd){
   fz.addColorStop(.3,'rgba(234,246,216,.4)'); fz.addColorStop(1,'rgba(234,246,216,0)');
   ctx.fillStyle=fz; ctx.fillRect(0,horizon-12,W,46);
 
-  // gather visible road strip — near-plane clipped, per-segment widths so lines don't shake near the camera
-  const lo=Math.max(R.start,c.idx-2), hi=Math.min(R.pts.length,c.idx+70);
+  // gather visible road strip — near-plane clipped, per-segment widths so lines don't shake near the camera.
+  // Each point remembers its road index, so a stroke can be held back where other paint (the exit's own
+  // lane-drop dashes) takes over.
   function buildLine(worldOf){ const out=[]; let prev=null;
     for(let i=lo;i<hi;i++){ const w=worldOf(i); const cur=zside(w.x,w.y);
-      if(prev && (prev.z>=NEARZ)!==(cur.z>=NEARZ)){ const t=(NEARZ-prev.z)/(cur.z-prev.z); out.push(toScreen(NEARZ, lerp(prev.side,cur.side,t))); }
-      if(cur.z>=NEARZ) out.push(toScreen(cur.z,cur.side));
+      if(prev && (prev.z>=NEARZ)!==(cur.z>=NEARZ)){ const t=(NEARZ-prev.z)/(cur.z-prev.z);
+        const q=toScreen(NEARZ, lerp(prev.side,cur.side,t)); q.i=i; out.push(q); }
+      if(cur.z>=NEARZ){ const q=toScreen(cur.z,cur.side); q.i=i; out.push(q); }
       prev=cur; }
     return out; }
-  function segStroke(pts,color,base){ if(pts.length<2) return; ctx.strokeStyle=color; ctx.lineCap='round';
-    for(let i=0;i<pts.length-1;i++){ const A=pts[i],B=pts[i+1]; ctx.lineWidth=clamp(base*(A.sc+B.sc)*0.5,1.4,22);
+  function segStroke(pts,color,base,skip){ if(pts.length<2) return; ctx.strokeStyle=color; ctx.lineCap='round';
+    for(let i=0;i<pts.length-1;i++){ const A=pts[i],B=pts[i+1]; if(skip && skip(A.i) && skip(B.i)) continue;
+      ctx.lineWidth=clamp(base*(A.sc+B.sc)*0.5,1.4,22);
       ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke(); } }
   const SH=42;                                              // gravel verge width, world px (~1.5m)
   const L =buildLine(i=>{const p=R.pts[i]; return {x:p.x-p.ty*ROAD_HALF, y:p.y+p.tx*ROAD_HALF};});
@@ -723,6 +732,8 @@ function drawWindshield(g,spd){
   if(L.length>1 && Rt.length>1){
     // gravel/dirt shoulders — a real verge between tarmac and grass, not a hard white cut
     ribbon(L,Lo,'#b7aa8b'); ribbon(Rt,Ro,'#b7aa8b');
+    // the apron again, over the verge this time — or the gravel would run a stripe of grit across the exit
+    drawApron(g,zside,toScreen,lo,hi,a=>ROAD_HALF+SH);
     // over the water there is no verge to have: the deck runs out to the parapet. Laid over the gravel and
     // under the tarmac, so the road's own edge lines and dashes still land on top of it.
     drawBridgeDeck(g,zside,toScreen,lo,hi);
@@ -764,8 +775,10 @@ function drawWindshield(g,spd){
       ctx.strokeStyle='rgba(36,38,44,'+clamp(0.05+0.14*Math.min(A.sc,1.2),0.05,0.20).toFixed(3)+')';
       ctx.lineWidth=clamp(3*(A.sc+B.sc)*0.5,1,7); ctx.beginPath();
       ctx.moveTo(A.x,A.y); ctx.quadraticCurveTo(M.x,M.y,B.x,B.y); ctx.stroke(); }
-    // white edge lines — per-segment widths keep them steady near the camera
-    segStroke(L,'#f6f8fb',4); segStroke(Rt,'#f6f8fb',4);
+    // white edge lines — per-segment widths keep them steady near the camera. Across a rest area's mouth
+    // the solid line stands down: the exit's own lane-drop dashes (drawRestStop) carry the edge there.
+    const apSkip=s=>i=>{ const a=apronAt(i,g.seed); return !!(a && a.side===s); };
+    segStroke(L,'#f6f8fb',4,apSkip(1)); segStroke(Rt,'#f6f8fb',4,apSkip(-1));
     // yellow centre dashes
     ctx.lineCap='round';
     for(let i=0;i<C.length-1;i++){ if(i%2) continue; const A=C[i],B=C[i+1];
@@ -775,9 +788,13 @@ function drawWindshield(g,spd){
   drawZombiesDriver(g, proj);
   drawGhostDriver(g, proj);   // the phantom runs the same tarmac, under the same barriers
   // barriers (red/white) — clamped so the nearest posts don't blow up or jitter. Over a bridge the posts
-  // give way to a parapet, which is what actually keeps you out of the water.
+  // give way to a parapet, which is what actually keeps you out of the water. At a rest area they stand
+  // BACK, tracing the apron's outer edge — exactly where wallAt() says the wall is, so what stops the car
+  // and what the eye sees are the same fence. This is also what opens the entrance: no more posts drawn
+  // straight across a gap the car could always drive through.
   for(const sgn of [1,-1]){ for(let i=lo;i<hi-1;i++){ if(bridgeAt(i,g.seed)) continue;
-    const p=R.pts[i]; const zs=zside(p.x-p.ty*BARRIER*sgn, p.y+p.tx*BARRIER*sgn);
+    const ap=apronAt(i,g.seed); const off=BARRIER+((ap && ap.side===sgn)?ap.w:0);
+    const p=R.pts[i]; const zs=zside(p.x-p.ty*off*sgn, p.y+p.tx*off*sgn);
     if(zs.z<NEARZ) continue; const b=toScreen(zs.z,zs.side); const w=clamp(6*b.sc,2,16), h=clamp(14*b.sc,4,40);
     ctx.fillStyle=(i%2===0)?'#e5484d':'#ffffff'; ctx.fillRect(b.x-w/2,b.y-h,w,h); } }
   drawBridge(g,zside,toScreen,lo,hi);
@@ -1295,47 +1312,64 @@ function forestAt(i,seed){
 }
 
 /* ---------------------------- rest areas ---------------------------- */
-/* Somewhere to stop. Same rule as the rivers: the road is endless and made as you drive it, so a rest area
-   can't be a thing we remember putting somewhere — it has to fall out of the road index and the seed. What
-   makes them different is that they're also GEOMETRY THE CAR CAN USE: the barrier opens, the tarmac widens,
-   and the lateral limit in step() has to agree with the apron you can see, or you'd be stopped by a wall
-   that isn't drawn. */
-const REST_EVERY=210, REST_W=340;
-const _rest=new Map();     // memo of a pure function: the bridge check below is far too dear to pay per frame
-function restBlock(b,seed){
-  const key=seed+':'+b; let v=_rest.get(key);
+/* Somewhere to stop. The county builds its services on a SCHEDULE, not by dice: the 3rd, 7th, 12th, 18th…
+   kilometre — each gap one km longer than the last (bay n sits at n(n+5)/2 km), so the early road teaches
+   the habit and the long haul makes you plan for it. Same rule as the rivers otherwise: the road is endless
+   and made as you drive it, so the schedule is a pure function of the road index (the seed only picks which
+   shoulder each bay is cut into). What makes a rest area different from scenery is that it's GEOMETRY THE
+   CAR CAN USE: the barrier stands back, the tarmac widens, and the lateral limit in step() has to agree
+   with the apron you can see, or you'd be stopped by a wall that isn't drawn. */
+const REST_W=340;
+const KM_PTS=Math.round(1000/(SEG*0.1));            // road points per kilometre (SEG px/point, 1px≈0.1m)
+const REST_IN=56, REST_OUT=26;                      // the exit lane in, and the merge back out (~145m / ~68m)
+const restKm = n => n*(n+5)/2;                      // bay n's kilometre: 3, 7, 12, 18, 25, …
+const restNof = km => Math.round((Math.sqrt(25+8*Math.max(0,km))-5)/2);   // …and the bay nearest a km
+const _rest=new Map();     // memo of a pure function: the bridge scan below is far too dear to pay per frame
+function restBlock(n,seed){
+  const key=seed+':'+n; let v=_rest.get(key);
   if(v===undefined){
-    const s=(Math.imul(b,7919)^Math.imul(seed,0x85ebca6b))|0;
-    v={ c: b*REST_EVERY + 55 + Math.floor(h01(s)*110),        // where the bay sits
-        side: h01(s^0x51ed270b)<0.5? 1:-1,                    // which shoulder it's cut into
-        len: 20+Math.floor(h01(s^0x27220a95)*8) };            // how far it runs, in road points
-    v.ok=true;   // nobody builds a services half-way out over a river, so a stop that fouls a bridge isn't built
-    for(let i=v.c-v.len-30;i<=v.c+v.len+30 && v.ok;i++) if(bridgeAt(i,seed)) v.ok=false;
+    const s=(Math.imul(n,7919)^Math.imul(seed,0x85ebca6b))|0;
+    v={ side: h01(s^0x51ed270b)<0.5? 1:-1,                    // which shoulder it's cut into
+        len: 20+Math.floor(h01(s^0x27220a95)*8) };            // how long the bay runs, in road points
+    // planted at its milestone, then nudged off any river — nobody builds a services half-way out over a
+    // bridge. The nudge walks 0, −15, +15, −30… so it's part of the pure function: the bay lands in the
+    // same place on every pass, on everyone's copy of a daily road.
+    const c0=Math.round(restKm(n)*KM_PTS);
+    const clear=cc=>{ for(let i=cc-v.len-REST_IN-12;i<=cc+v.len+REST_OUT+12;i++) if(bridgeAt(i,seed)) return false; return true; };
+    let sh=0; while(!clear(c0+sh) && Math.abs(sh)<=180){ sh = sh>=0 ? -(sh+15) : -sh; }
+    v.c=c0+sh; v.ok=clear(v.c);
     _rest.set(key,v);
   }
   return v;
 }
-function restAt(i,seed){
-  const b=Math.floor(i/REST_EVERY);
-  for(let k=b-1;k<=b+1;k++){
-    const r=restBlock(k,seed); if(!r.ok) continue;
+// how far the tarmac reaches past the barrier line at road point i. A REAL exit, not a bulge: a long
+// deceleration tongue peeling off the shoulder, a full-width bay, and a shorter merge back out — smoothstepped
+// so the tongue leaves and rejoins the verge tangent. d is where i sits relative to the bay's centre.
+function apronAt(i,seed){
+  const nc=restNof(i/KM_PTS);
+  for(let n=Math.max(1,nc-1);n<=nc+2;n++){
+    const r=restBlock(n,seed); if(!r.ok) continue;
     const d=i-r.c;
-    if(Math.abs(d)<=r.len) return { r, d, t:1-Math.abs(d)/r.len };
+    const u = d<-r.len ? 1-(-d-r.len)/REST_IN
+            : d> r.len ? 1-( d-r.len)/REST_OUT
+            : 1;
+    if(u<=0) continue;
+    const t=u*u*(3-2*u);
+    return { side:r.side, w:REST_W*t, r, t, d };
   }
   return null;
 }
-// how far the tarmac reaches past the barrier line at road point i — full width across the bay, tapering to
-// nothing at either end so the barrier has somewhere to pick up again
-function apronAt(i,seed){
-  const R=restAt(i,seed); if(!R) return null;
-  return { side:R.r.side, w:REST_W*clamp(R.t*2.6,0,1), r:R.r, t:R.t };
-}
-// the nearest bay in each direction, as road indices — pure on (index, seed) like everything else out
-// here, so the dash can ask every frame and the pause logic can look both ways without touching the road.
+// the nearest bay in each direction, as road indices — the schedule is a formula now, so this asks it
+// directly instead of walking the road. Pure on (index, seed) like everything else out here, so the dash
+// can ask every frame and the pause logic can look both ways without touching the road.
 function restNear(g,span){
-  const c=g.car.idx; let ahead=null, behind=null;
-  for(let i=c+10;i<=c+span;i++){ const a=apronAt(i,g.seed); if(a&&a.t>0.9){ ahead=i; break; } }
-  for(let i=c-10;i>=Math.max(10,c-span);i--){ const a=apronAt(i,g.seed); if(a&&a.t>0.9){ behind=i; break; } }
+  const c=g.car.idx, top=restNof(c/KM_PTS)+3;
+  let ahead=null, behind=null;
+  for(let n=1;n<=top;n++){
+    const r=restBlock(n,g.seed); if(!r.ok) continue;
+    if(r.c>=c+10 && r.c<=c+span && (ahead==null  || r.c<ahead))  ahead=r.c;
+    if(r.c<=c-10 && r.c>=c-span && (behind==null || r.c>behind)) behind=r.c;
+  }
   return { ahead, behind };
 }
 // metres, printed the way a nav prints them: paces when it's close, kilometres when it isn't
@@ -1443,29 +1477,44 @@ function drawApron(g,zside,toScreen,lo,hi,outerOf){
                  zside(q.x-q.ty*o2*s,        q.y+q.tx*o2*s),
                  zside(p.x-p.ty*o1*s,        p.y+p.tx*o1*s) ], toScreen);
   }
-  ctx.fillStyle='#9ba2ac'; ctx.fill();
+  ctx.fillStyle=g.wet?'#8b93a1':'#9ba2ac'; ctx.fill();   // service tarmac, a shade off the road's own
 }
-// The furniture that tells you what this place IS at a glance: bay markings, and a charging post with a light
-// on it. Drawn after the road, like the barriers, because they stand up out of the ground rather than lie on it.
+// The furniture and paint that tell you what this place IS at a glance. The exit gets the markings a real
+// one has: the through lane's solid edge breaks into LANE-DROP DASHES across the mouth (segStroke stood
+// down there for exactly this), a solid white edge runs out along the tongue's far side, bay markings
+// stripe the full-width stand, and a charging post with a light on it holds the bay's centre. Drawn after
+// the road, like the barriers, because most of it stands up out of the ground rather than lies on it.
 function drawRestStop(g,zside,toScreen,lo,hi){
   const R=g.road, seed=g.seed;
+  const pt=(i,off)=>{ const p=R.pts[i]; const zs=zside(p.x-p.ty*off, p.y+p.tx*off);
+    return zs.z<NEARZ ? null : toScreen(zs.z,zs.side); };
+  ctx.lineCap='round';
   for(let i=lo;i<hi-1;i++){
-    const a=apronAt(i,seed); if(!a) continue;
-    if(i%3!==0 || a.t<0.35) continue;                                  // bay markings, every third point
-    const p=R.pts[i], s=a.side;
-    const i0=BARRIER+a.w*0.16, i1=BARRIER+a.w*0.86;
-    const A=zside(p.x-p.ty*i0*s, p.y+p.tx*i0*s), B=zside(p.x-p.ty*i1*s, p.y+p.tx*i1*s);
-    if(A.z<NEARZ||B.z<NEARZ) continue;
-    const sa=toScreen(A.z,A.side), sb=toScreen(B.z,B.side);
-    ctx.strokeStyle='rgba(245,248,250,.5)'; ctx.lineWidth=Math.max(1,2.2*sa.sc);
-    ctx.beginPath(); ctx.moveTo(sa.x,sa.y); ctx.lineTo(sb.x,sb.y); ctx.stroke();
+    const a=apronAt(i,seed), b2=apronAt(i+1,seed);
+    if(!a||!b2||a.side!==b2.side) continue;
+    const s=a.side;
+    const E1=pt(i,(BARRIER+a.w-7)*s), E2=pt(i+1,(BARRIER+b2.w-7)*s);   // the tongue's own edge line
+    if(E1&&E2){ ctx.strokeStyle='#f6f8fb'; ctx.lineWidth=clamp(3.4*(E1.sc+E2.sc)*0.5,1.2,14);
+      ctx.beginPath(); ctx.moveTo(E1.x,E1.y); ctx.lineTo(E2.x,E2.y); ctx.stroke(); }
+    if(i%2===0){                                                       // lane-drop dashes across the mouth
+      const M1=pt(i,ROAD_HALF*s), M2=pt(i+1,ROAD_HALF*s);
+      if(M1&&M2){ ctx.strokeStyle='#f6f8fb'; ctx.lineWidth=clamp(4*(M1.sc+M2.sc)*0.5,1.4,22);
+        ctx.beginPath(); ctx.moveTo(M1.x,M1.y); ctx.lineTo(M2.x,M2.y); ctx.stroke(); }
+    }
   }
   for(let i=lo;i<hi-1;i++){
-    const a=apronAt(i,seed); if(!a || a.t<0.985) continue;             // one post, at the bay
-    const p=R.pts[i], s=a.side, off=(BARRIER+a.w*0.93)*s;
-    const zs=zside(p.x-p.ty*off, p.y+p.tx*off);
-    if(zs.z<NEARZ) continue;
-    const b=toScreen(zs.z,zs.side);
+    const a=apronAt(i,seed); if(!a) continue;
+    if(i%3!==0 || Math.abs(a.d)>a.r.len) continue;                     // bay markings, across the stand
+    const s=a.side;
+    const A=pt(i,(BARRIER+a.w*0.16)*s), B=pt(i,(BARRIER+a.w*0.86)*s);
+    if(!A||!B) continue;
+    ctx.strokeStyle='rgba(245,248,250,.5)'; ctx.lineWidth=Math.max(1,2.2*A.sc);
+    ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke();
+  }
+  for(let i=lo;i<hi-1;i++){
+    const a=apronAt(i,seed); if(!a || a.d!==0) continue;               // one post, at the bay's centre
+    const b=pt(i,(BARRIER+a.w*0.93)*a.side);
+    if(!b) continue;
     const w=clamp(13*b.sc,2,26), h=clamp(112*b.sc,6,150);
     ctx.fillStyle='#2b333d'; ctx.fillRect(b.x-w/2,b.y-h,w,h);          // the post
     ctx.fillStyle='#7fe2ff'; ctx.fillRect(b.x-w*0.30,b.y-h*0.92,w*0.60,h*0.26);   // its lit face
@@ -1477,16 +1526,17 @@ function drawRestStop(g,zside,toScreen,lo,hi){
   }
 }
 // Countdown signage: a post every kilometre in the run-up to a stop, the way a real highway plants
-// SERVICES · 3 KM · 2 KM · 1 KM so you know it's coming before you're already alongside it. Placed by
-// walking back from the BAY'S OWN centre in fixed 1km steps rather than scanning forward from wherever the
-// car happens to be — pure on (index, seed) like the bay itself, so a given post always reads the same
-// number, on every pass, not one keyed to your current position. Never within reach of a bridge: a sign
-// planted where the shoulder is actually open water would stand in mid-air over the river.
-const KM_PTS=Math.round(1000/(SEG*0.1));            // road points per kilometre (SEG px/point, 1px≈0.1m)
+// SERVICES · 3 KM · 2 KM · 1 KM so you know it's coming before you're already alongside it — plus the gore
+// sign, planted right where the exit lane leaves the road, arrowed into it. Placed by walking back from the
+// BAY'S OWN centre rather than scanning forward from wherever the car happens to be — pure on (index, seed)
+// like the bay itself, so a given post always reads the same number, on every pass, not one keyed to your
+// current position. Never within reach of a bridge: a sign planted where the shoulder is actually open
+// water would stand in mid-air over the river.
 function signAt(i,seed){
-  const b=Math.floor(i/REST_EVERY);
-  for(let k=b-1;k<=b+2;k++){                        // a sign can sit a block or two before its own bay
-    const r=restBlock(k,seed); if(!r.ok) continue;
+  const nc=restNof(i/KM_PTS);
+  for(let n=Math.max(1,nc-1);n<=nc+2;n++){          // a sign can belong to the bay after next
+    const r=restBlock(n,seed); if(!r.ok) continue;
+    if(i===r.c-(r.len+REST_IN+8)) return { km:0, side:r.side };   // the gore: km 0, take the lane
     for(let km=1;km<=3;km++){
       if(i!==r.c-KM_PTS*km) continue;
       for(let j=i-8;j<=i+8;j++) if(bridgeAt(j,seed)) return null;   // no post standing over the water
@@ -1520,7 +1570,7 @@ function drawRestSigns(g,zside,toScreen,lo,hi){
       ctx.fillStyle='#ffffff'; ctx.font='800 '+Math.round(h*0.24)+'px '+FSANS;
       ctx.fillText('⚡ REST AREA', b.x, py+h*0.28);
       ctx.font='900 '+Math.round(h*0.46)+'px '+FMONO;
-      ctx.fillText(sg.km+' KM', b.x, py+h*0.75);
+      ctx.fillText(sg.km===0 ? (sg.side===1?'↗':'↖') : sg.km+' KM', b.x, py+h*0.75);   // the gore sign points into the lane
       ctx.textBaseline='alphabetic';
     }
   }
@@ -1848,6 +1898,8 @@ function drawNearScenery(g,ca,sa,cx,hy){
   // one sun, reused by every verge highlight/shadow below
   const sux=Math.cos(g.scenery.sunB), suy=Math.sin(g.scenery.sunB);
   const hlx=Math.sign(suy*ca-sux*sa)||1;                                 // which screen side the sun is on
+  // nothing takes root in a rest area's pavement — tufts, poles and trees all stand clear of the apron
+  const onApron=(i,off)=>{ const a=apronAt(i,seed); return !!(a && a.side===(off>0?1:-1) && Math.abs(off)<BARRIER+a.w+40); };
   // roadside grass tussocks: the near verge is otherwise a flat green wash — real roadside grass is wild
   // and clumped. A scatter of little blade-clumps down both verges, world-anchored through the road's own
   // projection so they stream past underfoot (the ground-level motion the flat verge lacked), keyed to the
@@ -1859,6 +1911,7 @@ function drawNearScenery(g,ca,sa,cx,hy){
     for(const sg of [1,-1]){ if(h01(i*131+sg*17+9)<0.5) continue;         // roughly every other index, per side
       const m=2+(h01(i*57+sg*5)*3|0);                                     // a few clumps where they land
       for(let j=0;j<m;j++){ const off=(ROAD_HALF+46+h01(i*13+j*7+sg)*44+Math.pow(h01(i*29+j*3+sg),4)*180)*sg;
+        if(onApron(i,off)) continue;
         const q=put(p.x-p.ty*off,p.y+p.tx*off);
         if(q){ q.h=clamp((9+h01(i*17+j)*9)*q.sc,0.8,18); q.n=2+(h01(i*11+j)*2|0); q.seed=(i*7+j)|0; tufts.push(q); } } } }
   if(tufts.length){ ctx.lineCap='round'; ctx.lineJoin='round';
@@ -1878,7 +1931,7 @@ function drawNearScenery(g,ca,sa,cx,hy){
     const onBridge=!!bridgeAt(i,seed);
     if(i%16===0 && !onBridge){ const off=BARRIER+180+h01(i*3)*70;        // telephone poles down one shoulder
       const wx=p.x-p.ty*off, wy=p.y+p.tx*off;
-      if(!wet(rv,wx,wy,60)){ const q=put(wx,wy); if(q){ q.h=620*q.sc; q.wx=wx; q.wy=wy; poles.push(q); } } }
+      if(!onApron(i,off) && !wet(rv,wx,wy,60)){ const q=put(wx,wy); if(q){ q.h=620*q.sc; q.wx=wx; q.wy=wy; poles.push(q); } } }
     if(onBridge) continue;                                                // nothing grows on a bridge
     // how thick are the woods here? Dense forest crowds the verge and stacks trees back into the distance;
     // open country leaves a few out in the fields. Same road, same woods, every time.
@@ -1890,6 +1943,7 @@ function drawNearScenery(g,ca,sa,cx,hy){
       const sg=h01(i*11+k*97)<0.5?1:-1;
       const near = 120 + (1-dens)*520;                                    // woods come right up to the verge
       const off=(BARRIER+near+Math.pow(h01(i*17+k*281),0.65)*(360+dens*2400))*sg;
+      if(onApron(i,off)) continue;                                        // or growing up through the services
       const wx=p.x-p.ty*off, wy=p.y+p.tx*off;
       if(wet(rv,wx,wy,45)) continue;                                      // it would be standing in the water
       const q=put(wx,wy);
@@ -2092,6 +2146,7 @@ function drawNearScenery(g,ca,sa,cx,hy){
   for(let i=lo;i<hi-1;i++){ if(i&3) continue; const p=R.pts[i], p2=R.pts[i+1];
     const cross=p.tx*p2.ty-p.ty*p2.tx; if(Math.abs(cross)<0.012) continue;   // ~0.7°/seg: a corner, not a wobble
     const os=cross>0?1:-1, off=BARRIER+40, wx=p.x+os*p.ty*off, wy=p.y-os*p.tx*off;   // stand on the outside verge
+    if(onApron(i,-os*off)) continue;                                          // not in the middle of the services
     const q=put(wx,wy); if(!q) continue; q.wx=wx; q.wy=wy; signs.push(q); }
   if(signs.length){
     for(const q of signs){ const s=q.sc; q.bw=clamp(30*s,3,58); q.bh=clamp(22*s,2,44); q.top=q.y-clamp(36*s,3,66)-q.bh; }
@@ -2564,27 +2619,75 @@ function drawRiversTop(g){
 function roadRange(g){ const R=g.road, c=g.car;
   return { lo:Math.max(R.start, c.idx-24), hi:Math.min(R.pts.length, c.idx+70) }; }
 function drawRoad(g){
-  const R=g.road; const {lo,hi}=roadRange(g);
+  const R=g.road, seed=g.seed; const {lo,hi}=roadRange(g);
+  // the services apron first, so the road's own paint lands on top of it
+  ctx.beginPath();
+  for(let i=lo;i<hi-1;i++){
+    const a=apronAt(i,seed), b=apronAt(i+1,seed);
+    if(!a||!b||a.side!==b.side) continue;
+    const p=R.pts[i], q=R.pts[i+1], s=a.side;
+    ctx.moveTo(p.x-p.ty*ROAD_HALF*s,      p.y+p.tx*ROAD_HALF*s);
+    ctx.lineTo(q.x-q.ty*ROAD_HALF*s,      q.y+q.tx*ROAD_HALF*s);
+    ctx.lineTo(q.x-q.ty*(BARRIER+b.w)*s,  q.y+q.tx*(BARRIER+b.w)*s);
+    ctx.lineTo(p.x-p.ty*(BARRIER+a.w)*s,  p.y+p.tx*(BARRIER+a.w)*s);
+    ctx.closePath();
+  }
+  ctx.fillStyle=game&&game.wet?'#8f96a2':'#a2a8b3'; ctx.fill();   // service tarmac, a shade off the road's
   ctx.beginPath();
   for(let i=lo;i<hi;i++){ const p=R.pts[i]; ctx.lineTo(p.x-p.ty*ROAD_HALF, p.y+p.tx*ROAD_HALF); }
   for(let i=hi-1;i>=lo;i--){ const p=R.pts[i]; ctx.lineTo(p.x+p.ty*ROAD_HALF, p.y-p.tx*ROAD_HALF); }
   ctx.closePath(); ctx.fillStyle=game&&game.wet?'#99a0ac':'#adb3bd'; ctx.fill();
-  ctx.lineJoin='round';
+  ctx.lineJoin='round'; ctx.lineCap='round';
+  // edge lines, per segment — the solid line stands down across an exit's mouth, where the lane-drop
+  // dashes (drawRestTop) carry the edge instead
   for(const s of [1,-1]){
-    ctx.beginPath();
-    for(let i=lo;i<hi;i++){ const p=R.pts[i]; const off=(ROAD_HALF-7)*s; const x=p.x-p.ty*off, y=p.y+p.tx*off; i===lo?ctx.moveTo(x,y):ctx.lineTo(x,y); }
-    ctx.strokeStyle='#f6f8fb'; ctx.lineWidth=6; ctx.stroke();
+    for(let i=lo;i<hi-1;i++){
+      const a=apronAt(i,seed); if(a && a.side===s) continue;
+      const off=(ROAD_HALF-7)*s; const p=R.pts[i], q=R.pts[i+1];
+      ctx.strokeStyle='#f6f8fb'; ctx.lineWidth=6;
+      ctx.beginPath(); ctx.moveTo(p.x-p.ty*off,p.y+p.tx*off); ctx.lineTo(q.x-q.ty*off,q.y+q.tx*off); ctx.stroke();
+    }
   }
   ctx.strokeStyle='#ffd24a'; ctx.lineWidth=6; ctx.setLineDash([26,26]); ctx.lineDashOffset=-(R.pts[lo].dist%52);
   ctx.beginPath();
   for(let i=lo;i<hi;i++){ const p=R.pts[i]; i===lo?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); }
   ctx.stroke(); ctx.setLineDash([]);
+  // the barrier — at a rest area it stands back around the apron's outer edge, exactly where wallAt() puts
+  // the wall, which is also what opens the entrance in this view
   for(const s of [1,-1]){
-    for(let i=lo;i<hi-1;i++){ const p=R.pts[i]; const off=BARRIER*s; const x=p.x-p.ty*off, y=p.y+p.tx*off;
-      const p2=R.pts[i+1]; const x2=p2.x-p2.ty*off, y2=p2.y+p2.tx*off;
+    for(let i=lo;i<hi-1;i++){ const p=R.pts[i], p2=R.pts[i+1];
+      const a=apronAt(i,seed), b=apronAt(i+1,seed);
+      const o1=(BARRIER+((a&&a.side===s)?a.w:0))*s, o2=(BARRIER+((b&&b.side===s)?b.w:0))*s;
       const br=bridgeAt(i,g.seed);
       ctx.strokeStyle=br?'#d5dbdd':((i%2===0)?'#e5484d':'#ffffff'); ctx.lineWidth=br?11:8; ctx.lineCap='butt';
-      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x2,y2); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(p.x-p.ty*o1,p.y+p.tx*o1); ctx.lineTo(p2.x-p2.ty*o2,p2.y+p2.tx*o2); ctx.stroke(); }
+  }
+}
+// the exit's paint and furniture from above — the same story the windshield tells: lane-drop dashes across
+// the mouth, a white edge out along the tongue, bay markings, and the charging post.
+function drawRestTop(g){
+  const R=g.road, seed=g.seed, {lo,hi}=roadRange(g);
+  ctx.lineCap='round';
+  for(let i=lo;i<hi-1;i++){
+    const a=apronAt(i,seed), b=apronAt(i+1,seed);
+    if(!a||!b||a.side!==b.side) continue;
+    const s=a.side, p=R.pts[i], q=R.pts[i+1];
+    const o1=(BARRIER+a.w-8)*s, o2=(BARRIER+b.w-8)*s;
+    ctx.strokeStyle='#f6f8fb'; ctx.lineWidth=5;
+    ctx.beginPath(); ctx.moveTo(p.x-p.ty*o1,p.y+p.tx*o1); ctx.lineTo(q.x-q.ty*o2,q.y+q.tx*o2); ctx.stroke();
+    if(i%2===0){ const m=(ROAD_HALF-7)*s;
+      ctx.lineWidth=6; ctx.beginPath();
+      ctx.moveTo(p.x-p.ty*m,p.y+p.tx*m); ctx.lineTo(q.x-q.ty*m,q.y+q.tx*m); ctx.stroke(); }
+    if(i%3===0 && Math.abs(a.d)<=a.r.len){
+      const i0=(BARRIER+a.w*0.16)*s, i1=(BARRIER+a.w*0.86)*s;
+      ctx.strokeStyle='rgba(245,248,250,.55)'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(p.x-p.ty*i0,p.y+p.tx*i0); ctx.lineTo(p.x-p.ty*i1,p.y+p.tx*i1); ctx.stroke();
+      ctx.strokeStyle='#f6f8fb';
+    }
+    if(a.d===0){ const o=(BARRIER+a.w*0.93)*s, x=p.x-p.ty*o, y=p.y+p.tx*o;
+      ctx.fillStyle='#2b333d'; ctx.beginPath(); ctx.arc(x,y,11,0,TAU); ctx.fill();
+      ctx.fillStyle=(game&&game.parked&&game.parked.charger)?'#8affc1':'#7fe2ff';
+      ctx.beginPath(); ctx.arc(x,y,6.5,0,TAU); ctx.fill(); }
   }
 }
 function drawSkid(g){
@@ -2914,13 +3017,13 @@ function pullInDrive(g){
     const bp=R.pts[clamp(P.c,R.start,R.pts.length-1)];
     const px=bp.x-bp.ty*P.off, py=bp.y+bp.tx*P.off;
     const dx=px-c.x, dy=py-c.y, d=Math.hypot(dx,dy);
-    if(d<=34 && g.speed<16) return parkUp(g);
+    if(d<=34 && (g.speed<16 || (g.onGrass && g.speed<70))) return parkUp(g);   // grass kills the last of it anyway
     const err=angWrap(Math.atan2(dy,dx)-c.angle);
     const over=Math.max(0,Math.abs(g.slip)-0.22)*Math.sign(g.slip);
     g.steer=clamp(clamp(err*2.8,-1,1) - over*1.8,-1,1);
     const vWant=Math.min(VTOP, Math.sqrt(2*230*Math.max(0,d-26)));
-    g.gas   = g.speed<Math.min(vWant,120)-14 ? 0.32 : 0;             // crawl: no momentum needed, none wasted
-    g.brake = g.speed>vWant ? clamp((g.speed-vWant)/80,0,1) : 0;
+    g.gas   = g.speed<Math.min(vWant,120)-14 ? (g.onGrass?0.75:0.32) : 0;   // same braking curve, but a crawl
+    g.brake = g.speed>vWant ? clamp((g.speed-vWant)/80,0,1) : 0;            // throttle loses to grass drag
     return;
   }
 
@@ -2938,11 +3041,12 @@ function pullInDrive(g){
   g.steer=clamp(clamp(err*2.8,-1,1) - over*1.8,-1,1);
   const vWant=Math.min(VTOP, Math.sqrt(2*230*Math.max(0,to*SEG-24)));
   if(dir<0 && Math.abs(hdg)>0.9){                                    // still coming about: slow, but alive —
-    g.gas   = g.speed<150 ? 0.5 : 0;                                 // a U-turn needs way on to steer at all
+    g.gas   = g.speed<150 ? (g.onGrass?0.8:0.5) : 0;                 // a U-turn needs way on to steer at all
     g.brake = g.speed>240 ? clamp((g.speed-240)/90,0,1) : 0;
   } else {
-    g.gas   = (g.speed<vWant-70 && to>34) ? 0.4                      // don't coast to a halt half a mile short —
-            : (g.speed<60)                ? 0.25 : 0;                // a car fresh out of a U-turn has no momentum
+    g.gas   = (g.onGrass && g.speed<120)  ? 0.75                     // stranded on the verge: grass drag (300)
+            : (g.speed<vWant-70 && to>34) ? 0.4                      // swallows a crawl throttle whole, and a
+            : (g.speed<60)                ? 0.25 : 0;                // parked car drains its pack to nothing
     g.brake = g.speed>vWant ? clamp((g.speed-vWant)/90,0,1) : 0;
   }
 }
