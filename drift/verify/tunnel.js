@@ -35,7 +35,7 @@
       const v=tunnelBlock(b,seed); if(!v.ok) continue;
       found++;
       for(let i=v.c-v.len-40;i<=v.c+v.len+40;i++) if(bridgeAt(i,seed)) badBridge++;
-      if(restAt(v.c,seed)) badRest++;
+      if(apronAt(v.c,seed)) badRest++;
     }
     rec("tunnels are common enough to actually meet on a drive", found>=3,
         found+" real tunnels found in the first 12 blocks (7680 road points, ~20km)");

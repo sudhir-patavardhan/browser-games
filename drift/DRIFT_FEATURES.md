@@ -3,6 +3,70 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## Tunnels — the road punches through a hill, and it plays with the grip itself (2026-07-20)
+
+**What.** A bore through a hillside, same pure-function-of-(index,seed) style as rivers and rest areas:
+`TUNNEL_HALF` (280) tighter than the open road's own `BARRIER` (330), never punched through a bridge and
+never hosting a rest bay. No new collision code — `wallAt()` just answers with a smaller number inside
+one, and the existing barrier-hit physics (scrub the speed, take the charge, bounce back onto the tarmac)
+does the rest. Rendering: darkness ramps in fast on entry rather than a slow dimmer, real headlights pool
+warm light on the road ahead, and a single string of ceiling lights (real tunnels don't bother lighting
+both walls) recedes into the dark — drawn *on top of* the darkness overlay, lit by their own lights rather
+than the daylight the overlay just took away. A **WALL RIDE** reward (same shape as a close shave, paid by
+the rock instead of the horde) pays heat for hugging the tighter wall while genuinely sliding — once per
+crossing, never on top of an actual clip — with a `TUNNEL RAT` badge and a `HUG THE BORE 2x` contract
+reading the same counter.
+
+**Why.** The county's grip budget is the whole game; a hazard that plays with that budget directly (rather
+than bolting on a new obstacle type) fits the drift itself instead of sitting beside it. The tighter wall
+also gives distance-limited visibility — no new mechanic needed, just less room to be wrong in.
+
+**Two bugs caught before shipping, both by testing on the actual current dashboard rather than trusting
+old numbers.** (1) The bore floor wasn't paved past `ROAD_HALF`, so hugging the wall silently flipped
+`onGrass=true`, which blocks `drifting`, which makes the wall-ride reward *structurally impossible to
+earn* — fixed by extending `paved()` the same way bridges already are, and pinned with a probe assertion
+that checks both directions (paved inside a tunnel, still grass at the identical offset on the open road).
+(2) The wall geometry was sized like the old barrier posts (height ~210 world-units) — fine against the
+dashboard those were tuned on, but the current cluster covers ~63% of screen height (`dashTop` computed via
+`wheelGeom()`), so only a ~35px sliver of the nearest wall segment ever cleared it and everything past
+about 50m was entirely hidden behind the dash. Rebuilt at real height (480 world-units) once the actual
+`dashTop` was measured rather than assumed.
+
+**How it's defended.** `./verify/run.sh tunnel` — placement purity, the bridge/rest-bay exclusion sweep,
+the tighter wall against the open-road `BARRIER`, the paved-bore fix in both directions, the collision
+differential (a lateral that's fine on the open road but clips inside a tunnel), the wall-ride payout
+(once per crossing, never alongside a real hit, never on ordinary centred driving), the badge/contract
+hookup, and a real render pass through an actual tunnel with driver view live.
+
+## Rest areas get real — a schedule and an exit (2026-07-20)
+
+**What.** Services now sit on the county's own schedule — the **3rd, 7th, 12th, 18th… kilometre**, each
+gap one km longer than the last (bay n at n(n+5)/2 km), nudged deterministically off any bridge — instead
+of a random bay every half-km. And each one finally *looks* like somewhere you can stop: a **real exit**
+(a ~145 m deceleration tongue smoothstepped off the shoulder, lane-drop dashes across the mouth where the
+solid edge line stands down, a white edge out along the tongue, a shorter merge back), the barrier
+standing back around the apron exactly where `wallAt()` puts the wall, bay markings, the charger post,
+and a **gore sign arrowed into the lane** on top of the 3-2-1 km countdown — in **both views** (the top
+view previously drew no rest area at all), with nothing growing through the pavement: tufts, poles, trees
+and chevron boards all stand clear. The dash now always knows the distance to the next services, however
+far out.
+
+**Why.** The apron was real physics (`paved()`/`wallAt()` let the car in; pause parked on it) but
+`drawApron` was never called and the barrier posts were drawn straight across the entrance — a stop you
+could use but not see. And a bay every ~500 m made stopping meaningless: no anticipation, no planning,
+nothing for the signage to promise. A fixed, learnable, widening schedule turns range into a decision the
+long haul keeps re-asking.
+
+**Fix in the same pass.** The pull-in autopilot could strand itself: grass drag (a flat 300) eats a crawl
+throttle (0.32×760) whole, so a car that clipped the verge mid-U-turn sat at 0 km/h draining its pack to
+death. The crawl now digs (0.75) whenever it's aground on grass, and a shoulder stop is allowed to park
+from the crawl speed grass kills anyway.
+
+**How it's defended.** `./verify/run.sh restnav` — the schedule (bays at km 3/7/12/18, ± the river
+nudge), the exit geometry (plain road before the gore, a ramp half-way down the lane, a full-width
+stand), and the turn-back trip now runs against the real schedule — plus `pause`, which still proves a
+stop far from services parks on the hard shoulder, unplugged.
+
 ## Bounty Waves — the county radio calls (2026-07-19)
 
 **What.** Every ~1.6–2.2 km (seeded off the run, first call ~30 s in), the radio calls a **BOUNTY

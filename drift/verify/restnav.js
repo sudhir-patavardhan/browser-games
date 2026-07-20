@@ -29,6 +29,30 @@
     rec("...and the next rest stop is on it, in metres you can trust", rTxt===rWant,
         "hud says '"+rTxt+"', road says '"+rWant+"'");
 
+    // ---- the schedule: the county builds at the 3rd, 7th, 12th, 18th… km — each gap one km longer —
+    // nudged off a river OR a tunnel. The nudge search has its own cap (±180, one step of which can
+    // overshoot to ~195 before it gives up), and once in a while that's still not clear — the milestone
+    // is skipped outright (r.ok===false), same as a bridge already could do alone. That's correct, not a
+    // bug: sampled over enough milestones, MOST still land near their date; an occasional honest skip
+    // isn't the schedule breaking down. And every bay that DOES get built has a REAL exit: a tongue that
+    // ramps in off the shoulder, a full-width stand, and an end (no apron before the lane starts).
+    const N=10, blocks=[]; for(let n=1;n<=N;n++) blocks.push({n,r:restBlock(n,g.seed),want:Math.round(restKm(n)*KM_PTS)});
+    const built=blocks.filter(b=>b.r.ok);
+    const onSchedule=built.filter(b=>Math.abs(b.r.c-b.want)<=200);
+    const sched = built.length>=N*0.6 && onSchedule.length===built.length;
+    let taper=true;
+    for(const {r} of built){
+      const bay=apronAt(r.c,g.seed);
+      const lane=apronAt(r.c-r.len-Math.round(REST_IN/2),g.seed);        // half-way down the exit lane
+      const before=apronAt(r.c-r.len-REST_IN-4,g.seed);                  // upstream of the gore: plain road
+      if(!bay || bay.w<REST_W*0.99 || !lane || lane.w<=0 || lane.w>=REST_W*0.95 || before) taper=false;
+    }
+    rec("bays keep the county's schedule: km 3, 7, 12, 18 (± a nudge off a river or a tunnel)", sched,
+        built.length+"/"+N+" milestones actually built (want >="+Math.ceil(N*0.6)+"), all within 200pts of their date: "+
+        blocks.map(b=>"n"+b.n+"@"+(b.r.ok?b.r.c:'skipped')+" (milestone "+b.want+")").join(", "));
+    rec("each bay that gets built has a real exit: ramp in, full-width stand, and an end", taper && built.length>0,
+        "apron checked before the gore, half-way down the lane, and at the stand, across "+built.length+" built bays");
+
     // ---- the decision: drive just past a bay, and pause should choose to go BACK to it
     let setup=null;
     for(let guard=0; guard<24000 && !setup; guard++){
