@@ -36,10 +36,14 @@
     for(let n=1;n<=4;n++){
       const r=restBlock(n,g.seed), want=Math.round(restKm(n)*KM_PTS);
       if(!r.ok || Math.abs(r.c-want)>180) sched=false;
-      const bay=apronAt(r.c,g.seed);
-      const lane=apronAt(r.c-r.len-Math.round(REST_IN/2),g.seed);        // half-way down the exit lane
-      const before=apronAt(r.c-r.len-REST_IN-4,g.seed);                  // upstream of the gore: plain road
-      if(!bay || bay.w<REST_W*0.99 || !lane || lane.w<=0 || lane.w>=REST_W*0.95 || before) taper=false;
+      const bay=restGeom(r.c,g.seed);
+      const lane=restGeom(r.c-r.len-Math.round(REST_IN/2),g.seed);       // half-way down the drive in
+      const before=restGeom(r.c-r.len-REST_IN-4,g.seed);                 // upstream of the gore: plain road
+      // a real facility: the drive is a lane OFF the road (grass between it and the carriageway), it runs
+      // ~200 m, and it ends in a big lot SET BACK from the road — not a widened shoulder
+      if(!bay || bay.lane || bay.in<ROAD_HALF+80 || (bay.out-bay.in)<430) taper=false;
+      if(!lane || !lane.lane || lane.in<=ROAD_HALF+6 || (lane.out-lane.in)>170) taper=false;
+      if(before || REST_IN*SEG*0.1<190) taper=false;
       // every bay announces itself: the gore gantry plus a full 3-2-1 countdown, each post standing on
       // dry land (nudged off a bridge, never dropped) and answering signAt at its own index
       if(!r.signs || r.signs.length!==4) signs=false;
@@ -52,8 +56,8 @@
     }
     rec("bays keep the county's schedule: km 3, 7, 12, 18 (± a nudge off a river)", sched,
         [1,2,3,4].map(n=>{const r=restBlock(n,g.seed);return "n"+n+"@"+r.c+" (milestone "+Math.round(restKm(n)*KM_PTS)+")";}).join(", "));
-    rec("each bay has a real exit: ramp in, full-width stand, and an end", taper,
-        "apron checked before the gore, half-way down the lane, and at the stand, bays 1-4");
+    rec("each bay is a real facility: a ~200 m drive in, then a big set-back lot", taper,
+        "geometry checked before the gore, half-way down the drive, and on the lot, bays 1-4");
     rec("every bay carries its full signage: gore gantry + 3-2-1 km, all on dry land", signs,
         [1,2,3,4].map(n=>"n"+n+":"+restBlock(n,g.seed).signs.map(s=>s.km).sort().join("/")).join("  "));
 

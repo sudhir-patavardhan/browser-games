@@ -3,6 +3,29 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## Rest areas become real estate — a drive in, and a lot (2026-07-20)
+
+**What.** The rest area is no longer a widened shoulder. Each services is now a **facility**: a ~200 m
+**drive-in lane** that peels off at the gore and runs *away* from the carriageway, a **big parking lot set
+back behind a strip of grass** (~46 m deep, two rows of marked stalls), a **row of four charging posts**
+along its far side, and a shorter drive back out. The paved cross-section is still one pure function of
+(index, seed) — an interval `[in..out]` that only touches the road at the two mouths — so `paved()`,
+`wallAt()` (the fence now stands at the facility's perimeter), both views' drawing, and the pull-in
+autopilot all read the same geometry. The pull-in now **drives the lane**: it chases the drive's own
+centreline (~94 km/h down the drive), flares into the lot, and parks in a stall on the charger row;
+stopping anywhere short of the lot — the drive, the shoulder — earns no charger.
+
+**Why.** Field report: "the rest area is like a shoulder stop." It was — the bay sat directly on the
+shoulder, so stopping felt like breaking down, not arriving somewhere. A real services with an approach,
+an interior, and furniture makes the pause feature a *place*, and the 200 m drive gives the charging trip
+the small ritual cost the economy already prices in.
+
+**How it's defended.** `./verify/run.sh restnav` — the geometry probe now demands a real facility: plain
+road before the gore, a lane *off* the road (its inner edge clear of the carriageway, lane-width, ~200 m
+long) half-way down the drive, and a set-back lot at the stand (inner edge ≥8 m past the road edge, ≥43 m
+deep); the U-turn trip must still end parked ON the lot at a live charger. `pause` still proves the
+whole charging loop, and a stop far from services still parks on the hard shoulder, unplugged.
+
 ## The county's wildlife — deer crossings (2026-07-20)
 
 **What.** A rarer, faster hazard than the horde: every ~1.5–2.5 km (seeded, an event not a fixture) a deer

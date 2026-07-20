@@ -36,7 +36,7 @@
       for(const z of D.game.deer){
         if(seenFi.has(z.fi)) continue; seenFi.add(z.fi); sawAny=true;
         if(bridgeAt(z.fi,D.game.seed)) badBridge++;
-        if(apronAt(z.fi,D.game.seed)) badApron++;
+        if(restGeom(z.fi,D.game.seed)) badApron++;
       }
     }
     D.clearInput();
