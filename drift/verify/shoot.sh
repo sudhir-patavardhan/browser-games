@@ -64,7 +64,7 @@ const harness=`
       bridge: gg=> !bridgeAt(gg.car.idx,gg.seed) && !!bridgeAt(gg.car.idx+22,gg.seed),  // the span, dead ahead
       span:   gg=>{ const b=bridgeAt(gg.car.idx,gg.seed); return !!b && b.t>0.6; },     // out over the water
       zombie: gg=> gg.zombies.some(z=>z.fi-gg.car.idx>3 && z.fi-gg.car.idx<9),           // one dead ahead, close up
-      rest:   gg=>{ const a=apronAt(gg.car.idx+9,gg.seed); return !!(a && a.d===0); },   // the charger right ahead
+      rest:   gg=>{ const a=restGeom(gg.car.idx+9,gg.seed); return !!(a && a.d===0); },  // the lot right ahead
       gore:   gg=>{ const s=signAt(gg.car.idx+18,gg.seed); return !!(s && s.km===0); }   // the exit sign coming up
     }[${JSON.stringify(until)}];
     let pinned=null;

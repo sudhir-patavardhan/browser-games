@@ -255,8 +255,9 @@
         race — and some days it <i>rains</i>.</p>
       <p class="feat"><b>The wallet.</b> Buys guns that auto-fire at shamblers on the verge, then garage
         hardware — a longer-range pack, a regen tune, track tyres — fitted once, driven on for good.</p>
-      <p class="feat"><b>Rest areas.</b> Services at the <i>3rd, 7th, 12th… km</i>, signed from 3 km out,
-        each with a real exit lane. Pause pulls you in; the charger sells range back for score.</p>
+      <p class="feat"><b>Rest areas.</b> Services at the <i>3rd, 7th, 12th… km</i>, signed from 3 km out —
+        a 200 m drive off the road into a big charging lot. Pause pulls you in; the chargers sell range
+        back for score.</p>
       <p class="feat"><b>Trophies.</b> Firsts and feats land on the shelf below, for keeps — and driving
         Today’s Road day after day builds a <i>streak</i> it pays out on.</p>
       <p class="feat"><b>The cabin.</b> You drive from behind the wheel; <i>V</i> glances down at a top
@@ -705,8 +706,9 @@ function drawWindshield(g,spd){
   drawRivers(g,proj,zside,toScreen);
   // the visible road strip's bounds — needed here already, because the rest area's apron is ground too
   const lo=Math.max(R.start,c.idx-2), hi=Math.min(R.pts.length,c.idx+70);
-  // the services apron, laid on the ground before the trees so their trunks stand in front of it
-  drawApron(g,zside,toScreen,lo,hi,a=>BARRIER+a.w);
+  // the services' paving — drive, lot and all — laid on the ground before the trees so their trunks
+  // stand in front of it
+  drawApron(g,zside,toScreen,lo,hi,a=>[a.in,a.out]);
   // the fields we're actually driving past — anchored in the world, so they stream by with travel
   drawNearScenery(g,ca,sa,px,py);
   // wash the far fields into the treeline so the horizon reads as distance, not as a cut
@@ -742,8 +744,10 @@ function drawWindshield(g,spd){
   if(L.length>1 && Rt.length>1){
     // gravel/dirt shoulders — a real verge between tarmac and grass, not a hard white cut
     ribbon(L,Lo,'#b7aa8b'); ribbon(Rt,Ro,'#b7aa8b');
-    // the apron again, over the verge this time — or the gravel would run a stripe of grit across the exit
-    drawApron(g,zside,toScreen,lo,hi,a=>ROAD_HALF+SH);
+    // the drive's mouths again, over the verge this time — or the gravel would run a stripe of grit
+    // straight across where the lane leaves the road
+    drawApron(g,zside,toScreen,lo,hi,a=>{ const i0=Math.max(a.in,ROAD_HALF), i1=Math.min(a.out,ROAD_HALF+SH+2);
+      return i0<i1 ? [i0,i1] : null; });
     // over the water there is no verge to have: the deck runs out to the parapet. Laid over the gravel and
     // under the tarmac, so the road's own edge lines and dashes still land on top of it.
     drawBridgeDeck(g,zside,toScreen,lo,hi);
@@ -785,9 +789,11 @@ function drawWindshield(g,spd){
       ctx.strokeStyle='rgba(36,38,44,'+clamp(0.05+0.14*Math.min(A.sc,1.2),0.05,0.20).toFixed(3)+')';
       ctx.lineWidth=clamp(3*(A.sc+B.sc)*0.5,1,7); ctx.beginPath();
       ctx.moveTo(A.x,A.y); ctx.quadraticCurveTo(M.x,M.y,B.x,B.y); ctx.stroke(); }
-    // white edge lines — per-segment widths keep them steady near the camera. Across a rest area's mouth
-    // the solid line stands down: the exit's own lane-drop dashes (drawRestStop) carry the edge there.
-    const apSkip=s=>i=>{ const a=apronAt(i,g.seed); return !!(a && a.side===s); };
+    // white edge lines — per-segment widths keep them steady near the camera. Across the two mouths of a
+    // services (where the drive actually touches the road) the solid line stands down: the lane-drop
+    // dashes (drawRestStop) carry the edge there. Along the rest of the facility the road keeps its line —
+    // the lot is set back behind grass, not part of the carriageway.
+    const apSkip=s=>i=>{ const a=restGeom(i,g.seed); return !!(a && a.side===s && a.in<=ROAD_HALF+6); };
     segStroke(L,'#f6f8fb',4,apSkip(1)); segStroke(Rt,'#f6f8fb',4,apSkip(-1));
     // yellow centre dashes
     ctx.lineCap='round';
@@ -804,7 +810,7 @@ function drawWindshield(g,spd){
   // and what the eye sees are the same fence. This is also what opens the entrance: no more posts drawn
   // straight across a gap the car could always drive through.
   for(const sgn of [1,-1]){ for(let i=lo;i<hi-1;i++){ if(bridgeAt(i,g.seed)) continue;
-    const ap=apronAt(i,g.seed); const off=BARRIER+((ap && ap.side===sgn)?ap.w:0);
+    const gm=restGeom(i,g.seed); const off=(gm && gm.side===sgn)?gm.out:BARRIER;
     const p=R.pts[i]; const zs=zside(p.x-p.ty*off*sgn, p.y+p.tx*off*sgn);
     if(zs.z<NEARZ) continue; const b=toScreen(zs.z,zs.side); const w=clamp(6*b.sc,2,16), h=clamp(14*b.sc,4,40);
     ctx.fillStyle=(i%2===0)?'#e5484d':'#ffffff'; ctx.fillRect(b.x-w/2,b.y-h,w,h); } }
@@ -1327,12 +1333,14 @@ function forestAt(i,seed){
    kilometre — each gap one km longer than the last (bay n sits at n(n+5)/2 km), so the early road teaches
    the habit and the long haul makes you plan for it. Same rule as the rivers otherwise: the road is endless
    and made as you drive it, so the schedule is a pure function of the road index (the seed only picks which
-   shoulder each bay is cut into). What makes a rest area different from scenery is that it's GEOMETRY THE
-   CAR CAN USE: the barrier stands back, the tarmac widens, and the lateral limit in step() has to agree
-   with the apron you can see, or you'd be stopped by a wall that isn't drawn. */
-const REST_W=340;
+   side each facility is built on). What makes a rest area different from scenery is that it's GEOMETRY THE
+   CAR CAN USE: a ~200 m drive in, a big parking lot set back behind grass, a drive back out — and the
+   lateral limit in step() has to agree with the paving you can see, or you'd be stopped by a fence that
+   isn't drawn (or sail through one that is). */
 const KM_PTS=Math.round(1000/(SEG*0.1));            // road points per kilometre (SEG px/point, 1px≈0.1m)
-const REST_IN=56, REST_OUT=26;                      // the exit lane in, and the merge back out (~145m / ~68m)
+const REST_IN=77, REST_OUT=40;                      // the drive in (~200 m) and the drive back out (~104 m)
+const LOT_IN=BARRIER+110, LOT_OUT=BARRIER+570;      // the lot: set back off the road, ~46 m deep
+const LANE_HALF=65;                                  // the drive itself: a ~13 m roadway
 const restKm = n => n*(n+5)/2;                      // bay n's kilometre: 3, 7, 12, 18, 25, …
 const restNof = km => Math.round((Math.sqrt(25+8*Math.max(0,km))-5)/2);   // …and the bay nearest a km
 const _rest=new Map();     // memo of a pure function: the bridge scan below is far too dear to pay per frame
@@ -1346,7 +1354,7 @@ function restBlock(n,seed){
     // bridge. The nudge walks 0, −15, +15, −30… so it's part of the pure function: the bay lands in the
     // same place on every pass, on everyone's copy of a daily road.
     const c0=Math.round(restKm(n)*KM_PTS);
-    const clear=cc=>{ for(let i=cc-v.len-REST_IN-12;i<=cc+v.len+REST_OUT+12;i++) if(bridgeAt(i,seed)) return false; return true; };
+    const clear=cc=>{ for(let i=cc-v.len-REST_IN-18;i<=cc+v.len+REST_OUT+12;i++) if(bridgeAt(i,seed)) return false; return true; };   // -18: the gore sign's own ±8 must clear too
     let sh=0; while(!clear(c0+sh) && Math.abs(sh)<=180){ sh = sh>=0 ? -(sh+15) : -sh; }
     v.c=c0+sh; v.ok=clear(v.c);
     // the bay's signage, planted with it: the gore gantry at the exit's split, and a 3-2-1 km countdown.
@@ -1363,20 +1371,30 @@ function restBlock(n,seed){
   }
   return v;
 }
-// how far the tarmac reaches past the barrier line at road point i. A REAL exit, not a bulge: a long
-// deceleration tongue peeling off the shoulder, a full-width bay, and a shorter merge back out — smoothstepped
-// so the tongue leaves and rejoins the verge tangent. d is where i sits relative to the bay's centre.
-function apronAt(i,seed){
+// The facility's cross-section at road point i. A REAL services now, not a widened shoulder: a ~200 m
+// drive-in lane that peels off at the gore and runs AWAY from the carriageway, a big parking lot SET BACK
+// behind a strip of grass, and a shorter drive back out. All of it is one pure function of (i, seed): the
+// paved lateral interval [in..out] on the bay's side (in dips under ROAD_HALF only at the two mouths, so
+// the lane actually connects), plus `path` — the centreline the pull-in autopilot drives — and `lane`,
+// true on the drives and false on the lot itself. d is where i sits relative to the bay's centre.
+const smoo=u=>u*u*(3-2*u);
+function restGeom(i,seed){
   const nc=restNof(i/KM_PTS);
   for(let n=Math.max(1,nc-1);n<=nc+2;n++){
     const r=restBlock(n,seed); if(!r.ok) continue;
     const d=i-r.c;
-    const u = d<-r.len ? 1-(-d-r.len)/REST_IN
-            : d> r.len ? 1-( d-r.len)/REST_OUT
-            : 1;
-    if(u<=0) continue;
-    const t=u*u*(3-2*u);
-    return { side:r.side, w:REST_W*t, r, t, d };
+    let in_,out,lane=false;
+    if(Math.abs(d)<=r.len){ in_=LOT_IN; out=LOT_OUT; }
+    else{
+      const u = d<-r.len ? 1-(-d-r.len)/REST_IN : 1-(d-r.len)/REST_OUT;   // 0 at the mouth, 1 at the lot
+      if(u<=0) continue;
+      lane=true;
+      const c0=lerp(ROAD_HALF+58,(LOT_IN+LOT_OUT)/2,smoo(u));            // the drive slides away from the road…
+      const hw=u<0.72 ? LANE_HALF                                        // …holding lane width most of the way,
+             : lerp(LANE_HALF,(LOT_OUT-LOT_IN)/2,smoo((u-0.72)/0.28));   // then flaring open into the lot
+      in_=c0-hw; out=c0+hw;
+    }
+    return { r, d, side:r.side, in:in_, out, lane, path:(Math.max(in_,ROAD_HALF)+out)/2 };
   }
   return null;
 }
@@ -1400,13 +1418,15 @@ function restFmt(m){ return m==null ? '—' : m<1000 ? Math.round(m/10)*10+' m' 
 function paved(i,lateral,seed){
   if(Math.abs(lateral)<=ROAD_HALF) return true;                       // the road
   if(bridgeAt(i,seed)) return true;                                   // the deck, out to the parapet
-  const ap=apronAt(i,seed);                                           // and the apron of a rest area
-  return !!(ap && (lateral>0?1:-1)===ap.side && Math.abs(lateral)<=BARRIER+ap.w);
+  const gm=restGeom(i,seed);                                          // the services' drive and lot — the
+  return !!(gm && (lateral>0?1:-1)===gm.side &&                       // grass strip between road and lot is
+    Math.abs(lateral)>=gm.in && Math.abs(lateral)<=gm.out);           // exactly that: grass
 }
-// how far off the centre line the wall is, on the side you're leaning — it opens up at a rest area
+// how far off the centre line the wall is, on the side you're leaning. At a services the fence stands at
+// the FACILITY'S perimeter — you can cross the infield grass (slowly), but not leave the county's land.
 function wallAt(i,lateral,seed){
-  const ap=apronAt(i,seed);
-  return (ap && (lateral>0?1:-1)===ap.side) ? BARRIER+ap.w : BARRIER;
+  const gm=restGeom(i,seed);
+  return (gm && (lateral>0?1:-1)===gm.side) ? gm.out : BARRIER;
 }
 
 // The rivers near the car, each reduced to its own frame: an origin p on the road, a unit axis a running
@@ -1482,64 +1502,73 @@ function drawRivers(g,proj,zside,toScreen){
     }
   }
 }
-// The apron: a tongue of tarmac off the shoulder, widening to the bay and tapering back so the barrier can
-// pick up again. It's laid TWICE — once on the ground before the trees (or it would paint over the trunks of
-// the trees standing behind it), and again over the gravel verge, which would otherwise leave a stripe of
-// grit running straight across the entrance.
-function drawApron(g,zside,toScreen,lo,hi,outerOf){
+// The facility's paving: whatever lateral band bandOf() picks out of the geometry. Laid TWICE in the
+// windshield view — once on the ground before the trees (or it would paint over the trunks of the trees
+// standing behind it), and again over the gravel verge at the mouths, which would otherwise leave a
+// stripe of grit running straight across the entrance.
+function drawApron(g,zside,toScreen,lo,hi,bandOf){
   const R=g.road, seed=g.seed;
   ctx.beginPath();
   for(let i=lo;i<hi-1;i++){
-    const a=apronAt(i,seed), b=apronAt(i+1,seed);
+    const a=restGeom(i,seed), b=restGeom(i+1,seed);
     if(!a||!b||a.side!==b.side) continue;
-    const p=R.pts[i], q=R.pts[i+1], s=a.side, o1=outerOf(a), o2=outerOf(b);
-    groundPoly([ zside(p.x-p.ty*ROAD_HALF*s, p.y+p.tx*ROAD_HALF*s),
-                 zside(q.x-q.ty*ROAD_HALF*s, q.y+q.tx*ROAD_HALF*s),
-                 zside(q.x-q.ty*o2*s,        q.y+q.tx*o2*s),
-                 zside(p.x-p.ty*o1*s,        p.y+p.tx*o1*s) ], toScreen);
+    const bA=bandOf(a), bB=bandOf(b);
+    if(!bA||!bB) continue;
+    const p=R.pts[i], q=R.pts[i+1], s=a.side;
+    groundPoly([ zside(p.x-p.ty*bA[0]*s, p.y+p.tx*bA[0]*s),
+                 zside(q.x-q.ty*bB[0]*s, q.y+q.tx*bB[0]*s),
+                 zside(q.x-q.ty*bB[1]*s, q.y+q.tx*bB[1]*s),
+                 zside(p.x-p.ty*bA[1]*s, p.y+p.tx*bA[1]*s) ], toScreen);
   }
   ctx.fillStyle=g.wet?'#8b93a1':'#9ba2ac'; ctx.fill();   // service tarmac, a shade off the road's own
 }
-// The furniture and paint that tell you what this place IS at a glance. The exit gets the markings a real
-// one has: the through lane's solid edge breaks into LANE-DROP DASHES across the mouth (segStroke stood
-// down there for exactly this), a solid white edge runs out along the tongue's far side, bay markings
-// stripe the full-width stand, and a charging post with a light on it holds the bay's centre. Drawn after
-// the road, like the barriers, because most of it stands up out of the ground rather than lies on it.
+// The paint and furniture that tell you what this place IS at a glance. The drive gets the markings a
+// real one has: the through lane's solid edge breaks into LANE-DROP DASHES across the two mouths
+// (segStroke stood down there for exactly this), solid white edges run along both sides of the drive and
+// around the lot, the lot is striped with TWO ROWS of parking stalls, and a row of charging posts with
+// lit faces holds the far side. Drawn after the road, like the barriers, because most of it stands up out
+// of the ground rather than lies on it.
 function drawRestStop(g,zside,toScreen,lo,hi){
   const R=g.road, seed=g.seed;
   const pt=(i,off)=>{ const p=R.pts[i]; const zs=zside(p.x-p.ty*off, p.y+p.tx*off);
     return zs.z<NEARZ ? null : toScreen(zs.z,zs.side); };
   ctx.lineCap='round';
   for(let i=lo;i<hi-1;i++){
-    const a=apronAt(i,seed), b2=apronAt(i+1,seed);
+    const a=restGeom(i,seed), b2=restGeom(i+1,seed);
     if(!a||!b2||a.side!==b2.side) continue;
     const s=a.side;
-    const E1=pt(i,(BARRIER+a.w-7)*s), E2=pt(i+1,(BARRIER+b2.w-7)*s);   // the tongue's own edge line
-    if(E1&&E2){ ctx.strokeStyle='#f6f8fb'; ctx.lineWidth=clamp(3.4*(E1.sc+E2.sc)*0.5,1.2,14);
-      ctx.beginPath(); ctx.moveTo(E1.x,E1.y); ctx.lineTo(E2.x,E2.y); ctx.stroke(); }
-    if(i%2===0){                                                       // lane-drop dashes across the mouth
+    for(const [oA,oB] of [[Math.max(a.in,ROAD_HALF)+5, Math.max(b2.in,ROAD_HALF)+5],
+                          [a.out-7, b2.out-7]]){                       // both edges of the drive and the lot
+      const E1=pt(i,oA*s), E2=pt(i+1,oB*s);
+      if(E1&&E2){ ctx.strokeStyle='#f6f8fb'; ctx.lineWidth=clamp(3.2*(E1.sc+E2.sc)*0.5,1.2,14);
+        ctx.beginPath(); ctx.moveTo(E1.x,E1.y); ctx.lineTo(E2.x,E2.y); ctx.stroke(); }
+    }
+    if(i%2===0 && (a.in<=ROAD_HALF+6 || b2.in<=ROAD_HALF+6)){          // lane-drop dashes across the mouths
       const M1=pt(i,ROAD_HALF*s), M2=pt(i+1,ROAD_HALF*s);
       if(M1&&M2){ ctx.strokeStyle='#f6f8fb'; ctx.lineWidth=clamp(4*(M1.sc+M2.sc)*0.5,1.4,22);
         ctx.beginPath(); ctx.moveTo(M1.x,M1.y); ctx.lineTo(M2.x,M2.y); ctx.stroke(); }
     }
   }
   for(let i=lo;i<hi-1;i++){
-    const a=apronAt(i,seed); if(!a) continue;
-    if(i%3!==0 || Math.abs(a.d)>a.r.len) continue;                     // bay markings, across the stand
+    const a=restGeom(i,seed); if(!a || a.lane) continue;
+    if(i%2!==0 || Math.abs(a.d)>a.r.len-2) continue;                   // parking stalls: two rows, ~5 m pitch
     const s=a.side;
-    const A=pt(i,(BARRIER+a.w*0.16)*s), B=pt(i,(BARRIER+a.w*0.86)*s);
-    if(!A||!B) continue;
-    ctx.strokeStyle='rgba(245,248,250,.5)'; ctx.lineWidth=Math.max(1,2.2*A.sc);
-    ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke();
+    for(const [r0,r1] of [[LOT_IN+34,LOT_IN+170],[LOT_OUT-170,LOT_OUT-34]]){
+      const A=pt(i,r0*s), B=pt(i,r1*s);
+      if(!A||!B) continue;
+      ctx.strokeStyle='rgba(245,248,250,.5)'; ctx.lineWidth=Math.max(1,2.2*A.sc);
+      ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke();
+    }
   }
   for(let i=lo;i<hi-1;i++){
-    const a=apronAt(i,seed); if(!a || a.d!==0) continue;               // one post, at the bay's centre
-    const b=pt(i,(BARRIER+a.w*0.93)*a.side);
+    const a=restGeom(i,seed); if(!a || a.lane) continue;
+    if([-12,-4,4,12].indexOf(a.d)<0) continue;                         // the charger row, along the far side
+    const b=pt(i,(LOT_OUT-22)*a.side);
     if(!b) continue;
     const w=clamp(13*b.sc,2,26), h=clamp(112*b.sc,6,150);
     ctx.fillStyle='#2b333d'; ctx.fillRect(b.x-w/2,b.y-h,w,h);          // the post
     ctx.fillStyle='#7fe2ff'; ctx.fillRect(b.x-w*0.30,b.y-h*0.92,w*0.60,h*0.26);   // its lit face
-    if(game && game.parked && game.parked.charger){                     // plugged in: it breathes
+    if(game && game.parked && game.parked.charger){                     // plugged in: they breathe
       ctx.globalAlpha=0.35+0.25*Math.sin(g.time*3.4);
       ctx.fillStyle='#8affc1'; ctx.fillRect(b.x-w*0.30,b.y-h*0.92,w*0.60,h*0.26);
       ctx.globalAlpha=1;
@@ -1628,7 +1657,7 @@ function drawRestSigns(g,zside,toScreen,lo,hi){
     const r=restBlock(n,seed); if(!r.ok) continue;
     const dd=r.c-g.car.idx; if(dd<-40 || dd>520) continue;
     while(R.pts.length<=r.c+1) genPoint(R);
-    const pp=R.pts[r.c], off=(BARRIER+REST_W+130)*r.side;
+    const pp=R.pts[r.c], off=(LOT_OUT+120)*r.side;
     const zs=zside(pp.x-pp.ty*off, pp.y+pp.tx*off);
     if(zs.z<NEARZ) continue;
     const b=toScreen(zs.z,zs.side);
@@ -1973,7 +2002,7 @@ function drawNearScenery(g,ca,sa,cx,hy){
   const sux=Math.cos(g.scenery.sunB), suy=Math.sin(g.scenery.sunB);
   const hlx=Math.sign(suy*ca-sux*sa)||1;                                 // which screen side the sun is on
   // nothing takes root in a rest area's pavement — tufts, poles and trees all stand clear of the apron
-  const onApron=(i,off)=>{ const a=apronAt(i,seed); return !!(a && a.side===(off>0?1:-1) && Math.abs(off)<BARRIER+a.w+40); };
+  const onApron=(i,off)=>{ const a=restGeom(i,seed); return !!(a && a.side===(off>0?1:-1) && Math.abs(off)<a.out+40); };
   // roadside grass tussocks: the near verge is otherwise a flat green wash — real roadside grass is wild
   // and clumped. A scatter of little blade-clumps down both verges, world-anchored through the road's own
   // projection so they stream past underfoot (the ground-level motion the flat verge lacked), keyed to the
@@ -2577,8 +2606,8 @@ function updateDeer(g,dt){
   if(g.zNextIdx<1e8){                                // same "spawner live" gate the horde uses — a stood-down horde silences the road entirely
     if(g.dist>=g.deerNext){
       const fi=c.idx+70+((g.drng()*40)|0);
-      // never on a bridge, in a tunnel, or across a services apron — wildlife doesn't cross at the rest stop
-      if(!bridgeAt(fi,g.seed) && !(typeof tunnelAt==='function' && tunnelAt(fi,g.seed)) && !apronAt(fi,g.seed)){
+      // never on a bridge, in a tunnel, or across a services — wildlife doesn't cross at the rest stop
+      if(!bridgeAt(fi,g.seed) && !(typeof tunnelAt==='function' && tunnelAt(fi,g.seed)) && !restGeom(fi,g.seed)){
         const side=g.drng()<0.5?1:-1;
         const doe={ fi, o:side*(BARRIER+90), dir:-side, sp:210+g.drng()*70, ph:g.drng()*TAU, sc:1, spooked:false, minD:1e9, minSpd:0 };
         g.deer.push(doe);
@@ -2798,16 +2827,16 @@ function roadRange(g){ const R=g.road, c=g.car;
   return { lo:Math.max(R.start, c.idx-24), hi:Math.min(R.pts.length, c.idx+70) }; }
 function drawRoad(g){
   const R=g.road, seed=g.seed; const {lo,hi}=roadRange(g);
-  // the services apron first, so the road's own paint lands on top of it
+  // the services' paving first — the drive and the set-back lot — so the road's own paint lands on top
   ctx.beginPath();
   for(let i=lo;i<hi-1;i++){
-    const a=apronAt(i,seed), b=apronAt(i+1,seed);
+    const a=restGeom(i,seed), b=restGeom(i+1,seed);
     if(!a||!b||a.side!==b.side) continue;
     const p=R.pts[i], q=R.pts[i+1], s=a.side;
-    ctx.moveTo(p.x-p.ty*ROAD_HALF*s,      p.y+p.tx*ROAD_HALF*s);
-    ctx.lineTo(q.x-q.ty*ROAD_HALF*s,      q.y+q.tx*ROAD_HALF*s);
-    ctx.lineTo(q.x-q.ty*(BARRIER+b.w)*s,  q.y+q.tx*(BARRIER+b.w)*s);
-    ctx.lineTo(p.x-p.ty*(BARRIER+a.w)*s,  p.y+p.tx*(BARRIER+a.w)*s);
+    ctx.moveTo(p.x-p.ty*a.in*s,  p.y+p.tx*a.in*s);
+    ctx.lineTo(q.x-q.ty*b.in*s,  q.y+q.tx*b.in*s);
+    ctx.lineTo(q.x-q.ty*b.out*s, q.y+q.tx*b.out*s);
+    ctx.lineTo(p.x-p.ty*a.out*s, p.y+p.tx*a.out*s);
     ctx.closePath();
   }
   ctx.fillStyle=game&&game.wet?'#8f96a2':'#a2a8b3'; ctx.fill();   // service tarmac, a shade off the road's
@@ -2816,11 +2845,11 @@ function drawRoad(g){
   for(let i=hi-1;i>=lo;i--){ const p=R.pts[i]; ctx.lineTo(p.x+p.ty*ROAD_HALF, p.y-p.tx*ROAD_HALF); }
   ctx.closePath(); ctx.fillStyle=game&&game.wet?'#99a0ac':'#adb3bd'; ctx.fill();
   ctx.lineJoin='round'; ctx.lineCap='round';
-  // edge lines, per segment — the solid line stands down across an exit's mouth, where the lane-drop
-  // dashes (drawRestTop) carry the edge instead
+  // edge lines, per segment — the solid line stands down only across the drive's two mouths, where the
+  // lane-drop dashes (drawRestTop) carry the edge instead
   for(const s of [1,-1]){
     for(let i=lo;i<hi-1;i++){
-      const a=apronAt(i,seed); if(a && a.side===s) continue;
+      const a=restGeom(i,seed); if(a && a.side===s && a.in<=ROAD_HALF+6) continue;
       const off=(ROAD_HALF-7)*s; const p=R.pts[i], q=R.pts[i+1];
       ctx.strokeStyle='#f6f8fb'; ctx.lineWidth=6;
       ctx.beginPath(); ctx.moveTo(p.x-p.ty*off,p.y+p.tx*off); ctx.lineTo(q.x-q.ty*off,q.y+q.tx*off); ctx.stroke();
@@ -2830,39 +2859,42 @@ function drawRoad(g){
   ctx.beginPath();
   for(let i=lo;i<hi;i++){ const p=R.pts[i]; i===lo?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); }
   ctx.stroke(); ctx.setLineDash([]);
-  // the barrier — at a rest area it stands back around the apron's outer edge, exactly where wallAt() puts
-  // the wall, which is also what opens the entrance in this view
+  // the barrier — at a services it stands back around the facility's perimeter, exactly where wallAt()
+  // puts the fence, which is also what opens the entrance in this view
   for(const s of [1,-1]){
     for(let i=lo;i<hi-1;i++){ const p=R.pts[i], p2=R.pts[i+1];
-      const a=apronAt(i,seed), b=apronAt(i+1,seed);
-      const o1=(BARRIER+((a&&a.side===s)?a.w:0))*s, o2=(BARRIER+((b&&b.side===s)?b.w:0))*s;
+      const a=restGeom(i,seed), b=restGeom(i+1,seed);
+      const o1=((a&&a.side===s)?a.out:BARRIER)*s, o2=((b&&b.side===s)?b.out:BARRIER)*s;
       const br=bridgeAt(i,g.seed);
       ctx.strokeStyle=br?'#d5dbdd':((i%2===0)?'#e5484d':'#ffffff'); ctx.lineWidth=br?11:8; ctx.lineCap='butt';
       ctx.beginPath(); ctx.moveTo(p.x-p.ty*o1,p.y+p.tx*o1); ctx.lineTo(p2.x-p2.ty*o2,p2.y+p2.tx*o2); ctx.stroke(); }
   }
 }
-// the exit's paint and furniture from above — the same story the windshield tells: lane-drop dashes across
-// the mouth, a white edge out along the tongue, bay markings, and the charging post.
+// the services' paint and furniture from above — the same story the windshield tells: lane-drop dashes
+// at the two mouths, white edges along the drive and around the lot, two rows of parking stalls, and the
+// charger row along the far side.
 function drawRestTop(g){
   const R=g.road, seed=g.seed, {lo,hi}=roadRange(g);
   ctx.lineCap='round';
   for(let i=lo;i<hi-1;i++){
-    const a=apronAt(i,seed), b=apronAt(i+1,seed);
+    const a=restGeom(i,seed), b=restGeom(i+1,seed);
     if(!a||!b||a.side!==b.side) continue;
     const s=a.side, p=R.pts[i], q=R.pts[i+1];
-    const o1=(BARRIER+a.w-8)*s, o2=(BARRIER+b.w-8)*s;
     ctx.strokeStyle='#f6f8fb'; ctx.lineWidth=5;
-    ctx.beginPath(); ctx.moveTo(p.x-p.ty*o1,p.y+p.tx*o1); ctx.lineTo(q.x-q.ty*o2,q.y+q.tx*o2); ctx.stroke();
-    if(i%2===0){ const m=(ROAD_HALF-7)*s;
+    for(const [oA,oB] of [[Math.max(a.in,ROAD_HALF)+5, Math.max(b.in,ROAD_HALF)+5],[a.out-8, b.out-8]]){
+      ctx.beginPath(); ctx.moveTo(p.x-p.ty*oA*s,p.y+p.tx*oA*s); ctx.lineTo(q.x-q.ty*oB*s,q.y+q.tx*oB*s); ctx.stroke();
+    }
+    if(i%2===0 && (a.in<=ROAD_HALF+6 || b.in<=ROAD_HALF+6)){ const m=(ROAD_HALF-7)*s;
       ctx.lineWidth=6; ctx.beginPath();
       ctx.moveTo(p.x-p.ty*m,p.y+p.tx*m); ctx.lineTo(q.x-q.ty*m,q.y+q.tx*m); ctx.stroke(); }
-    if(i%3===0 && Math.abs(a.d)<=a.r.len){
-      const i0=(BARRIER+a.w*0.16)*s, i1=(BARRIER+a.w*0.86)*s;
+    if(i%2===0 && !a.lane && Math.abs(a.d)<=a.r.len-2){
       ctx.strokeStyle='rgba(245,248,250,.55)'; ctx.lineWidth=3;
-      ctx.beginPath(); ctx.moveTo(p.x-p.ty*i0,p.y+p.tx*i0); ctx.lineTo(p.x-p.ty*i1,p.y+p.tx*i1); ctx.stroke();
+      for(const [r0,r1] of [[LOT_IN+34,LOT_IN+170],[LOT_OUT-170,LOT_OUT-34]]){
+        ctx.beginPath(); ctx.moveTo(p.x-p.ty*r0*s,p.y+p.tx*r0*s); ctx.lineTo(p.x-p.ty*r1*s,p.y+p.tx*r1*s); ctx.stroke();
+      }
       ctx.strokeStyle='#f6f8fb';
     }
-    if(a.d===0){ const o=(BARRIER+a.w*0.93)*s, x=p.x-p.ty*o, y=p.y+p.tx*o;
+    if(!a.lane && [-12,-4,4,12].indexOf(a.d)>=0){ const o=(LOT_OUT-22)*s, x=p.x-p.ty*o, y=p.y+p.tx*o;
       ctx.fillStyle='#2b333d'; ctx.beginPath(); ctx.arc(x,y,11,0,TAU); ctx.fill();
       ctx.fillStyle=(game&&game.parked&&game.parked.charger)?'#8affc1':'#7fe2ff';
       ctx.beginPath(); ctx.arc(x,y,6.5,0,TAU); ctx.fill(); }
@@ -3162,8 +3194,8 @@ function nextRest(g){
   if(dA===Infinity && dB===Infinity) return null;   // nothing within reach either way: the hard shoulder
   const back = dB < dA-40;                          // ~100m of clear saving before a U-turn is worth it
   const i = back ? r.behind : r.ahead;
-  const a=apronAt(i,g.seed);
-  return { c:i, side:a.side, off:(BARRIER+REST_W*0.55)*a.side, dir: back?-1:1 };
+  const gm=restGeom(i,g.seed);
+  return { c:i, side:gm.side, off:(LOT_OUT-95)*gm.side, dir: back?-1:1 };   // a stall in the charger row
 }
 function togglePause(){
   const g=game;
@@ -3212,12 +3244,19 @@ function pullInDrive(g){
   const p=R.pts[c.idx], nx=-p.ty, ny=p.tx;
   const off=(c.x-p.x)*nx+(c.y-p.y)*ny;
   const lead=Math.round(clamp(4+g.speed/90,4,12));
-  const look=R.pts[clamp(c.idx+dir*lead, R.start, R.pts.length-1)];
-  const hdg=angWrap(Math.atan2(look.y-c.y,look.x-c.x)-c.angle);
-  const err=hdg + clamp(-off/240,-0.55,0.55)*dir;                    // lateral reads mirrored running the road backwards
+  const li=clamp(c.idx+dir*lead, R.start, R.pts.length-1);
+  const look=R.pts[li];
+  // once the facility exists at the look point, chase ITS centreline instead of the road's — this is what
+  // takes the car down the 200 m drive and into the lot, rather than mounting the verge at the bay
+  const gl=P.shoulder ? null : restGeom(li,g.seed);
+  const po=(gl && gl.r.c===P.c) ? gl.path*gl.side : 0;
+  const hdg=angWrap(Math.atan2(look.y+look.tx*po-c.y, look.x-look.ty*po-c.x)-c.angle);
+  const err=hdg + (po ? 0 : clamp(-off/240,-0.55,0.55)*dir);         // lateral reads mirrored running the road backwards
   const over=Math.max(0,Math.abs(g.slip)-0.22)*Math.sign(g.slip);
   g.steer=clamp(clamp(err*2.8,-1,1) - over*1.8,-1,1);
-  const vWant=Math.min(VTOP, Math.sqrt(2*230*Math.max(0,to*SEG-24)));
+  let vWant=Math.min(VTOP, Math.sqrt(2*230*Math.max(0,to*SEG-24)));
+  const gh=P.shoulder ? null : restGeom(c.idx,g.seed);
+  if(gh && gh.r.c===P.c) vWant=Math.min(vWant,260);                  // ~94 km/h down the drive itself
   if(dir<0 && Math.abs(hdg)>0.9){                                    // still coming about: slow, but alive —
     g.gas   = g.speed<150 ? (g.onGrass?0.8:0.5) : 0;                 // a U-turn needs way on to steer at all
     g.brake = g.speed>240 ? clamp((g.speed-240)/90,0,1) : 0;
@@ -3232,10 +3271,11 @@ function parkUp(g){
   const c=g.car, R=g.road, p=R.pts[c.idx];
   c.vx=0; c.vy=0; g.speed=0; g.slip=0; g.kw=0; g.stall=0;
   c.angle=Math.atan2(p.ty,p.tx);                                     // straighten up in the bay
-  const ap=apronAt(c.idx,g.seed);
+  const gm=restGeom(c.idx,g.seed);
   const lateral=(c.x-p.x)*(-p.ty)+(c.y-p.y)*p.tx;
-  const onApron=!!(ap && (lateral>0?1:-1)===ap.side && Math.abs(lateral)>ROAD_HALF);
-  g.parked={ charger:onApron, taken:0, paid:0 };                     // no apron under you means no charger: hard shoulder
+  const onLot=!!(gm && (lateral>0?1:-1)===gm.side && !gm.lane && Math.abs(lateral)>=gm.in-8);
+  g.parked={ charger:onLot, taken:0, paid:0 };                       // stopped anywhere short of the lot —
+                                                                     // the drive, the shoulder — is no charger
   g.pullIn=null;
   state='paused';
   setPauseUI();
