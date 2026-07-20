@@ -121,6 +121,11 @@
     font-weight:900; font-size:clamp(15px,4vw,22px); color:#ffd24a; opacity:0; letter-spacing:2px;
     text-shadow:0 2px 0 rgba(180,60,20,.8), 0 4px 12px rgba(0,0,0,.3); }
   .buzzpop.show{ animation:pop .8s ease forwards; }
+  /* the oil slide: same nerve-fed reward, paid by the road instead of the horde — cool where the shave is hot */
+  .oilpop{ position:fixed; left:50%; top:33%; transform:translateX(-50%); z-index:4; pointer-events:none;
+    font-weight:900; font-size:clamp(15px,4vw,22px); color:#9fd0ff; opacity:0; letter-spacing:2px;
+    text-shadow:0 2px 0 rgba(20,40,90,.8), 0 4px 12px rgba(0,0,0,.3); }
+  .oilpop.show{ animation:pop .8s ease forwards; }
   /* the race against the phantom, one signed number */
   .ghostrow{ margin-top:5px; font-size:11px; font-weight:900; letter-spacing:.6px; color:#2996a8; }
   .ghostrow b{ color:#1fae4a; } .ghostrow b.beh{ color:#e5484d; }
@@ -200,6 +205,7 @@
 <div class="driftpop" id="driftpop"></div>
 <div class="ctrpop" id="ctrPop"></div>
 <div class="buzzpop" id="buzzEl"></div>
+<div class="oilpop" id="oilEl"></div>
 <div class="badgepop" id="badgePop"></div>
 <div class="wavepop" id="wavePop"></div>
 <div class="steerhint" id="hintL" style="display:none">‹</div>
@@ -393,7 +399,7 @@ function newGame(forceSeed){
     scenery:makeScenery(seed),
     zombies:[], splats:[], gibs:[], flecks:[], shots:[],   // the horde, and what's left of it
     zrng:mulberry32(seed^0x2b1e), zNextIdx:0, gunCd:0, cashRun:0, goreT:0,
-    vmax:0, zCarKills:0, gunKills:0, buzzes:0, contracts:makeContracts(seed), mod:carMods(),
+    vmax:0, zCarKills:0, gunKills:0, buzzes:0, oilSlides:0, onOil:false, oilWasOn:false, contracts:makeContracts(seed), mod:carMods(),
     rec:[], recT:0, ghost:dailyMode?loadGhost():null, ghostIdx:0,   // today's line, and the one to beat
     wet: dailyMode && seedWet(seed),                                // today's sky came with the road
     wrng, waveNext:12000+wrng()*6000, waveT:0, waveKills:0, waveGoal:5,   // the radio's first call, ~30s out
@@ -473,6 +479,11 @@ function step(dt){
   lat *= 1-(1-BRAKE_GRIP)*wf;                           // trail-braking is what unloads the rear — this is the drift trigger
   lat *= 1-(1-GAS_GRIP)*thr;                            // and power lights the rears up
   if(g.onGrass) lat*=0.45;
+  // oil: unlike grass it costs nothing (no speed, no charge) — it ONLY thins the grip budget for however
+  // long you're standing in it. Hit it blind and the tail can step out from under you; hold a slide onto
+  // one on purpose and the same thin patch is free extra angle.
+  let onOilNow=false;
+  if(!g.onGrass){ const ot=oilGrip(c.idx,lateral,g.seed); if(ot<1){ lat*=ot; onOilNow=ot<0.9; } }
   if(ad0>SPIN) lat*=3.2;                                // safety valve: haul it back from a near-spin
 
   // heading: the front tyres yaw the car in (harder with weight over the nose), the rear tyres straighten it back out
@@ -504,6 +515,10 @@ function step(dt){
   g.speed=mag; g.slip=slip; g.vmax=Math.max(g.vmax,mag);
   const ad=Math.abs(g.slip);
   const drifting = g.speed>240 && ad>0.16 && !g.onGrass;
+  // the reward is for USING the slick, not just surviving it: crossing INTO one while already sliding —
+  // caught unprepared, the same entry just spins you out, which needs no code of its own to punish
+  if(onOilNow && !g.oilWasOn && drifting) oilSlide(g);
+  g.oilWasOn=onOilNow; g.onOil=onOilNow;
   if(drifting){
     g.driftTime+=dt; g.driftTotal+=dt; g.grace=0.7;      // enough slack to link one corner into the next
     g.mult=clamp(g.mult+dt*0.85,1,8);
@@ -742,6 +757,8 @@ function drawWindshield(g,spd){
       const B=buildLine(i=>{const p=R.pts[i]; return {x:p.x+p.ty*o1, y:p.y-p.tx*o1};}); ribbon(A,B,track); };
     band(ROAD_HALF*0.21,ROAD_HALF*0.33); band(ROAD_HALF*0.66,ROAD_HALF*0.78);   // near lane
     band(-ROAD_HALF*0.21,-ROAD_HALF*0.33); band(-ROAD_HALF*0.66,-ROAD_HALF*0.78); // oncoming lane
+    // the slick itself — under the lane paint, so a driver reading the road can still read the road through it
+    drawOilSlicks(g,zside,toScreen,lo,hi);
     // road-surface wear — the tarmac is a repaired rural road, not a clean grey ribbon: the odd resurfaced
     // patch and irregular black crack-seal seams tarred over the cracks, seeded off the absolute road index
     // so each stays put in the world (deterministic, never shakes) and streams toward you through the road's
@@ -1354,6 +1371,49 @@ function wallAt(i,lateral,seed){
   return (ap && (lateral>0?1:-1)===ap.side) ? BARRIER+ap.w : BARRIER;
 }
 
+/* ---------------------------- oil slicks ---------------------------- */
+/* A slick spot on the tarmac — a dropped sump, a spill nobody's cleaned up. Same rule as the rest of the
+   road: it can't be a thing we remember putting somewhere, so it falls out of the road index and the seed.
+   It sits off to ONE SIDE of the lane, never the whole width, so there's always a line through that misses
+   it — reading it in time, or choosing not to, is the whole hazard. Never stacked on a bridge or a rest
+   area's apron; those are their own features, and a slick belongs on ordinary tarmac. */
+const OIL_EVERY=140, OIL_CHANCE=0.5, OIL_GRIP=0.42;
+const _oil=new Map();
+function oilBlock(b,seed){
+  const key=seed+':'+b; let v=_oil.get(key);
+  if(v===undefined){
+    const s=(Math.imul(b,2246822519)^Math.imul(seed,3266489917))|0;
+    v={ ok: h01(s)<OIL_CHANCE };
+    if(v.ok){
+      v.c=b*OIL_EVERY+30+Math.floor(h01(s^0x51ed270b)*(OIL_EVERY-60));   // where it sits within the block
+      v.len=5+Math.floor(h01(s^0x27220a95)*5);                          // ~13-26m long: a puddle, not a lake
+      v.off=(h01(s^0x9e3779b9)-0.5)*ROAD_HALF*1.5;                      // off-centre by design
+      v.halfW=55+h01(s^0x85ebca6b)*45;                                  // how wide the puddle itself is
+      for(let i=v.c-v.len-20;i<=v.c+v.len+20 && v.ok;i++) if(bridgeAt(i,seed)) v.ok=false;
+      if(v.ok){ const a=apronAt(v.c,seed); if(a) v.ok=false; }
+    }
+    _oil.set(key,v);
+  }
+  return v;
+}
+// is road point i inside a slick, lengthwise? t=1 at its own centre, 0 at either end — index-only, the
+// same two-tier split restAt/apronAt use, so rendering can ask "is there a patch here" without a lateral.
+function oilAt(i,seed){
+  const b=Math.floor(i/OIL_EVERY);
+  for(let k=b-1;k<=b+1;k++){
+    const o=oilBlock(k,seed); if(!o.ok) continue;
+    const d=i-o.c; if(Math.abs(d)<=o.len) return { o, t:1-Math.abs(d)/o.len };
+  }
+  return null;
+}
+// grip-budget multiplier at (i, lateral): 1 = ordinary tarmac, down to OIL_GRIP dead centre. Tapers along
+// the road AND across it, so the edge is a fade, not a trapdoor.
+function oilGrip(i,lateral,seed){
+  const O=oilAt(i,seed); if(!O) return 1;
+  const dAcross=Math.abs(lateral-O.o.off); if(dAcross>O.o.halfW) return 1;
+  return lerp(1,OIL_GRIP,O.t*(1-dAcross/O.o.halfW));
+}
+
 // The rivers near the car, each reduced to its own frame: an origin p on the road, a unit axis a running
 // across it, and the road tangent t, along which distance from the crossing IS distance across the water.
 // Built once, then everything — the water, the banks, and what refuses to grow in them — asks it questions.
@@ -1394,6 +1454,28 @@ function groundPoly(cam,toScreen){
   out.forEach((q,i)=>{ const s=toScreen(q.z,q.side); i? ctx.lineTo(s.x,s.y) : ctx.moveTo(s.x,s.y); });
   ctx.closePath();
   return true;
+}
+// The sheen itself — dark, one segment at a time so its darkness can fade in from either end rather than
+// snapping on. Only drawn where oilAt says a patch actually IS, so the picture and the grip-budget hit
+// never disagree about where the hazard sits.
+function drawOilSlicks(g,zside,toScreen,lo,hi){
+  const R=g.road, seed=g.seed;
+  for(let i=Math.max(lo,0);i<hi-1;i++){
+    const O=oilAt(i,seed), O2=oilAt(i+1,seed); if(!O && !O2) continue;
+    const o=(O||O2).o, p=R.pts[i], q=R.pts[i+1];
+    const A=zside(p.x-p.ty*(o.off-o.halfW), p.y+p.tx*(o.off-o.halfW));
+    const B=zside(q.x-q.ty*(o.off-o.halfW), q.y+q.tx*(o.off-o.halfW));
+    const C=zside(q.x-q.ty*(o.off+o.halfW), q.y+q.tx*(o.off+o.halfW));
+    const D=zside(p.x-p.ty*(o.off+o.halfW), p.y+p.tx*(o.off+o.halfW));
+    if(A.z<NEARZ||B.z<NEARZ||C.z<NEARZ||D.z<NEARZ) continue;
+    const sa=toScreen(A.z,A.side), sb=toScreen(B.z,B.side), sc=toScreen(C.z,C.side), sd=toScreen(D.z,D.side);
+    const t=Math.max(O?O.t:0, O2?O2.t:0);
+    ctx.beginPath(); ctx.moveTo(sa.x,sa.y); ctx.lineTo(sb.x,sb.y); ctx.lineTo(sc.x,sc.y); ctx.lineTo(sd.x,sd.y); ctx.closePath();
+    ctx.fillStyle='rgba(16,13,26,'+(0.28+0.34*t).toFixed(3)+')'; ctx.fill();
+    // a thin cold streak along the near edge — the one thing that reads a flat dark patch as WET, not painted
+    ctx.strokeStyle='rgba(170,195,225,'+(0.10+0.18*t).toFixed(3)+')'; ctx.lineWidth=Math.max(1,1.4*sa.sc);
+    ctx.beginPath(); ctx.moveTo(sa.x,sa.y); ctx.lineTo(sb.x,sb.y); ctx.stroke();
+  }
 }
 // The water. It goes down on the ground before anything that stands up out of it, so the banks' trees and the
 // bridge deck both paint over it. Sliced along the river's own axis only to carry the haze out to the bends.
@@ -2155,6 +2237,7 @@ const BADGES={
   tonup:   { nm:'225 CLUB',        hint:'touch 225 km/h' },
   hauler:  { nm:'LONG HAULER',     hint:'cover 5 km on one pack' },
   barber:  { nm:'THE BARBER',      hint:'5 close shaves in one run' },
+  slick:   { nm:'SLICK OPERATOR',  hint:'hold a drift onto 3 oil slicks in one run' },
   pest:    { nm:'PEST CONTROL',    hint:'10 shamblers in one run' },
   biggame: { nm:'BIG GAME',        hint:'fell a brute' },
   ghostwin:{ nm:'FASTER THAN YESTERDAY', hint:'beat your ghost on Today’s Road' },
@@ -2196,6 +2279,7 @@ function checkRunBadges(g,isBest){
   if(g.vmax*0.36>=225)  awardBadge('tonup');
   if(g.dist>=50000)     awardBadge('hauler');
   if(g.buzzes>=5)       awardBadge('barber');
+  if(g.oilSlides>=3)    awardBadge('slick');
   if(g.zCarKills+g.gunKills>=10) awardBadge('pest');
   if(dailyMode && isBest && g.ghost) awardBadge('ghostwin');   // there was a line to beat, and you beat it
   if(dailyMode && isBest && g.wet)   awardBadge('rain');
@@ -2225,6 +2309,16 @@ function buzz(g){
   g.grace=Math.max(g.grace,0.7);
   const el=document.getElementById('buzzEl');
   if(el){ el.textContent='CLOSE SHAVE'; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+  sfx('whoosh');
+}
+/* the OIL SLIDE: the same heat/grace reward as a close shave, but paid for reading the road instead of the
+   horde — you carried a slide onto a slick patch on purpose and held it. Same mechanic, same reason it
+   exists: nerve feeds the drift, and now the tarmac itself can be the thing you dare. */
+function oilSlide(g){
+  g.oilSlides++; g.mult=clamp(g.mult+0.5,1,8);
+  g.grace=Math.max(g.grace,0.7);
+  const el=document.getElementById('oilEl');
+  if(el){ el.textContent='OIL SLIDE'; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
   sfx('whoosh');
 }
 // Z_H is sized against the CAMERA, not a tape measure: the eye sits CAMH=112 up, so a 92-px shambler's
@@ -2483,6 +2577,7 @@ function makeContracts(seed){
     { id:'vmax',  label:'TOUCH 225 km/h',       rew:40, tgt:225,  prog:g=>g.vmax*0.36,      fmt:v=>''+Math.round(v) },
     { id:'horde', label:'RUN DOWN 3 SHAMBLERS', rew:70, tgt:3,    prog:g=>g.zCarKills,      fmt:v=>''+Math.round(v) },
     { id:'shave', label:'SHAVE 4 SHAMBLERS',    rew:60, tgt:4,    prog:g=>g.buzzes,         fmt:v=>''+Math.round(v) },
+    { id:'slick', label:'HOLD 2 OIL SLIDES',    rew:65, tgt:2,    prog:g=>g.oilSlides,      fmt:v=>''+Math.round(v) },
     { id:'range', label:'COVER 2.5 km',         rew:50, tgt:2.5,  prog:g=>g.dist/10000,     fmt:v=>v.toFixed(1)+'km' },
   ];
   // a marksman job only makes sense with a gun on the door card
