@@ -18,6 +18,7 @@
 #   ./drift/verify/run.sh land       # rivers, the bridges over them, and the woods — checked in real pixels
 #   ./drift/verify/run.sh pause      # pulling in to charge: drives itself to a rest area, spends score on the pack
 #   ./drift/verify/run.sh restnav    # trip meter, charger distance on the dash, and the turn-back to a bay behind
+#   ./drift/verify/run.sh deer       # the county's wildlife: crossings, the strike, the dodge, visibility
 #
 # The game exposes window.__drift (start / setInput(steer,gas,brake) / step(n) / autopilot), so a probe is
 # just a <script> appended to a copy of the page. Probes write their findings into a <div id="RESULTS">,
@@ -72,7 +73,8 @@ case "$PROBE" in
   land)   JS="$HERE/land.js";   DIV="RESULTS" ;;
   pause)  JS="$HERE/pause.js";  DIV="RESULTS" ;;
   restnav) JS="$HERE/restnav.js"; DIV="RESULTS" ;;
-  *) echo "unknown probe '$PROBE' (want: assert | controls | contracts | garage | nearmiss | daily | ghost | report | weather | horde | badges | waves | plane | music | land | pause | restnav)" >&2; exit 2 ;;
+  deer)   JS="$HERE/deer.js";   DIV="RESULTS" ;;
+  *) echo "unknown probe '$PROBE' (want: assert | controls | contracts | garage | nearmiss | daily | ghost | report | weather | horde | badges | waves | plane | music | land | pause | restnav | deer)" >&2; exit 2 ;;
 esac
 
 # splice the probe in just before </body>, after the game's own script has defined window.__drift

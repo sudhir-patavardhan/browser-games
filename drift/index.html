@@ -121,6 +121,11 @@
     font-weight:900; font-size:clamp(15px,4vw,22px); color:#ffd24a; opacity:0; letter-spacing:2px;
     text-shadow:0 2px 0 rgba(180,60,20,.8), 0 4px 12px rgba(0,0,0,.3); }
   .buzzpop.show{ animation:pop .8s ease forwards; }
+  /* the deer dodge: same nerve-fed reward, paid by the county's wildlife instead of the horde — earthy where the shave is hot */
+  .deerpop{ position:fixed; left:50%; top:33%; transform:translateX(-50%); z-index:4; pointer-events:none;
+    font-weight:900; font-size:clamp(15px,4vw,22px); color:#c9a35a; opacity:0; letter-spacing:2px;
+    text-shadow:0 2px 0 rgba(70,45,15,.85), 0 4px 12px rgba(0,0,0,.3); }
+  .deerpop.show{ animation:pop .8s ease forwards; }
   /* the race against the phantom, one signed number */
   .ghostrow{ margin-top:5px; font-size:11px; font-weight:900; letter-spacing:.6px; color:#2996a8; }
   .ghostrow b{ color:#1fae4a; } .ghostrow b.beh{ color:#e5484d; }
@@ -200,6 +205,7 @@
 <div class="driftpop" id="driftpop"></div>
 <div class="ctrpop" id="ctrPop"></div>
 <div class="buzzpop" id="buzzEl"></div>
+<div class="deerpop" id="deerEl"></div>
 <div class="badgepop" id="badgePop"></div>
 <div class="wavepop" id="wavePop"></div>
 <div class="steerhint" id="hintL" style="display:none">‹</div>
@@ -379,6 +385,7 @@ function ghostAt(g){ const gh=g.ghost; if(!gh) return null;
 function newGame(forceSeed){
   const seed=forceSeed===undefined ? (Math.random()*1e9)|0 : forceSeed;
   const wrng=mulberry32(seed^0x33aa);   // the county radio's own dice: wave timing must not disturb the horde's
+  const drng=mulberry32(seed^0x4dee);   // the county's own wildlife — its own dice too, same reason
   const R=makeRoad(seed);
   const p0=R.pts[3];
   game={
@@ -396,6 +403,8 @@ function newGame(forceSeed){
     zombies:[], splats:[], gibs:[], flecks:[], shots:[],   // the horde, and what's left of it
     zrng:mulberry32(seed^0x2b1e), zNextIdx:0, gunCd:0, cashRun:0, goreT:0,
     vmax:0, zCarKills:0, gunKills:0, buzzes:0, contracts:makeContracts(seed), mod:carMods(),
+    deer:[], drng, deerNext:8000+drng()*8000,   // the county's own wildlife — first crossing 0.8-1.6km out
+    deerHits:0, spooks:0,
     rec:[], recT:0, ghost:dailyMode?loadGhost():null, ghostIdx:0,   // today's line, and the one to beat
     wet: dailyMode && seedWet(seed),                                // today's sky came with the road
     wrng, waveNext:12000+wrng()*6000, waveT:0, waveKills:0, waveGoal:5,   // the radio's first call, ~30s out
@@ -546,6 +555,7 @@ function step(dt){
   if(g.batt<=0) return gameOver('OUT OF CHARGE');
 
   updateZombies(g,dt);   // the horde: spawn, shamble, bumper checks, the auto-gun — money and gore only, never physics
+  updateDeer(g,dt);      // the county's wildlife: rarer, faster, no bounty — a startle, not an economy
   updateContracts(g);    // the job board: pays out the moment a goal is crossed — money and fanfare only, never physics
 
   // skid marks (rear wheels) — from the car's heading
@@ -656,7 +666,7 @@ function render(){
     const y=t.y+Math.round((g.cam.y-t.y)/4000)*4000;
     ctx.beginPath(); ctx.arc(x,y,t.r,0,TAU); ctx.fill();
   }
-  drawRiversTop(g); drawBridgeTop(g); drawRoad(g); drawRestTop(g); drawBillboardsTop(g); drawSkid(g); drawZombiesTop(g); drawGhostTop(g); drawCar(g); drawSmoke(g); drawGibs(g);
+  drawRiversTop(g); drawBridgeTop(g); drawRoad(g); drawRestTop(g); drawBillboardsTop(g); drawSkid(g); drawZombiesTop(g); drawDeerTop(g); drawGhostTop(g); drawCar(g); drawSmoke(g); drawGibs(g);
   ctx.restore();
   updateHUD();
 }
@@ -786,6 +796,7 @@ function drawWindshield(g,spd){
   }
   // the horde — splats bake into the tarmac, shamblers stand on it, both under the roadside barriers
   drawZombiesDriver(g, proj);
+  drawDeerDriverAll(g, proj);
   drawGhostDriver(g, proj);   // the phantom runs the same tarmac, under the same barriers
   // barriers (red/white) — clamped so the nearest posts don't blow up or jitter. Over a bridge the posts
   // give way to a parapet, which is what actually keeps you out of the water. At a rest area they stand
@@ -2273,6 +2284,7 @@ const BADGES={
   tonup:   { nm:'225 CLUB',        hint:'touch 225 km/h' },
   hauler:  { nm:'LONG HAULER',     hint:'cover 5 km on one pack' },
   barber:  { nm:'THE BARBER',      hint:'5 close shaves in one run' },
+  warden:  { nm:'GAME WARDEN',     hint:'dodge 3 deer clean in one run' },
   pest:    { nm:'PEST CONTROL',    hint:'10 shamblers in one run' },
   biggame: { nm:'BIG GAME',        hint:'fell a brute' },
   ghostwin:{ nm:'FASTER THAN YESTERDAY', hint:'beat your ghost on Today’s Road' },
@@ -2314,6 +2326,7 @@ function checkRunBadges(g,isBest){
   if(g.vmax*0.36>=225)  awardBadge('tonup');
   if(g.dist>=50000)     awardBadge('hauler');
   if(g.buzzes>=5)       awardBadge('barber');
+  if(g.spooks>=3)       awardBadge('warden');
   if(g.zCarKills+g.gunKills>=10) awardBadge('pest');
   if(dailyMode && isBest && g.ghost) awardBadge('ghostwin');   // there was a line to beat, and you beat it
   if(dailyMode && isBest && g.wet)   awardBadge('rain');
@@ -2549,6 +2562,107 @@ function drawZombiesTop(g){
   for(const s of g.shots){ const c=g.car; ctx.strokeStyle='rgba(255,240,180,.85)'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(s.x,s.y); ctx.stroke(); }
 }
+/* ============================ the county's wildlife ============================ */
+/* A county road runs through someone else's territory too. Every mile or two (rarer and more sudden than
+   a bounty wave — this is a startle, not a schedule you learn) a deer breaks from the verge and bolts
+   straight across, full width, in a couple of seconds flat. Reuses the horde's own machinery — a live
+   entity array, zPos/roadAt for its line, the same nose-strike math — because the shape of "something
+   crosses your path and you have to react" is already built; only the tone and the stakes are different.
+   Hit one and it costs you real speed and a real bite of the pack, no bounty, no gore — a startled bound
+   and a puff of dust, not a splat. Read it in time and dodge it clean at speed, and the same nerve the
+   horde already pays for pays again: DEER DODGE, heat and a grace refresh. */
+const DEER_HIT=48, DEER_SPOOK_R=140;                 // strike radius (smaller than a shambler); near-miss window
+function updateDeer(g,dt){
+  const R=g.road, c=g.car;
+  if(g.zNextIdx<1e8){                                // same "spawner live" gate the horde uses — a stood-down horde silences the road entirely
+    if(g.dist>=g.deerNext){
+      const fi=c.idx+70+((g.drng()*40)|0);
+      // never on a bridge, in a tunnel, or across a services apron — wildlife doesn't cross at the rest stop
+      if(!bridgeAt(fi,g.seed) && !(typeof tunnelAt==='function' && tunnelAt(fi,g.seed)) && !apronAt(fi,g.seed)){
+        const side=g.drng()<0.5?1:-1;
+        const doe={ fi, o:side*(BARRIER+90), dir:-side, sp:210+g.drng()*70, ph:g.drng()*TAU, sc:1, spooked:false, minD:1e9, minSpd:0 };
+        g.deer.push(doe);
+        if(g.drng()<0.3) g.deer.push({ fi:fi+3+((g.drng()*3)|0), o:doe.o, dir:doe.dir, sp:doe.sp*0.8,   // a fawn, a beat behind
+          ph:g.drng()*TAU, sc:0.6, spooked:false, minD:1e9, minSpd:0 });
+      }
+      g.deerNext=g.dist+15000+g.drng()*10000;         // ~1.5-2.5km between crossings — an event, not a fixture
+    }
+  }
+  for(let i=g.deer.length-1;i>=0;i--){
+    const z=g.deer[i];
+    z.ph+=dt*7; z.o+=z.dir*z.sp*dt;
+    if(Math.abs(z.o)>BARRIER+140){ g.deer.splice(i,1); continue; }               // made the far verge, gone
+    if(Math.abs(z.fi-c.idx)<3){
+      const bx=c.x+Math.cos(c.angle)*CAR_L*0.45, by=c.y+Math.sin(c.angle)*CAR_L*0.45;
+      const p=zPos(R,z), d2=(p.x-bx)*(p.x-bx)+(p.y-by)*(p.y-by);
+      if(d2<DEER_HIT*DEER_HIT){ strikeDeer(g,z); g.deer.splice(i,1); continue; }
+      const d=Math.sqrt(d2);
+      if(d<z.minD){ z.minD=d; z.minSpd=g.speed; }
+    }
+    if(!z.spooked && z.fi<c.idx-1){ z.spooked=true;
+      if(z.minD<DEER_SPOOK_R && z.minSpd>280) spook(g); }
+  }
+}
+// the consequence, and it's a cost, not a bounty: startled, not slain. Dust and fur, not gore — reuses
+// g.gibs (the same particle pool the horde's splats use) so nothing new has to render them.
+function strikeDeer(g,z){
+  const p=zPos(g.road,z);
+  g.car.vx*=0.82; g.car.vy*=0.82;                     // real mass — the hit costs real momentum
+  g.batt=clamp(g.batt-0.035/g.mod.cap,0,1);           // and a bite of the pack, the same idea as a barrier clip
+  g.shake=Math.max(g.shake,0.9); sfx('crash');
+  g.deerHits++;
+  for(let i=0;i<7;i++){ const a=Math.random()*TAU, v=50+Math.random()*90;
+    g.gibs.push({x:p.x,y:p.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-60,r:2+Math.random()*2,
+      life:1,max:0.4+Math.random()*0.3,col:'#caa06a'}); }                        // dust/fur, tan — not the horde's red
+}
+// the reward: same shape as a close shave, paid by the county's wildlife instead of the horde
+function spook(g){
+  g.spooks++; g.mult=clamp(g.mult+0.5,1,8);
+  g.grace=Math.max(g.grace,0.7);
+  const el=document.getElementById('deerEl');
+  if(el){ el.textContent='DEER DODGE'; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+  sfx('whoosh');
+}
+// one deer, mid-bound through the windshield: body low and stretched, legs tucked under a leap, a flash
+// of white tail — the one thing that actually reads as DEER at a glance, not just "brown animal".
+function drawDeerDriver(P,z){
+  const h=clamp(58*(z.sc||1)*P.sc,3,260), x=P.x, y=P.y, s=Math.sin(z.ph);
+  ctx.fillStyle='rgba(20,30,16,.20)'; ctx.beginPath(); ctx.ellipse(x,y,h*0.30,h*0.08,0,0,TAU); ctx.fill();
+  ctx.save(); ctx.translate(x,y); ctx.rotate(s*0.05);
+  const dir=Math.sign(z.dir)||1;
+  ctx.strokeStyle='#6b4a30'; ctx.lineWidth=Math.max(1,h*0.05); ctx.lineCap='round';   // legs, tucked mid-bound
+  for(const [lx,ly,bend] of [[-0.20,-0.30,1],[0.05,-0.28,-1],[-0.12,-0.55,-1],[0.16,-0.52,1]]){
+    ctx.beginPath(); ctx.moveTo(lx*h,ly*h); ctx.lineTo(lx*h+bend*h*0.06,ly*h+h*0.18); ctx.stroke(); }
+  ctx.fillStyle='#8a5f3c'; ctx.beginPath();                                       // body, low and stretched
+  ctx.ellipse(0,-h*0.42,h*0.30,h*0.15,0.18*dir,0,TAU); ctx.fill();
+  ctx.fillStyle='#f4ede0'; ctx.beginPath();                                       // the tail-flash — startled white
+  ctx.ellipse(-dir*h*0.26,-h*0.44,h*0.06,h*0.045,0,0,TAU); ctx.fill();
+  ctx.fillStyle='#8a5f3c'; ctx.beginPath(); ctx.ellipse(dir*h*0.30,-h*0.52,h*0.11,h*0.08,0,0,TAU); ctx.fill();  // head, reaching forward
+  if(h>20 && (z.sc||1)>0.85){                                                     // antlers, buck only-ish (bigger sc = doe/buck, fawns skip it)
+    ctx.strokeStyle='#5a4028'; ctx.lineWidth=Math.max(1,h*0.025);
+    ctx.beginPath();
+    ctx.moveTo(dir*h*0.34,-h*0.60); ctx.lineTo(dir*h*0.30,-h*0.74); ctx.lineTo(dir*h*0.38,-h*0.71);
+    ctx.moveTo(dir*h*0.30,-h*0.74); ctx.lineTo(dir*h*0.24,-h*0.72); ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawDeerDriverAll(g,proj){
+  const R=g.road, list=[];
+  for(const z of g.deer){ const p=zPos(R,z), P=proj(p.x,p.y); if(P&&P.x>-120&&P.x<W+120) list.push({P,z}); }
+  list.sort((A,B)=>B.P.z-A.P.z);
+  for(const e of list) drawDeerDriver(e.P,e.z);
+}
+function drawDeerTop(g){
+  const R=g.road;
+  for(const z of g.deer){ const p=zPos(R,z);
+    const ang=Math.atan2(p.tx*z.dir,-p.ty*z.dir)+Math.PI/2, sc=z.sc||1;
+    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang); ctx.scale(sc,sc);
+    ctx.fillStyle='rgba(20,30,16,.20)'; ctx.beginPath(); ctx.ellipse(0,2,10,6,0,0,TAU); ctx.fill();
+    ctx.fillStyle='#8a5f3c'; ctx.beginPath(); ctx.ellipse(0,0,9,5.5,0,0,TAU); ctx.fill();       // body
+    ctx.beginPath(); ctx.ellipse(0,-7,4.2,3.6,0,0,TAU); ctx.fill();                              // head
+    ctx.fillStyle='#f4ede0'; ctx.beginPath(); ctx.ellipse(0,6,2.4,1.6,0,0,TAU); ctx.fill();       // tail-flash
+    ctx.restore(); }
+}
 function drawGibs(g,proj){                                                       // gore particles, either lens
   for(const s of g.gibs){ const al=clamp(s.life,0,1);
     let x=s.x,y=s.y,r=s.r; if(proj){ const P=proj(s.x,s.y); if(!P) continue; x=P.x; y=P.y; r=Math.max(1.2,s.r*P.sc*2.4); }
@@ -2601,6 +2715,7 @@ function makeContracts(seed){
     { id:'vmax',  label:'TOUCH 225 km/h',       rew:40, tgt:225,  prog:g=>g.vmax*0.36,      fmt:v=>''+Math.round(v) },
     { id:'horde', label:'RUN DOWN 3 SHAMBLERS', rew:70, tgt:3,    prog:g=>g.zCarKills,      fmt:v=>''+Math.round(v) },
     { id:'shave', label:'SHAVE 4 SHAMBLERS',    rew:60, tgt:4,    prog:g=>g.buzzes,         fmt:v=>''+Math.round(v) },
+    { id:'dodge', label:'DODGE 2 DEER CLEAN',   rew:65, tgt:2,    prog:g=>g.spooks,         fmt:v=>''+Math.round(v) },
     { id:'range', label:'COVER 2.5 km',         rew:50, tgt:2.5,  prog:g=>g.dist/10000,     fmt:v=>v.toFixed(1)+'km' },
   ];
   // a marksman job only makes sense with a gun on the door card
