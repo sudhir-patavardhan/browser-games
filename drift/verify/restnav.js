@@ -39,10 +39,11 @@
       const bay=restGeom(r.c,g.seed);
       const lane=restGeom(r.c-r.len-Math.round(REST_IN/2),g.seed);       // half-way down the drive in
       const before=restGeom(r.c-r.len-REST_IN-4,g.seed);                 // upstream of the gore: plain road
-      // a real facility: the drive is a lane OFF the road (grass between it and the carriageway), it runs
-      // ~200 m, and it ends in a big lot SET BACK from the road — not a widened shoulder
-      if(!bay || bay.lane || bay.in<ROAD_HALF+80 || (bay.out-bay.in)<430) taper=false;
-      if(!lane || !lane.lane || lane.in<=ROAD_HALF+6 || (lane.out-lane.in)>170) taper=false;
+      // a real facility: the drive is a BROAD lane OFF the road (grass between it and the carriageway,
+      // ~20 m of paving — a real two-way service road, not a track), it runs ~200 m, and it ends in a
+      // BIG lot SET BACK from the road (~75 m deep) — not a widened shoulder
+      if(!bay || bay.lane || bay.in<ROAD_HALF+80 || (bay.out-bay.in)<700) taper=false;
+      if(!lane || !lane.lane || lane.in<=ROAD_HALF+6 || (lane.out-lane.in)<180 || (lane.out-lane.in)>230) taper=false;
       if(before || REST_IN*SEG*0.1<190) taper=false;
       // every bay announces itself: the gore gantry plus a full 3-2-1 countdown, each post standing on
       // dry land (nudged off a bridge, never dropped) and answering signAt at its own index
@@ -56,8 +57,8 @@
     }
     rec("bays keep the county's schedule: km 3, 7, 12, 18 (± a nudge off a river)", sched,
         [1,2,3,4].map(n=>{const r=restBlock(n,g.seed);return "n"+n+"@"+r.c+" (milestone "+Math.round(restKm(n)*KM_PTS)+")";}).join(", "));
-    rec("each bay is a real facility: a ~200 m drive in, then a big set-back lot", taper,
-        "geometry checked before the gore, half-way down the drive, and on the lot, bays 1-4");
+    rec("each bay is a real facility: a broad ~200 m drive in, then a big set-back lot", taper,
+        "geometry checked before the gore, half-way down the drive (18-23 m wide), and on the lot (>=70 m deep), bays 1-4");
     rec("every bay carries its full signage: gore gantry + 3-2-1 km, all on dry land", signs,
         [1,2,3,4].map(n=>"n"+n+":"+restBlock(n,g.seed).signs.map(s=>s.km).sort().join("/")).join("  "));
 
@@ -85,7 +86,8 @@
     D.pause();
     rec("the pill owns up to the U-turn", document.getElementById('pullPill').textContent==='TURNING BACK…',
         "pill says '"+document.getElementById('pullPill').textContent+"'");
-    let n=0; while(D.game.pullIn && D.state==='play' && n<8000){ D.step(1); n++; }
+    // the budget is large on purpose: the facility's own 10 km/h limit makes the last leg a slow crawl
+    let n=0; while(D.game.pullIn && D.state==='play' && n<40000){ D.step(1); n++; }
     rec("the car turns around, drives back, and parks", D.state==='paused',
         "state="+D.state+" after "+n+" ticks");
     if(D.state!=='paused') throw new Error("never parked — nothing below can run");
@@ -102,7 +104,7 @@
     rec("with nothing worth turning for, pause still pulls in ahead", !fwd || fwd.dir===1,
         "picked "+JSON.stringify(fwd));
     if(fwd){
-      D.pause(); let m=0; while(D.game.pullIn && D.state==='play' && m<4000){ D.step(1); m++; }
+      D.pause(); let m=0; while(D.game.pullIn && D.state==='play' && m<40000){ D.step(1); m++; }
       rec("...and that trip still ends parked, same as it ever did", D.state==='paused',
           "state="+D.state+" after "+m+" ticks");
     }

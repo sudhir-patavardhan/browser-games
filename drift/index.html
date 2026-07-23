@@ -176,6 +176,12 @@
   #pauseCard .pkm{ font-size:24px; font-weight:900; color:#f4fbff; line-height:1; }
   #pauseCard .psub{ font-size:11px; color:#8fb0c8; margin-top:7px; font-weight:700; line-height:1.5; }
   #pauseCard .cost{ color:#ffb454; }
+  /* the charge meter: the session's ledger, line by line, tabular like a real receipt */
+  #pauseCard .pmeter{ display:grid; grid-template-columns:auto 1fr; gap:3px 12px; margin-top:9px;
+    padding-top:8px; border-top:1px solid rgba(160,225,255,.14); text-align:left; }
+  #pauseCard .pmeter span{ font-size:9.5px; font-weight:800; letter-spacing:1.5px; color:#8fb0c8; align-self:center; }
+  #pauseCard .pmeter b{ font-size:12px; font-weight:900; color:#dff2ff; text-align:right;
+    font-variant-numeric:tabular-nums; }
   #resumeBtn{ margin-top:13px; width:100%; background:linear-gradient(180deg,#7fe2ff,#4bb8e0); color:#06283a;
     border:none; border-radius:11px; padding:11px 0; font-weight:900; font-size:13px; letter-spacing:1.5px;
     cursor:pointer; touch-action:manipulation; }
@@ -217,6 +223,7 @@
   <div class="ptitle" id="pauseTitle">CHARGING</div>
   <div class="pbar"><div class="pfill" id="pauseFill"></div></div>
   <div class="pkm" id="pauseKm">0 km</div>
+  <div class="pmeter" id="pauseMeter" style="display:none"></div>
   <div class="psub" id="pauseSub"></div>
   <button id="resumeBtn">RESUME</button>
 </div>
@@ -256,8 +263,9 @@
       <p class="feat"><b>The wallet.</b> Buys guns that auto-fire at shamblers on the verge, then garage
         hardware — a longer-range pack, a regen tune, track tyres — fitted once, driven on for good.</p>
       <p class="feat"><b>Rest areas.</b> Services at the <i>3rd, 7th, 12th… km</i>, signed from 3 km out —
-        a 200 m drive off the road into a big charging lot. Pause pulls you in; the chargers sell range
-        back for score.</p>
+        a broad exit road into a big charging lot. Turn in (or hit Pause) and the car takes over: down to
+        <i>10 km/h</i>, into a stall, plug in. The meter bills your <i>wallet</i> by the kWh —
+        $0.45/kWh plus a $1 hookup, idle fees and all — and RESUME sees you back onto the road.</p>
       <p class="feat"><b>Trophies.</b> Firsts and feats land on the shelf below, for keeps — and driving
         Today’s Road day after day builds a <i>streak</i> it pays out on.</p>
       <p class="feat"><b>The cabin.</b> You drive from behind the wheel; <i>V</i> glances down at a top
@@ -399,7 +407,8 @@ function newGame(forceSeed){
     stall:0, chainScore:0, bestChain:0, driftTotal:0,
     skid:[], smoke:[], grassTufts:makeTufts(seed),
     batt:1, kw:0, hitT:0, cc:0, padCand:null,  // the cabin: charge, power, last impact, cruise set-speed
-    pullIn:null, parked:null,                  // heading for a rest area / sat at the charger
+    pullIn:null, pullOut:null, parked:null,    // heading for a rest area / seeing itself out / sat at the charger
+    apArm:true,                                // the valet: auto-park is armed until the driver waves it off
     scenery:makeScenery(seed),
     zombies:[], splats:[], gibs:[], flecks:[], shots:[],   // the horde, and what's left of it
     zrng:mulberry32(seed^0x2b1e), zNextIdx:0, gunCd:0, cashRun:0, goreT:0,
@@ -448,6 +457,12 @@ function step(dt){
   // off the tarmac is grass — but a bridge deck and a rest area's apron are not fields, they're paved, and the
   // car has to agree with the picture: they grip like road and don't drink the pack the way a ploughed verge does
   g.onGrass=!paved(c.idx,lateral,g.seed);
+  // the services' own ground truth, asked once per step — the speed governor, the stall clock and the
+  // auto-park valet all read it. "On the facility" means pavement genuinely SEPARATED from the road
+  // (its inner edge past the carriageway), so a drift carried wide across an open mouth never counts.
+  const fac=restGeom(c.idx,g.seed);
+  g.onFac=!!(fac && (lateral>0?1:-1)===fac.side && fac.in>ROAD_HALF+2 &&
+             Math.abs(lateral)>=fac.in && Math.abs(lateral)<=fac.out+4);
   // the barrier doesn't end you any more — it costs you. Scrub back onto the tarmac, lose the speed you
   // carried into it, and take a bite out of the pack. Enough hits will flatten it; one mistake won't.
   // At a rest area the wall stands back to let you in, which is the only reason you can pull off the road.
@@ -511,6 +526,14 @@ function step(dt){
   if(g.onGrass) mag -= 300*dt;
   mag -= mag*Math.abs(slip)*(brk>0?0.45:(thr>0?0.30:0.55))*dt;
   if(mag<0) mag=0;
+  // THE FACILITY'S SPEED LIMIT: on a services' own pavement the car takes the speed down to ~10 km/h and
+  // holds it there, whoever is driving — your foot loses to the limiter, not to a scold. Only the drive
+  // back out is exempt (an exit ramp is for getting back up to speed). Braked at REST_DEC, not clamped,
+  // so getting into the exit is a firm automatic stop, not a wall.
+  if(g.onFac){
+    const lim=(fac.lane && fac.d>fac.r.len) ? REST_OUT_LIMIT : REST_LIMIT;
+    if(mag>lim) mag=Math.max(lim, mag-REST_DEC*dt);
+  }
   c.vx=Math.cos(velAng)*mag; c.vy=Math.sin(velAng)*mag;
   c.x+=c.vx*dt; c.y+=c.vy*dt;
   g.speed=mag; g.slip=slip; g.vmax=Math.max(g.vmax,mag);
@@ -540,9 +563,21 @@ function step(dt){
   }
 
   // stall / spun-out — a hard stop on corner entry is fine, crawling is not. Pulling into a rest area is the
-  // one time coming to a halt is the POINT, so the spin-out clock doesn't run while the car is parking itself.
-  if(g.speed<95 && !g.pullIn){ g.stall+=dt; if(g.stall>3.5) return gameOver('SPUN OUT'); }
+  // one time coming to a halt is the POINT, so the spin-out clock doesn't run while the car is parking
+  // itself, seeing itself out, or crawling a facility at the limiter's own 10 km/h.
+  if(g.speed<95 && !g.pullIn && !g.pullOut && !g.onFac){ g.stall+=dt; if(g.stall>3.5) return gameOver('SPUN OUT'); }
   else g.stall=Math.max(0,g.stall-dt*2);
+
+  // AUTO-PARK: drive onto a services' pavement and the valet takes it from there — the wheel is the car's,
+  // it idles down the drive at the limit, picks a stall on the charger row and plugs in. Cancelling (the
+  // pause key) hands the wheel back and stands the valet down until you've left the facility.
+  if(g.onFac && g.apArm && !g.pullIn && !g.pullOut && !g.parked && Math.abs(g.slip)<0.35){
+    // (the slip gate: a slide carried wide onto the lane's pavement is a mistake, not a request to park)
+    g.cc=0;
+    g.pullIn={ c:fac.r.c, side:fac.side, off:(LOT_OUT-95)*fac.side, dir:(fac.r.c>=c.idx?1:-1), auto:true };
+    setPauseUI();
+  }
+  if(!g.onFac) g.apArm=true;
 
   g.dist+=g.speed*dt; g.time+=dt;
 
@@ -623,7 +658,7 @@ function gameOver(reason){
   document.getElementById('overStats').innerHTML=st.map(s=>
     '<div class="stat"><span>'+s[0]+'</span><b>'+s[1]+(s[2]?'<em>'+s[2]+'</em>':'')+'</b></div>').join('');
   document.getElementById('overCtr').innerHTML=contractRows(game,true);   // the job board, settled
-  game.pullIn=null; game.parked=null; setPauseUI();
+  game.pullIn=null; game.pullOut=null; game.parked=null; setPauseUI();
   showHUD(false); document.getElementById('viewBtn').style.display='none';
   document.getElementById('pauseBtn').style.display='none';
   document.getElementById('hintL').style.display='none'; document.getElementById('hintR').style.display='none';
@@ -1196,7 +1231,7 @@ function powerBlock(g,x,y,w,s){
   ctx.fillStyle='rgba(255,255,255,.28)'; ctx.fillRect(x0+mid*(sw+gap)-gap*0.5-0.5, by-2*s, 1, bh+4*s);
   ctx.textAlign='right'; ctx.textBaseline='alphabetic';
   ctx.fillStyle='#c3dcee'; ctx.font='700 '+Math.round(9.5*s)+'px '+FSANS;
-  ctx.fillText((g.kw<-2?'REGEN':'POWER')+' · '+Math.round(Math.abs(g.kw))+' kW', x, y);
+  ctx.fillText(((g.parked&&g.parked.charger)?'CHARGE':(g.kw<-2?'REGEN':'POWER'))+' · '+Math.round(Math.abs(g.kw))+' kW', x, y);
 }
 
 // the stereo, as a cluster widget rather than a card: title, meter, and a tap target
@@ -1339,8 +1374,15 @@ function forestAt(i,seed){
    isn't drawn (or sail through one that is). */
 const KM_PTS=Math.round(1000/(SEG*0.1));            // road points per kilometre (SEG px/point, 1px≈0.1m)
 const REST_IN=77, REST_OUT=40;                      // the drive in (~200 m) and the drive back out (~104 m)
-const LOT_IN=BARRIER+110, LOT_OUT=BARRIER+570;      // the lot: set back off the road, ~46 m deep
-const LANE_HALF=65;                                  // the drive itself: a ~13 m roadway
+const LOT_IN=BARRIER+110, LOT_OUT=BARRIER+860;      // the lot: set back off the road, ~75 m deep
+const LANE_HALF=100;                                 // the drive itself: a broad ~20 m roadway
+const LOT_MID=(LOT_IN+LOT_OUT)/2;
+const STALL_ROWS=[[LOT_IN+34,LOT_IN+170],[LOT_MID-68,LOT_MID+68],[LOT_OUT-170,LOT_OUT-34]];  // three rows of stalls
+const CHG_D=[-20,-12,-4,4,12,20];                   // the charger row: six posts, spaced along the far side
+// The facility has a speed limit and the car itself enforces it: cross onto a services' own pavement and
+// you're idled down to ~10 km/h (28 px/s at 1px≈0.1m), walking pace for a lot full of parked cars. Only
+// the drive back OUT is exempt — an exit ramp exists to get you back up to road speed.
+const REST_LIMIT=28, REST_OUT_LIMIT=180, REST_DEC=340;
 const restKm = n => n*(n+5)/2;                      // bay n's kilometre: 3, 7, 12, 18, 25, …
 const restNof = km => Math.round((Math.sqrt(25+8*Math.max(0,km))-5)/2);   // …and the bay nearest a km
 const _rest=new Map();     // memo of a pure function: the bridge scan below is far too dear to pay per frame
@@ -1349,7 +1391,7 @@ function restBlock(n,seed){
   if(v===undefined){
     const s=(Math.imul(n,7919)^Math.imul(seed,0x85ebca6b))|0;
     v={ side: h01(s^0x51ed270b)<0.5? 1:-1,                    // which shoulder it's cut into
-        len: 20+Math.floor(h01(s^0x27220a95)*8) };            // how long the bay runs, in road points
+        len: 30+Math.floor(h01(s^0x27220a95)*10) };           // how long the bay runs, in road points
     // planted at its milestone, then nudged off any river — nobody builds a services half-way out over a
     // bridge. The nudge walks 0, −15, +15, −30… so it's part of the pure function: the bay lands in the
     // same place on every pass, on everyone's copy of a daily road.
@@ -1551,9 +1593,9 @@ function drawRestStop(g,zside,toScreen,lo,hi){
   }
   for(let i=lo;i<hi-1;i++){
     const a=restGeom(i,seed); if(!a || a.lane) continue;
-    if(i%2!==0 || Math.abs(a.d)>a.r.len-2) continue;                   // parking stalls: two rows, ~5 m pitch
+    if(i%2!==0 || Math.abs(a.d)>a.r.len-2) continue;                   // parking stalls: three rows, ~5 m pitch
     const s=a.side;
-    for(const [r0,r1] of [[LOT_IN+34,LOT_IN+170],[LOT_OUT-170,LOT_OUT-34]]){
+    for(const [r0,r1] of STALL_ROWS){
       const A=pt(i,r0*s), B=pt(i,r1*s);
       if(!A||!B) continue;
       ctx.strokeStyle='rgba(245,248,250,.5)'; ctx.lineWidth=Math.max(1,2.2*A.sc);
@@ -1562,7 +1604,7 @@ function drawRestStop(g,zside,toScreen,lo,hi){
   }
   for(let i=lo;i<hi-1;i++){
     const a=restGeom(i,seed); if(!a || a.lane) continue;
-    if([-12,-4,4,12].indexOf(a.d)<0) continue;                         // the charger row, along the far side
+    if(CHG_D.indexOf(a.d)<0) continue;                                 // the charger row, along the far side
     const b=pt(i,(LOT_OUT-22)*a.side);
     if(!b) continue;
     const w=clamp(13*b.sc,2,26), h=clamp(112*b.sc,6,150);
@@ -2298,7 +2340,7 @@ function buyMod(id){ const m=MODS[id]; if(!m||modsOwned.indexOf(id)>=0||cash<m.p
   cash-=m.price; modsOwned.push(id); saveWallet(); renderArmory();
   if(modsOwned.length>=Object.keys(MODS).length) awardBadge('geared');
   return true; }
-function saveWallet(){ try{ localStorage.setItem('drift.cash',Math.round(cash));
+function saveWallet(){ try{ localStorage.setItem('drift.cash',Math.round(cash*100)/100);   // the meter deals in cents now
   localStorage.setItem('drift.guns',gunsOwned.join(',')); localStorage.setItem('drift.gun',gunEq);
   localStorage.setItem('drift.mods',modsOwned.join(',')); }catch(e){} }
 
@@ -2889,12 +2931,12 @@ function drawRestTop(g){
       ctx.moveTo(p.x-p.ty*m,p.y+p.tx*m); ctx.lineTo(q.x-q.ty*m,q.y+q.tx*m); ctx.stroke(); }
     if(i%2===0 && !a.lane && Math.abs(a.d)<=a.r.len-2){
       ctx.strokeStyle='rgba(245,248,250,.55)'; ctx.lineWidth=3;
-      for(const [r0,r1] of [[LOT_IN+34,LOT_IN+170],[LOT_OUT-170,LOT_OUT-34]]){
+      for(const [r0,r1] of STALL_ROWS){
         ctx.beginPath(); ctx.moveTo(p.x-p.ty*r0*s,p.y+p.tx*r0*s); ctx.lineTo(p.x-p.ty*r1*s,p.y+p.tx*r1*s); ctx.stroke();
       }
       ctx.strokeStyle='#f6f8fb';
     }
-    if(!a.lane && [-12,-4,4,12].indexOf(a.d)>=0){ const o=(LOT_OUT-22)*s, x=p.x-p.ty*o, y=p.y+p.tx*o;
+    if(!a.lane && CHG_D.indexOf(a.d)>=0){ const o=(LOT_OUT-22)*s, x=p.x-p.ty*o, y=p.y+p.tx*o;
       ctx.fillStyle='#2b333d'; ctx.beginPath(); ctx.arc(x,y,11,0,TAU); ctx.fill();
       ctx.fillStyle=(game&&game.parked&&game.parked.charger)?'#8affc1':'#7fe2ff';
       ctx.beginPath(); ctx.arc(x,y,6.5,0,TAU); ctx.fill(); }
@@ -3175,14 +3217,21 @@ function skidSound(on,intensity){
    That means pausing is a thing you DO in the fiction, and it has a price: you have to get there. The pack
    keeps draining on the way in, so hitting pause at 2% will not necessarily save you.
 
-   Charging is not free either, and the game already told us what charge is worth. Land a drift chain and it
-   pays you back `chainScore/11000` of the pack — so the game's own exchange rate is 11,000 points to a full
-   charge. The charger sells it back at exactly that price. Electricity you didn't earn by driving well comes
-   straight out of the score you're playing for, which is what stops "pause, top up, resume" from quietly
-   deleting the fail state the whole run is built on. */
-const CHARGE_RATE=0.06;                      // pack per second, in real time — you have to actually sit there
+   Charging is not free either, and it is billed the way a real DC fast-charge network bills: a METER. The
+   pack is a real pack now (100 kWh usable, scaled by the garage's long-range mod), the post is a real
+   250 kW unit that tapers as the state of charge climbs, and every kWh that flows is priced and taken from
+   the WALLET as it flows — $0.45/kWh plus a $1.00 hookup fee, with an idle fee for squatting on the post
+   after the session ends. No money, no electrons: electricity you didn't earn by hunting bounties and
+   working contracts simply doesn't flow, which is what stops "pause, top up, resume" from quietly deleting
+   the fail state the whole run is built on. One real second at the post is a minute of charging — a
+   courtesy of the fiction, not of the meter. */
 const CHARGE_CAP=0.80;                       // roadside chargers taper hard; nobody waits out the last fifth
-const CHARGE_PRICE=11000;                    // score per full pack: the drift payback rate, run backwards
+const PACK_KWH=100;                          // usable pack of the stock car; mod.cap scales it, as it scales range
+const CHG_KW_MAX=250, CHG_KW_MIN=60;         // the post: 250 kW off the bottom, tapering hard toward the cap
+const CHG_TIMESCALE=90;                      // seconds of charging per real second sat there
+const CHG_PRICE_KWH=0.45;                    // $/kWh, DC fast-charge money
+const CHG_HOOKUP=1.00;                       // flat session fee, taken when the plug goes in
+const IDLE_GRACE=45, IDLE_FEE_MIN=0.35;      // stay plugged after CHARGED and the network starts billing $/min
 /* Which way to somewhere you can stop? The nearest bay might be BEHIND you — blowing past the services at
    240 shouldn't condemn you to the hard shoulder when the next one ahead is a county away. Going back means
    a U-turn and running the road against its grain, so behind only wins when it's clearly the shorter trip,
@@ -3201,7 +3250,10 @@ function togglePause(){
   const g=game;
   if(state==='paused'){ resumeDrive(); return; }
   if(state!=='play' || !g) return;
-  if(g.pullIn){ g.pullIn=null; g.stall=0; setPauseUI(); return; }    // pressed again on the way in: carry on
+  // pressed on the way in or out: the driver wants the wheel back. Standing the valet down (apArm) is what
+  // keeps it from snatching the wheel again a frame later while the car is still on the facility.
+  if(g.pullOut){ g.pullOut=null; g.apArm=false; g.stall=0; setPauseUI(); return; }
+  if(g.pullIn){ g.pullIn=null; g.apArm=false; g.stall=0; setPauseUI(); return; }
   const r=nextRest(g);
   g.cc=0;                                                            // cruise doesn't get a say in this
   g.pullIn = r || { c:g.car.idx+34, side:(h01(g.car.idx)<0.5?1:-1), off:(BARRIER-64)*(h01(g.car.idx)<0.5?1:-1), shoulder:true };
@@ -3256,7 +3308,7 @@ function pullInDrive(g){
   g.steer=clamp(clamp(err*2.8,-1,1) - over*1.8,-1,1);
   let vWant=Math.min(VTOP, Math.sqrt(2*230*Math.max(0,to*SEG-24)));
   const gh=P.shoulder ? null : restGeom(c.idx,g.seed);
-  if(gh && gh.r.c===P.c) vWant=Math.min(vWant,260);                  // ~94 km/h down the drive itself
+  if(gh && gh.r.c===P.c) vWant=Math.min(vWant,REST_OUT_LIMIT);       // on the facility the limiter takes it from here
   if(dir<0 && Math.abs(hdg)>0.9){                                    // still coming about: slow, but alive —
     g.gas   = g.speed<150 ? (g.onGrass?0.8:0.5) : 0;                 // a U-turn needs way on to steer at all
     g.brake = g.speed>240 ? clamp((g.speed-240)/90,0,1) : 0;
@@ -3274,50 +3326,114 @@ function parkUp(g){
   const gm=restGeom(c.idx,g.seed);
   const lateral=(c.x-p.x)*(-p.ty)+(c.y-p.y)*p.tx;
   const onLot=!!(gm && (lateral>0?1:-1)===gm.side && !gm.lane && Math.abs(lateral)>=gm.in-8);
-  g.parked={ charger:onLot, taken:0, paid:0 };                       // stopped anywhere short of the lot —
+  g.parked={ charger:onLot, kwh:0, cost:0, idle:0, plugged:false };  // stopped anywhere short of the lot —
                                                                      // the drive, the shoulder — is no charger
   g.pullIn=null;
   state='paused';
   setPauseUI();
 }
-// Sitting at the post. The clock, the score and the distance are all stopped — the ONLY thing that moves is
-// the pack going up and the score coming down to pay for it.
+// Sitting at the post. The clock, the score and the distance are all stopped — the ONLY things that move are
+// the pack going up and the METER: kWh in, dollars out of the wallet, in the same breath. The meter banks to
+// localStorage as it runs, so a closed tab can't un-spend electricity that already flowed.
 function chargeStep(dt){
-  const g=game; if(!g||!g.parked) return;
-  if(!g.parked.charger || g.batt>=CHARGE_CAP) return;
-  const add=Math.min(CHARGE_CAP-g.batt, CHARGE_RATE*dt);
-  g.batt+=add;
-  g.parked.taken+=add;
-  g.parked.paid += add*CHARGE_PRICE;
-  g.score=Math.max(0, g.score-add*CHARGE_PRICE);
-  g.kw=lerp(g.kw, 74, 0.1);                                          // the dash should show it drinking
+  const g=game; if(!g||!g.parked||!g.parked.charger) return;
+  const P=g.parked, packK=PACK_KWH*g.mod.cap;
+  if(g.batt<CHARGE_CAP && cash>0.005){
+    if(!P.plugged){ P.plugged=true;                                  // the plug goes in: the hookup fee lands first
+      const fee=Math.min(CHG_HOOKUP,cash); cash-=fee; P.cost+=fee; }
+    const kw=lerp(CHG_KW_MAX, CHG_KW_MIN, smoo(clamp(g.batt/CHARGE_CAP,0,1)));   // the taper
+    let add=Math.min(CHARGE_CAP-g.batt, kw*CHG_TIMESCALE*dt/3600/packK);
+    add=Math.min(add, cash/(CHG_PRICE_KWH*packK));                   // the wallet buys exactly what it can afford
+    const kwh=add*packK, bill=kwh*CHG_PRICE_KWH;
+    g.batt+=add; P.kwh+=kwh; P.cost+=bill; cash-=bill;
+    P.idle=0;
+    g.kw=lerp(g.kw, -kw, 0.12);                                      // the dash should show it drinking
+  } else {
+    // session over — CHARGED, or the wallet ran dry. A real network bills you for squatting on a live post,
+    // after a grace long enough to read the receipt.
+    if(P.plugged && g.batt>=CHARGE_CAP){
+      P.idle+=dt;
+      if(P.idle>IDLE_GRACE && cash>0){
+        const fee=Math.min(cash, IDLE_FEE_MIN*dt/60);
+        cash-=fee; P.cost+=fee; P.idleBill=(P.idleBill||0)+fee;
+      }
+    }
+    g.kw=lerp(g.kw, 0, 0.1);
+  }
+  if((P.saveT=(P.saveT||0)+dt)>1){ P.saveT=0; saveWallet(); }
   setPauseUI();
 }
 function resumeDrive(){
   const g=game; if(!g||state!=='paused') return;
-  g.parked=null; g.stall=0; g.kw=0;
+  if(g.parked && g.parked.cost) saveWallet();                        // the receipt is settled before the wheels move
+  const c=g.car, p=g.road.pts[c.idx];
+  const lateral=(c.x-p.x)*(-p.ty)+(c.y-p.y)*p.tx;
+  const fac=restGeom(c.idx,g.seed);
+  g.parked=null; g.stall=0; g.kw=0; g.apArm=false;
+  // parked on a facility: the car sees itself out — across the lot, up the out-drive, back onto the road —
+  // before handing the wheel back. A hard-shoulder stop hands it straight back.
+  g.pullOut=(fac && (lateral>0?1:-1)===fac.side && Math.abs(lateral)>ROAD_HALF+10) ? {} : null;
   state='play'; last=performance.now(); acc=0;                       // don't hand the sim a huge dt on the way back
   setPauseUI();
+}
+// The drive out: the same pure pursuit as the drive in, run toward the road instead of away from it — it
+// rides the facility's centreline to the out-drive's mouth and dissolves the moment the car is back on the
+// carriageway. The limiter holds the lot to 10 km/h and frees the out-drive, so the trip reads like leaving
+// a real services: crawl the lot, then power down the ramp.
+function pullOutDrive(g){
+  const R=g.road, c=g.car;
+  ensureAhead(R,c.idx+16);
+  const p=R.pts[clamp(c.idx,R.start,R.pts.length-1)];
+  const lateral=(c.x-p.x)*(-p.ty)+(c.y-p.y)*p.tx;
+  if(Math.abs(lateral)<ROAD_HALF-20){ g.pullOut=null; setPauseUI(); return; }   // back in the traffic lane: yours again
+  const lead=Math.round(clamp(4+g.speed/90,4,12));
+  const li=clamp(c.idx+lead, R.start, R.pts.length-1);
+  const look=R.pts[li];
+  const gl=restGeom(li,g.seed);
+  const po=gl ? gl.path*gl.side : 0;                                 // the facility's centreline out, then the road's own
+  const hdg=angWrap(Math.atan2(look.y+look.tx*po-c.y, look.x-look.ty*po-c.x)-c.angle);
+  const over=Math.max(0,Math.abs(g.slip)-0.22)*Math.sign(g.slip);
+  g.steer=clamp(clamp(hdg*2.8,-1,1) - over*1.8,-1,1);
+  g.gas=(g.onGrass && g.speed<120) ? 0.75 : 0.55;                    // the limiter is the speed authority out here
+  g.brake=0;
 }
 function setPauseUI(){
   const g=game, card=document.getElementById('pauseCard'), pill=document.getElementById('pullPill');
   const btn=document.getElementById('pauseBtn');
-  const pulling=!!(g&&g.pullIn&&state==='play');
+  const pulling=!!(g&&state==='play'&&(g.pullIn||g.pullOut));
   pill.style.display=pulling?'block':'none';
-  if(pulling) pill.textContent=(g.pullIn.dir<0)?'TURNING BACK…':'PULLING IN…';   // the U-turn announces itself
+  if(pulling) pill.textContent = g.pullOut ? 'PULLING OUT…'
+    : (g.pullIn.dir<0) ? 'TURNING BACK…'                             // the U-turn announces itself
+    : g.pullIn.auto ? 'AUTO-PARK · LIMIT 10' : 'PULLING IN…';
   if(btn) btn.textContent=pulling?'CANCEL':'PAUSE';
   if(!g||state!=='paused'){ card.classList.add('hidden'); return; }
   card.classList.remove('hidden');
   const P=g.parked||{};
-  const full=g.batt>=CHARGE_CAP;
+  const full=g.batt>=CHARGE_CAP, broke=cash<=0.005;
   document.getElementById('pauseTitle').textContent =
-    !P.charger ? 'HARD SHOULDER' : full ? 'CHARGED' : 'CHARGING';
+    !P.charger ? 'HARD SHOULDER' : full ? 'CHARGED' : broke ? 'OUT OF CREDIT' : 'CHARGING';
   document.getElementById('pauseFill').style.width=Math.round(g.batt*100)+'%';
-  document.getElementById('pauseKm').textContent=Math.round(g.batt*EV_RANGE*g.mod.cap)+' km';
+  document.getElementById('pauseKm').textContent=
+    Math.round(g.batt*EV_RANGE*g.mod.cap)+' km · '+Math.round(g.batt*100)+'%';
+  // the METER — the session ledger, itemised the way the network itemises it
+  const mEl=document.getElementById('pauseMeter');
+  if(P.charger){
+    const row=(k,v,c)=>'<span>'+k+'</span><b'+(c?' class="cost"':'')+'>'+v+'</b>';
+    mEl.style.display='grid';
+    mEl.innerHTML=
+      row('POWER', Math.round(Math.max(0,-g.kw))+' kW')+
+      row('ENERGY', (P.kwh||0).toFixed(1)+' kWh')+
+      row('TARIFF', '$'+CHG_PRICE_KWH.toFixed(2)+'/kWh + $'+CHG_HOOKUP.toFixed(2)+' hookup')+
+      row('SESSION', '−$'+(P.cost||0).toFixed(2), true)+
+      row('WALLET', '$'+Math.floor(cash).toLocaleString());
+  } else mEl.style.display='none';
   document.getElementById('pauseSub').innerHTML =
     !P.charger ? 'no charger out here — you stopped short of the services'
-    : full ? ('charged to '+Math.round(CHARGE_CAP*100)+'% — the last fifth takes all night')
-    : ('charging to '+Math.round(CHARGE_CAP*100)+'% · <span class="cost">−'+Math.round(P.paid||0).toLocaleString()+' pts</span>');
+    : full ? ('charged to '+Math.round(CHARGE_CAP*100)+'% — the last fifth takes all night'
+        +(P.idleBill ? ' · <span class="cost">idle fee running, $'+IDLE_FEE_MIN.toFixed(2)+'/min</span>'
+                     : ' · idle fee after '+IDLE_GRACE+' s'))
+    : broke ? 'the meter stopped — nothing left in the wallet. Bounties and contracts pay it back up.'
+    : ('billed to your wallet as it flows · stops at '+Math.round(CHARGE_CAP*100)+'%');
 }
 
 /* ============================ loop ============================ */
@@ -3328,11 +3444,14 @@ function frame(t){
   if(state==='play' && game){
     // wheel springs back to centre when released and no keys held
     if(game.view==='driver' && game.wheelPtr==null && !(keys['arrowleft']||keys['a']||keys['arrowright']||keys['d'])) game.wheelSteer*=0.72;
-    // once you've asked to stop, the car drives itself in — your hands are off the wheel until it's parked
-    if(game.pullIn) pullInDrive(game);
-    else { game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); cruiseAdjust(game); }
-    acc+=dt; const h=1/120;
-    while(acc>=h){ if(state==='play') step(h); acc-=h; }
+    // once you've asked to stop (or the valet has), the car drives itself — your hands are off the wheel
+    // until it's parked, or back on the road. The self-driven legs run as a TIME-LAPSE: the facility's
+    // 10 km/h limit is real, but nobody's evening is spent watching a car idle across a parking lot.
+    if(!game.pullIn && !game.pullOut){ game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); cruiseAdjust(game); }
+    acc+=dt*((game.pullIn||game.pullOut)?6:1); const h=1/120;
+    while(acc>=h){ if(state==='play'&&game){
+      if(game.pullIn) pullInDrive(game); else if(game.pullOut) pullOutDrive(game);
+      step(h); } acc-=h; }
     if(game){ const ad=Math.abs(game.slip); skidSound(!game.onGrass&&game.speed>180&&ad>0.18, game.speed/500); }
   } else if(state==='paused' && game){ chargeStep(dt); skidSound(false,0); }
   else skidSound(false,0);
@@ -3490,6 +3609,7 @@ window.__drift={
   clearInput(){ if(game){ delete game.forceSteer; delete game.forceGas; delete game.forceBrake; } },
   step(n){ for(let i=0;i<(n||1);i++){ if(state==='play'){
     if(game.pullIn) pullInDrive(game);
+    else if(game.pullOut) pullOutDrive(game);
     else { game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); cruiseAdjust(game); }
     step(1/120); } } },
   cruise(){ toggleCruise(); },
