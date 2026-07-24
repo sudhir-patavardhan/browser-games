@@ -12,7 +12,12 @@
   function seedRandom(s){ let a=s|0; Math.random=function(){ a=a+0x6D2B79F5|0;
     let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
   const D=window.__drift;
-  const fresh=()=>{ seedRandom(31337); D.start(); D.game.zNextIdx=1e9; D.game.zombies.length=0; };
+  // the board is settled up front for the same reason the spawner is stood down: this probe's cash
+  // arithmetic must be PURE. A seeded contract (e.g. TOUCH 225 km/h) crossing mid-choreography pays real
+  // cashRun and fails "a shave is not a kill" on road luck — which is the contracts suite's business, not
+  // this one's. (The deer feature shifted the seeded rng universe and surfaced exactly that.)
+  const fresh=()=>{ seedRandom(31337); D.start(); D.game.zNextIdx=1e9; D.game.zombies.length=0;
+    for(const c of D.game.contracts) c.done=true; };
   const launch=(steps)=>{ for(let i=0;i<steps;i++){ D.autopilot(); D.setInput(D.game.forceSteer,1,0); D.step(1); } };
   // place a shambler `o` px off the road centre a few segments ahead, then drive past it on the line —
   // flat out by default, or coasting (gas 0) so a slow car STAYS slow through the pass

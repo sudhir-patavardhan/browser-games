@@ -149,6 +149,12 @@
     text-shadow:0 2px 0 rgba(140,30,10,.9), 0 5px 16px rgba(0,0,0,.35); }
   .wavepop.show{ animation:pop 1.3s ease forwards; }
   .waverow{ margin-top:5px; font-size:11px; font-weight:900; letter-spacing:.6px; color:#c8442a; }
+  /* the pack running low: an alarm, not a status — amber at a quarter, red-hot at the last tenth */
+  .battpop{ position:fixed; left:50%; top:27%; transform:translateX(-50%); z-index:5; pointer-events:none;
+    font-weight:900; font-size:clamp(16px,4.6vw,24px); color:#ffd24a; opacity:0; letter-spacing:1.5px;
+    text-shadow:0 2px 0 rgba(140,80,10,.9), 0 4px 14px rgba(0,0,0,.35); }
+  .battpop.crit{ color:#ff9a8a; text-shadow:0 2px 0 rgba(140,30,10,.9), 0 4px 14px rgba(0,0,0,.35); }
+  .battpop.show{ animation:pop 1.5s ease forwards; }
   /* the chain's NAME, worn like a title belt */
   .tierword{ font-size:.52em; vertical-align:middle; font-weight:900; letter-spacing:2px; margin-right:6px;
     background:linear-gradient(180deg,#ffd24a,#ff4d3d); -webkit-background-clip:text; background-clip:text; color:transparent; }
@@ -200,6 +206,7 @@
     <div class="best" id="bestEl">BEST 0</div>
     <div class="best" id="tripEl">TRIP 0.0 km</div>
     <div class="best" id="restEl">⚡ REST —</div>
+    <div class="best" id="battEl">⚡ CHARGE 100%</div>
   </div>
 </div>
 <div class="driftpop" id="driftpop"></div>
@@ -208,6 +215,7 @@
 <div class="deerpop" id="deerEl"></div>
 <div class="badgepop" id="badgePop"></div>
 <div class="wavepop" id="wavePop"></div>
+<div class="battpop" id="battPop"></div>
 <div class="steerhint" id="hintL" style="display:none">‹</div>
 <div class="steerhint" id="hintR" style="display:none">›</div>
 <button id="viewBtn" style="display:none">DRIVER VIEW</button>
@@ -398,7 +406,7 @@ function newGame(forceSeed){
     score:0, mult:1, driftTime:0, grace:0, dist:0, onGrass:false, slip:0, speed:430,
     stall:0, chainScore:0, bestChain:0, driftTotal:0,
     skid:[], smoke:[], grassTufts:makeTufts(seed),
-    batt:1, kw:0, hitT:0, cc:0, padCand:null,  // the cabin: charge, power, last impact, cruise set-speed
+    batt:1, kw:0, hitT:0, cc:0, padCand:null, battWarn:0,  // the cabin: charge, power, last impact, cruise set-speed, low-pack alarm stage
     pullIn:null, parked:null,                  // heading for a rest area / sat at the charger
     scenery:makeScenery(seed),
     zombies:[], splats:[], gibs:[], flecks:[], shots:[],   // the horde, and what's left of it
@@ -554,6 +562,11 @@ function step(dt){
   g.kw = lerp(g.kw, thr*EV_KW*clamp(0.35+mag/VTOP,0,1) - brk*REGEN_KW*g.mod.regen*clamp(mag/VTOP,0,1), 0.12);
   g.batt = clamp(g.batt - (load - regen*g.mod.regen + offRoad)*EV_BURN/g.mod.cap*dt, 0, 1);   // the garage: harder claw-back, and every % is more clock
   if(g.batt<=0) return gameOver('OUT OF CHARGE');
+  // a pack this important doesn't get to die quietly: one warning at a quarter, an alarm at the last
+  // tenth — each fired once, re-armed by charging back up (a chain claw-back or a stop at the services)
+  if(g.batt>0.30) g.battWarn=0;
+  else if(g.batt<=0.10 && g.battWarn<2){ g.battWarn=2; battPop('⚡ CHARGE CRITICAL'+battRest(g),true); sfx('klaxon'); }
+  else if(g.batt<=0.25 && g.battWarn<1){ g.battWarn=1; battPop('⚡ LOW CHARGE'+battRest(g),false); }
 
   updateZombies(g,dt);   // the horde: spawn, shamble, bumper checks, the auto-gun — money and gore only, never physics
   updateDeer(g,dt);      // the county's wildlife: rarer, faster, no bounty — a startle, not an economy
@@ -636,6 +649,12 @@ const CHAIN_TIERS=[[20000,'LEGENDARY'],[10000,'OUTRAGEOUS'],[5000,'SICK'],[2500,
 function chainTier(v){ for(const t of CHAIN_TIERS) if(v>=t[0]) return t[1]; return ''; }
 function wavePop(msg){ const el=document.getElementById('wavePop'); if(!el) return;
   el.textContent=msg; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+// the low-pack alarm, with the one fact that matters bolted on: how far to somewhere you can charge
+function battRest(g){ const m=(g.rest&&g.rest.ahead!=null) ? (g.rest.ahead-g.car.idx)*SEG*0.1 : null;
+  return m==null ? '' : ' · REST '+restFmt(m); }
+function battPop(msg,crit){ const el=document.getElementById('battPop'); if(!el) return;
+  el.textContent=msg; el.classList.toggle('crit',!!crit);
+  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
 function driftPop(v,charge,tier){ const el=document.getElementById('driftpop');
   el.innerHTML=(tier?'<span class="tierword">'+tier+'</span>':'')+'+'+Math.round(v).toLocaleString()
     +(charge>0.002?' <span class="chg">+'+(charge*100).toFixed(0)+'%</span>':'');
@@ -3048,6 +3067,11 @@ function updateHUD(){
   document.getElementById('tripEl').textContent='TRIP '+(g.dist/10000).toFixed(1)+' km';
   document.getElementById('restEl').textContent='⚡ REST '+
     restFmt((g.rest&&g.rest.ahead!=null) ? (g.rest.ahead-g.car.idx)*SEG*0.1 : null);
+  // the pack is the clock the whole run runs on — the top view gets to see it too, and it changes colour
+  // before it changes your plans
+  const be=document.getElementById('battEl');
+  be.textContent='⚡ CHARGE '+Math.round(g.batt*100)+'%';
+  be.style.color = g.batt<=0.15 ? '#e5484d' : (g.batt<=0.30 ? '#ffb454' : '');
   const rows=contractRows(g,false);
   if(rows!==g._ctrHtml){ document.getElementById('ctrEl').innerHTML=rows; g._ctrHtml=rows; }
   const ge=document.getElementById('ghostEl');
@@ -3257,6 +3281,8 @@ function pullInDrive(g){
   let vWant=Math.min(VTOP, Math.sqrt(2*230*Math.max(0,to*SEG-24)));
   const gh=P.shoulder ? null : restGeom(c.idx,g.seed);
   if(gh && gh.r.c===P.c) vWant=Math.min(vWant,260);                  // ~94 km/h down the drive itself
+  if(g.batt<0.25) vWant=Math.min(vWant,330);                         // limp mode: load scales with speed, and a
+                                                                     // dying pack needs the range more than the pace
   if(dir<0 && Math.abs(hdg)>0.9){                                    // still coming about: slow, but alive —
     g.gas   = g.speed<150 ? (g.onGrass?0.8:0.5) : 0;                 // a U-turn needs way on to steer at all
     g.brake = g.speed>240 ? clamp((g.speed-240)/90,0,1) : 0;
