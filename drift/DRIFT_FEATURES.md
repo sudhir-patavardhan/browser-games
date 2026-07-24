@@ -37,6 +37,29 @@ lot must end back in the traffic lane under the car's own steering, while a shou
 straight back. `restnav` pins the broader geometry (drive 18–23 m wide, lot ≥70 m deep) and still proves the
 U-turn trip parks on the apron, plugged in.
 
+## The pack doesn't die quietly — a five-minute ride's findings (2026-07-20)
+
+**What.** An instrumented five-minute ride (autopilot, a mid-ride charging stop, every counter watched)
+kept ending the same way: **OUT OF CHARGE, no warning, ~2 minutes in** — barrier clips cost 7% of the pack
+each (by design), and on a twisty road they stack fast, while the only battery readout lived on the driver
+view's dash. Four fixes: **the top-view HUD now carries the charge** (`⚡ CHARGE 47%`, amber ≤30%, red
+≤15%) — one of the two views was completely blind to the run's actual clock; a **low-charge alarm** in
+both views — one banner at a quarter pack, a critical one (klaxon) at the last tenth, each fired once and
+re-armed by charging back up, and each carrying the one fact that matters: `· REST 2.3 km`; **limp mode**
+— a pull-in with under a quarter pack caps itself at ~120 km/h, since load scales with speed and a dying
+pack needs range more than pace; and the **`nearmiss` suite un-flaked** — the deer feature shifted the
+seeded rng universe, so seed 31337's contract board now paid `TOUCH 225 km/h` mid-choreography and failed
+"a shave is not a kill" on road luck. The probe now settles the board up front, the same way it stands the
+horde down: its cash arithmetic must be pure.
+
+**Why.** "The pack is your life now" only works as tension if the player can *watch* it run out. A run
+that ends OUT OF CHARGE with no readout in view and no warning isn't tension, it's a rug-pull — and the
+five-minute ride proved it happens to a real session, twice in a row.
+
+**How it's defended.** `./verify/run.sh pause` — the warning fires at a quarter pack (amber, no crit
+flag), goes critical at the last tenth, the HUD readout turns colour, and charging back up re-arms the
+whole ladder. `nearmiss` is green again on the shifted universe, and the full suite stays green.
+
 ## Rest areas become real estate — a drive in, and a lot (2026-07-20)
 
 **What.** The rest area is no longer a widened shoulder. Each services is now a **facility**: a ~200 m

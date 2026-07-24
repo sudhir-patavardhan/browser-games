@@ -105,6 +105,21 @@
     rec("...and the car actually drives again", D.game.speed>spdBefore,
         "speed "+spdBefore.toFixed(0)+" -> "+D.game.speed.toFixed(0));
 
+    // ---- the pack doesn't die quietly: one warning at a quarter, an alarm at the last tenth, re-armed
+    // by charging back up — and the top-view HUD wears the number in colour
+    const bp=document.getElementById('battPop'), be=document.getElementById('battEl');
+    D.game.batt=0.60; D.game.battWarn=0; D.step(1);
+    D.game.batt=0.24; D.step(1); D.hud();
+    rec("the low-charge warning fires at a quarter pack", D.game.battWarn===1 && bp.classList.contains('show') && !bp.classList.contains('crit'),
+        "battWarn="+D.game.battWarn+" pop='"+bp.textContent+"'");
+    rec("...and the HUD charge readout turns amber", be.textContent.indexOf('⚡ CHARGE')===0 && be.style.color!=='',
+        "battEl='"+be.textContent+"' color='"+be.style.color+"'");
+    D.game.batt=0.09; D.step(1);
+    rec("the alarm goes critical at the last tenth", D.game.battWarn===2 && bp.classList.contains('crit'),
+        "battWarn="+D.game.battWarn+" pop='"+bp.textContent+"'");
+    D.game.batt=0.70; D.step(1);
+    rec("charging back up re-arms the alarm", D.game.battWarn===0, "battWarn="+D.game.battWarn);
+
     // ---- running the pack dry mid-drive still ends the run cleanly with no pause state left dangling
     D.game.batt=0.02;
     for(let i=0;i<8*120 && D.state==='play';i++){ D.setInput(1,1,0); D.step(1); }   // off-road burn, same as assert.js
