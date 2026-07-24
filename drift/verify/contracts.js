@@ -75,6 +75,11 @@
         board.map(c=>c.id+"="+(c.done?"done":c.fmt(c.prog(D.game)))).join(", "));
 
     // ---- the over panel settles the board
+    // a stint above may have wandered across a services and been caught by the auto-park valet — stand it
+    // down and drive clear first, or the facility's own 10 km/h limit turns "running dry" into a long sit
+    D.game.pullIn=null; D.game.pullOut=null; D.game.apArm=false;
+    for(let i=0;i<20000 && D.game.onFac;i++){ D.autopilot(); D.step(1); }
+    D.clearInput();
     D.game.batt=0.005; D.setInput(0,1,0);
     for(let i=0;i<1200 && D.state==='play';i++) D.step(1);
     D.clearInput();
