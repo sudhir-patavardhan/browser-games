@@ -154,17 +154,42 @@
     rec("the toast actually says CLOSE CALL", toastEl && toastEl.textContent==='CLOSE CALL',
         "toast text = '"+(toastEl&&toastEl.textContent)+"'");
 
-    // ---- the pull-in is on rails, so it is exempt both ways
-    seedRandom(777); D.start(); g=D.game;
-    g.zNextIdx=1e9; g.zombies.length=0; g.deer.length=0;
-    cruise(200);
-    g.traffic.length=0; g.trafHits=0; g.calls=0;
-    g.pullIn={ };                                                 // stand in for "the game is driving"
-    D.traffic.spawn(g.car.idx+18,'car');
-    for(let i=0;i<900 && g.traffic.length;i++){ pin(g,ROAD_HALF*0.50,340); D.step(1); }
-    const pullHits=g.trafHits, pullCalls=g.calls; g.pullIn=null;
-    rec("a vehicle can neither hit nor pay you while the game drives itself in", pullHits===0 && pullCalls===0,
-        "trafHits="+pullHits+" calls="+pullCalls+" through a pull-in with one on the nose");
+    // ---- anything the car isn't steering itself through is exempt, both ways: the valet's leg IN, its leg
+    // back OUT, and the facility's own pavement (which nothing on the carriageway can reach anyway)
+    // Posed out at lateral 240 — inside the carriageway, but past the ROAD_HALF-20 mark where pullOutDrive
+    // hands the wheel back, so the leg genuinely stays live — with a TRUCK pinned at its yield cap. That is
+    // a 44px gap against a 47px bumper: a certain strike if the exemption isn't there, which is exactly what
+    // makes it worth asserting. (Verified by control: `field:null` on the same pose does hit.)
+    const railed=(field)=>{
+      seedRandom(777); D.start(); const gg=D.game;
+      gg.zNextIdx=1e9; gg.zombies.length=0; gg.deer.length=0;
+      cruise(200);
+      gg.traffic.length=0; gg.trafHits=0; gg.calls=0;
+      const v=D.traffic.spawn(gg.car.idx+6,'truck'); v.o=ROAD_HALF*0.80;
+      for(let i=0;i<900 && gg.traffic.length;i++){
+        if(field) gg[field]={};                                  // the leg is re-asserted: the drive dissolves itself
+        pin(gg,240,340); D.step(1);
+      }
+      const out={ hits:gg.trafHits, calls:gg.calls };
+      gg.pullIn=null; gg.pullOut=null;
+      D.clearInput(); return out;
+    };
+    const loose=railed(null), inLeg=railed('pullIn'), outLeg=railed('pullOut');
+    rec("the control: that same pose, hands on the wheel, really is a head-on", loose.hits===1,
+        "trafHits="+loose.hits+" — 44px of gap against a truck's 47px bumper");
+    rec("a vehicle can neither hit nor pay you while the valet drives you IN",
+        inLeg.hits===0 && inLeg.calls===0, "trafHits="+inLeg.hits+" calls="+inLeg.calls+" through the same head-on");
+    rec("...nor while it sees you back OUT",
+        outLeg.hits===0 && outLeg.calls===0, "trafHits="+outLeg.hits+" calls="+outLeg.calls+" through the same head-on");
+    // The facility's own pavement is exempt too, but it can't be posed: step() recomputes onFac from the
+    // geometry every tick. It doesn't need to be — out there the exemption is redundant with the geometry,
+    // and THAT is the thing worth pinning, because it is what makes a parked car unreachable.
+    rec("...and a car on the services' pavement is out of reach anyway",
+        ROAD_HALF+2 - ROAD_HALF*0.80 > 24*0.5+58*0.5+6,
+        "pavement starts at "+(ROAD_HALF+2).toFixed(0)+"px, a yielding truck caps at "+(ROAD_HALF*0.80).toFixed(0)+
+        "px, and its bumper reaches "+(24*0.5+58*0.5+6).toFixed(0)+"px — "+
+        ((ROAD_HALF+2)-(ROAD_HALF*0.80)-(24*0.5+58*0.5+6)).toFixed(0)+"px short");
+    g=D.game;
 
     // ---- the badge and the contract read the same counter
     g.calls=3; checkRunBadges(g,false);
