@@ -3,6 +3,40 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## The full-service stop — auto-park, a 10 km/h limit, and a metered wallet bill (2026-07-23)
+
+**What.** The rest area is now an *experience*, end to end. The **exit road is broader** (a ~20 m two-way
+service road, up from ~13 m) and the **lot is bigger** (~75 m deep, up from ~46 m — three rows of stalls,
+six charging posts). Cross onto a facility's own pavement and the car itself enforces the **10 km/h limit**
+(`REST_LIMIT`, braked in at a firm automatic rate, never clamped): your foot loses to the limiter, and only
+the drive back out is exempt so you can power back up to road speed. Drive into the exit and the
+**auto-park valet** takes the wheel — `AUTO-PARK · LIMIT 10` on the pill, cancellable with the pause key —
+idles down the drive, parks in a stall on the charger row and plugs in; the self-driven legs run as a ×6
+time-lapse, because the limit is real but nobody's evening is spent watching a car idle across a lot. RESUME
+is the mirror image: the car sees itself out and hands the wheel back in the traffic lane.
+
+**The money is real now.** Charging no longer spends score — it runs a **meter**. The pack is 100 kWh usable
+(scaled by the long-range mod, like the range readout), the post is a 250 kW DC unit that tapers toward the
+80% cap, and the session is billed to the **wallet** as the energy flows: **$0.45/kWh + $1.00 hookup**, with
+a **$0.35/min idle fee** after a 45 s grace once charged — and *no money, no electrons*, which keeps the
+fail state the economy exists to protect. The pause card is the receipt: live kW, kWh delivered, tariff,
+session total, wallet balance. One real second at the post is 90 s of charging; the meter banks to
+localStorage as it runs, so a closed tab can't un-spend electricity that already flowed.
+
+**Why.** Field report: make the rest-area experience *a lot better* — and tie its cost to the game's real
+currency. Score-priced charging punished the thing you're best at; wallet-priced charging makes the horde
+bounties, contracts and waves *fund* the drive, the way fuel money works. The valet, the limit and the
+broad exit turn the stop from a mechanic into a place with manners.
+
+**How it's defended.** `./verify/run.sh pause` — the meter is pinned to the number: kWh delivered must match
+the pack's gain times PACK_KWH·mod.cap, the bill must equal kWh·$0.45+$1.00 out of the wallet with the score
+untouched, the taper must stop at 80%, the grace must be free and a minute past it must cost $0.35, an empty
+wallet must stop the meter dead, and the shoulder must stay unmetered. Driving onto the exit must hand the
+wheel to the valet, take the speed to 10 km/h within ~2 s, and end parked at a live charger; resume from a
+lot must end back in the traffic lane under the car's own steering, while a shoulder resume hands the wheel
+straight back. `restnav` pins the broader geometry (drive 18–23 m wide, lot ≥70 m deep) and still proves the
+U-turn trip parks on the apron, plugged in.
+
 ## The pack doesn't die quietly — a five-minute ride's findings (2026-07-20)
 
 **What.** An instrumented five-minute ride (autopilot, a mid-ride charging stop, every counter watched)

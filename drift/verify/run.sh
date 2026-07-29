@@ -16,7 +16,7 @@
 #   ./drift/verify/run.sh plane      # scenery build + airliner reachability
 #   ./drift/verify/run.sh music      # the playlist actually loads in a browser
 #   ./drift/verify/run.sh land       # rivers, the bridges over them, and the woods — checked in real pixels
-#   ./drift/verify/run.sh pause      # pulling in to charge: drives itself to a rest area, spends score on the pack
+#   ./drift/verify/run.sh pause      # pulling in to charge: auto-park, the metered wallet bill, the drive back out
 #   ./drift/verify/run.sh restnav    # trip meter, charger distance on the dash, and the turn-back to a bay behind
 #   ./drift/verify/run.sh deer       # the county's wildlife: crossings, the strike, the dodge, visibility
 #
