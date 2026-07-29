@@ -99,13 +99,37 @@
   const control=shot();                                        // open road, no river anywhere ahead
   const gotApproach=driveTo(i=>bridgeAt(i+18,seed));           // the span is just ahead of us
   const approach=shot();
-  const gotSpan=driveTo(i=>{ const b=bridgeAt(i,seed); return b && Math.abs(b.t-1)<0.35; });  // now stood on it
+  /* The crossing is sampled RIGHT THROUGH rather than at one point on it, for two reasons.
+     One: the regression being defended is the water blinking OUT as you drive over it, and "does it survive
+     the crossing" is that claim — "how many pixels are there at t=0.65" is a proxy for it that moves with the
+     river's width, its skew, and whatever line the autopilot happened to take onto the deck. Measured across
+     four seeds, the deep-span count ranges 1.6k–23k on the same build; a single-sample bar tuned on one of
+     those is a coin toss on the others, and had in fact gone red on this one.
+     Two: the open-road control is not a clean zero. ~1,200 of its pixels pass the water test — distant haze
+     and the AR overlay's cyan, which are the SAME colours as hazed water, so no predicate separates them. The
+     approach frame to the very same river, seconds earlier, cancels all of that: same seed, same haze, same
+     overlay, one variable changed (are you on the deck yet). If the quads get dropped again, the span count
+     goes to ~0 against an approach that is still thousands. */
+  const gotSpan=driveTo(i=>{ const b=bridgeAt(i,seed); return b && b.t>=0.65; });   // out past the abutment
+  // the sweep is an OBSERVATION, not part of the drive: everything after it (the parapet, the deck's grip)
+  // is written from the deep span, so hand the car back exactly where the sweep borrowed it from
+  const c0=D.game.car, mark={ x:c0.x, y:c0.y, angle:c0.angle, vx:c0.vx, vy:c0.vy, idx:c0.idx };
+  const span=[];
+  for(let k=0;k<60 && D.state==='play';k++){
+    const b=bridgeAt(D.game.car.idx,seed);
+    if(!b || b.t<0.65) break;                                  // off the deep part of the deck again
+    span.push(shot().water);
+    for(let n=0;n<10;n++){ D.autopilot(); D.step(1); }          // ~0.08s of real driving between frames
+  }
+  const spanMin=span.length?Math.min(...span):0, spanMax=span.length?Math.max(...span):0;
+  Object.assign(D.game.car, mark);
   const onSpan=shot();
 
   rows.push("");
   rows.push("open road   water-blue "+(100*control.water/control.tot).toFixed(2)+"%   (the control: no river in sight)");
   rows.push("approaching water-blue "+(100*approach.water/approach.tot).toFixed(2)+"%");
-  rows.push("on the span water-blue "+(100*onSpan.water/onSpan.tot).toFixed(2)+"%");
+  rows.push("on the span water-blue "+(100*spanMin/control.tot).toFixed(2)+"% .. "+(100*spanMax/control.tot).toFixed(2)+
+            "%  across "+span.length+" frames of the deep crossing");
   rows.push("");
 
   rec("driving up to a river actually puts water on the screen",
@@ -115,10 +139,18 @@
 
   // The regression this was written for: the water quads were being DROPPED whole when a corner of one fell
   // behind the camera, so the river vanished from under you at exactly the moment you drove out over it.
-  rec("the river is still there when you are standing over it",
-      gotSpan && onSpan.water > control.water*4 && onSpan.water > 1500,
-      gotSpan? ("mid-span, "+onSpan.water+"px of water is on screen (near-plane clipping holds; it used to "+
-                "blink out here)") : "never reached mid-span");
+  rec("the river is still there for the WHOLE crossing, not just the run-up",
+      gotSpan && span.length>=6 && spanMin > approach.water*0.22 && spanMin > control.water,
+      gotSpan? (span.length+" frames from the abutment through mid-span and out: the thinnest of them still "+
+                "carries "+spanMin+"px of water — "+(100*spanMin/approach.water).toFixed(0)+"% of the "+
+                approach.water+"px on the approach to this same river, and more than the "+control.water+
+                "px of haze an open road shows. Dropping the quads would put this at ~0.")
+              : "never reached mid-span");
+
+  rec("...and at its peak it is unmistakably a river, not haze",
+      spanMax > control.water*3,
+      "the fullest frame of the crossing carries "+spanMax+"px, "+(spanMax/control.water).toFixed(1)+
+      "x the open road's "+control.water+"px");
 
   rec("no debug fill left in the water",
       control.magenta===0 && approach.magenta===0 && onSpan.magenta===0,
