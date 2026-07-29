@@ -3,6 +3,47 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## The road isn't yours — oncoming traffic (2026-07-29)
+
+**What.** The far half of the road has had lane paint and wheel-polish bands on it since the first commit —
+the code even *names* it `oncoming lane` — and in six months nothing has ever come the other way down it.
+Now something does: cars, vans and flatbeds at ~90–120 km/h, closing on you at the **sum** of both speeds,
+which is the fastest anything in this game has ever approached. They ride their own seeded rng (so the
+horde's and the road's streams are untouched, and a daily road raises the same traffic for everyone),
+appear ~3.5 km out — about 4 s of closing at a racing pace — and render in **both** views, headlights
+first, because at the distance that actually matters a pair of sparks *is* the vehicle.
+
+Two rules keep it honest. **They move over for you, proportionally**: a driver watching a car drift across
+the line hugs their verge, flashes, and leans on the horn — so a bit wide is free, properly across is a
+**CLOSE CALL** (+0.75 heat and a grace refresh, the nerviest of the three near-misses), and taking their
+lane outright is a **head-on**: 42% of your speed gone, 9% of the pack, and the only hit in the game that
+voids a chain outright. And the yield **stops at the verge**, so there is no free pass for going wider
+still. New `NERVES OF STEEL` badge (3 clean threads) and `THREAD 2 ONCOMING` contract.
+
+**Why.** Every hazard here asks *how fast, how early, how brave*. None of them asks **where**. Traffic asks
+only that — how much of the road are you using? — and a drift line's honest answer is "all of it". It costs
+a lane-disciplined driver literally nothing and prices the far half of the road for everyone else, which
+turns the widest, fastest, most obvious line through a bend into a decision instead of a freebie. It also
+finally cashes a promise the art has been making since the beginning.
+
+**Two fixes in the same pass.** The first cut gave each vehicle a *width* and a *height* and derived its
+plan-view length from the height — which read as a narrow box front-on while carrying a hitbox three times
+its drawn width. A hazard that hits you when the picture says it missed is worse than no hazard, so
+vehicles now carry three real dimensions and a bumper-to-bumper strike radius. And the screenshot harness
+pinned the car but not the world, so `shoot.sh … traffic` reliably photographed an empty road: anything
+with its own speed had cleared the frame in a couple of virtual seconds. It freezes what you drove *to*
+now, not just where you drove *from*.
+
+**How it's defended.** `./verify/run.sh traffic` — and the claim that matters most is the first one: the
+tidy driver every number in `assert.js` is measured with (copied verbatim from that suite at `aggr=1.0`)
+drives the six canon roads with traffic live and takes **0 head-ons and 0 close calls**, worst lateral
++66 px against a 74 px gate and 50 px of bumper clearance — stated as geometry on both gates independently,
+not as a lucky seed. On top of that: the yield is proven A/B (lane centre → verge → capped), a head-on
+costs speed, charge and the chain but pays no cash, threading pays exactly once and only when you were both
+*properly* over the line and quick with it, the pull-in the game drives itself is exempt both ways, the
+badge and contract read the counter the toast increments, same seed raises the same traffic, and a stood-down
+horde silences the road entirely. `assert.js` is still green, unchanged.
+
 ## The pack doesn't die quietly — a five-minute ride's findings (2026-07-20)
 
 **What.** An instrumented five-minute ride (autopilot, a mid-ride charging stop, every counter watched)

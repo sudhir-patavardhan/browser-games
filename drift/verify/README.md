@@ -24,6 +24,7 @@ Chrome/Chromium. The game exposes `window.__drift` (`start()`, `setInput(steer, 
 ./drift/verify/run.sh waves        # bounty waves: seeded schedule, double pay, the +$120 clear
 ./drift/verify/run.sh plane        # scenery built, and the rare airliner is actually reachable
 ./drift/verify/run.sh land         # rivers, bridges and woods — driven to, then checked in real pixels
+./drift/verify/run.sh traffic      # the far lane's owner: the yield, the head-on, the thread — and your lane left alone
 ./drift/verify/shoot.sh driver f.png   # screenshot the car mid-drive, so you can LOOK at it
 ./drift/verify/shoot.sh driver b.png 14000 500,900 70 bridge   # ...having driven until a bridge is ahead
 ```
@@ -59,6 +60,13 @@ The claims it defends, in rough order of how much they matter:
   NOT end the run, landing a drift chain claws charge back, and 0% ends you with `OUT OF CHARGE`.
   Driving tidily buys ~840s; sending it recklessly burns you down to ~7% within 100s. That gradient is the
   whole risk/reward loop, and it replaced the old instant-crash death.
+- **Your own lane is still yours.** Oncoming traffic is the only hazard here that is purely a question of
+  *where* you are, which makes one claim load-bearing above all the others: the tidy driver every physics
+  measurement in `assert.js` is written in must never meet one. `run.sh traffic` drives that exact driver —
+  copied verbatim at `aggr=1.0` — over the six canon roads with traffic live, and then re-states the same
+  claim as geometry rather than luck, on both of the gates independently. Everything else about the feature
+  (they move over for you, and stop at their verge; a head-on takes speed, pack and the chain; threading one
+  pays only if you were *properly* over the line and quick) is downstream of that.
 - **The driver view renders through a full yaw sweep without throwing.**
 - **The landscape is really out there.** Rivers, the bridges over them and the thickening woods are stored
   nowhere — they're a pure function of the road index and the seed, so the only way to know a river exists is

@@ -6,6 +6,7 @@
 #   ./drift/verify/shoot.sh driver b.png 14000 500,900 70 bridge   # ...and drive until a bridge is ahead
 #   ./drift/verify/shoot.sh driver s.png 14000 500,900 70 span     # ...or until you are out over the water
 #   ./drift/verify/shoot.sh driver z.png 14000 500,900 70 zombie   # ...or until a shambler is dead ahead
+#   ./drift/verify/shoot.sh driver t.png 14000 500,900 70 traffic  # ...or until one is coming the other way
 #
 # Boots the game, forces the requested camera, then DRIVES THE SIM FORWARD SYNCHRONOUSLY before handing back
 # to the render loop — Chrome's virtual clock doesn't fire anywhere near enough rAF callbacks to advance the
@@ -64,10 +65,11 @@ const harness=`
       bridge: gg=> !bridgeAt(gg.car.idx,gg.seed) && !!bridgeAt(gg.car.idx+22,gg.seed),  // the span, dead ahead
       span:   gg=>{ const b=bridgeAt(gg.car.idx,gg.seed); return !!b && b.t>0.6; },     // out over the water
       zombie: gg=> gg.zombies.some(z=>z.fi-gg.car.idx>3 && z.fi-gg.car.idx<9),           // one dead ahead, close up
+      traffic:gg=> gg.traffic.some(v=>v.fi-gg.car.idx>5 && v.fi-gg.car.idx<12),          // one coming the other way, right on top of you
       rest:   gg=>{ const a=restGeom(gg.car.idx+9,gg.seed); return !!(a && a.d===0); },  // the lot right ahead
       gore:   gg=>{ const s=signAt(gg.car.idx+18,gg.seed); return !!(s && s.km===0); }   // the exit sign coming up
     }[${JSON.stringify(until)}];
-    let pinned=null;
+    let pinned=null, frozen=[];
     if(AT){
       for(let i=0;i<300*120;i++){
         if(__drift.state!=="play" || AT(__drift.game)) break;
@@ -75,10 +77,15 @@ const harness=`
       }
       const c=__drift.game.car;
       pinned={ x:c.x, y:c.y, angle:c.angle, vx:c.vx, vy:c.vy, idx:c.idx };
+      // whatever we drove until, hold IT still too — anything with its own speed (oncoming traffic runs at
+      // the sum of both, so it clears the frame in a couple of virtual seconds) is otherwise long gone by
+      // the time the shutter opens, and the picture shows an empty road you were told had something on it
+      frozen=(__drift.game.traffic||[]).map(v=>[v,v.fi,v.o]);
     }
     (function tick(){
       if(window.__drift && __drift.state==="play"){
-        if(pinned) Object.assign(__drift.game.car, pinned);   // hold it where we drove it to
+        if(pinned){ Object.assign(__drift.game.car, pinned);   // hold it where we drove it to
+          for(const f of frozen){ f[0].fi=f[1]; f[0].o=f[2]; } }
         else __drift.autopilot();
       }
       requestAnimationFrame(tick);

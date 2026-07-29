@@ -70,8 +70,13 @@
     rec("contract cash equals the sum of completed rewards (paid once, zombies stood down)",
         D.horde.cash()-cash0===dueNow && D.horde.run()===dueNow,
         "wallet delta="+(D.horde.cash()-cash0)+" cashRun="+D.horde.run()+" vs completed rewards="+dueNow);
+    // Only two jobs accrue from the mere act of driving: distance covered, and top speed touched. Every
+    // other one needs something to HAPPEN — a real slide, or an encounter the autopilot may simply not
+    // have had in this stint — so a zero there is honest, not a dead counter. Listing what is guaranteed
+    // rather than what is exempt means a new hazard's job doesn't quietly need this line edited.
+    const ALWAYS={ range:1, vmax:1 };
     rec("progress is live while a job is open",
-        board.every(c=>c.done || c.prog(D.game)>0 || c.id==='horde' || c.id==='marks' || c.id==='chain' || c.id==='slide' || c.id==='shave'),
+        board.every(c=>c.done || c.prog(D.game)>0 || !ALWAYS[c.id]),
         board.map(c=>c.id+"="+(c.done?"done":c.fmt(c.prog(D.game)))).join(", "));
 
     // ---- the over panel settles the board
