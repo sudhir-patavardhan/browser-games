@@ -25,6 +25,7 @@ Chrome/Chromium. The game exposes `window.__drift` (`start()`, `setInput(steer, 
 ./drift/verify/run.sh plane        # scenery built, and the rare airliner is actually reachable
 ./drift/verify/run.sh land         # rivers, bridges and woods — driven to, then checked in real pixels
 ./drift/verify/run.sh traffic      # the far lane's owner: the yield, the head-on, the thread — and your lane left alone
+./drift/verify/run.sh sound        # the car's own voice: pitch is speed, loudness is kW, and the verge is loud and dark
 ./drift/verify/shoot.sh driver f.png   # screenshot the car mid-drive, so you can LOOK at it
 ./drift/verify/shoot.sh driver b.png 14000 500,900 70 bridge   # ...having driven until a bridge is ahead
 ```
@@ -67,6 +68,11 @@ The claims it defends, in rough order of how much they matter:
   claim as geometry rather than luck, on both of the gates independently. Everything else about the feature
   (they move over for you, and stop at their verge; a head-on takes speed, pack and the chain; threading one
   pays only if you were *properly* over the line and quick) is downstream of that.
+- **The car sounds like what it is doing.** What it sounds like is a pure function of the car (`driveTone`),
+  so `run.sh sound` can check the *decision* — pitch is road speed and nothing else, loudness is |kW| and
+  not speed, regen bends the note down proportionally, and the grass is louder and much darker than tarmac
+  at the same speed — without an audio device in the room. The wiring that carries that decision into Web
+  Audio is then checked separately, by driving with a live `AudioContext` in a real browser.
 - **The driver view renders through a full yaw sweep without throwing.**
 - **The landscape is really out there.** Rivers, the bridges over them and the thickening woods are stored
   nowhere — they're a pure function of the road index and the seed, so the only way to know a river exists is

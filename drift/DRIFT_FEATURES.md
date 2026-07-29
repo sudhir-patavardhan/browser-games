@@ -3,6 +3,40 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## The car finally says something — drivetrain and road noise (2026-07-29)
+
+**What.** Between events this car was **silent**. Tyre scrub, a thud, a squelch, a klaxon — and in the gaps,
+nothing at all. Which was odd for a machine whose dashboard has been reporting live kW since the cabin was
+built: the number was there, the sound it describes was not. Two continuous voices now run underneath
+everything, both read straight off state the sim already computes.
+
+The **motor**: one reduction gear means motor rpm is a pure function of road speed, so it is one rising note
+from a standstill to VTOP with no shifts in it — pitch *is* your speed, always. Loudness is **|kW|**, not
+speed, so coasting at 200 km/h is nearly silent and dragging yourself out of a hairpin is not. And **regen
+bends the note down** by up to a third, which is one acoustic tell that charge is going back in, off the
+same gauge the dash draws.
+
+The **road**: filtered noise rising and brightening with speed — and off the tarmac it goes **loud and
+dark**. That is the point of it. Ploughing a field drains the pack ~90× faster than road does and is the
+mistake that actually ends runs, and until now it made no sound whatsoever: you had to be *looking* at a
+percentage to know. A bridge deck rings brighter than asphalt, because concrete does.
+
+**Why.** A driving game where the car is mute between collisions has no sense of effort, and this one had
+gone further than most without one — it will tell you your power draw to the kilowatt and then say nothing
+while you use it. Sound is also the cheapest channel the game has left: the driver view's dash is already
+dense, the top view is deliberately sparse, and both of them can be looked away from. The verge cue in
+particular is doing real work — it puts the run's most expensive mistake in the one channel that doesn't
+compete with reading the road.
+
+**How it's defended.** `./verify/run.sh sound` — what the car sounds like is a pure function (`driveTone`),
+so the decision is checked without an audio device in the room: the whine rises monotonically across 80
+samples with no jump over 8 Hz (a gearbox artefact would show as a cliff), the same 330 kW at 72 and
+202 km/h gives *identical* gain and different pitch, regen bends 497 Hz → 348 Hz proportionally, a
+stationary car makes no road noise, and the same 144 km/h reads 0.0154 @ 850 Hz on tarmac against 0.0369 @
+340 Hz on grass — while the motor, which has no opinion about the surface, doesn't move at all. Then the
+wiring is checked for real: a live `AudioContext` in a browser, 600 ticks of driving, both voices built,
+nothing thrown — and nothing built or sounded before you have started.
+
 ## The road isn't yours — oncoming traffic (2026-07-29)
 
 **What.** The far half of the road has had lane paint and wheel-polish bands on it since the first commit —

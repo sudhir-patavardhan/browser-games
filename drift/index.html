@@ -282,6 +282,9 @@
       <p class="feat"><b>The cabin.</b> You drive from behind the wheel; <i>V</i> glances down at a top
         view. The wheel’s left thumb pad holds cruise, the right skips a track, and the dash stereo plays
         your own music — tap it, or keys <i>K</i> / <i>N</i> / <i>P</i> / <i>M</i>.</p>
+      <p class="feat"><b>Listen to it.</b> One gear, so the motor’s pitch <i>is</i> your speed; how loud it
+        is, is how hard you’re pulling. Lift and brake and the note bends down as the pack takes charge
+        back. And the second you’re off the tarmac the road goes loud and dark under you.</p>
     </details>
     <div class="armoryBox"></div>
     <div class="shelfBox"></div>
@@ -3370,6 +3373,68 @@ function sfx(kind,opt){ if(!actx) return; const t=actx.currentTime, o=actx.creat
     const o2=actx.createOscillator(), g2=actx.createGain(); o2.type='square'; o2.frequency.setValueAtTime(190,t);
     o2.frequency.exponentialRampToValueAtTime(90,t+.05); g2.gain.setValueAtTime(.10,t); g2.gain.exponentialRampToValueAtTime(.0001,t+.06);
     o2.connect(g2); g2.connect(actx.destination); o2.start(t); o2.stop(t+.06); } }
+/* ---------------------------- the car's own voice ----------------------------
+   Between events this car has been silent. No drivetrain, no wind — which is odd for a machine whose
+   dashboard has been reporting live kW the whole time: the number was there, the sound it describes was
+   not. Two continuous voices, both read straight off state the sim already computes, so neither can drift
+   out of step with what the car is actually doing.
+
+   THE MOTOR. One reduction gear means motor rpm is a pure function of road speed — no shifts, no ratios,
+   one rising note from a standstill to VTOP. That is what makes an EV the honest cheap case: pitch IS your
+   speed, always, and there is no gearbox fiction to maintain. Loudness is |kW| rather than speed, so
+   coasting at 200 is nearly silent and dragging yourself out of a hairpin is not. And regen bends the note
+   DOWN — one acoustic tell that you are putting charge back instead of taking it, off the same gauge the
+   dash draws.
+
+   THE ROAD. Filtered noise rising with speed, and its real job is the verge: off the tarmac it goes loud
+   and dark. Ploughing a field drains the pack ~90x faster than road does and is the mistake that actually
+   ends runs, and until now it made no sound at all — you had to be looking at a percentage to know. A
+   bridge deck rings brighter than asphalt, because concrete does. */
+const MOTOR_HZ0=58, MOTOR_HZ1=678;
+// the whole decision, as a pure function of the car — so what the game has decided to sound like can be
+// asked and checked without an audio device in the room
+function driveTone(g){
+  if(!g || state!=='play') return { hz:MOTOR_HZ0, gain:0, windHz:300, windGain:0, regen:0 };
+  const f=clamp(g.speed/VTOP,0,1);
+  const regen=clamp(-g.kw/(REGEN_KW*0.6),0,1);          // how hard the motor is being run backwards
+  const load=clamp(Math.abs(g.kw)/EV_KW,0,1);
+  const deck=!!bridgeAt(g.car.idx,g.seed);
+  return {
+    hz: (MOTOR_HZ0+(MOTOR_HZ1-MOTOR_HZ0)*f)*(1-0.30*regen),
+    gain: 0.004+0.030*load,
+    windHz: (250+g.speed*1.5)*(g.onGrass?0.40:(deck?1.22:1)),
+    windGain: Math.pow(clamp((g.speed-70)/VTOP,0,1),1.35)*0.05*(g.onGrass?2.4:1),
+    regen
+  };
+}
+let motorOsc=null, motorGain=null, roadSrc=null, roadGain=null, roadFilt=null;
+let vHz=MOTOR_HZ0, vG=0, vRHz=300, vRG=0;               // the voice as it is NOW, chasing the tone as it should be
+function driveSound(g,dt){
+  if(!actx) return;
+  const t=driveTone(g);
+  if(!motorOsc){
+    if(!t.gain && !t.windGain) return;                  // a car that hasn't set off yet doesn't get a voice
+    vHz=t.hz; vRHz=t.windHz; vG=0; vRG=0;               // start on pitch, but fade the level in
+    motorOsc=actx.createOscillator(); motorOsc.type='sawtooth'; motorOsc.frequency.value=t.hz;
+    const mf=actx.createBiquadFilter(); mf.type='lowpass'; mf.frequency.value=1500; mf.Q.value=0.7;
+    motorGain=actx.createGain(); motorGain.gain.value=0;
+    motorOsc.connect(mf); mf.connect(motorGain); motorGain.connect(actx.destination); motorOsc.start();
+    const buf=actx.createBuffer(1,actx.sampleRate,actx.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    roadSrc=actx.createBufferSource(); roadSrc.buffer=buf; roadSrc.loop=true;
+    roadFilt=actx.createBiquadFilter(); roadFilt.type='lowpass'; roadFilt.Q.value=0.6; roadFilt.frequency.value=t.windHz;
+    roadGain=actx.createGain(); roadGain.gain.value=0;
+    roadSrc.connect(roadFilt); roadFilt.connect(roadGain); roadGain.connect(actx.destination); roadSrc.start();
+  }
+  // Chased, not assigned: a parameter snapped to a new value every frame is a click track, not an engine.
+  // The chase is done here rather than with setTargetAtTime because that would append an automation event
+  // 60 times a second for the length of the run — this way each frame is one plain assignment, and how fast
+  // the voice catches up is a number you can read rather than a scheduler's.
+  const k=clamp((dt||1/60)*12,0,1);
+  vHz+=(t.hz-vHz)*k; vG+=(t.gain-vG)*k; vRHz+=(t.windHz-vRHz)*k; vRG+=(t.windGain-vRG)*k;
+  motorOsc.frequency.value=vHz; motorGain.gain.value=vG;
+  roadFilt.frequency.value=vRHz; roadGain.gain.value=vRG;
+}
 function skidSound(on,intensity){
   if(!actx) return;
   if(on && !skidNode){ skidNode=actx.createBufferSource(); const buf=actx.createBuffer(1,actx.sampleRate,actx.sampleRate); const d=buf.getChannelData(0); for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1; skidNode.buffer=buf; skidNode.loop=true; skidGain=actx.createGain(); skidGain.gain.value=0; const f=actx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1400; skidNode.connect(f); f.connect(skidGain); skidGain.connect(actx.destination); skidNode.start(); }
@@ -3541,9 +3606,10 @@ function frame(t){
     else { game.steer=steerInput(); game.gas=throttleInput(); game.brake=brakeInput(); cruiseAdjust(game); }
     acc+=dt; const h=1/120;
     while(acc>=h){ if(state==='play') step(h); acc-=h; }
-    if(game){ const ad=Math.abs(game.slip); skidSound(!game.onGrass&&game.speed>180&&ad>0.18, game.speed/500); }
-  } else if(state==='paused' && game){ chargeStep(dt); skidSound(false,0); }
-  else skidSound(false,0);
+    if(game){ const ad=Math.abs(game.slip); skidSound(!game.onGrass&&game.speed>180&&ad>0.18, game.speed/500);
+      driveSound(game,dt); }
+  } else if(state==='paused' && game){ chargeStep(dt); skidSound(false,0); driveSound(null,dt); }
+  else { skidSound(false,0); driveSound(null,dt); }
   render();
 }
 requestAnimationFrame(frame);
@@ -3705,6 +3771,9 @@ window.__drift={
     gun:()=>gunEq, owned:()=>gunsOwned.slice(), give:n=>{ cash+=n; saveWallet(); renderArmory(); },
     buy:buyGun, spawn:(fi,o)=>spawnZombie(game,fi,o),
     wipe:()=>{ cash=0; gunsOwned=[]; gunEq=''; saveWallet(); renderArmory(); } },
+  audio:{ init:audioInit, live:()=>!!actx, voice:()=>({ motor:!!motorOsc, road:!!roadSrc }),
+    drive:dt=>driveSound(state==='play'?game:null,dt),
+    now:()=>({ hz:vHz, gain:vG, windHz:vRHz, windGain:vRG }) },
   traffic:{ list:()=>game?game.traffic:[], spawn:(fi,kind)=>spawnTraffic(game,fi,kind),
     stand:()=>{ if(game){ game.traffic.length=0; game.trafNext=1e18; } } },   // an empty road, for probes that need one
   garage:{ owned:()=>modsOwned.slice(), buy:buyMod,
