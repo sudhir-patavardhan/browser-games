@@ -29,3 +29,29 @@ open browser-games/chroma-blocks/index.html
 ```
 
 No server required — just open the file directly, or serve the repo root with any static file server (e.g. for GitHub Pages).
+
+## Analytics
+
+Every page loads [`analytics.js`](analytics.js) from the repo root — one file, one GA4 measurement ID, so
+there is a single place to change it instead of a dozen copies drifting apart. Pageviews come for free
+(each game is its own path under one property), and Drift additionally reports gameplay: `run_start`,
+`run_end` (score, distance, top speed, longest chain and its tier, drift time, shamblers, shaves, deer
+dodges, close calls, head-ons — and crucially *why* the run ended), `shop_buy`, and `badge_earned`.
+
+Three things worth knowing before you rely on the numbers:
+
+- **It is completely silent when a game is opened as a local file.** GA4 identifies a visitor by a cookie
+  and browsers grant none to `file://` origins, so such a hit has no stable `client_id` and reports a
+  `file:///…` path — junk, if it arrives at all. Since opening a game straight off the disk is the whole
+  point of this repo, `analytics.js` doesn't pretend otherwise: on `file://` it injects nothing and sends
+  nothing. **You will only ever see traffic from a hosted copy.**
+- **Ad blockers drop `googletagmanager.com` universally.** Expect a material undercount, and treat the
+  numbers as a biased sample rather than as traffic.
+- **GA4 sets cookies, so there is no consent banner here and serving this to visitors in the EU/UK
+  generally requires one.** That is an outstanding item, not a solved one — if you need it, the honest fix
+  is Google Consent Mode with `analytics_storage` denied until the visitor agrees.
+
+It cannot break a game: every entry point swallows its own failures, and Drift's `track()` is a no-op if
+the file never loaded. `./drift/verify/run.sh analytics` pins exactly that — silent on `file://`, unable to
+throw at the game loop however badly it is called (including with a `gtag` that throws), and reporting
+numbers that match the run's own final state rather than invented ones.

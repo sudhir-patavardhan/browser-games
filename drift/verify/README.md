@@ -26,6 +26,7 @@ Chrome/Chromium. The game exposes `window.__drift` (`start()`, `setInput(steer, 
 ./drift/verify/run.sh land         # rivers, bridges and woods — driven to, then checked in real pixels
 ./drift/verify/run.sh traffic      # the far lane's owner: the yield, the head-on, the thread — and your lane left alone
 ./drift/verify/run.sh sound        # the car's own voice: pitch is speed, loudness is kW, and the verge is loud and dark
+./drift/verify/run.sh analytics    # telemetry: silent on file://, unable to throw at the game, honest about the run
 ./drift/verify/shoot.sh driver f.png   # screenshot the car mid-drive, so you can LOOK at it
 ./drift/verify/shoot.sh driver b.png 14000 500,900 70 bridge   # ...having driven until a bridge is ahead
 ```
@@ -68,6 +69,13 @@ The claims it defends, in rough order of how much they matter:
   claim as geometry rather than luck, on both of the gates independently. Everything else about the feature
   (they move over for you, and stop at their verge; a head-on takes speed, pack and the chain; threading one
   pays only if you were *properly* over the line and quick) is downstream of that.
+- **Telemetry cannot touch the run it measures.** Analytics is the only code here that depends on a third
+  party being reachable, so `run.sh analytics` is mostly a set of claims about what it must *not* do: on
+  `file://` it injects nothing and sends nothing (which is also what stops it perturbing every other probe —
+  they drive the page from `file://` under a virtual clock, and a pending request can stall one), and
+  `track()` cannot be made to throw by any call shape, including a `gtag` that throws on every hit. Then the
+  part that has to be right: a real run driven to a real death reports numbers matching the run's own final
+  state, and a reason matching the actual reason.
 - **The car sounds like what it is doing.** What it sounds like is a pure function of the car (`driveTone`),
   so `run.sh sound` can check the *decision* — pitch is road speed and nothing else, loudness is |kW| and
   not speed, regen bends the note down proportionally, and the grass is louder and much darker than tarmac
