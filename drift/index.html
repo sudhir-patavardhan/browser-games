@@ -657,6 +657,12 @@ function step(dt){
   if(g.shake>0) g.shake-=dt*4;
 }
 
+/* ============================ telemetry ============================ */
+/* The one call the game makes into analytics.js, and it is deliberately the dumbest possible wrapper: if
+   that file was blocked, never loaded, or is doing nothing because we're on file://, this is a no-op and
+   the game cannot tell. Nothing in here is allowed to be load-bearing — no return value is read, and
+   nothing branches on whether a hit went out. */
+function track(name,params){ try{ if(window.bgTrack) window.bgTrack(name,params); }catch(e){} }
 function gameOver(reason){
   state='over'; game.overReason=reason; game.shake=1.4;
   game.bestChain=Math.max(game.bestChain,game.chainScore);   // a chain you died holding still counts on the report
@@ -666,6 +672,18 @@ function gameOver(reason){
   if(dailyMode){ isBest=sc>loadDailyBest(); if(isBest){ saveDailyBest(sc); saveGhost(game.rec,sc); } dbCache=loadDailyBest(); }
   else { isBest=sc>best; if(isBest){ best=sc; try{ localStorage.setItem('drift.best',best); }catch(e){} } }
   checkRunBadges(game,isBest);   // the shelf remembers what the score forgets
+  /* How the run actually went — the same numbers the report card shows the player, plus the one thing the
+     card can't: WHY it ended. `reason` is the interesting field; if the population is mostly SPUN OUT the
+     grip budget is wrong, and if it's mostly OUT OF CHARGE the economy is. Rounded on the way out, because
+     a float per run is a high-cardinality dimension that reports badly and tells you nothing extra. */
+  track('run_end', { reason:reason, mode: dailyMode?'daily':'endless', best:isBest?1:0,
+    score:sc, duration_s:Math.round(game.time), distance_km:+(game.dist/10000).toFixed(2),
+    top_speed:Math.round(game.vmax*0.36), best_chain:Math.round(game.bestChain),
+    chain_tier:chainTier(game.bestChain)||'none', drift_s:Math.round(game.driftTotal),
+    shamblers:game.zCarKills+game.gunKills, shaves:game.buzzes,
+    deer_dodges:game.spooks, deer_hits:game.deerHits,
+    close_calls:game.calls, head_ons:game.trafHits,
+    cash_run:Math.round(game.cashRun), wet:game.wet?1:0 });
   document.getElementById('overReason').textContent=(dailyMode?'TODAY’S ROAD · ':'')+reason;
   document.getElementById('finalScore').textContent=sc.toLocaleString();
   document.getElementById('overBest').textContent=dailyMode
@@ -2376,6 +2394,7 @@ function carMods(){ const has=id=>modsOwned.indexOf(id)>=0;
   return { cap:has('pack')?1.30:1, regen:has('regen')?1.50:1, lat:has('tyres')?1.08:1 }; }
 function buyMod(id){ const m=MODS[id]; if(!m||modsOwned.indexOf(id)>=0||cash<m.price) return false;
   cash-=m.price; modsOwned.push(id); saveWallet(); renderArmory();
+  track('shop_buy', { kind:'mod', item:id, price:m.price, cash_left:Math.round(cash) });
   if(modsOwned.length>=Object.keys(MODS).length) awardBadge('geared');
   return true; }
 function saveWallet(){ try{ localStorage.setItem('drift.cash',Math.round(cash*100)/100);   // the meter deals in cents now
@@ -2417,6 +2436,7 @@ function awardBadge(id){
   badgesOwned.push(id);
   try{ localStorage.setItem('drift.badges',badgesOwned.join(',')); }catch(e){}
   badgeQ.push(id); if(!badgeT) badgeToast();
+  track('badge_earned', { badge:id, badges_total:badgesOwned.length });   // fires once per badge, ever — awardBadge already dedupes
   renderShelf(); return true;
 }
 function renderShelf(){
@@ -3022,6 +3042,8 @@ function buyGun(id){ const gn=GUNS[id]; if(!gn) return false;
   if(gunsOwned.indexOf(id)>=0){ gunEq = gunEq===id ? '' : id; saveWallet(); renderArmory(); return true; }
   if(cash<gn.price) return false;
   cash-=gn.price; gunsOwned.push(id); gunEq=id; saveWallet(); renderArmory();
+  // the economy's sinks, and how long players save for each — cash_left says whether a price is punishing
+  track('shop_buy', { kind:'gun', item:id, price:gn.price, cash_left:Math.round(cash) });
   if(gunsOwned.length>=Object.keys(GUNS).length) awardBadge('armed');
   return true;
 }
@@ -3859,6 +3881,9 @@ function startGame(daily){
   dailyMode = daily===true; dbCache=dailyMode?loadDailyBest():0;
   if(dailyMode) bumpStreak();   // showing up is the feat the streak badges pay
   audioInit(); newGame(dailyMode ? daySeed(dayKey()) : undefined); state='play'; last=performance.now(); acc=0;
+  // what kind of run this is, recorded at the start so an abandoned run (closed tab, no run_end) still counts
+  track('run_start', { mode: dailyMode?'daily':'endless', wet: game.wet?1:0, view: game.view,
+    guns_owned: gunsOwned.length, mods_owned: modsOwned.length, badges: badgesOwned.length });
   if(MUSIC.length && !mPlaying) musicPlay();   // the Drive click is the gesture autoplay policy wants
   document.getElementById('startPanel').classList.add('hidden');
   document.getElementById('overPanel').classList.add('hidden');
@@ -3937,5 +3962,6 @@ window.__drift={
   }
 };
 </script>
+<script src="../analytics.js"></script>
 </body>
 </html>

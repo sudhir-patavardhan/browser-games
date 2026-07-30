@@ -3,6 +3,42 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## Telemetry — the run reports how it went, and why it ended (2026-07-30)
+
+**What.** A GA4 property behind a single shared `analytics.js` at the repo root, loaded relatively by every
+game in the collection so the measurement ID lives in one place. Pageviews come free (each game is its own
+path under one property). Drift adds gameplay on top: **`run_start`** (endless or daily, wet, view, what
+you already own) and **`run_end`** — score, duration, distance, top speed, longest chain and its tier,
+drift time, shamblers, shaves, deer dodges and hits, close calls and head-ons, cash earned, and the one
+thing the report card can't show the player: **`reason`**. Plus `shop_buy` (the economy's sinks, and what
+was left in the wallet after) and `badge_earned`.
+
+**Why `reason` is the interesting field.** Every other number describes how well a run went; that one says
+what the game *did* to end it. If the population is mostly `SPUN OUT` the grip budget is wrong; if it's
+mostly `OUT OF CHARGE` the economy is. The feature log already contains one entry ("the pack doesn't die
+quietly") that was written off a single instrumented five-minute ride finding exactly that failure twice in
+a row — this is that ride, running for everyone, all the time.
+
+**What it deliberately does not do.** It is **completely silent on `file://`**. GA4 identifies a visitor by
+a cookie and browsers grant none to file: origins, so such a hit has no stable `client_id` and reports a
+`file:///…` path — junk, if it arrives at all. Since opening the game straight off the disk is the whole
+premise of this repo, the guard is just honesty about where numbers can come from. It has a second,
+load-bearing benefit: every probe in `verify/` drives the real page from `file://` under Chrome's virtual
+clock, and a pending network request can stall that clock. No network on `file://` means adding analytics
+cannot perturb a single existing measurement — and the full suite re-run confirms it didn't.
+
+**Outstanding, and stated rather than hidden:** GA4 sets cookies, so serving this to EU/UK visitors
+generally needs a consent banner, and there isn't one. Noted in the README as an open item.
+
+**How it's defended.** `./verify/run.sh analytics` — the claims are mostly about what it must not do:
+nothing injected and nothing sent on `file://` (no `gtag`, no `dataLayer`, no tag), `track()` unable to
+throw under any call shape (no name, null params, a circular object, a param that throws on read, and a
+`gtag` that throws on every hit), and the local event log capped so a long session can't leak. Then the part
+that has to be right: a real run driven to a real `OUT OF CHARGE` reports a `run_end` exactly once, with the
+game's own reason and with distance/top speed/duration/score matching the run's **final** state — the first
+cut of that assertion compared against a snapshot taken before the death and was wrong, because the car goes
+on driving while the pack empties.
+
 ## The car finally says something — drivetrain and road noise (2026-07-29)
 
 **What.** Between events this car was **silent**. Tyre scrub, a thud, a squelch, a klaxon — and in the gaps,
