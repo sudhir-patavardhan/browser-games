@@ -126,6 +126,11 @@
     font-weight:900; font-size:clamp(15px,4vw,22px); color:#c9a35a; opacity:0; letter-spacing:2px;
     text-shadow:0 2px 0 rgba(70,45,15,.85), 0 4px 12px rgba(0,0,0,.3); }
   .deerpop.show{ animation:pop .8s ease forwards; }
+  /* the head-on you DIDN'T take: the coldest toast on the board, because that is the colour it was lit in */
+  .callpop{ position:fixed; left:50%; top:36%; transform:translateX(-50%); z-index:4; pointer-events:none;
+    font-weight:900; font-size:clamp(15px,4vw,22px); color:#cfe9ff; opacity:0; letter-spacing:2px;
+    text-shadow:0 2px 0 rgba(18,52,96,.85), 0 4px 12px rgba(0,0,0,.3); }
+  .callpop.show{ animation:pop .8s ease forwards; }
   /* the race against the phantom, one signed number */
   .ghostrow{ margin-top:5px; font-size:11px; font-weight:900; letter-spacing:.6px; color:#2996a8; }
   .ghostrow b{ color:#1fae4a; } .ghostrow b.beh{ color:#e5484d; }
@@ -219,6 +224,7 @@
 <div class="ctrpop" id="ctrPop"></div>
 <div class="buzzpop" id="buzzEl"></div>
 <div class="deerpop" id="deerEl"></div>
+<div class="callpop" id="callEl"></div>
 <div class="badgepop" id="badgePop"></div>
 <div class="wavepop" id="wavePop"></div>
 <div class="battpop" id="battPop"></div>
@@ -263,6 +269,11 @@
         2×, <i>brutes</i> soak two rounds and pay 3×. Brushing past one at speed is a <i>close shave</i>:
         it feeds the multiplier and keeps a chain alive between corners. Every couple of klicks the radio
         calls a <i>bounty wave</i> — double pay for 18 s, five heads clears it for +$120.</p>
+      <p class="feat"><b>The road isn’t yours.</b> Deer break from the verge without warning — read one
+        and dodge it clean for the same nerve a shave pays. And the far lane has an owner: cars, vans and
+        flatbeds come the other way at closing speed. They’ll pull over and lean on the horn for you; take
+        their half anyway and thread it for a <i>close call</i>, or meet one head-on and lose your speed, a
+        bite of the pack, and the chain you were holding.</p>
       <p class="feat"><b>Contracts.</b> Three county jobs a run, top-left under your wallet — cross a
         target and the cash lands on the spot.</p>
       <p class="feat"><b>Today’s Road.</b> One seeded road a day: same corners, horde and jobs for
@@ -279,6 +290,9 @@
       <p class="feat"><b>The cabin.</b> You drive from behind the wheel; <i>V</i> glances down at a top
         view. The wheel’s left thumb pad holds cruise, the right skips a track, and the dash stereo plays
         your own music — tap it, or keys <i>K</i> / <i>N</i> / <i>P</i> / <i>M</i>.</p>
+      <p class="feat"><b>Listen to it.</b> One gear, so the motor’s pitch <i>is</i> your speed; how loud it
+        is, is how hard you’re pulling. Lift and brake and the note bends down as the pack takes charge
+        back. And the second you’re off the tarmac the road goes loud and dark under you.</p>
     </details>
     <div class="armoryBox"></div>
     <div class="shelfBox"></div>
@@ -403,6 +417,7 @@ function newGame(forceSeed){
   const seed=forceSeed===undefined ? (Math.random()*1e9)|0 : forceSeed;
   const wrng=mulberry32(seed^0x33aa);   // the county radio's own dice: wave timing must not disturb the horde's
   const drng=mulberry32(seed^0x4dee);   // the county's own wildlife — its own dice too, same reason
+  const trng=mulberry32(seed^0x71c4);   // and the road's other users roll their own, so traffic never shifts the horde
   const R=makeRoad(seed);
   const p0=R.pts[3];
   game={
@@ -423,6 +438,8 @@ function newGame(forceSeed){
     vmax:0, zCarKills:0, gunKills:0, buzzes:0, contracts:makeContracts(seed), mod:carMods(),
     deer:[], drng, deerNext:8000+drng()*8000,   // the county's own wildlife — first crossing 0.8-1.6km out
     deerHits:0, spooks:0,
+    traffic:[], trng, trafNext:5000+trng()*5000,   // the far lane finally has an owner — first one 0.5-1.0km out
+    trafHits:0, calls:0,
     rec:[], recT:0, ghost:dailyMode?loadGhost():null, ghostIdx:0,   // today's line, and the one to beat
     wet: dailyMode && seedWet(seed),                                // today's sky came with the road
     wrng, waveNext:12000+wrng()*6000, waveT:0, waveKills:0, waveGoal:5,   // the radio's first call, ~30s out
@@ -605,6 +622,7 @@ function step(dt){
 
   updateZombies(g,dt);   // the horde: spawn, shamble, bumper checks, the auto-gun — money and gore only, never physics
   updateDeer(g,dt);      // the county's wildlife: rarer, faster, no bounty — a startle, not an economy
+  updateTraffic(g,dt);   // the road's other users: the only hazard that is purely a question of WHERE you are
   updateContracts(g);    // the job board: pays out the moment a goal is crossed — money and fanfare only, never physics
 
   // skid marks (rear wheels) — from the car's heading
@@ -721,7 +739,7 @@ function render(){
     const y=t.y+Math.round((g.cam.y-t.y)/4000)*4000;
     ctx.beginPath(); ctx.arc(x,y,t.r,0,TAU); ctx.fill();
   }
-  drawRiversTop(g); drawBridgeTop(g); drawRoad(g); drawRestTop(g); drawBillboardsTop(g); drawSkid(g); drawZombiesTop(g); drawDeerTop(g); drawGhostTop(g); drawCar(g); drawSmoke(g); drawGibs(g);
+  drawRiversTop(g); drawBridgeTop(g); drawRoad(g); drawRestTop(g); drawBillboardsTop(g); drawSkid(g); drawZombiesTop(g); drawDeerTop(g); drawTrafficTop(g); drawGhostTop(g); drawCar(g); drawSmoke(g); drawGibs(g);
   ctx.restore();
   updateHUD();
 }
@@ -857,6 +875,7 @@ function drawWindshield(g,spd){
   // the horde — splats bake into the tarmac, shamblers stand on it, both under the roadside barriers
   drawZombiesDriver(g, proj);
   drawDeerDriverAll(g, proj);
+  drawTrafficDriver(g, proj);   // the far lane's owner, coming the other way
   drawGhostDriver(g, proj);   // the phantom runs the same tarmac, under the same barriers
   // barriers (red/white) — clamped so the nearest posts don't blow up or jitter. Over a bridge the posts
   // give way to a parapet, which is what actually keeps you out of the water. At a rest area they stand
@@ -2375,6 +2394,7 @@ const BADGES={
   hauler:  { nm:'LONG HAULER',     hint:'cover 5 km on one pack' },
   barber:  { nm:'THE BARBER',      hint:'5 close shaves in one run' },
   warden:  { nm:'GAME WARDEN',     hint:'dodge 3 deer clean in one run' },
+  nerve:   { nm:'NERVES OF STEEL', hint:'thread 3 oncoming cars in one run' },
   pest:    { nm:'PEST CONTROL',    hint:'10 shamblers in one run' },
   biggame: { nm:'BIG GAME',        hint:'fell a brute' },
   ghostwin:{ nm:'FASTER THAN YESTERDAY', hint:'beat your ghost on Today’s Road' },
@@ -2417,6 +2437,7 @@ function checkRunBadges(g,isBest){
   if(g.dist>=50000)     awardBadge('hauler');
   if(g.buzzes>=5)       awardBadge('barber');
   if(g.spooks>=3)       awardBadge('warden');
+  if(g.calls>=3)        awardBadge('nerve');
   if(g.zCarKills+g.gunKills>=10) awardBadge('pest');
   if(dailyMode && isBest && g.ghost) awardBadge('ghostwin');   // there was a line to beat, and you beat it
   if(dailyMode && isBest && g.wet)   awardBadge('rain');
@@ -2753,6 +2774,169 @@ function drawDeerTop(g){
     ctx.fillStyle='#f4ede0'; ctx.beginPath(); ctx.ellipse(0,6,2.4,1.6,0,0,TAU); ctx.fill();       // tail-flash
     ctx.restore(); }
 }
+/* ============================ the road isn't yours ============================ */
+/* The county road has had two lanes painted on it since the first commit and only ever used one: the
+   wheel-polish bands even name the far half "oncoming lane", and nothing has ever come the other way down
+   it. Traffic gives that lane an owner — a car, a van or a flatbed closing on you at the SUM of both
+   speeds, which is the fastest anything in this game has ever approached.
+
+   What makes it worth building is that it is the only hazard here that is purely a question of WHERE you
+   are. The horde, the deer and the barrier all ask "how fast, how early, how brave". Traffic asks one
+   question — how much of the road are you using? — and a drift line's honest answer is "all of it". Stay
+   your side and it costs nothing at all. Take the far half for a better line and you have borrowed
+   something with an owner on their way to collect.
+
+   Two rules keep it fair rather than cheap:
+     - They MOVE OVER for you, proportionally: a driver seeing a car drifting over the line hugs their
+       verge, flashes, and leans on the horn. So being a little wide is free, being properly across is a
+       CLOSE CALL, and only taking their lane outright is a head-on. Nothing here is a surprise — you can
+       see the lights from ~3.5 km out, which is ~4 s of closing at a racing pace.
+     - The manoeuvre the game drives ITSELF — the pull-in to a rest area — is exempt. Being punished for
+       a line you did not choose is not difficulty, it is a bug with a story.
+
+   Traffic shares the horde's own "spawner live" gate (zNextIdx<1e8), exactly like the deer, so every probe
+   that stands the horde down for a clean measurement gets an empty road without needing to know traffic
+   exists. And it rolls its own rng stream, so adding it does not shift the horde's or the road's. */
+const TRAF_LANE=ROAD_HALF*0.50;        // their lane centre — the far half, screen right, where the wear bands say
+const TRAF_YIELD=ROAD_HALF*0.80;       // as far over as a driver will go for you, and not one inch further
+const TRAF_SHOULDER=52;                // clearance past the bumpers that still counts as threading it
+const TRAF_OVER=ROAD_HALF*0.30;        // and how far past the centre line you have to have BEEN for it to count
+const TRAF_DEBRIS=['#dfe9f2','#b9c6d2','#8e9aa6','#ffd24a'];   // glass, plastic, and somebody's lamp
+// three real dimensions, because the two lenses need different ones: w and hgt are the face you meet through
+// the windshield, w and len are the footprint from above. Deriving one from the other is what made the first
+// cut of this read as a narrow box front-on while carrying a hitbox three times its drawn width — a hazard
+// that hits you when the picture says it missed.
+const TRAF_KINDS=[
+  { id:'car',   wt:0.56, w:44, hgt:48, len:54, sp:330, rf:'#2a3b4c', cols:['#3d6ea8','#b9c2cb','#2f6b4a','#8e2f2f','#d9d3c4'] },
+  { id:'van',   wt:0.27, w:50, hgt:72, len:70, sp:300, rf:'#cfcabb', cols:['#eae6da','#dfe3e8','#c9d6df'] },
+  { id:'truck', wt:0.17, w:58, hgt:88, len:96, sp:250, rf:'#5f6b74', cols:['#8a3a2c','#2f4a63','#6d6a54'] },
+];
+function spawnTraffic(g,fi,kind){
+  const r=g.trng, R=g.road;
+  // they have to appear far enough out to be READ, which is further than the road has been minted. Same
+  // rng stream, same road — just built a moment early, exactly as the rest-area signage already does.
+  while(R.pts.length<fi+8) genPoint(R);
+  let k=null;
+  if(kind) k=TRAF_KINDS.find(t=>t.id===kind);
+  if(!k){ let roll=r(), acc=0; for(const t of TRAF_KINDS){ acc+=t.wt; if(roll<acc){ k=t; break; } } }
+  k=k||TRAF_KINDS[0];
+  const v={ fi, o:TRAF_LANE, kind:k.id, w:k.w, hgt:k.hgt, len:k.len, rf:k.rf,
+    sp:k.sp*(0.88+r()*0.24), col:k.cols[(r()*k.cols.length)|0],
+    r:CAR_W*0.5+k.w*0.5+6,              // bumper to bumper, plus a little: a truck is a bigger thing to meet
+    flash:0, horn:false, minD:1e9, minSpd:0, minLat:-1e9, passed:false };
+  g.traffic.push(v);
+  return v;
+}
+function updateTraffic(g,dt){
+  const R=g.road, c=g.car;
+  const p=R.pts[c.idx];
+  const lat=(c.x-p.x)*(-p.ty)+(c.y-p.y)*(p.tx);      // the car's own offset, same frame the entities live in
+  /* Exempt whenever the car is not, in the relevant sense, on the road being yours to steer: the valet's
+     leg IN, its leg back OUT, and the facility's own pavement. The first two are the rule this feature was
+     built on — the game must never charge you for a line it drove itself — and the third is just true:
+     nothing travelling the carriageway can reach a car parked in a lot set back behind it. */
+  const onRails=!!(g.pullIn||g.pullOut||g.onFac);
+  if(g.zNextIdx<1e8 && !g.pullIn && !g.pullOut && g.dist>=g.trafNext){
+    spawnTraffic(g, c.idx+134+((g.trng()*36)|0));
+    g.trafNext=g.dist+6000+g.trng()*8000;            // one every ~0.6-1.4km: often enough to matter, rare enough to read
+  }
+  for(let i=g.traffic.length-1;i>=0;i--){
+    const v=g.traffic[i];
+    v.fi-=v.sp*dt/SEG;                               // they run the road against your grain
+    if(v.fi<c.idx-6){ g.traffic.splice(i,1); continue; }
+    // the yield: a real driver hugs their verge for a car drifting over the line, and stops at the verge.
+    // Proportional, so "a bit wide" is free, "properly over" is nerve, and "in their lane" is a head-on.
+    const want=TRAF_LANE+(TRAF_YIELD-TRAF_LANE)*clamp(lat/120,0,1);
+    v.o+=clamp(want-v.o,-200*dt,200*dt);
+    if(!v.horn && lat>40 && (v.fi-c.idx)*SEG<1400){ v.horn=true; v.flash=1.1; sfx('horn'); }
+    if(v.flash>0) v.flash-=dt;
+    if(Math.abs(v.fi-c.idx)<3){                      // close enough to check the bumper — same test the horde uses
+      const bx=c.x+Math.cos(c.angle)*CAR_L*0.45, by=c.y+Math.sin(c.angle)*CAR_L*0.45;
+      const q=zPos(R,v), d2=(q.x-bx)*(q.x-bx)+(q.y-by)*(q.y-by);
+      if(d2<v.r*v.r && !onRails){ strikeTraffic(g,v); g.traffic.splice(i,1); continue; }
+      const d=Math.sqrt(d2);
+      if(d<v.minD){ v.minD=d; v.minSpd=g.speed; v.minLat=lat; }
+    }
+    // judged once it's behind you, like every near-miss here — but gated on TWO things, not one. Proximity
+    // alone would pay a tidy driver on a wide corner, because a vehicle that has moved over for you is
+    // closer than one that hasn't. You have to have actually taken the far lane AND got away with it.
+    if(!v.passed && v.fi<c.idx-1){ v.passed=true;
+      if(v.minD<v.r+TRAF_SHOULDER && v.minLat>TRAF_OVER && v.minSpd>280 && !onRails) closeCall(g); }
+  }
+}
+// the head-on: the hardest hit in the game, and the only one that voids a chain outright. It still doesn't
+// END you — the pack is the fail state and that hasn't changed — but it takes the run's two currencies at
+// once, which is what a hazard you could simply have driven around ought to cost.
+function strikeTraffic(g,v){
+  const q=zPos(g.road,v);
+  g.car.vx*=0.42; g.car.vy*=0.42;
+  g.batt=clamp(g.batt-0.09/g.mod.cap,0,1);          // bigger bite than a barrier's 7%, same idea
+  g.shake=1.5; sfx('crash'); sfx('thud');
+  g.trafHits++;
+  g.bestChain=Math.max(g.bestChain,g.chainScore);   // the report still remembers what you were holding
+  g.chainScore=0; g.mult=1; g.driftTime=0; g.grace=0;
+  for(let i=0;i<16;i++){ const a=Math.random()*TAU, sp=60+Math.random()*160;
+    g.gibs.push({x:q.x,y:q.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40,r:1.6+Math.random()*2.4,
+      life:1,max:0.45+Math.random()*0.4,col:TRAF_DEBRIS[(Math.random()*TRAF_DEBRIS.length)|0]}); }
+}
+// and the reward, same shape as a shave and a deer dodge — paid bigger, because it is the nerviest of the three
+function closeCall(g){
+  g.calls++; g.mult=clamp(g.mult+0.75,1,8);
+  g.grace=Math.max(g.grace,0.7);
+  const el=document.getElementById('callEl');
+  if(el){ el.textContent='CLOSE CALL'; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+  sfx('whoosh');
+}
+/* one oncoming vehicle through the windshield. Drawn front-on because that is the only face of it you ever
+   see, and headlights-first because at the distance that actually matters a pair of sparks IS the vehicle —
+   the read has to survive being four pixels tall. */
+function drawVehicleDriver(P,v,g){
+  const s=P.sc, w=Math.max(2.2,v.w*s), h=Math.max(2.2,v.hgt*s), x=P.x, y=P.y;
+  ctx.fillStyle='rgba(22,34,20,.26)';
+  ctx.beginPath(); ctx.ellipse(x,y,w*0.70,Math.max(0.7,h*0.07),0,0,TAU); ctx.fill();
+  if(h>8){
+    const rad=Math.min(w,h)*0.13;
+    ctx.fillStyle=v.col;      rr(x-w/2,      y-h*0.78, w,      h*0.78, rad); ctx.fill();     // body
+    ctx.fillStyle=v.rf;       rr(x-w*0.42,   y-h,      w*0.84, h*0.36, rad); ctx.fill();     // cab/roof
+    ctx.fillStyle='#22303f';  rr(x-w*0.36,   y-h*0.95, w*0.72, h*0.24, rad*0.6); ctx.fill(); // windscreen
+    ctx.fillStyle='rgba(255,255,255,.13)'; rr(x-w*0.34,y-h*0.93,w*0.30,h*0.17,rad*0.5); ctx.fill();
+    ctx.fillStyle='#20262e';  ctx.fillRect(x-w*0.30, y-h*0.36, w*0.60, h*0.10);              // grille
+    ctx.fillStyle='#e8edf2';  ctx.fillRect(x-w*0.13, y-h*0.17, w*0.26, h*0.07);              // plate
+    ctx.fillStyle='#1a1e24';  ctx.fillRect(x-w*0.52, y-h*0.17, w*0.12, h*0.17);              // tyres, squatting on the tarmac
+                              ctx.fillRect(x+w*0.40, y-h*0.17, w*0.12, h*0.17);
+  }
+  const lit = v.flash>0 && Math.sin(g.time*38)>0;                                            // flashed at you
+  const lr=Math.max(1.1,w*0.115), lx=w*0.32, ly=-h*0.44;
+  ctx.fillStyle = lit ? '#ffffff' : '#fff6d0';
+  ctx.globalAlpha=lit?0.42:0.26;
+  ctx.beginPath(); ctx.arc(x-lx,y+ly,lr*3.0,0,TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+lx,y+ly,lr*3.0,0,TAU); ctx.fill();
+  ctx.globalAlpha=1;
+  ctx.beginPath(); ctx.arc(x-lx,y+ly,lr,0,TAU); ctx.arc(x+lx,y+ly,lr,0,TAU); ctx.fill();
+}
+function drawTrafficDriver(g,proj){
+  const R=g.road, list=[];
+  for(const v of g.traffic){ const p=zPos(R,v), P=proj(p.x,p.y);
+    if(P&&P.x>-300&&P.x<W+300) list.push({P,v}); }
+  list.sort((A,B)=>B.P.z-A.P.z);                    // far first, so the near one overlaps it
+  for(const e of list) drawVehicleDriver(e.P,e.v,g);
+}
+// top view: the same vehicle from above, nose pointed back down the road at you — the glance you take to
+// read a corner has to show what is coming round it
+function drawTrafficTop(g){
+  const R=g.road;
+  for(const v of g.traffic){
+    const p=zPos(R,v), L=v.len, Wd=v.w;
+    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(Math.atan2(-p.ty,-p.tx)+Math.PI/2);
+    ctx.fillStyle='rgba(20,40,20,.22)'; rr(-Wd/2+3,-L/2+5,Wd,L,7); ctx.fill();
+    ctx.fillStyle=v.col; rr(-Wd/2,-L/2,Wd,L,7); ctx.fill();
+    ctx.fillStyle=v.rf;  rr(-Wd/2+3,-L*0.16,Wd-6,L*0.44,4); ctx.fill();
+    ctx.fillStyle='#1f2c3a'; rr(-Wd/2+4,-L*0.34,Wd-8,L*0.17,3); ctx.fill();
+    ctx.fillStyle=(v.flash>0 && Math.sin(g.time*38)>0) ? '#ffffff' : '#fff3c4';
+    ctx.beginPath(); ctx.arc(-Wd/2+4.5,-L/2+4,2.6,0,TAU); ctx.arc(Wd/2-4.5,-L/2+4,2.6,0,TAU); ctx.fill();
+    ctx.restore();
+  }
+}
 function drawGibs(g,proj){                                                       // gore particles, either lens
   for(const s of g.gibs){ const al=clamp(s.life,0,1);
     let x=s.x,y=s.y,r=s.r; if(proj){ const P=proj(s.x,s.y); if(!P) continue; x=P.x; y=P.y; r=Math.max(1.2,s.r*P.sc*2.4); }
@@ -2806,6 +2990,7 @@ function makeContracts(seed){
     { id:'horde', label:'RUN DOWN 3 SHAMBLERS', rew:70, tgt:3,    prog:g=>g.zCarKills,      fmt:v=>''+Math.round(v) },
     { id:'shave', label:'SHAVE 4 SHAMBLERS',    rew:60, tgt:4,    prog:g=>g.buzzes,         fmt:v=>''+Math.round(v) },
     { id:'dodge', label:'DODGE 2 DEER CLEAN',   rew:65, tgt:2,    prog:g=>g.spooks,         fmt:v=>''+Math.round(v) },
+    { id:'call',  label:'THREAD 2 ONCOMING',    rew:75, tgt:2,    prog:g=>g.calls,          fmt:v=>''+Math.round(v) },
     { id:'range', label:'COVER 2.5 km',         rew:50, tgt:2.5,  prog:g=>g.dist/10000,     fmt:v=>v.toFixed(1)+'km' },
   ];
   // a marksman job only makes sense with a gun on the door card
@@ -3226,10 +3411,77 @@ function sfx(kind,opt){ if(!actx) return; const t=actx.currentTime, o=actx.creat
   else if(kind==='klaxon'){ o.type='square'; o.frequency.setValueAtTime(392,t); o.frequency.setValueAtTime(311,t+.16);            // the county radio's two-tone call
     o.frequency.setValueAtTime(392,t+.32); o.frequency.setValueAtTime(311,t+.48);
     gg.gain.setValueAtTime(.10,t); gg.gain.exponentialRampToValueAtTime(.0001,t+.62); o.start(t); o.stop(t+.62); }
+  else if(kind==='horn'){ o.type='sawtooth'; o.frequency.setValueAtTime(400,t);                                                  // somebody leaning on it: a two-tone road horn, held
+    gg.gain.setValueAtTime(.075,t); gg.gain.setValueAtTime(.075,t+.30); gg.gain.exponentialRampToValueAtTime(.0001,t+.44); o.start(t); o.stop(t+.44);
+    const oh=actx.createOscillator(), gh=actx.createGain(); oh.type='sawtooth'; oh.frequency.setValueAtTime(504,t);
+    gh.gain.setValueAtTime(.055,t); gh.gain.setValueAtTime(.055,t+.30); gh.gain.exponentialRampToValueAtTime(.0001,t+.44);
+    oh.connect(gh); gh.connect(actx.destination); oh.start(t); oh.stop(t+.44); }
   else if(kind==='shot'){ gg.gain.value=0; noiseBurst(0.07,0.24,2600,700,0.5);                                                   // crack + a little body
     const o2=actx.createOscillator(), g2=actx.createGain(); o2.type='square'; o2.frequency.setValueAtTime(190,t);
     o2.frequency.exponentialRampToValueAtTime(90,t+.05); g2.gain.setValueAtTime(.10,t); g2.gain.exponentialRampToValueAtTime(.0001,t+.06);
     o2.connect(g2); g2.connect(actx.destination); o2.start(t); o2.stop(t+.06); } }
+/* ---------------------------- the car's own voice ----------------------------
+   Between events this car has been silent. No drivetrain, no wind — which is odd for a machine whose
+   dashboard has been reporting live kW the whole time: the number was there, the sound it describes was
+   not. Two continuous voices, both read straight off state the sim already computes, so neither can drift
+   out of step with what the car is actually doing.
+
+   THE MOTOR. One reduction gear means motor rpm is a pure function of road speed — no shifts, no ratios,
+   one rising note from a standstill to VTOP. That is what makes an EV the honest cheap case: pitch IS your
+   speed, always, and there is no gearbox fiction to maintain. Loudness is |kW| rather than speed, so
+   coasting at 200 is nearly silent and dragging yourself out of a hairpin is not. And regen bends the note
+   DOWN — one acoustic tell that you are putting charge back instead of taking it, off the same gauge the
+   dash draws.
+
+   THE ROAD. Filtered noise rising with speed, and its real job is the verge: off the tarmac it goes loud
+   and dark. Ploughing a field drains the pack ~90x faster than road does and is the mistake that actually
+   ends runs, and until now it made no sound at all — you had to be looking at a percentage to know. A
+   bridge deck rings brighter than asphalt, because concrete does. */
+const MOTOR_HZ0=58, MOTOR_HZ1=678;
+// the whole decision, as a pure function of the car — so what the game has decided to sound like can be
+// asked and checked without an audio device in the room
+function driveTone(g){
+  if(!g || state!=='play') return { hz:MOTOR_HZ0, gain:0, windHz:300, windGain:0, regen:0 };
+  const f=clamp(g.speed/VTOP,0,1);
+  const regen=clamp(-g.kw/(REGEN_KW*0.6),0,1);          // how hard the motor is being run backwards
+  const load=clamp(Math.abs(g.kw)/EV_KW,0,1);
+  const deck=!!bridgeAt(g.car.idx,g.seed);
+  return {
+    hz: (MOTOR_HZ0+(MOTOR_HZ1-MOTOR_HZ0)*f)*(1-0.30*regen),
+    gain: 0.004+0.030*load,
+    windHz: (250+g.speed*1.5)*(g.onGrass?0.40:(deck?1.22:1)),
+    windGain: Math.pow(clamp((g.speed-70)/VTOP,0,1),1.35)*0.05*(g.onGrass?2.4:1),
+    regen
+  };
+}
+let motorOsc=null, motorGain=null, roadSrc=null, roadGain=null, roadFilt=null;
+let vHz=MOTOR_HZ0, vG=0, vRHz=300, vRG=0;               // the voice as it is NOW, chasing the tone as it should be
+function driveSound(g,dt){
+  if(!actx) return;
+  const t=driveTone(g);
+  if(!motorOsc){
+    if(!t.gain && !t.windGain) return;                  // a car that hasn't set off yet doesn't get a voice
+    vHz=t.hz; vRHz=t.windHz; vG=0; vRG=0;               // start on pitch, but fade the level in
+    motorOsc=actx.createOscillator(); motorOsc.type='sawtooth'; motorOsc.frequency.value=t.hz;
+    const mf=actx.createBiquadFilter(); mf.type='lowpass'; mf.frequency.value=1500; mf.Q.value=0.7;
+    motorGain=actx.createGain(); motorGain.gain.value=0;
+    motorOsc.connect(mf); mf.connect(motorGain); motorGain.connect(actx.destination); motorOsc.start();
+    const buf=actx.createBuffer(1,actx.sampleRate,actx.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    roadSrc=actx.createBufferSource(); roadSrc.buffer=buf; roadSrc.loop=true;
+    roadFilt=actx.createBiquadFilter(); roadFilt.type='lowpass'; roadFilt.Q.value=0.6; roadFilt.frequency.value=t.windHz;
+    roadGain=actx.createGain(); roadGain.gain.value=0;
+    roadSrc.connect(roadFilt); roadFilt.connect(roadGain); roadGain.connect(actx.destination); roadSrc.start();
+  }
+  // Chased, not assigned: a parameter snapped to a new value every frame is a click track, not an engine.
+  // The chase is done here rather than with setTargetAtTime because that would append an automation event
+  // 60 times a second for the length of the run — this way each frame is one plain assignment, and how fast
+  // the voice catches up is a number you can read rather than a scheduler's.
+  const k=clamp((dt||1/60)*12,0,1);
+  vHz+=(t.hz-vHz)*k; vG+=(t.gain-vG)*k; vRHz+=(t.windHz-vRHz)*k; vRG+=(t.windGain-vRG)*k;
+  motorOsc.frequency.value=vHz; motorGain.gain.value=vG;
+  roadFilt.frequency.value=vRHz; roadGain.gain.value=vRG;
+}
 function skidSound(on,intensity){
   if(!actx) return;
   if(on && !skidNode){ skidNode=actx.createBufferSource(); const buf=actx.createBuffer(1,actx.sampleRate,actx.sampleRate); const d=buf.getChannelData(0); for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1; skidNode.buffer=buf; skidNode.loop=true; skidGain=actx.createGain(); skidGain.gain.value=0; const f=actx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1400; skidNode.connect(f); f.connect(skidGain); skidGain.connect(actx.destination); skidNode.start(); }
@@ -3478,9 +3730,11 @@ function frame(t){
     while(acc>=h){ if(state==='play'&&game){
       if(game.pullIn) pullInDrive(game); else if(game.pullOut) pullOutDrive(game);
       step(h); } acc-=h; }
-    if(game){ const ad=Math.abs(game.slip); skidSound(!game.onGrass&&game.speed>180&&ad>0.18, game.speed/500); }
-  } else if(state==='paused' && game){ chargeStep(dt); skidSound(false,0); }
-  else skidSound(false,0);
+    // the voice is chased in REAL time even through a time-lapse leg — a ×6 ramp is a chirp, not an engine
+    if(game){ const ad=Math.abs(game.slip); skidSound(!game.onGrass&&game.speed>180&&ad>0.18, game.speed/500);
+      driveSound(game,dt); }
+  } else if(state==='paused' && game){ chargeStep(dt); skidSound(false,0); driveSound(null,dt); }
+  else { skidSound(false,0); driveSound(null,dt); }
   render();
 }
 requestAnimationFrame(frame);
@@ -3643,6 +3897,11 @@ window.__drift={
     gun:()=>gunEq, owned:()=>gunsOwned.slice(), give:n=>{ cash+=n; saveWallet(); renderArmory(); },
     buy:buyGun, spawn:(fi,o)=>spawnZombie(game,fi,o),
     wipe:()=>{ cash=0; gunsOwned=[]; gunEq=''; saveWallet(); renderArmory(); } },
+  audio:{ init:audioInit, live:()=>!!actx, voice:()=>({ motor:!!motorOsc, road:!!roadSrc }),
+    drive:dt=>driveSound(state==='play'?game:null,dt),
+    now:()=>({ hz:vHz, gain:vG, windHz:vRHz, windGain:vRG }) },
+  traffic:{ list:()=>game?game.traffic:[], spawn:(fi,kind)=>spawnTraffic(game,fi,kind),
+    stand:()=>{ if(game){ game.traffic.length=0; game.trafNext=1e18; } } },   // an empty road, for probes that need one
   garage:{ owned:()=>modsOwned.slice(), buy:buyMod,
     wipe:()=>{ modsOwned=[]; saveWallet(); renderArmory(); } },
   shelf:{ owned:()=>badgesOwned.slice(),

@@ -3,6 +3,80 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## The car finally says something — drivetrain and road noise (2026-07-29)
+
+**What.** Between events this car was **silent**. Tyre scrub, a thud, a squelch, a klaxon — and in the gaps,
+nothing at all. Which was odd for a machine whose dashboard has been reporting live kW since the cabin was
+built: the number was there, the sound it describes was not. Two continuous voices now run underneath
+everything, both read straight off state the sim already computes.
+
+The **motor**: one reduction gear means motor rpm is a pure function of road speed, so it is one rising note
+from a standstill to VTOP with no shifts in it — pitch *is* your speed, always. Loudness is **|kW|**, not
+speed, so coasting at 200 km/h is nearly silent and dragging yourself out of a hairpin is not. And **regen
+bends the note down** by up to a third, which is one acoustic tell that charge is going back in, off the
+same gauge the dash draws.
+
+The **road**: filtered noise rising and brightening with speed — and off the tarmac it goes **loud and
+dark**. That is the point of it. Ploughing a field drains the pack ~90× faster than road does and is the
+mistake that actually ends runs, and until now it made no sound whatsoever: you had to be *looking* at a
+percentage to know. A bridge deck rings brighter than asphalt, because concrete does.
+
+**Why.** A driving game where the car is mute between collisions has no sense of effort, and this one had
+gone further than most without one — it will tell you your power draw to the kilowatt and then say nothing
+while you use it. Sound is also the cheapest channel the game has left: the driver view's dash is already
+dense, the top view is deliberately sparse, and both of them can be looked away from. The verge cue in
+particular is doing real work — it puts the run's most expensive mistake in the one channel that doesn't
+compete with reading the road.
+
+**How it's defended.** `./verify/run.sh sound` — what the car sounds like is a pure function (`driveTone`),
+so the decision is checked without an audio device in the room: the whine rises monotonically across 80
+samples with no jump over 8 Hz (a gearbox artefact would show as a cliff), the same 330 kW at 72 and
+202 km/h gives *identical* gain and different pitch, regen bends 497 Hz → 348 Hz proportionally, a
+stationary car makes no road noise, and the same 144 km/h reads 0.0154 @ 850 Hz on tarmac against 0.0369 @
+340 Hz on grass — while the motor, which has no opinion about the surface, doesn't move at all. Then the
+wiring is checked for real: a live `AudioContext` in a browser, 600 ticks of driving, both voices built,
+nothing thrown — and nothing built or sounded before you have started.
+
+## The road isn't yours — oncoming traffic (2026-07-29)
+
+**What.** The far half of the road has had lane paint and wheel-polish bands on it since the first commit —
+the code even *names* it `oncoming lane` — and in six months nothing has ever come the other way down it.
+Now something does: cars, vans and flatbeds at ~90–120 km/h, closing on you at the **sum** of both speeds,
+which is the fastest anything in this game has ever approached. They ride their own seeded rng (so the
+horde's and the road's streams are untouched, and a daily road raises the same traffic for everyone),
+appear ~3.5 km out — about 4 s of closing at a racing pace — and render in **both** views, headlights
+first, because at the distance that actually matters a pair of sparks *is* the vehicle.
+
+Two rules keep it honest. **They move over for you, proportionally**: a driver watching a car drift across
+the line hugs their verge, flashes, and leans on the horn — so a bit wide is free, properly across is a
+**CLOSE CALL** (+0.75 heat and a grace refresh, the nerviest of the three near-misses), and taking their
+lane outright is a **head-on**: 42% of your speed gone, 9% of the pack, and the only hit in the game that
+voids a chain outright. And the yield **stops at the verge**, so there is no free pass for going wider
+still. New `NERVES OF STEEL` badge (3 clean threads) and `THREAD 2 ONCOMING` contract.
+
+**Why.** Every hazard here asks *how fast, how early, how brave*. None of them asks **where**. Traffic asks
+only that — how much of the road are you using? — and a drift line's honest answer is "all of it". It costs
+a lane-disciplined driver literally nothing and prices the far half of the road for everyone else, which
+turns the widest, fastest, most obvious line through a bend into a decision instead of a freebie. It also
+finally cashes a promise the art has been making since the beginning.
+
+**Two fixes in the same pass.** The first cut gave each vehicle a *width* and a *height* and derived its
+plan-view length from the height — which read as a narrow box front-on while carrying a hitbox three times
+its drawn width. A hazard that hits you when the picture says it missed is worse than no hazard, so
+vehicles now carry three real dimensions and a bumper-to-bumper strike radius. And the screenshot harness
+pinned the car but not the world, so `shoot.sh … traffic` reliably photographed an empty road: anything
+with its own speed had cleared the frame in a couple of virtual seconds. It freezes what you drove *to*
+now, not just where you drove *from*.
+
+**How it's defended.** `./verify/run.sh traffic` — and the claim that matters most is the first one: the
+tidy driver every number in `assert.js` is measured with (copied verbatim from that suite at `aggr=1.0`)
+drives the six canon roads with traffic live and takes **0 head-ons and 0 close calls**, worst lateral
++66 px against a 74 px gate and 50 px of bumper clearance — stated as geometry on both gates independently,
+not as a lucky seed. On top of that: the yield is proven A/B (lane centre → verge → capped), a head-on
+costs speed, charge and the chain but pays no cash, threading pays exactly once and only when you were both
+*properly* over the line and quick with it, the pull-in the game drives itself is exempt both ways, the
+badge and contract read the counter the toast increments, same seed raises the same traffic, and a stood-down
+horde silences the road entirely. `assert.js` is still green, unchanged.
 ## The full-service stop — auto-park, a 10 km/h limit, and a metered wallet bill (2026-07-23)
 
 **What.** The rest area is now an *experience*, end to end. The **exit road is broader** (a ~20 m two-way
