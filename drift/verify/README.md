@@ -27,6 +27,7 @@ Chrome/Chromium. The game exposes `window.__drift` (`start()`, `setInput(steer, 
 ./drift/verify/run.sh traffic      # the far lane's owner: the yield, the head-on, the thread — and your lane left alone
 ./drift/verify/run.sh sound        # the car's own voice: pitch is speed, loudness is kW, and the verge is loud and dark
 ./drift/verify/run.sh analytics    # telemetry: silent on file://, unable to throw at the game, honest about the run
+./drift/verify/run.sh cabin        # the cabin never closes on the horizon — every window shape keeps its road
 ./drift/verify/shoot.sh driver f.png   # screenshot the car mid-drive, so you can LOOK at it
 ./drift/verify/shoot.sh driver b.png 14000 500,900 70 bridge   # ...having driven until a bridge is ahead
 ```
@@ -81,6 +82,16 @@ The claims it defends, in rough order of how much they matter:
   not speed, regen bends the note down proportionally, and the grass is louder and much darker than tarmac
   at the same speed — without an audio device in the room. The wiring that carries that decision into Web
   Audio is then checked separately, by driving with a live `AudioContext` in a real browser.
+- **The cabin is never allowed to eat the road.** The interior scales with the pane so a desktop doesn't get
+  a toy wheel, and that growth had no floor under it: on a wide, *short* window — `cabK()` reads
+  `min(W/2, H)`, which a landscape pane makes large while leaving little height to spend — the wheel and
+  cluster stacked up until the dash lip met the horizon and there was no road on screen at all. The other
+  probes couldn't see it, because headless lays out ~500px wide and that shape was never broken. `run.sh
+  cabin` therefore **drives the viewport itself**: it sets `W`/`H` across 14 window shapes, asks the real
+  `wheelGeom()`/`clusterH()` where the cabin lands, and requires ≥19% of every screen to survive as road
+  between the horizon and the dash. Geometry alone would only be a proxy, so it then **renders at 1800x905
+  and counts tarmac in the band**, against the sky above as a control. Against the pre-fix build five of its
+  claims go red, including that one at 0.1%.
 - **The driver view renders through a full yaw sweep without throwing.**
 - **The landscape is really out there.** Rivers, the bridges over them and the thickening woods are stored
   nowhere — they're a pure function of the road index and the seed, so the only way to know a river exists is
