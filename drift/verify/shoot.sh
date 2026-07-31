@@ -93,7 +93,8 @@ const harness=`
   })();
 })();
 <\/script>`;
-fs.writeFileSync(out, html.replace("</body>", harness+"</body>"));
+// via a function, so a "$" in the harness stays a "$" — see the note in run.sh
+fs.writeFileSync(out, html.replace("</body>", ()=>harness+"</body>"));
 ' "$GAME" "$PROBE_HTML" || exit 2
 
 "$CHROME_BIN" --headless=new --disable-gpu --no-sandbox --hide-scrollbars \

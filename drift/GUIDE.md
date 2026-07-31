@@ -3,10 +3,12 @@
 This used to be printed on the start card. It isn't any more: the card now shows nine seconds of the game
 instead, because nobody should have to read this to press Drive. It lives here for anyone who wants it.
 
-**Zombies.** Bounties in wallet cash — *runners* sprint for your lane and pay 2×, *brutes* soak two rounds
-and pay 3×. Brushing past one at speed is a *close shave*: it feeds the multiplier and keeps a chain alive
-between corners. Every couple of klicks the radio calls a *bounty wave* — double pay for 18 s, five heads
-clears it for +$120.
+**Zombies.** Bounties in wallet cash, **paid at your multiplier** — the ×N in the corner of the HUD. Take a
+head while you're cruising and it pays the base rate; take one while you're holding a chain and it pays that
+many times over, and the popup says so. *Runners* sprint for your lane and pay 2× on top, *brutes* soak two
+rounds and pay 3×. Brushing past one at speed is a *close shave*: it feeds the multiplier and keeps a chain
+alive between corners. Every couple of klicks the radio calls a *bounty wave* — double pay again for 18 s,
+five heads clears it for +$120.
 
 **The road isn't yours.** Deer break from the verge without warning — read one and dodge it clean for the
 same nerve a shave pays. And the far lane has an owner: cars, vans and flatbeds come the other way at
