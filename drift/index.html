@@ -79,17 +79,16 @@
   .ctl kbd{ font-family:inherit; font-size:10.5px; font-weight:900; color:#48627a; background:#f2f5f2;
     border:1px solid rgba(23,50,74,.2); border-bottom-width:2px; border-radius:5px; padding:1px 5.5px; margin-right:1px; }
   .ctlnote{ font-size:11px; color:#8a9aa8; font-weight:600; line-height:1.55; margin-top:7px; }
-  /* the rest of the manual, folded away until asked for */
-  .more{ margin-top:14px; border-top:1px solid rgba(23,50,74,.1); padding-top:10px; text-align:left; }
+  /* nine seconds of the actual game, in place of nine paragraphs about it (drift/verify/clip.sh cuts it) */
+  .clip{ display:block; width:100%; aspect-ratio:16/10; object-fit:cover; border-radius:14px;
+    margin:0 0 16px; background:#dfeed6; box-shadow:0 6px 18px rgba(20,50,20,.2); }
+  /* the shop and the shelf: yours to browse, but folded away — nobody reads an inventory to start a game */
+  .more{ margin-top:14px; border-top:1px solid rgba(23,50,74,.1); padding-top:10px; text-align:center; }
   .more summary{ list-style:none; cursor:pointer; text-align:center; font-size:11px; font-weight:800;
     letter-spacing:1.5px; color:#48627a; }
   .more summary::-webkit-details-marker{ display:none; }
   .more summary::after{ content:" ▾"; color:#8a9aa8; }
   .more[open] summary::after{ content:" ▴"; }
-  .feat{ font-size:12px; color:#5a6a78; line-height:1.55; margin-top:9px; }
-  .feat b{ color:#17324a; font-weight:900; }
-  .feat i{ font-style:normal; font-weight:800; color:#c85a1a; }
-  .more + .armoryBox{ border-top:1px solid rgba(23,50,74,.1); margin-top:10px; padding-top:4px; }
   /* the wallet, and the armory it pays for */
   .cash{ font-size:13px; font-weight:900; color:#2e8f38; margin-top:3px; letter-spacing:.5px; }
   .cash.pop{ animation:cashpop .5s ease; }
@@ -247,8 +246,9 @@
   <div class="card">
     <h1>DRIFT</h1>
     <div class="tag">SLIDE · CHAIN · SEND IT</div>
-    <p class="lead">An endless sunlit road with a horde problem. Brake into the bend, hold the slide to
-      build your multiplier — and the county pays cash for every zombie under the bumper.</p>
+    <video class="clip" id="clip" src="clip.webm" autoplay muted loop playsinline preload="auto"></video>
+    <p class="lead">An endless sunlit road with a horde problem. Brake into the bend, hold the slide —
+      and the county pays cash for every zombie under the bumper.</p>
     <button class="go" id="startBtn">Drive</button>
     <div class="modeRow">
       <button class="aux hot" id="dailyBtn">⚑ Today’s Road</button>
@@ -264,38 +264,10 @@
     <div class="ctlnote">Arrows or WASD · touch: hold a side, second finger brakes<br>
       Slide: brake as you turn in, then power to hold it</div>
     <details class="more">
-      <summary>THE FULL TOUR</summary>
-      <p class="feat"><b>Zombies.</b> Bounties in wallet cash — <i>runners</i> sprint for your lane and pay
-        2×, <i>brutes</i> soak two rounds and pay 3×. Brushing past one at speed is a <i>close shave</i>:
-        it feeds the multiplier and keeps a chain alive between corners. Every couple of klicks the radio
-        calls a <i>bounty wave</i> — double pay for 18 s, five heads clears it for +$120.</p>
-      <p class="feat"><b>The road isn’t yours.</b> Deer break from the verge without warning — read one
-        and dodge it clean for the same nerve a shave pays. And the far lane has an owner: cars, vans and
-        flatbeds come the other way at closing speed. They’ll pull over and lean on the horn for you; take
-        their half anyway and thread it for a <i>close call</i>, or meet one head-on and lose your speed, a
-        bite of the pack, and the chain you were holding.</p>
-      <p class="feat"><b>Contracts.</b> Three county jobs a run, top-left under your wallet — cross a
-        target and the cash lands on the spot.</p>
-      <p class="feat"><b>Today’s Road.</b> One seeded road a day: same corners, horde and jobs for
-        everyone, with its own best that resets at midnight. Your best run comes back as a <i>ghost</i> to
-        race — and some days it <i>rains</i>.</p>
-      <p class="feat"><b>The wallet.</b> Buys guns that auto-fire at shamblers on the verge, then garage
-        hardware — a longer-range pack, a regen tune, track tyres — fitted once, driven on for good.</p>
-      <p class="feat"><b>Rest areas.</b> Services at the <i>3rd, 7th, 12th… km</i>, signed from 3 km out —
-        a broad exit road into a big charging lot. Turn in (or hit Pause) and the car takes over: down to
-        <i>10 km/h</i>, into a stall, plug in. The meter bills your <i>wallet</i> by the kWh —
-        $0.45/kWh plus a $1 hookup, idle fees and all — and RESUME sees you back onto the road.</p>
-      <p class="feat"><b>Trophies.</b> Firsts and feats land on the shelf below, for keeps — and driving
-        Today’s Road day after day builds a <i>streak</i> it pays out on.</p>
-      <p class="feat"><b>The cabin.</b> You drive from behind the wheel; <i>V</i> glances down at a top
-        view. The wheel’s left thumb pad holds cruise, the right skips a track, and the dash stereo plays
-        your own music — tap it, or keys <i>K</i> / <i>N</i> / <i>P</i> / <i>M</i>.</p>
-      <p class="feat"><b>Listen to it.</b> One gear, so the motor’s pitch <i>is</i> your speed; how loud it
-        is, is how hard you’re pulling. Lift and brake and the note bends down as the pack takes charge
-        back. And the second you’re off the tarmac the road goes loud and dark under you.</p>
+      <summary>WALLET · GARAGE · SHELF</summary>
+      <div class="armoryBox"></div>
+      <div class="shelfBox"></div>
     </details>
-    <div class="armoryBox"></div>
-    <div class="shelfBox"></div>
   </div>
 </div>
 
@@ -3911,11 +3883,20 @@ function startGame(daily){
   if(MUSIC.length && !mPlaying) musicPlay();   // the Drive click is the gesture autoplay policy wants
   document.getElementById('startPanel').classList.add('hidden');
   document.getElementById('overPanel').classList.add('hidden');
+  const clip=document.getElementById('clip'); if(clip) clip.pause();
   showHUD(true);
   viewBtn.style.display='block'; setViewButton();   // sets the driver-view body class + the tap hints
   document.getElementById('pauseBtn').style.display='block';
   setPauseUI();
 }
+/* the start card's nine seconds of gameplay. It's decoration, so it fails quietly: a browser too old for
+   VP9 webm (iOS before 16) gets the card without it rather than a broken frame in the middle of it. And
+   once you're driving the real thing there's no reason to keep decoding a recording of it. */
+(function(){
+  const clip=document.getElementById('clip'); if(!clip) return;
+  clip.addEventListener('error',()=>{ clip.style.display='none'; });
+  clip.play().catch(()=>{});                       // muted+playsinline, so this is allowed unprompted
+})();
 document.getElementById('startBtn').onclick=()=>startGame(false);
 document.getElementById('dailyBtn').onclick=e=>{ e.stopPropagation(); startGame(true); };
 document.getElementById('againBtn').onclick=()=>startGame(dailyMode);   // Again replays the mode you died in

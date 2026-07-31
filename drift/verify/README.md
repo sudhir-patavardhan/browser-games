@@ -30,10 +30,19 @@ Chrome/Chromium. The game exposes `window.__drift` (`start()`, `setInput(steer, 
 ./drift/verify/run.sh cabin        # the cabin never closes on the horizon — every window shape keeps its road
 ./drift/verify/shoot.sh driver f.png   # screenshot the car mid-drive, so you can LOOK at it
 ./drift/verify/shoot.sh driver b.png 14000 500,900 70 bridge   # ...having driven until a bridge is ahead
+./drift/verify/clip.sh                 # re-cut drift/clip.webm — the 9 s of real driving on the start card
 ```
 
 Set `CHROME=/path/to/chrome` if it isn't found automatically. If no browser exists the runner **exits 2
 rather than reporting success** — a green run must mean the game really ran.
+
+`clip.sh` is the odd one out: it doesn't assert anything, it *records*. The start card shows nine seconds of
+the game instead of nine paragraphs about it, and that clip is cut by the same autopilot the probes drive —
+boot, warm up 50 s of road off the clock, then hold the wheel in real time while Chrome's `MediaRecorder`
+encodes the canvas. It needs real time rather than `--virtual-time-budget` (which fast-forwards past the
+encoder and yields an empty file), so it drives Chrome over the DevTools protocol instead; Node 22+ ships a
+`WebSocket`, so that still costs no dependencies. Re-run it after any visual change and the card stops
+advertising a game that no longer looks like that.
 
 ## What the suite pins down
 
