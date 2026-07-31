@@ -3,6 +3,37 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## The cabin gets a floor under it — you can see the road on a desktop again (2026-07-31)
+
+**What.** On a wide window the game showed **no road**. Sky, treeline, horizon — and then the dash, starting
+exactly where the tarmac should have. At 2000x1005 the band between the horizon and the dash lip came to
+**one pixel**; at 1800x905 the dash covered the horizon by 25.
+
+**Why it happened.** The cabin scales with the pane — `cabK()` grows the wheel and cluster past a
+comfortable screen size, so a desktop doesn't get a phone-sized wheel adrift in a metre of glass. It reads
+`min(W/2, H)`, and on a landscape monitor that number is *large* while the **height** left to spend is
+small: the wheel grew to r=192, the cluster to its 250px ceiling, and the stack ran clean up to `0.42H`. The
+maths that sized it had never been asked what it was standing on.
+
+**The fix.** The road band is now a **floor, not a leftover**. `ROAD_BAND=0.21` of the screen between
+`HORIZON_F*H` and the top of the dash is reserved first, and the wheel shrinks to fit whatever is left —
+`cabinH()` (wheel + cluster + gap) inverted for the room actually available. The cluster's own clamp makes
+that inversion piecewise, so it solves on the assumption the cluster tracks the wheel and re-solves against
+its ceiling or floor. `drawDashboard` now reads its cluster height from the same `clusterH()` the solve
+uses, so the two cannot drift apart again.
+
+**What it costs.** Nothing on a phone or a tall pane: at 390x780 the wheel is r=78 and the dash top y=517,
+the exact pre-fix numbers, and at 1440x1440 the wheel keeps its full `cabK()` size — the fraction only binds
+where the cabin was overrunning. A 1920x1080 pane goes r=185 → 122, which is still 1.6x a phone's, so the
+growth is capped rather than undone.
+
+**How it's defended.** `./verify/run.sh cabin`, a probe that drives the viewport itself — the existing
+suite couldn't have caught this, because headless lays out ~500px wide and that shape was never broken. It
+sets `W`/`H` across 14 window shapes and requires ≥19% of each to survive as road; calls out 2000x1005,
+1800x905 and 1280x720 by name; pins the phone and tall-pane numbers as unchanged; and then, because
+geometry is only a proxy for *seeing* anything, **renders at 1800x905 and counts tarmac in the band** (20.0%
+of it, against 0.2% for the sky above as a control). Five of its claims go red against the pre-fix build.
+
 ## Telemetry — the run reports how it went, and why it ended (2026-07-30)
 
 **What.** A GA4 property behind a single shared `analytics.js` at the repo root, loaded relatively by every

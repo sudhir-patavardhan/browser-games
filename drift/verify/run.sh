@@ -22,6 +22,7 @@
 #   ./drift/verify/run.sh traffic    # the far lane's owner: the yield, the head-on, the thread — and your lane left alone
 #   ./drift/verify/run.sh sound      # the car's own voice: pitch is speed, loudness is kW, and the verge is loud and dark
 #   ./drift/verify/run.sh analytics  # telemetry: silent on file://, unable to throw at the game, honest about the run
+#   ./drift/verify/run.sh cabin      # the cabin never closes on the horizon — every window shape keeps its road
 #
 # The game exposes window.__drift (start / setInput(steer,gas,brake) / step(n) / autopilot), so a probe is
 # just a <script> appended to a copy of the page. Probes write their findings into a <div id="RESULTS">,
@@ -80,7 +81,8 @@ case "$PROBE" in
   traffic) JS="$HERE/traffic.js"; DIV="RESULTS" ;;
   sound)  JS="$HERE/sound.js";  DIV="RESULTS" ;;
   analytics) JS="$HERE/analytics.js"; DIV="RESULTS" ;;
-  *) echo "unknown probe '$PROBE' (want: assert | controls | contracts | garage | nearmiss | daily | ghost | report | weather | horde | badges | waves | plane | music | land | pause | restnav | deer | traffic | sound | analytics)" >&2; exit 2 ;;
+  cabin)  JS="$HERE/cabin.js";  DIV="RESULTS" ;;
+  *) echo "unknown probe '$PROBE' (want: assert | controls | contracts | garage | nearmiss | daily | ghost | report | weather | horde | badges | waves | plane | music | land | pause | restnav | deer | traffic | sound | analytics | cabin)" >&2; exit 2 ;;
 esac
 
 # splice the probe in just before </body>, after the game's own script has defined window.__drift
