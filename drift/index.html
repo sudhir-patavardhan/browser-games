@@ -115,6 +115,13 @@
     font-weight:900; font-size:clamp(16px,4.5vw,24px); color:#b6ffdd; opacity:0; letter-spacing:1px;
     text-shadow:0 2px 0 rgba(20,80,40,.75), 0 4px 14px rgba(0,0,0,.3); }
   .ctrpop.show{ animation:pop 1.4s ease forwards; }
+  /* a bounty paid above rate says its own multiplier out loud — money green, but hot on the ×N, because the
+     ×N is the part you have to earn. Its own element, so it can never stomp the wave banner it fires under */
+  .paypop{ position:fixed; left:50%; top:37%; transform:translateX(-50%); z-index:4; pointer-events:none;
+    font-weight:900; font-size:clamp(15px,4vw,22px); color:#7dffa5; opacity:0; letter-spacing:1px;
+    text-shadow:0 2px 0 rgba(10,70,30,.8), 0 4px 12px rgba(0,0,0,.35); white-space:nowrap; }
+  .paypop b{ color:#ffd24a; margin-left:6px; }
+  .paypop.show{ animation:pop .85s ease forwards; }
   /* the near-miss: a flash of nerve rewarded, styled hot like the multiplier it feeds */
   .buzzpop{ position:fixed; left:50%; top:29%; transform:translateX(-50%); z-index:4; pointer-events:none;
     font-weight:900; font-size:clamp(15px,4vw,22px); color:#ffd24a; opacity:0; letter-spacing:2px;
@@ -226,6 +233,7 @@
 <div class="callpop" id="callEl"></div>
 <div class="badgepop" id="badgePop"></div>
 <div class="wavepop" id="wavePop"></div>
+<div class="paypop" id="payPop"></div>
 <div class="battpop" id="battPop"></div>
 <div class="steerhint" id="hintL" style="display:none">‹</div>
 <div class="steerhint" id="hintR" style="display:none">›</div>
@@ -406,7 +414,7 @@ function newGame(forceSeed){
     apArm:true,                                // the valet: auto-park is armed until the driver waves it off
     scenery:makeScenery(seed),
     zombies:[], splats:[], gibs:[], flecks:[], shots:[],   // the horde, and what's left of it
-    zrng:mulberry32(seed^0x2b1e), zNextIdx:0, gunCd:0, cashRun:0, goreT:0,
+    zrng:mulberry32(seed^0x2b1e), zNextIdx:0, gunCd:0, cashRun:0, goreT:0, bountyMulMax:1,
     vmax:0, zCarKills:0, gunKills:0, buzzes:0, contracts:makeContracts(seed), mod:carMods(),
     deer:[], drng, deerNext:8000+drng()*8000,   // the county's own wildlife — first crossing 0.8-1.6km out
     deerHits:0, spooks:0,
@@ -675,7 +683,9 @@ function gameOver(reason){
              ['DRIFT TIME', game.driftTotal.toFixed(1)+' s', ''],
              ['DISTANCE', (game.dist/10000).toFixed(1)+' km', ''],
              ['CLOSE SHAVES', ''+game.buzzes, ''],
-             ['SHAMBLERS', ''+(game.zCarKills+game.gunKills), ''] ];
+             // what the best-paid head of the run was worth, so the new rule lands on the report card too
+             ['SHAMBLERS', ''+(game.zCarKills+game.gunKills),
+               (game.bountyMulMax||1)>1.05 ? 'BEST ×'+(game.bountyMulMax).toFixed(1) : ''] ];
   document.getElementById('overStats').innerHTML=st.map(s=>
     '<div class="stat"><span>'+s[0]+'</span><b>'+s[1]+(s[2]?'<em>'+s[2]+'</em>':'')+'</b></div>').join('');
   document.getElementById('overCtr').innerHTML=contractRows(game,true);   // the job board, settled
@@ -2367,7 +2377,8 @@ function drawNearScenery(g,ca,sa,cx,hy){
    The road has a zombie problem, and the county pays a bounty. Shamblers spawn ahead — most lurching
    across the tarmac, some out on the verge — carried in road coordinates (index along + offset across),
    so they project through the road's own lens like everything else and can't shake. Mow one down and the
-   bounty lands in your WALLET (persisted; drifting is still what scores). The wallet buys guns in the
+   bounty lands in your WALLET — AT YOUR CURRENT MULTIPLIER, so how you were driving when you hit it is
+   most of what it's worth (x1.0 is the old flat rate exactly; x8 is eight times it). The wallet buys guns in the
    ARMORY on the start/over screens; an equipped gun auto-fires at shamblers OFF the tarmac — the ones the
    car can't reach — while you drive. Hits are purely additive: money, gore and a shake, never physics,
    so the committed verify thresholds don't move. Gore is deliberately comic-book: dark ichor splats on
@@ -2515,8 +2526,16 @@ function killZombie(g,z,by){
   const R=g.road, p=zPos(R,z), spd=g.speed;
   const rank = z.kind==='brute' ? 3 : z.kind==='runner' ? 2 : 1;                // the county pays by the head
   let pay = (by==='car' ? 20+Math.round(spd*0.02) : 40)*rank;                   // gun targets pay a marksman bonus
+  /* THE COUNTY PAYS AT YOUR MULTIPLIER. The bounty used to be flat, which quietly made the wallet — and so
+     every permanent thing it buys — payable for showing up: five minutes of the tidiest possible driving
+     banks four figures while scoring almost nothing. Score already lives or dies on the multiplier, so the
+     bounty now rides the same number, live, exactly as the HUD shows it. Nothing is taken away — at x1.0
+     the rate is the old rate to the cent — but the ceiling is now the same skill the score asks for. */
+  const mul=Math.max(1,g.mult||1);
+  pay=Math.round(pay*mul);
   if(g.waveT>0){ pay*=2; g.waveKills++; }                                       // wave rates: double, and it counts toward the clear
-  cash+=pay; g.cashRun+=pay; cashPop(pay); saveWallet();                        // banked on the spot — a crash can't take it
+  g.bountyMulMax=Math.max(g.bountyMulMax||1,mul);                               // the report card's line on it
+  cash+=pay; g.cashRun+=pay; cashPop(pay,mul); saveWallet();                    // banked on the spot — a crash can't take it
   if(by==='car' && z.kind==='brute'){ g.car.vx*=0.86; g.car.vy*=0.86;           // a brute has MASS: the hit is paid in momentum
     g.shake=Math.max(g.shake,0.8); }
   if(z.kind==='brute') awardBadge('biggame');
@@ -2988,9 +3007,14 @@ function drawFlecks(g){                                                         
     ctx.fillStyle=v; ctx.fillRect(0,0,W,H);
   }
 }
-function cashPop(pay){ const el=document.getElementById('cashEl'); if(!el) return;
+function cashPop(pay,mul){ const el=document.getElementById('cashEl'); if(!el) return;
   el.textContent='$'+Math.round(cash).toLocaleString();
-  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  // a bounty paid at rate is just a number going up; one paid at ×4.3 has to SAY so, or the rule stays a
+  // secret and nobody ever learns to drive for it
+  if(mul>1.05){ const p=document.getElementById('payPop'); if(!p) return;
+    p.innerHTML='+$'+Math.round(pay).toLocaleString()+'<b>×'+mul.toFixed(1)+'</b>';
+    p.classList.remove('show'); void p.offsetWidth; p.classList.add('show'); } }
 
 /* ============================ contracts ============================ */
 /* The county job board: every run posts THREE short goals that pay wallet cash the moment they're crossed.
@@ -3925,7 +3949,7 @@ window.__drift={
   cruise(){ toggleCruise(); },
   horde:{ count:()=>game?game.zombies.length:0, cash:()=>cash, run:()=>game?game.cashRun:0,
     gun:()=>gunEq, owned:()=>gunsOwned.slice(), give:n=>{ cash+=n; saveWallet(); renderArmory(); },
-    buy:buyGun, spawn:(fi,o)=>spawnZombie(game,fi,o),
+    buy:buyGun, spawn:(fi,o)=>spawnZombie(game,fi,o), kill:(g,z,by)=>killZombie(g||game,z,by||'car'),
     wipe:()=>{ cash=0; gunsOwned=[]; gunEq=''; saveWallet(); renderArmory(); } },
   audio:{ init:audioInit, live:()=>!!actx, voice:()=>({ motor:!!motorOsc, road:!!roadSrc }),
     drive:dt=>driveSound(state==='play'?game:null,dt),

@@ -11,6 +11,7 @@
 #   ./drift/verify/run.sh report     # chain tier names + the end-of-run report card
 #   ./drift/verify/run.sh weather    # rain days: seed-pure forecast, wet grip/brakes proven A/B
 #   ./drift/verify/run.sh horde      # zombie ranks: the mix, the bounty ladder, the brute's momentum tax
+#   ./drift/verify/run.sh bounty     # the bounty rides the multiplier: same rate at x1, many times it sideways
 #   ./drift/verify/run.sh badges     # the trophy shelf: feats award once, streaks count days, all persists
 #   ./drift/verify/run.sh waves      # bounty waves: seeded schedule, double pay, the +$120 clear
 #   ./drift/verify/run.sh plane      # scenery build + airliner reachability
@@ -70,6 +71,7 @@ case "$PROBE" in
   report) JS="$HERE/report.js"; DIV="RESULTS" ;;
   weather) JS="$HERE/weather.js"; DIV="RESULTS" ;;
   horde) JS="$HERE/horde.js"; DIV="RESULTS" ;;
+  bounty) JS="$HERE/bounty.js"; DIV="RESULTS" ;;
   badges) JS="$HERE/badges.js"; DIV="RESULTS" ;;
   waves) JS="$HERE/waves.js"; DIV="RESULTS" ;;
   plane)  JS="$HERE/plane.js";  DIV="PLANE" ;;
@@ -82,7 +84,7 @@ case "$PROBE" in
   sound)  JS="$HERE/sound.js";  DIV="RESULTS" ;;
   analytics) JS="$HERE/analytics.js"; DIV="RESULTS" ;;
   cabin)  JS="$HERE/cabin.js";  DIV="RESULTS" ;;
-  *) echo "unknown probe '$PROBE' (want: assert | controls | contracts | garage | nearmiss | daily | ghost | report | weather | horde | badges | waves | plane | music | land | pause | restnav | deer | traffic | sound | analytics | cabin)" >&2; exit 2 ;;
+  *) echo "unknown probe '$PROBE' (want: assert | controls | contracts | garage | nearmiss | daily | ghost | report | weather | horde | bounty | badges | waves | plane | music | land | pause | restnav | deer | traffic | sound | analytics | cabin)" >&2; exit 2 ;;
 esac
 
 # splice the probe in just before </body>, after the game's own script has defined window.__drift
@@ -91,7 +93,10 @@ const fs=require("fs");
 const [game,js,out]=process.argv.slice(1);
 let html=fs.readFileSync(game,"utf8");
 if(!html.includes("window.__drift")) { console.error("!! "+game+" has no window.__drift test hooks"); process.exit(2); }
-html=html.replace("</body>", "<script>\n"+fs.readFileSync(js,"utf8")+"\n<\/script>\n</body>");
+// the replacement MUST go through a function: as a plain string, $\x27 / $& / $` / $$ inside the probe are
+// replacement patterns, not text, and get expanded. A probe about money is full of "$"+n, and the page it
+// produced was silently corrupt — a syntax error 4000 lines in, reported only as "it threw before reporting".
+html=html.replace("</body>", ()=>"<script>\n"+fs.readFileSync(js,"utf8")+"\n<\/script>\n</body>");
 fs.writeFileSync(out,html);
 ' "$GAME" "$JS" "$PROBE_HTML" || exit 2
 

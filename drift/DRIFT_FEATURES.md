@@ -3,6 +3,42 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## The county pays at your multiplier — the wallet is about driving now (2026-07-31)
+
+**What.** A zombie bounty is multiplied by the live `g.mult` — the same number the HUD has always shown in
+the corner, built by drifting and topped up by close shaves, deer dodges and threaded oncoming. At **×1.0
+the rate is the old flat rate to the cent**; at ×8 it is eight times it. Rank and the bounty wave still
+compose on top, unchanged. A head paid above rate says so on screen (`+$258 ×4.3`) in its own popup, and the
+run report ends with the best multiplier you got paid at.
+
+**Why it earns its place.** Found by driving the game for five minutes and reading the numbers rather than
+the code. The tidy autopilot — the same one `assert.js` uses precisely *because* it scores nothing — covered
+133 km and banked **$1,235 with a score of 25**. The wallet is the only progression Drift keeps: guns, and
+garage hardware that bolts onto the car for good. So the permanent half of the game was payable by the one
+activity the game itself says is worth nothing, and the shop could be cleared by cruising. `verify/README.md`
+already says the score gradient "**is** the game — if it flattens, the game is broken even when nothing
+errors." The cash gradient was flat, and nothing was watching it.
+
+Paying at the multiplier fixes it with a number the player is already looking at, and does it as a **ceiling
+raise, not a nerf**: nobody's existing rate drops, so no saved wallet and no learned expectation breaks.
+
+**What it costs.** Driven for real over three pinned roads, a sent lap earns **1.85×** what a tidy lap earns
+per head ($68 → $125). Tidy driving still pays — a beginner who can't crack a chain yet is still saving
+toward the P9 — it just no longer pays like an expert.
+
+**How it's defended.** `./verify/run.sh bounty`, which pins the floor (×1.0 pays exactly the old rate, gun
+rate untouched), the shape (linear in the multiplier; rank and wave still compose), the honesty (you are paid
+at the multiplier the HUD was showing that frame), and then stops asserting and **drives**: the same road and
+seed lapped tidy and lapped sent, requiring a real separation in cash per head. The first cut of that last
+claim failed, correctly — it modelled "aggressive" by mangling the steering, which just produces a slower,
+spun-out car that earns *less*. Driving badly is not driving sideways; the probe now carries `assert.js`'s
+`follower(aggr, stab)` model, which drifts because it takes more speed into the corner than the corner wants.
+
+**Also fixed on the way.** The probe splicer in `run.sh` and `shoot.sh` used `String.replace` with a plain
+replacement string, so `$'`, `$&`, `` $` `` and `$$` inside any probe were **replacement patterns, not text**.
+The first probe to write `"$"+n` produced a silently corrupt page and a syntax error 4,000 lines in, reported
+only as "probe produced no output". Both splicers now replace through a function.
+
 ## The cabin gets a floor under it — you can see the road on a desktop again (2026-07-31)
 
 **What.** On a wide window the game showed **no road**. Sky, treeline, horizon — and then the dash, starting

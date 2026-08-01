@@ -20,6 +20,7 @@ Chrome/Chromium. The game exposes `window.__drift` (`start()`, `setInput(steer, 
 ./drift/verify/run.sh report       # chain tier names + the end-of-run report card
 ./drift/verify/run.sh weather      # rain days: seed-pure forecast, wet grip/brakes proven A/B
 ./drift/verify/run.sh horde        # zombie ranks: the mix, the bounty ladder, the brute's momentum tax
+./drift/verify/run.sh bounty       # the bounty rides the multiplier: old rate at x1, many times it sideways
 ./drift/verify/run.sh badges       # the trophy shelf: feats award once, streaks count days, all persists
 ./drift/verify/run.sh waves        # bounty waves: seeded schedule, double pay, the +$120 clear
 ./drift/verify/run.sh plane        # scenery built, and the rare airliner is actually reachable
@@ -79,6 +80,17 @@ The claims it defends, in rough order of how much they matter:
   claim as geometry rather than luck, on both of the gates independently. Everything else about the feature
   (they move over for you, and stop at their verge; a head-on takes speed, pack and the chain; threading one
   pays only if you were *properly* over the line and quick) is downstream of that.
+- **The wallet is about driving too.** The score gradient above is the game — and the *cash* gradient was
+  flat, which mattered because cash is the only thing Drift keeps between runs. Five minutes of the tidy
+  autopilot (the driver written into every physics measurement here, chosen precisely because it scores
+  nothing) banked $1,235 against a score of 25: the permanent progression was payable by not playing. The
+  bounty now pays at the live multiplier, and `run.sh bounty` holds both ends of that. The floor: x1.0 pays
+  the old flat rate **to the cent**, so it is a ceiling raise and no existing wallet or expectation breaks.
+  The ceiling: linear in the multiplier, with rank and the wave composing on top as before. Then it stops
+  asserting and drives — the same pinned road lapped tidy and lapped sent, requiring a real separation in
+  cash per head (currently 1.85x, $68 → $125). Note what the first version of that claim got wrong, because
+  it is the same trap as the two tests above: it modelled "aggressive" by mangling the steering, which
+  produces a *slower, spun-out* car that earns less. Driving badly is not driving sideways.
 - **Telemetry cannot touch the run it measures.** Analytics is the only code here that depends on a third
   party being reachable, so `run.sh analytics` is mostly a set of claims about what it must *not* do: on
   `file://` it injects nothing and sends nothing (which is also what stops it perturbing every other probe —
