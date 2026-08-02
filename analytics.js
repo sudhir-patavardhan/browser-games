@@ -25,7 +25,7 @@
    consent banner. There isn't one here — see the README.
 */
 (function(){
-  var ID='G-FHGHG4B3GR';
+  var ID='G-9XV3GF4FT0';
   var LOG=[];                 // what the page believes it reported, oldest first, capped
   var CAP=200;
   var live=false;
