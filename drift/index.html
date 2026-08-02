@@ -1462,14 +1462,24 @@ const LANE_HALF=150;                                 // the drive itself: a broa
 // wide sweep you can take at speed rather than a gap you have to aim at. Both mouths get it — the drive in
 // and the drive back out are the same taper run in opposite directions.
 const MOUTH_HALF=LANE_HALF+110, MOUTH_U=0.34;        // the flare's width, and how far up the drive it reaches
-const LOT_MID=(LOT_IN+LOT_OUT)/2;
-const STALL_ROWS=[[LOT_IN+34,LOT_IN+170],[LOT_MID-68,LOT_MID+68],[LOT_OUT-170,LOT_OUT-34]];  // three rows of stalls
 // The charger row along the far side: KIOSKS, not posts — four of them, set a good 8 m apart so each one
 // owns its own bay and the row reads as a charging plaza rather than a picket fence. Six posts at half that
 // pitch used to crowd into one dark smear at any distance, and none of them was big enough to aim at.
 const CHG_D=[-24,-8,8,24];                          // where they stand along the road, in road points
 const CHG_OFF=LOT_OUT-26;                           // …how far out: at the head of the far stall row
-const CHG_BAY=LOT_OUT-62;                           // …and the bay alongside, where the valet leaves the car
+/* The bays are sized off the CAR, because a bay that isn't is just paint. A stall is 5 m nose to tail and
+   2.6 m across — and at 5 m, three rows do not fit in a 15 m lot with anywhere left to drive, so the lot
+   is two rows either side of an aisle. The old three rows were 2.7 m deep on a 1.04 m pitch: fine for a
+   car drawn 0.92 m long, and a car parked over three bays at once the moment one was drawn 4.4 m. */
+const STALL_D=CAR_L+0.6*PX_M;                       // 5.0 m deep — a bay a car actually fits in
+const STALL_PTS=Math.max(1,Math.round(2.6*PX_M/SEG));   // 2.6 m across — the stripe pitch, in road points
+const STALL_FAR=CHG_OFF-8;                          // the far row's head, tucked just inside the kiosks
+const STALL_ROWS=[[LOT_IN+20,LOT_IN+20+STALL_D],[STALL_FAR-STALL_D,STALL_FAR]];
+/* …and the bay the valet leaves the car in: squarely in the far row, which is what finally keeps the tail
+   off the kiosk. parkUp reverses the car in ACROSS the row, so it is the car's half-LENGTH that points at
+   the post — 2.2 m of it. The old offset held the bay 0.72 m inboard of the kiosk, which cleared a 0.92 m
+   car by 0.26 m and buried a real one 1.48 m INSIDE the charger it had come to use. */
+const CHG_BAY=STALL_FAR-STALL_D/2;                  // tail stops ~0.5 m short of the post — a cable's reach
 // which kiosk the car takes: the first one it meets. Coming down the drive that's the near end of the row,
 // coming back after a U-turn it's the far end — either way, you stop at the first free bay you reach.
 const chgIdx=(r,dir)=> r.c + (dir<0 ? CHG_D[CHG_D.length-1] : CHG_D[0]);
@@ -1688,7 +1698,7 @@ function drawRestStop(g,zside,toScreen,lo,hi){
   }
   for(let i=lo;i<hi-1;i++){
     const a=restGeom(i,seed); if(!a || a.lane) continue;
-    if(i%2!==0 || Math.abs(a.d)>a.r.len-2) continue;                   // parking stalls: three rows, ~5 m pitch
+    if(i%STALL_PTS!==0 || Math.abs(a.d)>a.r.len-2) continue;           // parking stalls: two rows, 2.6 m pitch
     const s=a.side;
     for(const [r0,r1] of STALL_ROWS){
       const A=pt(i,r0*s), B=pt(i,r1*s);
@@ -3272,7 +3282,7 @@ function drawRestTop(g){
     if(i%2===0 && (a.in<=ROAD_HALF+6 || b.in<=ROAD_HALF+6)){ const m=(ROAD_HALF-7)*s;
       ctx.lineWidth=6; ctx.beginPath();
       ctx.moveTo(p.x-p.ty*m,p.y+p.tx*m); ctx.lineTo(q.x-q.ty*m,q.y+q.tx*m); ctx.stroke(); }
-    if(i%2===0 && !a.lane && Math.abs(a.d)<=a.r.len-2){
+    if(i%STALL_PTS===0 && !a.lane && Math.abs(a.d)<=a.r.len-2){
       ctx.strokeStyle='rgba(245,248,250,.55)'; ctx.lineWidth=3;
       for(const [r0,r1] of STALL_ROWS){
         ctx.beginPath(); ctx.moveTo(p.x-p.ty*r0*s,p.y+p.tx*r0*s); ctx.lineTo(p.x-p.ty*r1*s,p.y+p.tx*r1*s); ctx.stroke();
