@@ -27,6 +27,7 @@ Chrome/Chromium. The game exposes `window.__drift` (`start()`, `setInput(steer, 
 ./drift/verify/run.sh land         # rivers, bridges and woods — driven to, then checked in real pixels
 ./drift/verify/run.sh traffic      # the far lane's owner: the yield, the head-on, the thread — and your lane left alone
 ./drift/verify/run.sh sound        # the car's own voice: pitch is speed, loudness is kW, and the verge is loud and dark
+./drift/verify/run.sh stereo       # the music rides with the wheels: over 10 km/h it plays, stopped it doesn't
 ./drift/verify/run.sh analytics    # telemetry: silent on file://, unable to throw at the game, honest about the run
 ./drift/verify/run.sh cabin        # the cabin never closes on the horizon — every window shape keeps its road
 ./drift/verify/shoot.sh driver f.png   # screenshot the car mid-drive, so you can LOOK at it

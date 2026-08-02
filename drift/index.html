@@ -3518,8 +3518,32 @@ function musicLoad(i){
 function musicPlay(){ if(!MUSIC.length) return; const a=musicEl(); if(!a.src) musicLoad(mIdx);
   const pr=a.play(); mPlaying=true; if(pr&&pr.catch) pr.catch(()=>{ mPlaying=false; }); }   // autoplay may refuse until a gesture
 function musicSkip(d){ if(!MUSIC.length) return; musicLoad(mIdx+d); musicPlay(); }
+// The toggle reads the DRIVER's intent, not the element: the gate below parks the audio whenever the car
+// is stopped, so `mPlaying && !a.paused` was true only while actually rolling — press ⏯ at a standstill and
+// the old test fell through to musicPlay() and the stereo could never be turned off at all.
 function musicToggle(){ if(!MUSIC.length){ auxPick(); return; }
-  const a=musicEl(); if(mPlaying && !a.paused){ a.pause(); mPlaying=false; } else musicPlay(); }
+  const a=musicEl(); if(mPlaying){ a.pause(); mPlaying=false; } else musicPlay(); }
+/* THE STEREO RIDES WITH THE WHEELS. Music playing to a car that is sitting still — on the start card, at
+   the charger, spun to a stop on the verge — is menu music, and this game has no menus. So playback follows
+   the speedo: it cuts below walking pace and picks up again, from where it left off, when you're moving.
+
+   mPlaying stays the driver's own intent (the ⏯ button, the k key) and is never written here — this only
+   decides whether that intent is currently audible. And the first play() still happens on the Drive click,
+   because that gesture is what autoplay policy unlocks the element with; pausing it a frame later doesn't
+   re-lock it, so every resume after that is allowed unprompted.
+
+   Two thresholds, not one, because the facility limiter holds the car at REST_LIMIT=28px/s — 10.08 km/h,
+   which is the ON threshold to within a rounding error. A single gate would chatter the stereo on and off
+   for the whole length of the pull-in. */
+const MUSIC_ON_KMH=10, MUSIC_OFF_KMH=8;
+function musicGate(){
+  if(!MUSIC.length || !mPlaying) return;                      // no playlist, or it's off — not ours to touch
+  const a=audioEl; if(!a || !a.src) return;
+  const kmh=(state==='play' && game) ? game.speed*0.36 : 0;   // parked, crashed or on the card: stopped
+  const rolling = a.paused ? kmh>MUSIC_ON_KMH : kmh>=MUSIC_OFF_KMH;
+  if(rolling && a.paused){ const pr=a.play(); if(pr&&pr.catch) pr.catch(()=>{}); }
+  else if(!rolling && !a.paused) a.pause();
+}
 function musicMute(){ mMuted=!mMuted; if(audioEl) audioEl.volume=mMuted?0:MVOL;
   try{ localStorage.setItem('drift.mute',mMuted?'1':'0'); }catch(e){} }
 function musicNow(){
@@ -3901,6 +3925,7 @@ function frame(t){
       driveSound(game,dt); }
   } else if(state==='paused' && game){ chargeStep(dt); skidSound(false,0); driveSound(null,dt); }
   else { skidSound(false,0); driveSound(null,dt); }
+  musicGate();          // the stereo follows the wheels, in every state — parked included
   render();
 }
 requestAnimationFrame(frame);
