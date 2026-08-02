@@ -3,6 +3,45 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## The services get a forecourt — a trumpet exit, a fence that bows around it, and charging kiosks (2026-08-02)
+
+**What.** Four changes to the rest area, all from driving into one and looking at it.
+
+* **The exit is broad.** The drive is a ~30 m two-way service road (`LANE_HALF` 100 → 150), and both mouths
+  now open into a **trumpet**: `MOUTH_HALF` is 26 m wider still where the drive meets the carriageway,
+  easing back to lane width over the first third of the ramp. The turn-in is a sweep you can take at speed
+  instead of a gap you have to aim at, and the same taper runs the other way on the drive back out.
+* **Nothing crosses the exit road any more.** The roadside boundary fence used to march straight through
+  the slip road and across the lot at a flat `BARRIER+40`; it now **bows out around the facility's own
+  perimeter** (`gm.out+46`) wherever a services stands on that side. Hedgerows were worse: they *had* an
+  apron test, but they asked it at the index the run *starts* from, and a hedge strikes out across the
+  fields at a tilt — so by the time a run reached the lot it was several road points downstream of the
+  index it had been cleared at, and it striped bushes straight across the parking bays. Each blob now asks
+  at **its own** road index (`at − d·sg·sin θ / SEG`), which is where it actually stands.
+* **The chargers are kiosks, and they're spread out.** Six posts at a 20 m pitch became **four kiosks at
+  40 m** (`CHG_D`), each a real piece of forecourt furniture — plinth, body, slung cable, lit screen at head
+  height and an overhanging canopy with a bolt on its face — drawn back-to-front so a near one occludes a
+  far one. From above they're canopy squares aligned to the row, not dots.
+* **The valet parks at a kiosk.** It used to aim at `r.c`, the middle of the charger row — a point with no
+  charger on it — and leave the car lying along the road's line across three bays. `nextRest`/auto-park now
+  target **the first kiosk the car reaches** (near end coming down the drive, far end after a U-turn) and
+  the bay alongside it, and `parkUp` **squares the car up in the stall**, reversed in with its tail to the
+  post: that's where an EV's socket is, it matches the stall paint (which runs across the row, not along
+  it), and it leaves the car pointing back across the lot for the drive out.
+
+**Why.** Field report, all four in one sentence: "the exit to rest area needs to be broad; the fence and
+hedges are getting rendered on the exit road; the charging stations are too near and small." A fence drawn
+through a slip road you can drive down is the one thing out here that makes the picture and the physics
+disagree — `paved()` and `wallAt()` had always let the car through it, so it read as a barrier standing in
+the mouth of an exit that wasn't there. And a "charging stop" that ends with the car parked in the middle of
+an empty row is a stop at nothing.
+
+**How it's defended.** `./verify/run.sh restnav` gains three assertions — both mouths flare wider than the
+drive *and* reach inside the road's edge line; `nextRest` targets an index that is actually in `CHG_D` at
+the `CHG_BAY` line; and the car ends up alongside a kiosk, square in the stall (heading within 0.05 rad of
+the row's normal). The drive-width bound moved with the geometry (18–23 m → 28–33 m). `pause` is unchanged
+and still green end to end, including the valet's drive back out from the new square-parked heading.
+
 ## The county pays at your multiplier — the wallet is about driving now (2026-07-31)
 
 **What.** A zombie bounty is multiplied by the live `g.mult` — the same number the HUD has always shown in

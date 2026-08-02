@@ -25,8 +25,9 @@ resets at midnight. Your best run comes back as a *ghost* to race — and some d
 pack, a regen tune, track tyres — fitted once, driven on for good. Both are on the start card, folded under
 **WALLET · GARAGE · SHELF**.
 
-**Rest areas.** Services at the *3rd, 7th, 12th… km*, signed from 3 km out — a broad exit road into a big
-charging lot. Turn in (or hit Pause) and the car takes over: down to *10 km/h*, into a stall, plug in. The
+**Rest areas.** Services at the *3rd, 7th, 12th… km*, signed from 3 km out — a wide, trumpet-mouthed exit
+road into a big charging lot with a row of well-spaced **charging kiosks** down its far side. Turn in (or hit
+Pause) and the car takes over: down to *10 km/h*, up the lot, backs itself into the bay at a kiosk, plugs in. The
 meter bills your *wallet* by the kWh — $0.45/kWh plus a $1 hookup, idle fees and all — and RESUME sees you
 back onto the road.
 
