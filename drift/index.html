@@ -780,8 +780,17 @@ function render(){
 const HORIZON_F=0.42, FOCAL=185, CAMH=112, NEARZ=16;
 function drawWindshield(g,spd){
   const c=g.car, R=g.road;
-  // look along a lightly-smoothed heading (the direction the nose points)
-  g.camAngle += angWrap(c.angle - g.camAngle)*0.18;
+  // look along a lightly-smoothed heading (the direction the nose points) — UNLESS we're parked at a
+  // charger, where the car sits tail-to-post and a nose-heading camera would face away from the one
+  // thing worth seeing. Look at the kiosk itself instead: the pursuit that drove us in already aims the
+  // nose near the post, so this target is close to where camAngle already is and the switch doesn't jump.
+  let lookAngle=c.angle;
+  if(g.parked && g.parked.charger && g.parked.kioskIdx!=null){
+    const ki=clamp(g.parked.kioskIdx,0,R.pts.length-1), kp=R.pts[ki];
+    if(kp){ const off=CHG_OFF*g.parked.kioskSide;
+      lookAngle=Math.atan2(kp.y+kp.tx*off-c.y, kp.x-kp.ty*off-c.x); }
+  }
+  g.camAngle += angWrap(lookAngle - g.camAngle)*0.18;
   const a=g.camAngle, ca=Math.cos(a), sa=Math.sin(a);
   const horizon=H*HORIZON_F;
   let shy=0, shx=0; if(g.shake>0){ shx=(Math.random()-0.5)*g.shake*16; shy=(Math.random()-0.5)*g.shake*12; }
@@ -1861,11 +1870,14 @@ function drawRestStop(g,zside,toScreen,lo,hi){
     const a=restGeom(i,seed); if(!a || a.lane) continue;
     if(CHG_D.indexOf(a.d)<0) continue;                                 // the charger row, along the far side
     const b=pt(i,CHG_OFF*a.side);
-    if(b) kiosks.push(b);
+    if(b) kiosks.push({...b, i});
   }
   kiosks.sort((A,B)=>A.sc-B.sc);                                       // far ones first
-  const lit=!!(game && game.parked && game.parked.charger);
+  // only the post you're actually plugged into lights up — the rest of the row stays idle. This is also
+  // the one the parked camera is looking at, so its screen is the one worth putting real numbers on.
+  const activeIdx=(game && game.parked && game.parked.charger) ? game.parked.kioskIdx : null;
   for(const b of kiosks){
+    const lit=b.i===activeIdx;
     const w=clamp(46*b.sc,3,96), h=clamp(150*b.sc,8,300);              // ~0.9 m wide, ~3 m to the canopy
     const x=b.x, y=b.y;
     ctx.fillStyle='rgba(38,44,52,.22)';                                // it stands on the tarmac, not above it
@@ -1879,6 +1891,19 @@ function drawRestStop(g,zside,toScreen,lo,hi){
     if(lit) ctx.globalAlpha=0.55+0.35*Math.sin(g.time*3.4);                         // plugged in: it breathes
     ctx.fillRect(x-w*0.33,y-h*0.71,w*0.66,h*0.28);
     ctx.globalAlpha=1;
+    // the readout: charge % and the taper rate, or CHARGED once it's capped — the same numbers the pause
+    // card shows, just printed where you're actually looking. Skipped when the screen is too small to read.
+    if(lit && w>28){
+      const full=g.batt>=CHARGE_CAP;
+      const l1=full?'CHARGED':Math.round(g.batt*100)+'%';
+      const l2=full?Math.round(g.batt*100)+'%':Math.round(Math.max(0,-g.kw))+' kW';
+      ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='rgba(6,32,22,.9)';
+      ctx.font='900 '+Math.max(7,h*0.115)+'px system-ui,sans-serif';
+      ctx.fillText(l1, x, y-h*0.71+h*0.28*0.34);
+      ctx.font='800 '+Math.max(6,h*0.09)+'px system-ui,sans-serif';
+      ctx.fillText(l2, x, y-h*0.71+h*0.28*0.74);
+      ctx.restore();
+    }
     ctx.fillStyle=lit?'rgba(138,255,193,.85)':'rgba(127,226,255,.75)';              // the bolt on the canopy face
     ctx.fillRect(x-w*0.06,y-h*0.99,w*0.12,h*0.11);
   }
@@ -4045,8 +4070,14 @@ function parkUp(g){
   // (which is where the socket is, and which leaves it pointing back across the lot for the drive out).
   c.angle = onLot ? Math.atan2(-p.tx*gm.side, p.ty*gm.side)
                   : Math.atan2(p.ty,p.tx);                           // a shoulder stop just straightens up
-  g.parked={ charger:onLot, kwh:0, cost:0, idle:0, plugged:false };  // stopped anywhere short of the lot —
-                                                                     // the drive, the shoulder — is no charger
+  // which kiosk we're actually plugged into — the nearest CHG_D column to where we stopped — so the
+  // dashboard camera and the kiosk's own screen both know which post is ours
+  let kioskIdx=null;
+  if(onLot){ let best=CHG_D[0], bd=Infinity;
+    for(const d of CHG_D){ const dist=Math.abs(d-gm.d); if(dist<bd){ bd=dist; best=d; } }
+    kioskIdx=gm.r.c+best; }
+  g.parked={ charger:onLot, kwh:0, cost:0, idle:0, plugged:false,    // stopped anywhere short of the lot —
+    kioskIdx, kioskSide:onLot?gm.side:null };                        // the drive, the shoulder — is no charger
   g.pullIn=null;
   state='paused';
   setPauseUI();
