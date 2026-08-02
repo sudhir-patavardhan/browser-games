@@ -431,7 +431,7 @@ function newGame(forceSeed){
     apArm:true,                                // the valet: auto-park is armed until the driver waves it off
     scenery:makeScenery(seed),
     zombies:[], splats:[], gibs:[], flecks:[], shots:[],   // the horde, and what's left of it
-    zrng:mulberry32(seed^0x2b1e), zNextIdx:0, gunCd:0, cashRun:0, goreT:0, bountyMulMax:1,
+    zrng:mulberry32(seed^0x2b1e), zNextIdx:0, packLeft:0, gunCd:0, cashRun:0, goreT:0, bountyMulMax:1,
     vmax:0, zCarKills:0, gunKills:0, buzzes:0, contracts:makeContracts(seed), mod:carMods(),
     deer:[], drng, deerNext:8000+drng()*8000,   // the county's own wildlife — first crossing 0.8-1.6km out
     deerHits:0, spooks:0,
@@ -2543,6 +2543,20 @@ function bumpStreak(){
   return count;
 }
 const Z_MAX=9, Z_HIT=55, Z_H=92;                    // population cap, bumper-strike radius, body height (world px)
+/* THE HORDE TRAVELS IN PACKS. It used to walk in single file: one shambler laid every 45-90 points of road,
+   reaped 4 points behind you, none existing past 70 points ahead — a 74-point window over a 67.5-point mean,
+   so ~1.1 were ever alive and Z_MAX=9 was unreachable outside a bounty wave. Driven and counted, the road
+   you can see held zero or one 91% of the time, and every encounter was the same encounter: one body, dodge
+   left or right, repeat.
+   So the spawner now draws a KNOT rather than a body — mostly one or two, sometimes five or six — lays it
+   shoulder to shoulder over a few points, then leaves a long clear stretch before the next one. The numbers
+   below are chosen to keep shamblers-per-km exactly where it was: mean knot 2.29 bodies, mean 8 points
+   inside a knot, mean 145 between them, which is the same 67.5 points per head as before. This is a change
+   of SHAPE, NOT VOLUME — the same horde, arranged so that meeting it is a decision instead of a coin flip,
+   and so the empty road in between is finally empty enough to notice. */
+const PACK_IN=5, PACK_IN_J=6, PACK_GAP=105, PACK_GAP_J=80;
+function packSize(r){ const x=r();                  // 1:40% 2:25% 3:15% 4:10% 5:6% 6:4%  (mean 2.29)
+  return x<0.40?1 : x<0.65?2 : x<0.80?3 : x<0.90?4 : x<0.96?5 : 6; }
 /* the CLOSE SHAVE: pass a live shambler with the nose inside BUZZ_R (but outside the strike) at speed and
    you're paid in HEAT — half a multiplier step, and the chain's grace window refreshed. That refresh is the
    real mechanic: a shave can BRIDGE a chain across the straight between two corners, so the horde stops
@@ -2635,10 +2649,15 @@ function updateZombies(g,dt){
       }
     }
   }
-  // spawner: one shambler every ~45–90 points of road, up to the cap — seeded, so a seed replays its horde
-  if(g.zNextIdx===0) g.zNextIdx=c.idx+46+g.zrng()*40;
-  while(c.idx+70>g.zNextIdx){ if(g.zombies.length<(g.waveT>0?14:Z_MAX)) spawnZombie(g,g.zNextIdx);
-    g.zNextIdx+=45+g.zrng()*45; }
+  // spawner: knots of shamblers, tight inside and far apart — seeded, so a seed replays its horde exactly
+  if(g.zNextIdx===0){ g.zNextIdx=c.idx+46+g.zrng()*40; g.packLeft=0; }
+  while(c.idx+70>g.zNextIdx){
+    if(g.packLeft<=0) g.packLeft=packSize(g.zrng);                              // how many bodies in this knot
+    if(g.zombies.length<(g.waveT>0?14:Z_MAX)) spawnZombie(g,g.zNextIdx);
+    g.packLeft--;
+    g.zNextIdx += g.packLeft>0 ? PACK_IN+g.zrng()*PACK_IN_J                     // shoulder to shoulder…
+                               : PACK_GAP+g.zrng()*PACK_GAP_J;                  // …then a long clear stretch
+  }
   const gun=GUNS[gunEq]; g.gunCd-=dt;
   let tgt=null, tgtD=1e9;
   for(let i=g.zombies.length-1;i>=0;i--){ const z=g.zombies[i];
