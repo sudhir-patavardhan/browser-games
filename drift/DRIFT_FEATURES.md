@@ -3,6 +3,40 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## The cluster earns its glass — a premium EV instrument panel (2026-08-02)
+
+**What.** The driver-view binnacle is reworked into the cluster of a high-end electric car, inside the same
+single-canvas renderer and the same `wheelGeom()`/`clusterH()` layout maths.
+
+* **Speed is the instrument.** The big numeral now sits inside a thin gauge arc — a faint full track with a
+  lit cyan sweep and a bead at its tip that *is* the speed — and its glow breathes with velocity: barely
+  there at a cruise, awake at the top end. The old lane brackets are gone.
+* **Power got a real gauge.** The stepped segment strip is replaced by a **vertical instrument on the right
+  of the glass** with a true zero line: drive climbs from zero in cyan, regen (and a charger's feed) falls
+  below it in green, with quarter ticks, a kW numeral, and a label that switches POWER / REGEN / CHARGE.
+  Hard regen adds a soft green halo, so lifting into a corner *feels* like the motor working backwards.
+* **Battery speaks in colour.** RANGE (bottom-left) shifts green → amber → red with the pack; critical
+  charge pulses slowly, and plugging in turns the block over to **CHARGING · nn kW** with a bolt in the
+  cell. The crash pad's ambient light line — the one restrained cabin-wide warning — re-lights amber when
+  the pack drops under 15%.
+* **A proper top strip.** The lone `D` is now a **P R N D gear rack** (live gear lit and underlined, `P` at
+  a standstill) with the clock, outside temp, the CRUISE chip — and a **drive-mode chip**: SPORT in cyan,
+  DRIFT in magenta while you're sideways (latched and decayed so it doesn't strobe), RANGE in amber on a
+  low pack, CHARGE at a kiosk.
+* **The bottom strip is trip + media.** TRIP moved down opposite RANGE and now carries a slow-averaged
+  **Wh/km efficiency** readout; the stereo pill gets a hairline border and a glass play button instead of a
+  warning-orange dot. Tap targets are unchanged.
+* **Materials, not neon.** The bezel is a brushed gradient lit from above, the glass glare is dialled down
+  so it never costs a digit, and the nav route is drawn as a soft halo under a bright core.
+
+**Why.** The cabin sold "a high-end EV" but the cluster read as a HUD: a bare numeral, a segment bar, one
+gear letter. Real clusters put power on a zero-crossing instrument, state into colour, and restraint into
+everything else — and that's also simply easier to read at speed.
+
+**Defended by** the `cabin` suite (renders every viewport in both views without throwing, and the road band
+survives the cabin), `controls` (the wheel pads still work where they're drawn), and `stereo` (the media
+pill's tap targets are untouched).
+
 ## The services get a forecourt — a trumpet exit, a fence that bows around it, and charging kiosks (2026-08-02)
 
 **What.** Four changes to the rest area, all from driving into one and looking at it.

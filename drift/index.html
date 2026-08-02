@@ -1082,10 +1082,13 @@ function drawDashboard(g){
   ctx.quadraticCurveTo(W*0.5,topY-26, W,lip); ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
 
   const roll=(dy)=>{ ctx.beginPath(); ctx.moveTo(0,lip+dy); ctx.quadraticCurveTo(W*0.5,topY-26+dy,W,lip+dy); };
-  // ambient light line along the crash pad
+  // ambient light line along the crash pad — and the one restrained thing the cabin does about a dying
+  // pack: the whole line shifts to amber, the way a real EV re-lights its ambient trim on a warning
   ctx.lineCap='round';
-  for(const [w,a] of [[6,'rgba(110,215,255,.09)'],[2.4,'rgba(150,230,255,.26)'],[1,'rgba(225,248,255,.7)']]){
-    ctx.strokeStyle=a; ctx.lineWidth=w; roll(0); ctx.stroke(); }
+  const amb = g.batt<=0.15
+    ? [[6,'rgba(255,170,80,.10)'],[2.4,'rgba(255,190,110,.26)'],[1,'rgba(255,232,205,.7)']]
+    : [[6,'rgba(110,215,255,.09)'],[2.4,'rgba(150,230,255,.26)'],[1,'rgba(225,248,255,.7)']];
+  for(const [w,a] of amb){ ctx.strokeStyle=a; ctx.lineWidth=w; roll(0); ctx.stroke(); }
   // contrast stitching, the way a leather dash top is actually finished
   ctx.setLineDash([5,6]); ctx.strokeStyle='rgba(226,164,110,.34)'; ctx.lineWidth=1.4; roll(9); ctx.stroke();
   ctx.setLineDash([]);
@@ -1125,9 +1128,11 @@ function drawBinnacle(g, y0, h, cx, rad){
   ctx.fillStyle='rgba(0,0,0,.55)';
   ctx.beginPath(); ctx.moveTo(x0-7,y0+4); ctx.quadraticCurveTo(cx,y0-14, x1+7,y0+4);
   ctx.lineTo(x1+7,y0+12); ctx.quadraticCurveTo(cx,y0-6, x0-7,y0+12); ctx.closePath(); ctx.fill();
-  // bezel, then glass sunk inside it
-  ctx.fillStyle='#191d25'; rr(x0-3,y0-2,wd+6,h+5,r+3); ctx.fill();
-  ctx.strokeStyle='rgba(210,235,255,.12)'; ctx.lineWidth=1; rr(x0-3,y0-2,wd+6,h+5,r+3); ctx.stroke();
+  // bezel — brushed, lit from above like real trim — then glass sunk inside it
+  const bz=ctx.createLinearGradient(0,y0-2,0,y0+h+3);
+  bz.addColorStop(0,'#232833'); bz.addColorStop(0.12,'#191d25'); bz.addColorStop(1,'#12151c');
+  ctx.fillStyle=bz; rr(x0-3,y0-2,wd+6,h+5,r+3); ctx.fill();
+  ctx.strokeStyle='rgba(210,235,255,.14)'; ctx.lineWidth=1; rr(x0-3,y0-2,wd+6,h+5,r+3); ctx.stroke();
   ctx.fillStyle='#04050a'; rr(x0,y0,wd,h,r); ctx.fill();
 
   ctx.save(); rr(x0,y0,wd,h,r); ctx.clip();
@@ -1143,22 +1148,23 @@ function drawBinnacle(g, y0, h, cx, rad){
   ctx.fillStyle=lit; ctx.fillRect(x0,y0,wd,h);
 
   clusterTop(g, x0, x1, y0+13*s, s);
-  tripBlock(g, x1-9*s, y0+50*s, s);                       // under the temp, where a cluster keeps its trip
   bigSpeed(g, gcx, y0+h*0.50, h, s);
   navMap(g, x0+9*s, y0+h*0.30, wd*0.235, h*0.42, s);      // the map, where a real cluster puts it
+  powerBlock(g, x1-9*s, y0+h*0.26, h*0.44, s);            // the right column: live power, drawn vertically
   rangeBlock(g, x0+9*s, y1-10*s, s);
-  powerBlock(g, x1-9*s, y1-10*s, wd*0.24, s);
+  tripBlock(g, x1-9*s, y1-10*s, s);                       // bottom-right, mirroring RANGE across the glass
   mediaBar(g, gcx, y1-13*s, wd*0.30, s);
 
-  // glare across the glass — a flat card never has this, and a pane of glass always does
+  // glare across the glass — a flat card never has this, and a pane of glass always does. Kept faint:
+  // it has to read as glass without ever costing a digit.
   const gl=ctx.createLinearGradient(x0,y1,x0+wd*0.75,y0);
-  gl.addColorStop(0,'rgba(255,255,255,0)'); gl.addColorStop(.47,'rgba(255,255,255,.05)');
-  gl.addColorStop(.53,'rgba(255,255,255,.07)'); gl.addColorStop(.6,'rgba(255,255,255,0)');
+  gl.addColorStop(0,'rgba(255,255,255,0)'); gl.addColorStop(.47,'rgba(255,255,255,.035)');
+  gl.addColorStop(.53,'rgba(255,255,255,.05)'); gl.addColorStop(.6,'rgba(255,255,255,0)');
   ctx.fillStyle=gl; ctx.fillRect(x0,y0,wd,h);
   ctx.restore();
 }
 
-// the thin strip along the top: clock, gear, outside temp — the small print every car carries
+// the thin strip along the top: clock, gear, drive mode, outside temp — the small print every car carries
 function clusterTop(g,x0,x1,y,s){
   const d=new Date();
   const hh=d.getHours(), mm=String(d.getMinutes()).padStart(2,'0');
@@ -1167,16 +1173,35 @@ function clusterTop(g,x0,x1,y,s){
   ctx.textAlign='left'; ctx.fillStyle='#c3dcee'; ctx.font='600 '+Math.round(11*s)+'px '+FMONO;
   ctx.fillText(clock, x0+10*s, y);
   ctx.textAlign='right'; ctx.fillText((18+(g.seed%11))+'°C', x1-10*s, y);
-  ctx.textAlign='center'; ctx.fillStyle='#dff2ff'; ctx.font='800 '+Math.round(13*s)+'px '+FSANS;
-  ctx.fillText('D', (x0+x1)*0.5, y);
-  // CRUISE: lit with the set speed when it's holding, dim when it isn't
-  const on=g.cc>0, cw=Math.max(64,70*s), chh=Math.max(17,19*s);
-  const cx2=(x0+x1)*0.5 - (x1-x0)*0.235, cy2=y-chh*0.72;
-  ctx.fillStyle=on?'rgba(127,226,255,.16)':'rgba(255,255,255,.06)';
-  rr(cx2-cw*0.5, cy2, cw, chh, chh*0.5); ctx.fill();
-  ctx.strokeStyle=on?'rgba(127,226,255,.6)':'rgba(190,215,235,.2)'; ctx.lineWidth=1;
-  rr(cx2-cw*0.5, cy2, cw, chh, chh*0.5); ctx.stroke();
+  // the gear rack: P R N D all present, the live one lit — a shifter readout, not a lone letter
+  const mid=(x0+x1)*0.5, gear=(g.speed*0.36<1)?'P':'D', gs=Math.round(11*s), gw=gs*1.35;
+  ctx.textAlign='center'; ctx.font='800 '+gs+'px '+FSANS;
+  'PRND'.split('').forEach((L,i)=>{
+    const lit=L===gear;
+    ctx.fillStyle=lit?'#eef9ff':'rgba(160,185,210,.28)';
+    ctx.fillText(L, mid+(i-1.5)*gw, y);
+    if(lit){ ctx.fillStyle='rgba(127,226,255,.9)';
+      ctx.fillRect(mid+(i-1.5)*gw-gw*0.26, y+3*s, gw*0.52, Math.max(1,1.3*s)); }
+  });
+  // drive mode, right of the gear rack: DRIFT while sideways, RANGE when the pack runs low, SPORT otherwise.
+  // Sideways flickers frame to frame, so it latches and decays instead of strobing.
+  g.uiDrift=Math.abs(g.slip)>0.45 ? 1 : (g.uiDrift||0)*0.96;
+  const mode=(g.parked&&g.parked.charger)?'CHARGE':(g.uiDrift>0.3?'DRIFT':(g.batt<=0.25?'RANGE':'SPORT'));
+  const mcol=mode==='DRIFT'?'#e893ff':mode==='RANGE'?'#ffb454':mode==='CHARGE'?'#63e6a4':CYAN;
+  const cw=Math.max(64,70*s), chh=Math.max(17,19*s), cy2=y-chh*0.72;
+  const mx=mid+(x1-x0)*0.235;
+  ctx.fillStyle='rgba(255,255,255,.05)'; rr(mx-cw*0.5, cy2, cw, chh, chh*0.5); ctx.fill();
+  ctx.strokeStyle='rgba(190,215,235,.22)'; ctx.lineWidth=1;
+  rr(mx-cw*0.5, cy2, cw, chh, chh*0.5); ctx.stroke();
   ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle=mcol; ctx.font='800 '+Math.round(9.5*s)+'px '+FSANS;
+  ctx.fillText(mode, mx, cy2+chh*0.54);
+  // CRUISE: lit with the set speed when it's holding, dim when it isn't — mirrored left of the rack
+  const on=g.cc>0, cx2=mid-(x1-x0)*0.235;
+  ctx.fillStyle=on?'rgba(127,226,255,.16)':'rgba(255,255,255,.05)';
+  rr(cx2-cw*0.5, cy2, cw, chh, chh*0.5); ctx.fill();
+  ctx.strokeStyle=on?'rgba(127,226,255,.6)':'rgba(190,215,235,.22)'; ctx.lineWidth=1;
+  rr(cx2-cw*0.5, cy2, cw, chh, chh*0.5); ctx.stroke();
   ctx.fillStyle=on?CYAN:'#c3dcee'; ctx.font='800 '+Math.round(9.5*s)+'px '+FSANS;
   ctx.fillText(on? ('CC '+Math.round(g.cc*0.36)) : 'CRUISE', cx2, cy2+chh*0.54);
   ctx.textBaseline='alphabetic';
@@ -1196,26 +1221,31 @@ function wheelPadAt(g,x,y){
 }
 function pressPad(i){ if(i===0) toggleCruise(); else if(i===1){ if(MUSIC.length) musicSkip(1); else auxPick(); } }
 
-// one big, light numeral between two brackets. Airy is the whole point — a cluster is not a dashboard of tiles.
+// one big, light numeral inside a thin speed arc. Airy is the whole point — a cluster is not a dashboard
+// of tiles. The glow under the digits breathes with speed: barely there at a cruise, awake at the top end.
 function bigSpeed(g,cx2,cy2,h,s){
-  const kmh=Math.round(g.speed*0.36);
+  const kmh=Math.round(g.speed*0.36), f=clamp(g.speed/VTOP,0,1);
+  // the arc: a faint full track, and a lit sweep that is the speed — restrained, one hairline, no needle
+  const ar=h*0.40, ay=cy2+h*0.02, a0=Math.PI*0.78, a1=Math.PI*2.22;
+  ctx.lineCap='round';
+  ctx.strokeStyle='rgba(190,215,235,.10)'; ctx.lineWidth=Math.max(1.6,h*0.014);
+  ctx.beginPath(); ctx.arc(cx2,ay,ar,a0,a1); ctx.stroke();
+  if(f>0.004){
+    const ae=a0+(a1-a0)*f;
+    ctx.strokeStyle='rgba(127,226,255,'+(0.45+0.35*f)+')'; ctx.lineWidth=Math.max(1.8,h*0.018);
+    ctx.beginPath(); ctx.arc(cx2,ay,ar,a0,ae); ctx.stroke();
+    ctx.fillStyle='#dff6ff';                                       // the sweep's tip, a lit bead
+    ctx.beginPath(); ctx.arc(cx2+Math.cos(ae)*ar, ay+Math.sin(ae)*ar, Math.max(1.6,h*0.014), 0, TAU); ctx.fill();
+  }
+  ctx.save();
+  ctx.shadowColor='rgba(127,226,255,'+(0.14+0.30*f)+')'; ctx.shadowBlur=h*(0.03+0.06*f);
   ctx.textAlign='center'; ctx.textBaseline='alphabetic';
   ctx.fillStyle='#f4fbff'; ctx.font='300 '+Math.round(h*0.42)+'px '+FMONO;
   ctx.fillText(String(kmh), cx2, cy2+h*0.13);
+  ctx.restore();
+  ctx.textAlign='center'; ctx.textBaseline='alphabetic';
   ctx.fillStyle=DIM; ctx.font='600 '+Math.round(h*0.075)+'px '+FSANS;
   ctx.fillText('km/h', cx2, cy2+h*0.27);
-  // lane brackets, exactly the way the reference cluster frames the speed
-  const bw=h*0.30, bx=h*0.44, by=h*0.02;
-  ctx.strokeStyle='rgba(190,215,235,.42)'; ctx.lineWidth=Math.max(1.6,h*0.018);
-  ctx.lineCap='round'; ctx.lineJoin='round';
-  for(const sg of [-1,1]){
-    ctx.beginPath();
-    ctx.moveTo(cx2+sg*(bx-h*0.06), cy2-bw*0.5+by);
-    ctx.lineTo(cx2+sg*bx,          cy2-bw*0.5+by+h*0.05);
-    ctx.lineTo(cx2+sg*bx,          cy2+bw*0.5+by-h*0.05);
-    ctx.lineTo(cx2+sg*(bx-h*0.06), cy2+bw*0.5+by);
-    ctx.stroke();
-  }
 }
 
 // a live top-down of the road you're on, oriented so your heading points up — like every car's nav pane
@@ -1236,10 +1266,13 @@ function navMap(g,x,y,w,h,s){
   for(let i=lo;i<hi;i++){ const p=R.pts[i]; ctx.lineTo(p.x-p.ty*ROAD_HALF, p.y+p.tx*ROAD_HALF); }
   for(let i=hi-1;i>=lo;i--){ const p=R.pts[i]; ctx.lineTo(p.x+p.ty*ROAD_HALF, p.y-p.tx*ROAD_HALF); }
   ctx.closePath(); ctx.fillStyle='rgba(150,190,220,.20)'; ctx.fill();
-  // the route itself, and the corner it's warning you about
+  // the route itself — a soft halo under a bright core, the way a nav line is actually lit — and the
+  // corner it's warning you about
   ctx.beginPath();
   for(let i=lo;i<hi;i++){ const p=R.pts[i]; i===lo?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); }
-  ctx.strokeStyle='#7fe2ff'; ctx.lineWidth=70; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.strokeStyle='rgba(127,226,255,.18)'; ctx.lineWidth=150; ctx.stroke();
+  ctx.strokeStyle='#7fe2ff'; ctx.lineWidth=60; ctx.stroke();
   if(nav.real && nav.idx>0 && nav.idx<R.pts.length){
     const p=R.pts[nav.idx];
     ctx.fillStyle=(g.speed>nav.rec*1.06)?'#ffb454':'#ffffff';
@@ -1269,50 +1302,70 @@ function navMap(g,x,y,w,h,s){
   ctx.fillText('⚡ '+restFmt(rm), x+7*s, y+h-footH*0.28);
 }
 
-// the trip odometer, top-right column — how far this run has actually gone, on the same 1px≈0.1m scale
-// the ghost meter and the contract board already count in. It used to be bare text dropped in the corner,
-// which is unreadable the moment anything busy sits behind it — so now it gets the same lit chip RANGE and
-// the charger distance get: a solid backing sized to the number, not a hope that the glass stays dark there.
+// trip + efficiency, bottom-right — how far this run has actually gone (1px≈0.1m, the same scale the ghost
+// meter and the contract board count in), and what it has cost per km. Efficiency is smoothed to a crawl so
+// it reads as this drive's average, not a needle chasing the pedal.
 function tripBlock(g,x,y,s){
-  const bw=Math.max(70,78*s), bh=Math.max(34,38*s), bx=x-bw, by=y-bh+8*s;
-  ctx.fillStyle='rgba(255,255,255,.07)'; rr(bx,by,bw,bh,bh*0.22); ctx.fill();
-  ctx.strokeStyle='rgba(190,215,235,.18)'; ctx.lineWidth=1; rr(bx,by,bw,bh,bh*0.22); ctx.stroke();
+  const kmh=g.speed*0.36;
+  if(kmh>25) g.uiEff=lerp(g.uiEff==null?170:g.uiEff, clamp(g.kw/kmh*1000,0,999), 0.008);
   ctx.textAlign='right'; ctx.textBaseline='alphabetic';
-  ctx.fillStyle='#f4fbff'; ctx.font='800 '+Math.round(17*s)+'px '+FMONO;
-  ctx.fillText((g.dist/10000).toFixed(1)+' km', x-9*s, y-13*s);
-  ctx.fillStyle=CYAN; ctx.font='800 '+Math.round(9.5*s)+'px '+FSANS;
-  ctx.fillText('TRIP', x-9*s, y);
+  ctx.fillStyle='#f4fbff'; ctx.font='800 '+Math.round(18*s)+'px '+FMONO;
+  ctx.fillText((g.dist/10000).toFixed(1)+' km', x, y-11*s);
+  ctx.fillStyle='#c3dcee'; ctx.font='700 '+Math.round(9.5*s)+'px '+FSANS;
+  ctx.fillText('TRIP'+(g.uiEff==null?'':' · '+Math.round(g.uiEff)+' Wh/km'), x, y);
 }
 
-// range, bottom-left, in amber — the way a real EV cluster shouts about what's left
+// battery + range, bottom-left. The colour IS the message: a healthy pack sits in quiet green, a middling
+// one in amber, a critical one in red with a slow pulse — and at a charger the whole block turns to the
+// business of drinking, rate and all.
 function rangeBlock(g,x,y,s){
-  const low=g.batt<0.15, col=low?'#ff8a5c':'#ffb454';
+  const chg=!!(g.parked&&g.parked.charger), low=g.batt<=0.15;
+  const col = low?'#ff7a66' : g.batt<=0.40?'#ffb454' : '#7ddfae';
   const bw=15*s, bh=8*s, by=y-19*s;
+  const pulse = (low && !chg) ? 0.55+0.45*Math.sin(g.time*3.2) : 1;
+  ctx.globalAlpha=pulse;
   ctx.strokeStyle=col; ctx.lineWidth=Math.max(1.2,1.3*s);
   rr(x,by,bw,bh,1.8*s); ctx.stroke();
   ctx.fillStyle=col; ctx.fillRect(x+bw+1.2*s, by+bh*0.28, 1.8*s, bh*0.44);
   ctx.fillRect(x+1.6*s, by+1.6*s, Math.max(1,(bw-3.2*s)*g.batt), bh-3.2*s);
+  if(chg){ // the bolt over the cell — the icon every charge port flash uses
+    ctx.fillStyle='#eafff3';
+    ctx.beginPath(); ctx.moveTo(x+bw*0.56,by-1.5*s); ctx.lineTo(x+bw*0.30,by+bh*0.58);
+    ctx.lineTo(x+bw*0.50,by+bh*0.58); ctx.lineTo(x+bw*0.42,by+bh+1.5*s);
+    ctx.lineTo(x+bw*0.72,by+bh*0.38); ctx.lineTo(x+bw*0.52,by+bh*0.38); ctx.closePath(); ctx.fill();
+  }
+  ctx.globalAlpha=1;
   ctx.textAlign='left'; ctx.textBaseline='alphabetic';
   ctx.fillStyle=col; ctx.font='800 '+Math.round(18*s)+'px '+FMONO;
   ctx.fillText(Math.round(g.batt*EV_RANGE*g.mod.cap)+' km', x+bw+8*s, by+bh);   // the dash reports the pack you actually fitted
-  ctx.fillStyle='#c3dcee'; ctx.font='700 '+Math.round(9.5*s)+'px '+FSANS;
-  ctx.fillText('RANGE · '+Math.round(g.batt*100)+'%', x, y);
+  ctx.fillStyle=chg?'#8affc1':'#c3dcee'; ctx.font='700 '+Math.round(9.5*s)+'px '+FSANS;
+  ctx.fillText(chg ? ('CHARGING · '+Math.round(Math.abs(g.kw))+' kW')
+                   : ('RANGE · '+Math.round(g.batt*100)+'%'), x, y);
 }
 
-// power / regen, bottom-right, stepped like an instrument
-function powerBlock(g,x,y,w,s){
-  const n=10, mid=3, gap=Math.max(1.4,w*0.016), sw=(w-gap*(n-1))/n;
-  const bh=Math.max(4.5,6.5*s), by=y-18*s, x0=x-w;
-  for(let i=0;i<n;i++){
-    let col='rgba(150,180,205,.14)';
-    if(i<mid){ if((mid-i)/mid<=clamp(-g.kw/REGEN_KW,0,1)) col='#63e6a4'; }
-    else if((i-mid+1)/(n-mid)<=clamp(g.kw/EV_KW,0,1)) col=CYAN;
-    ctx.fillStyle=col; rr(x0+i*(sw+gap), by, sw, bh, Math.min(1.8,sw*0.3)); ctx.fill();
-  }
-  ctx.fillStyle='rgba(255,255,255,.28)'; ctx.fillRect(x0+mid*(sw+gap)-gap*0.5-0.5, by-2*s, 1, bh+4*s);
+// power / regen, the right column — a vertical instrument with a real zero line. Drive climbs from zero in
+// cyan; regen (and a charger's feed) falls below it in green. x is the right edge, ht the gauge's height.
+function powerBlock(g,x,y,ht,s){
+  const chg=!!(g.parked&&g.parked.charger);
+  const drive=clamp(g.kw/EV_KW,0,1);
+  const regen=clamp(-g.kw/(chg?CHG_KW_MAX:REGEN_KW*1.5),0,1);
+  const bw=Math.max(4,5*s), bx=x-bw, zy=y+ht*0.66;
+  ctx.fillStyle='rgba(255,255,255,.06)'; rr(bx,y,bw,ht,bw*0.5); ctx.fill();
+  ctx.fillStyle='rgba(190,215,235,.22)';                          // quarter ticks up the drive side
+  for(let i=1;i<4;i++) ctx.fillRect(bx-3*s, zy-(zy-y)*i/4, 2*s, 1);
+  if(drive>0.004){ const fh=(zy-y)*drive;
+    ctx.fillStyle=CYAN; rr(bx, zy-fh, bw, fh, Math.min(bw*0.5,fh*0.5)); ctx.fill(); }
+  if(regen>0.004){ const fh=(y+ht-zy)*regen;
+    ctx.fillStyle='#63e6a4'; rr(bx, zy, bw, fh, Math.min(bw*0.5,fh*0.5)); ctx.fill();
+    if(regen>0.5){ ctx.fillStyle='rgba(99,230,164,'+(regen-0.5)*0.5+')';   // hard regen glows, softly
+      rr(bx-1.5, zy, bw+3, fh, Math.min(bw*0.5+1.5,fh*0.5)); ctx.fill(); } }
+  ctx.fillStyle='rgba(255,255,255,.5)'; ctx.fillRect(bx-4*s, zy-0.5, bw+4*s, 1);   // zero
+  const rg=g.kw<-2;
   ctx.textAlign='right'; ctx.textBaseline='alphabetic';
-  ctx.fillStyle='#c3dcee'; ctx.font='700 '+Math.round(9.5*s)+'px '+FSANS;
-  ctx.fillText(((g.parked&&g.parked.charger)?'CHARGE':(g.kw<-2?'REGEN':'POWER'))+' · '+Math.round(Math.abs(g.kw))+' kW', x, y);
+  ctx.fillStyle=rg?'#8affc1':'#f4fbff'; ctx.font='800 '+Math.round(17*s)+'px '+FMONO;
+  ctx.fillText(String(Math.round(Math.abs(g.kw))), bx-7*s, zy-3*s);
+  ctx.fillStyle=rg?'#63e6a4':'#c3dcee'; ctx.font='700 '+Math.round(9.5*s)+'px '+FSANS;
+  ctx.fillText('kW · '+(chg?'CHARGE':(rg?'REGEN':'POWER')), bx-7*s, zy+10*s);
 }
 
 // the stereo, as a cluster widget rather than a card: title, meter, and a tap target
@@ -1320,10 +1373,14 @@ function mediaBar(g,cx2,y,w,s){
   const n=musicNow(), h=15*s, x=cx2-w*0.5, yy=y-h;
   g.uiStereo={ x:x-6*s, y:yy-4*s, w:w+12*s, h:h+8*s };
   ctx.fillStyle='rgba(255,255,255,.05)'; rr(x-6*s,yy-4*s,w+12*s,h+8*s,(h+8*s)*0.5); ctx.fill();
-  // play/pause dot
-  ctx.fillStyle=n.has?'#ff6a3d':'rgba(255,255,255,.22)';
+  ctx.strokeStyle='rgba(190,215,235,.14)'; ctx.lineWidth=1;
+  rr(x-6*s,yy-4*s,w+12*s,h+8*s,(h+8*s)*0.5); ctx.stroke();
+  // play/pause: a glass button, not a warning light
+  ctx.fillStyle=n.has?'rgba(127,226,255,.18)':'rgba(255,255,255,.08)';
   ctx.beginPath(); ctx.arc(x+h*0.5, yy+h*0.5, h*0.46, 0, TAU); ctx.fill();
-  ctx.fillStyle='#fff';
+  ctx.strokeStyle=n.has?'rgba(127,226,255,.55)':'rgba(190,215,235,.25)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(x+h*0.5, yy+h*0.5, h*0.46, 0, TAU); ctx.stroke();
+  ctx.fillStyle='#eaf6ff';
   if(n.playing){ ctx.fillRect(x+h*0.36,yy+h*0.32,h*0.09,h*0.36); ctx.fillRect(x+h*0.56,yy+h*0.32,h*0.09,h*0.36); }
   else { ctx.beginPath(); ctx.moveTo(x+h*0.40,yy+h*0.30); ctx.lineTo(x+h*0.68,yy+h*0.5);
          ctx.lineTo(x+h*0.40,yy+h*0.70); ctx.closePath(); ctx.fill(); }
