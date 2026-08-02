@@ -473,6 +473,7 @@ function step(dt){
   // road frame
   ensureAhead(R,c.idx);
   c.idx=nearestIdx(R,c.x,c.y,c.idx);
+  g.bio=bioState(g);                  // the land the car is in right now — the tyres and the paint both read it
   const p=R.pts[c.idx];
   const nx=-p.ty, ny=p.tx;
   const lateral=(c.x-p.x)*nx+(c.y-p.y)*ny;
@@ -518,7 +519,7 @@ function step(dt){
 
   // weight transfer: on the brakes the nose goes down and the rear goes light. lifting does a milder version of it.
   const wf=clamp(brk+(thr>0?0:LIFT),0,1);
-  let lat=lerp(LAT0,LAT1,diff)*g.mod.lat*(g.wet?0.88:1);  // track tyres raise the whole grip budget; rain taxes it
+  let lat=lerp(LAT0,LAT1,diff)*g.mod.lat*(1-0.12*g.bio.wet);  // track tyres raise the whole grip budget; rain taxes it 12%, snow country half that
   lat *= 1-(1-BRAKE_GRIP)*wf;                           // trail-braking is what unloads the rear — this is the drift trigger
   lat *= 1-(1-GAS_GRIP)*thr;                            // and power lights the rears up
   if(g.onGrass) lat*=0.45;
@@ -543,7 +544,7 @@ function step(dt){
   // speed: your right foot, drag, grass drag, and the scrub of a slide (power keeps it lit, braking kills it)
   let mag = spd;
   mag += thr*ACCEL*clamp(1-mag/VTOP,0,1)*dt;
-  mag -= (brk*BRAKEF*(g.wet?0.85:1) + (thr>0?0:COAST))*dt;   // wet pads bite later too
+  mag -= (brk*BRAKEF*(1-0.15*g.bio.wet) + (thr>0?0:COAST))*dt;   // wet pads bite later too
   mag -= mag*DRAG*dt;
   if(g.onGrass) mag -= 300*dt;
   mag -= mag*Math.abs(slip)*(brk>0?0.45:(thr>0?0.30:0.55))*dt;
@@ -636,6 +637,12 @@ function step(dt){
     if(Math.random()<0.6){ for(const w of [[rlx,rly],[rrx,rry]]){
       g.smoke.push({x:w[0],y:w[1],vx:(Math.random()-0.5)*40-c.vx*0.05,vy:(Math.random()-0.5)*40-c.vy*0.05,
         r:6+Math.random()*6,life:1, max:0.55+Math.random()*0.35}); } }
+  }
+  // desert dust: at speed the rear wheels pull a warm plume off the road — a different powder than tyre smoke
+  if(g.bio.des>0.35 && g.speed>420 && Math.random()<g.bio.des*0.35){
+    const w=Math.random()<0.5?[rlx,rly]:[rrx,rry];
+    g.smoke.push({x:w[0],y:w[1],vx:(Math.random()-0.5)*30-c.vx*0.04,vy:(Math.random()-0.5)*30-c.vy*0.04,
+      r:7+Math.random()*7,life:1, max:0.7+Math.random()*0.4, k:1});
   }
   c.rl.x=rlx; c.rl.y=rly; c.rl.set=true; c.rr.x=rrx; c.rr.y=rry; c.rr.set=true;
   if(g.skid.length>620) g.skid.splice(0,g.skid.length-620);
@@ -744,7 +751,8 @@ function render(){
 
   // ---- top-down view ----
   let shx=0,shy=0; if(g.shake>0){ shx=(Math.random()-0.5)*g.shake*14; shy=(Math.random()-0.5)*g.shake*14; }
-  ctx.fillStyle='#79c665'; ctx.fillRect(0,0,W,H);
+  const bw=(g.bio||(g.bio=bioState(g))).w;               // this view respects the biome too — one world, two lenses
+  ctx.fillStyle=bioCol(P_TOPBG,bw); ctx.fillRect(0,0,W,H);
   ctx.save();
   const s=spd||1, lead=Math.min(s*0.46,300);            // look further ahead, and sit further back:
   const tx=c.x+(c.vx/s)*lead, ty=c.y+(c.vy/s)*lead;      // this view's whole job is showing you the corner
@@ -752,7 +760,7 @@ function render(){
   ctx.translate(W/2+shx, H/2+shy);
   ctx.scale(TOPZOOM,TOPZOOM);
   ctx.translate(-g.cam.x,-g.cam.y);
-  ctx.fillStyle='#6cbb57';
+  ctx.fillStyle=bioCol(P_TUFT,bw);
   for(const t of g.grassTufts){
     const x=t.x+Math.round((g.cam.x-t.x)/4000)*4000;
     const y=t.y+Math.round((g.cam.y-t.y)/4000)*4000;
@@ -760,6 +768,11 @@ function render(){
   }
   drawRiversTop(g); drawBridgeTop(g); drawRoad(g); drawRestTop(g); drawBillboardsTop(g); drawSkid(g); drawZombiesTop(g); drawDeerTop(g); drawTrafficTop(g); drawGhostTop(g); drawCar(g); drawSmoke(g); drawGibs(g);
   ctx.restore();
+  bioVeil(bw);                                           // the biome's light, then its weather, on this glass too
+  const rainI=g.wet?1:g.bio.rain;
+  if(rainI>0.04) drawRain(g,0,rainI*0.7);
+  if(g.bio.snow>0.04) drawSnowFall(g,g.bio.snow*0.7);
+  if(g.bio.des>0.04) drawDust(g,g.bio.des*0.7);
   updateHUD();
 }
 
@@ -783,11 +796,13 @@ function drawWindshield(g,spd){
   // sky — sun, cloud decks, birds and the odd airliner. all of it sits at infinity, so only yaw moves it.
   const px=W/2+shx, py=horizon+shy;
   drawSky(g,a,px,py,horizon);
-  // grass ground — aerial perspective down the field: far grass by the horizon hazes pale and desaturated
-  // into the sky, near grass under the camera reads richer and deeper. one vertical wash, so it costs nothing
-  // and it's the whole ground plane's depth cue.
+  // grass ground — aerial perspective down the field: far ground by the horizon hazes pale and desaturated
+  // into the sky, near ground under the camera reads richer and deeper. one vertical wash, so it costs
+  // nothing and it's the whole ground plane's depth cue. The colours are the biome's: green farmland, a
+  // sodden grey-green rain belt, snow cover, sand.
+  const bw=(g.bio||(g.bio=bioState(g))).w;
   const grnd=ctx.createLinearGradient(0,horizon,0,H);
-  grnd.addColorStop(0,'#a4cd8f'); grnd.addColorStop(.28,'#83c76a'); grnd.addColorStop(1,'#5aa544');
+  grnd.addColorStop(0,bioCol(P_GRND0,bw)); grnd.addColorStop(.28,bioCol(P_GRND1,bw)); grnd.addColorStop(1,bioCol(P_GRND2,bw));
   ctx.fillStyle=grnd; ctx.fillRect(0,horizon,W,H-horizon);
   // the edge of the world: a city hazing out along one arc of the horizon, then hills, landmarks, treeline
   drawHorizon(g,a,px,py,Math.max(horizon,py)+4);
@@ -802,9 +817,11 @@ function drawWindshield(g,spd){
   drawApron(g,zside,toScreen,lo,hi,a=>[a.in,a.out]);
   // the fields we're actually driving past — anchored in the world, so they stream by with travel
   drawNearScenery(g,ca,sa,px,py);
-  // wash the far fields into the treeline so the horizon reads as distance, not as a cut
-  const fz=ctx.createLinearGradient(0,horizon-12,0,horizon+34); fz.addColorStop(0,'rgba(234,246,216,0)');
-  fz.addColorStop(.3,'rgba(234,246,216,.4)'); fz.addColorStop(1,'rgba(234,246,216,0)');
+  // wash the far fields into the treeline so the horizon reads as distance, not as a cut — thicker air in
+  // the rain belt and in snow country, where the world genuinely shortens
+  const fogA=0.4+0.3*(bw[BIO_RAIN]+bw[BIO_SNOW]);
+  const fz=ctx.createLinearGradient(0,horizon-12,0,horizon+34); fz.addColorStop(0,bioColA(P_FOG,bw,0));
+  fz.addColorStop(.3,bioColA(P_FOG,bw,fogA)); fz.addColorStop(1,bioColA(P_FOG,bw,0));
   ctx.fillStyle=fz; ctx.fillRect(0,horizon-12,W,46);
 
   // gather visible road strip — near-plane clipped, per-segment widths so lines don't shake near the camera.
@@ -833,8 +850,10 @@ function drawWindshield(g,spd){
     for(let i=B.length-1;i>=0;i--) ctx.lineTo(B[i].x,B[i].y);
     ctx.closePath(); ctx.fillStyle=fill; ctx.fill(); }
   if(L.length>1 && Rt.length>1){
-    // gravel/dirt shoulders — a real verge between tarmac and grass, not a hard white cut
-    ribbon(L,Lo,'#b7aa8b'); ribbon(Rt,Ro,'#b7aa8b');
+    // gravel/dirt shoulders — a real verge between tarmac and grass, not a hard white cut. Gravel in the
+    // farmland, damp grit in the rain, ploughed snow along the snow country, sand at the desert's edge.
+    const vergeCol=bioCol(P_VERGE,bw);
+    ribbon(L,Lo,vergeCol); ribbon(Rt,Ro,vergeCol);
     // the drive's mouths again, over the verge this time — or the gravel would run a stripe of grit
     // straight across where the lane leaves the road
     drawApron(g,zside,toScreen,lo,hi,a=>{ const i0=Math.max(a.in,ROAD_HALF), i1=Math.min(a.out,ROAD_HALF+SH+2);
@@ -848,8 +867,8 @@ function drawWindshield(g,spd){
     for(let i=Rt.length-1;i>=0;i--) ctx.lineTo(Rt[i].x,Rt[i].y);
     ctx.closePath();
     const road=ctx.createLinearGradient(0,horizon,0,H);
-    if(g.wet){ road.addColorStop(0,'#aeb5c1'); road.addColorStop(1,'#878e9c'); }   // rain-dark, sheened
-    else     { road.addColorStop(0,'#c1c6ce'); road.addColorStop(1,'#a1a7b3'); }
+    const rw=g.wet?[0,1,0,0]:bw;               // a daily rain day soaks the tarmac the whole run
+    road.addColorStop(0,bioCol(P_ROAD0,rw)); road.addColorStop(1,bioCol(P_ROAD1,rw));
     ctx.fillStyle=road; ctx.fill();
     // wheel-polished tracks — twin bands per lane where a million tyres have burnished the tarmac darker.
     // strongest under the camera, hazing out with distance like the asphalt itself, so depth reads true.
@@ -919,7 +938,7 @@ function drawWindshield(g,spd){
     ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke(); }
   // smoke projected
   for(const s of g.smoke){ const P=proj(s.x,s.y); if(!P) continue; const al=clamp(s.life,0,1);
-    ctx.fillStyle='rgba(255,'+Math.round(190+40*al)+','+Math.round(90+70*(1-al))+','+(al*0.5)+')';
+    ctx.fillStyle=smokeCol(g,s,al);
     ctx.beginPath(); ctx.arc(P.x,P.y,Math.max(2,s.r*P.sc),0,TAU); ctx.fill(); }
   drawGibs(g,proj);   // gore in flight
   // haze at the horizon for depth
@@ -941,8 +960,14 @@ function drawWindshield(g,spd){
     for(let i=0;i<6;i++){ const yy=horizon+40+Math.random()*(H-horizon-60); const xx=Math.random()<.5?20+Math.random()*60:W-80+Math.random()*60;
       ctx.beginPath(); ctx.moveTo(xx,yy); ctx.lineTo(xx,yy+40); ctx.stroke(); } }
 
+  bioVeil(g.bio.w);                 // the biome's ambient light, laid over the whole world
   if(g.nav) drawNav(g, proj, horizon);
-  if(g.wet) drawRain(g, horizon);   // the weather, on the glass — over the world, under the ichor
+  // the weather, on the glass — over the world, under the ichor. Each system's intensity is its biome's
+  // blend weight, so a border crossing fades one sky out and the next in.
+  const rainI=g.wet?1:g.bio.rain;
+  if(rainI>0.04) drawRain(g,horizon,rainI);
+  if(g.bio.snow>0.04) drawSnowFall(g,g.bio.snow);
+  if(g.bio.des>0.04) drawDust(g,g.bio.des);
   drawFlecks(g);      // ichor on the glass — in front of the world, behind the dash
   drawDashboard(g);
   drawWheel(g);
@@ -1015,7 +1040,7 @@ function navAhead(g){
     if(kk>k){ k=kk; dir=d<0?-1:1; idx=i; }
   }
   const diff=clamp(g.dist/46000,0,1);
-  const grip=lerp(LAT0,LAT1,diff)*GAS_GRIP;
+  const grip=lerp(LAT0,LAT1,diff)*GAS_GRIP*(1-0.12*(g.bio?g.bio.wet:0));   // the advisory feels the rain too
   const rec=k>1e-5 ? Math.sqrt(grip/k) : VTOP;
   return { k, dir, idx,
            distPx: idx<0?9e9:Math.max(0,(idx-c.idx)*SEG),
@@ -1500,6 +1525,70 @@ function forestAt(i,seed){
   const v=Math.sin(i*0.0041+p)*0.50 + Math.sin(i*0.0012+p*2.7)*0.34 + Math.sin(i*0.0093+p*0.6)*0.16;
   return clamp((v+0.12)*1.45,0,1)*onset;
 }
+
+/* ---------------------------- biomes ---------------------------- */
+/* The county isn't one county. Every ~5 km the land changes character — temperate farmland, a rain belt,
+   snow country, desert — and the road drives straight through the change rather than cutting to it: each
+   border is a ~1 km crossfade where both landscapes hold a share of every surface. Like everything else
+   out here it is a PURE function of (road index, seed): the same seed always drives the same journey, the
+   starting biome is the seed's own pick, and no two consecutive zones repeat. The physics probes pin the
+   canonical car on the canonical temperate road, so the harness entry points lock the world to temperate;
+   the biomes suite unlocks it and tests the weather on purpose. */
+const BIO_TEMP=0, BIO_RAIN=1, BIO_SNOW=2, BIO_DES=3, BIOMES=4;
+const BIO_PTS=Math.round(50000/SEG);          // ~5 km of road points per zone (1px ≈ 0.1 m)
+const BIO_BLEND=Math.round(10000/SEG);        // ~1 km of crossfade at each border
+let bioLock=false;                            // probes pin the canonical temperate world
+let _bioSeq={ seed:null, arr:null };          // the sequence memo — rebuilt the moment the seed changes
+function bioZone(n,seed){
+  if(_bioSeq.seed!==seed) _bioSeq={ seed, arr:[ (h01(((seed>>>0)%65536)*7+13)*BIOMES)|0 ] };
+  const a=_bioSeq.arr;
+  while(a.length<=n) a.push((a[a.length-1]+1+(h01(a.length*211+((seed>>>0)%16384)*3+5)*(BIOMES-1)|0))%BIOMES);
+  return a[n<0?0:n];
+}
+// distance → biome weights. One entry per biome, summing to 1; inside a zone one weight is 1, across a
+// border the outgoing and incoming biomes trade shares along a smoothstep.
+function bioMix(i,seed){
+  const w=[0,0,0,0];
+  if(bioLock){ w[BIO_TEMP]=1; return w; }
+  const j=Math.max(0,i), z=(j/BIO_PTS)|0, u=j-z*BIO_PTS;
+  const t=u>BIO_PTS-BIO_BLEND ? smoo((u-(BIO_PTS-BIO_BLEND))/BIO_BLEND) : 0;
+  w[bioZone(z,seed)]+=1-t; w[bioZone(z+1,seed)]+=t;
+  return w;
+}
+// the frame's read of the weather, cached on the game each step: the blend weights, each biome's share,
+// and the wetness the tyres actually feel — a daily rain day soaks the whole run (the forecast came with
+// the road), otherwise the rain belt soaks it fully and snow country half as hard.
+function bioState(g){
+  const w=bioMix(g.car.idx,g.seed);
+  return { w, rain:w[BIO_RAIN], snow:w[BIO_SNOW], des:w[BIO_DES],
+           wet: g.wet?1:clamp(w[BIO_RAIN]+w[BIO_SNOW]*0.5,0,1) };
+}
+// blend a per-biome palette [temperate, rain, snow, desert] by the current weights
+function bioRGB(cols,w){ let r=0,g2=0,b=0;
+  for(let k=0;k<4;k++){ const wt=w[k]; if(!wt) continue; const c=parseInt(cols[k].slice(1),16);
+    r+=(c>>16)*wt; g2+=((c>>8)&255)*wt; b+=(c&255)*wt; }
+  return [r+0.5|0,g2+0.5|0,b+0.5|0];
+}
+const bioCol=(cols,w)=>{ const c=bioRGB(cols,w); return 'rgb('+c[0]+','+c[1]+','+c[2]+')'; };
+const bioColA=(cols,w,a)=>{ const c=bioRGB(cols,w); return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')'; };
+const mixHex=(hex,to,t)=>{ if(t<=0.01) return hex; const a=parseInt(hex.slice(1),16), b=parseInt(to.slice(1),16);
+  const v=((lerp(a>>16,b>>16,t)|0)<<16) | ((lerp((a>>8)&255,(b>>8)&255,t)|0)<<8) | (lerp(a&255,b&255,t)|0);
+  return '#'+v.toString(16).padStart(6,'0'); };
+// every surface the world blends across a border, one palette each: [temperate, rain, snow, desert]
+const P_SKY0=['#79c6ff','#6e8296','#8fadcc','#7fbdf2'], P_SKY1=['#a6ddfb','#8b9dae','#b6cde2','#b0d8f4'],
+      P_SKY2=['#d9eeea','#b8c3cc','#dfe9f2','#ecdfc2'], P_SKY3=['#eaf6d8','#c2cbcf','#edf3f8','#f2e9c6'];
+const P_GRND0=['#a4cd8f','#8aa98c','#dde6ee','#dcc79b'], P_GRND1=['#83c76a','#6da267','#cdd8e3','#d0b078'],
+      P_GRND2=['#5aa544','#49823f','#b4c3d2','#b08d55'];
+const P_ROAD0=['#c1c6ce','#aeb5c1','#b6bfcc','#c9c2b2'], P_ROAD1=['#a1a7b3','#878e9c','#8e97a8','#a89f8e'];
+const P_VERGE=['#b7aa8b','#988e76','#dbe2ea','#cdb583'];
+const P_FOG=['#eaf6d8','#ccd6de','#f0f6fc','#f4e8cc'];
+const P_TREELINE0=['#5d9c5b','#4c8350','#9fb4c4','#b09a62'], P_TREELINE1=['#8abd79','#73a06b','#c9d6e2','#d3bc84'];
+const P_HILL0=['#8cc191','#78a884','#b9c9d8','#c9b183'],     P_HILL1=['#bedcc1','#a4bfa9','#dde7ef','#e5d5a8'];
+const P_TOPBG=['#79c665','#5e935a','#dfe7ed','#d9bf8b'],     P_TUFT=['#6cbb57','#558a4e','#c3ced8','#c4a76e'];
+const P_TOPROAD=['#adb3bd','#99a0ac','#a2abb8','#b5ada0'],   P_TOPAPR=['#a2a8b3','#8f96a2','#98a1ae','#aaa295'];
+const P_TUFT_BLADE=['#3f8b3c','#33702f','#8fa3b5','#9c8a58'], P_TUFT_SUN=['#d2ea96','#a8bd8a','#e8f2fa','#e8d8a0'];
+const P_HEDGE0=['#4c8b4a','#3e7440','#c8d3dc','#8f7f4e'],    P_HEDGE1=['#3a723d','#2f5e33','#aebfca','#7a6c42'],
+      P_HEDGE_CAP=['#e0f2bc','#b9c9a8','#f4f8fc','#f0e0b0'];
 
 /* ---------------------------- rest areas ---------------------------- */
 /* Somewhere to stop. The county builds its services on a SCHEDULE, not by dice: the 3rd, 7th, 12th, 18th…
@@ -2051,9 +2140,14 @@ function makeScenery(seed){
 
 function drawSky(g,a,cx,hy,horizon){
   const S=g.scenery, t=g.time, dmax=DMAX();
+  const bw=(g.bio||(g.bio=bioState(g))).w, rainW=g.wet?1:bw[BIO_RAIN];
   const sky=ctx.createLinearGradient(0,0,0,horizon+4);
-  sky.addColorStop(0,'#79c6ff'); sky.addColorStop(.45,'#a6ddfb'); sky.addColorStop(.82,'#d9eeea'); sky.addColorStop(1,'#eaf6d8');
+  sky.addColorStop(0,bioCol(P_SKY0,bw)); sky.addColorStop(.45,bioCol(P_SKY1,bw));
+  sky.addColorStop(.82,bioCol(P_SKY2,bw)); sky.addColorStop(1,bioCol(P_SKY3,bw));
   ctx.fillStyle=sky; ctx.fillRect(0,0,W,horizon+2);
+  // heavy weather swallows the sun: full overcast in the rain belt, a milky disc over the snow
+  const sunA=clamp(1-0.85*rainW-0.45*bw[BIO_SNOW],0.1,1);
+  ctx.globalAlpha=sunA;
   // sun: forward-scattered daylight warms the sky it sits in (a wide soft veil that ties the whole dome to the
   // same source throwing the verge shadows), then a tight warm bloom for the disc. no hard edge on either — a
   // real sky has neither. both anchor to the sun bearing, so they pan with yaw and never scale by z.
@@ -2068,6 +2162,7 @@ function drawSky(g,a,cx,hy,horizon){
     rg.addColorStop(0,'rgba(255,253,231,.95)'); rg.addColorStop(.09,'rgba(255,245,196,.55)');
     rg.addColorStop(.34,'rgba(255,233,170,.18)'); rg.addColorStop(1,'rgba(255,230,165,0)');
     ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); }
+  ctx.globalAlpha=1;
   drawCirrus(S,a,cx,hy,t,dmax);                 // highest and furthest, so it goes down behind every cumulus
   drawDeck(S.decks[0],a,cx,hy,t,dmax,sd); drawDeck(S.decks[1],a,cx,hy,t,dmax,sd);
   drawPlane(S,a,cx,hy,t,dmax);                 // high up, so the near deck can pass in front of it
@@ -2158,23 +2253,26 @@ function drawHorizon(g,a,cx,hy,bandY){
       ctx.rect(x-w,top,w*2,bandY-top);
       if(q.cap>0.82&&q.h>44) ctx.rect(x-Math.max(.7,.9*s), top-11*s, Math.max(1.4,1.8*s), 11*s); }   // mast
     ctx.fillStyle=haze(hy,124,CC[r][0],CC[r][1]); ctx.fill(); }
-  drawHills(S,a,cx,hy,bandY,dmax);                                                          // rolling farmland hills
+  drawHills(g,S,a,cx,hy,bandY,dmax);                                                        // rolling farmland hills
   drawMarks(S,a,cx,hy,bandY,dmax);
-  band(b=>1+prof(S.tree,b)*10*(0.2+0.95*prof(S.gap,b)), a,cx,hy,bandY, haze(hy,26,'#5d9c5b','#8abd79'), 4);
+  const bw=g.bio.w;
+  band(b=>1+prof(S.tree,b)*10*(0.2+0.95*prof(S.gap,b)), a,cx,hy,bandY,
+       haze(hy,26,bioCol(P_TREELINE0,bw),bioCol(P_TREELINE1,bw)), 4);
 }
 // the hills, but quilted: build the hills silhouette once, fill a hazy green base into it (so any sub-pixel
 // seam still reads as land), then clip to that silhouette and lay the field patchwork across it as flat
 // per-bearing colour strips — pasture, rapeseed, stubble, ploughed. A final haze wash sinks the field bases
 // into the horizon so only the crests hold colour, exactly as distant farmland does. One path build, ~34
 // rects and a gradient — same order of cost as the plain band it replaces.
-function drawHills(S,a,cx,hy,bandY,dmax){
+function drawHills(g,S,a,cx,hy,bandY,dmax){
+  const bw=g.bio.w;
   const hf=b=>2+prof(S.hills,b)*30, step=8, x0=-40, x1=W+40;
   const yat=x=>{ const t=(x-cx)/FOCAL; return hy-hf(a+Math.atan(t))*secT(t); };
   ctx.save();
   ctx.beginPath(); ctx.moveTo(x0,bandY); ctx.lineTo(x0,yat(x0));
   for(let x=x0+step;x<x1;x+=step) ctx.lineTo(x,yat(x));
   ctx.lineTo(x1,yat(x1)); ctx.lineTo(x1,bandY); ctx.closePath();
-  ctx.fillStyle=haze(hy,46,'#8cc191','#bedcc1'); ctx.fill();
+  ctx.fillStyle=haze(hy,46,bioCol(P_HILL0,bw),bioCol(P_HILL1,bw)); ctx.fill();
   ctx.clip();
   const top=hy-120, hgt=bandY-top+2;
   for(const f of S.fields){ const dL=angWrap(f.b-a), dR=angWrap(f.b+f.arc-a);
@@ -2182,7 +2280,10 @@ function drawHills(S,a,cx,hy,bandY,dmax){
     const xL=cx+FOCAL*Math.tan(clamp(dL,-1.45,1.45)), xR=cx+FOCAL*Math.tan(clamp(dR,-1.45,1.45));
     if(xR<=xL) continue;                                     // the one parcel straddling the wrap behind you
     ctx.fillStyle=f.col; ctx.fillRect(xL,top,xR-xL,hgt); }
-  ctx.fillStyle=haze(hy,46,'rgba(150,197,150,0)','rgba(190,220,193,.72)'); ctx.fillRect(0,top,W,hgt);
+  // the quilt is farmland's — snow buries it, sand supplants it, rain only mutes it
+  const cover=clamp(bw[BIO_SNOW]+bw[BIO_DES]+bw[BIO_RAIN]*0.45,0,1);
+  if(cover>0.02){ ctx.fillStyle=bioColA(P_HILL0,bw,cover*0.85); ctx.fillRect(0,top,W,hgt); }
+  ctx.fillStyle=haze(hy,46,'rgba(150,197,150,0)',bioColA(P_HILL1,bw,0.72)); ctx.fillRect(0,top,W,hgt);
   ctx.restore();
 }
 function drawMarks(S,a,cx,hy,bandY,dmax){
@@ -2236,13 +2337,14 @@ function drawNearScenery(g,ca,sa,cx,hy){
         if(onApron(i,off)) continue;
         const q=put(p.x-p.ty*off,p.y+p.tx*off);
         if(q){ q.h=clamp((9+h01(i*17+j)*9)*q.sc,0.8,18); q.n=2+(h01(i*11+j)*2|0); q.seed=(i*7+j)|0; tufts.push(q); } } } }
+  const bwF=g.bio.w;                                                      // the frame's blend, for batched fills
   if(tufts.length){ ctx.lineCap='round'; ctx.lineJoin='round';
-    ctx.strokeStyle='#3f8b3c'; ctx.lineWidth=1.5; ctx.beginPath();        // deep base blades
+    ctx.strokeStyle=bioCol(P_TUFT_BLADE,bwF); ctx.lineWidth=1.5; ctx.beginPath();   // deep base blades
     for(const q of tufts){ const h=q.h;
       for(let b=0;b<q.n;b++){ const dx=(h01(q.seed*11+b)-0.5)*h*0.8, lean=(h01(q.seed*17+b)-0.5)*h*0.7;
         ctx.moveTo(q.x+dx,q.y); ctx.quadraticCurveTo(q.x+dx+lean*0.4,q.y-h*0.55,q.x+dx+lean,q.y-h); } }
     ctx.stroke();
-    ctx.strokeStyle='rgba(210,234,150,.5)'; ctx.lineWidth=1.1; ctx.beginPath();   // warm sun-side blade
+    ctx.strokeStyle=bioColA(P_TUFT_SUN,bwF,0.5); ctx.lineWidth=1.1; ctx.beginPath();   // warm sun-side blade
     for(const q of tufts){ const h=q.h, dx=(h01(q.seed*11)-0.5)*h*0.8;
       ctx.moveTo(q.x+dx,q.y-h*0.14); ctx.quadraticCurveTo(q.x+dx+hlx*h*0.24,q.y-h*0.58,q.x+dx+hlx*h*0.52,q.y-h); }
     ctx.stroke(); }
@@ -2256,8 +2358,11 @@ function drawNearScenery(g,ca,sa,cx,hy){
       if(!onApron(i,off) && !wet(rv,wx,wy,60)){ const q=put(wx,wy); if(q){ q.h=620*q.sc; q.wx=wx; q.wy=wy; poles.push(q); } } }
     if(onBridge) continue;                                                // nothing grows on a bridge
     // how thick are the woods here? Dense forest crowds the verge and stacks trees back into the distance;
-    // open country leaves a few out in the fields. Same road, same woods, every time.
-    const dens=forestAt(i,seed);
+    // open country leaves a few out in the fields. Same road, same woods, every time — and the biome has
+    // its say: the desert starves the woods down to scrub and rock, snow country thins them out. Weights
+    // are taken at each tree's OWN index, so a border crossing swaps the flora gradually and in place.
+    const bwI=bioMix(i,seed);
+    const dens=forestAt(i,seed)*(1-0.9*bwI[BIO_DES])*(1-0.35*bwI[BIO_SNOW]);
     const n = dens>0.62 ? 3 : dens>0.34 ? 2 : 1;
     for(let k=0;k<n;k++){
       const hh=h01(i*37+k*613+1);
@@ -2273,6 +2378,10 @@ function drawNearScenery(g,ca,sa,cx,hy){
       const conif = h01(i*53+k*31) < 0.30+dens*0.42;                      // conifers take over in the deep woods
       q.hh=((conif?1050:680) + h01(i*23+k*7)*(conif?900:560))*q.sc;   // ~10-28m: an actual tree
       q.conif=conif; q.c=h01(i*29+k*11); q.wx=wx; q.wy=wy;
+      // in the desert's share of the border a tree gives way to what actually survives there
+      q.kind = h01(i*97+k*17+29)<bwI[BIO_DES] ? (h01(i*41+k*7)<0.25?2:1) : 0;   // 0 tree · 1 scrub · 2 rock
+      if(q.kind){ q.hh*=q.kind===2?0.16:0.30; }
+      q.sw=bwI[BIO_SNOW]; q.rw=bwI[BIO_RAIN];                             // for snow-laden / rain-heavy crowns
       q.a=clamp((FADE1-q.z)/(FADE1-FADE0),0,1);                           // fades up out of the haze instead of popping
       if(q.a<=0.02) continue;
       trees.push(q);
@@ -2317,6 +2426,7 @@ function drawNearScenery(g,ca,sa,cx,hy){
   for(let blk=Math.floor(lo/30);blk*30<hi;blk++){
     const at=blk*30+Math.floor(h01(blk*151+5)*20); if(at<lo||at>=hi||at<R.start+2) continue;
     const p=R.pts[at]; if(!p) continue;
+    if(h01(blk*97+11)<bioMix(at,seed)[BIO_DES]) continue;                // field boundaries end where the fields do
     const sg=h01(blk*29+1)<0.5?1:-1, th=(h01(blk*67+4)-0.5)*0.5, co=Math.cos(th), si=Math.sin(th);
     const nx=(-p.ty*co-p.tx*si)*sg, ny=(p.tx*co-p.ty*si)*sg;              // outward road-normal, tilted a touch
     const d0=BARRIER+140, d1=d0+780+h01(blk*13+8)*1150;                  // some short field edges, some long
@@ -2335,20 +2445,43 @@ function drawNearScenery(g,ca,sa,cx,hy){
     for(const q of hedge){ const r=q.r; ctx.ellipse(q.x-hlx*r*0.5,q.y,r*1.2,Math.max(1.1,r*0.28),0,0,TAU); } ctx.fill();
     for(let k=0;k<2;k++){ ctx.beginPath();                               // two greens, a hair deeper than the trees
       for(const q of hedge){ if(q.k!==k) continue; const r=q.r; ctx.moveTo(q.x+r,q.y-r*0.7); ctx.arc(q.x,q.y-r*0.7,r,0,TAU); }
-      ctx.fillStyle=k?'#4c8b4a':'#3a723d'; ctx.fill(); }
-    ctx.fillStyle='rgba(224,242,188,.42)'; ctx.beginPath();              // warm sun-side cap, same light as the trees
+      ctx.fillStyle=k?bioCol(P_HEDGE0,bwF):bioCol(P_HEDGE1,bwF); ctx.fill(); }
+    ctx.fillStyle=bioColA(P_HEDGE_CAP,bwF,0.42); ctx.beginPath();        // warm sun-side cap, same light as the trees
     for(const q of hedge){ const r=q.r; ctx.moveTo(q.x+hlx*r*0.35+r*0.5,q.y-r*0.98); ctx.arc(q.x+hlx*r*0.35,q.y-r*0.98,r*0.5,0,TAU); }
     ctx.fill();
   }
 
-  // trunks — tapered, and dark against the crown
+  // trunks — tapered, and dark against the crown. Scrub and rock have none.
   ctx.fillStyle='#5b4737';
   ctx.beginPath();
   for(const q of trees){
+    if(q.kind) continue;
     const w=clamp(q.hh*(q.conif?0.055:0.075),0.8,14), t=q.y-q.hh*(q.conif?0.80:0.46);
     ctx.moveTo(q.x-w/2, q.y); ctx.lineTo(q.x-w*0.30, t); ctx.lineTo(q.x+w*0.30, t); ctx.lineTo(q.x+w/2, q.y); ctx.closePath();
   }
   ctx.fill();
+
+  // the desert's own flora and furniture: dusty olive scrub clumps, and the odd sun-bleached boulder —
+  // low, sparse, and batched, so the long sight lines the desert promises stay cheap
+  ctx.beginPath();
+  for(const q of trees){ if(q.kind!==1) continue; const r=q.hh*0.9;
+    ctx.moveTo(q.x+r,q.y-r*0.5); ctx.arc(q.x,q.y-r*0.5,r,0,TAU);
+    ctx.moveTo(q.x-r*0.8+r*0.6,q.y-r*0.3); ctx.arc(q.x-r*0.8,q.y-r*0.3,r*0.6,0,TAU); }
+  ctx.fillStyle='#7c7a4e'; ctx.fill();
+  ctx.beginPath();
+  for(const q of trees){ if(q.kind!==1) continue; const r=q.hh*0.9;
+    ctx.moveTo(q.x+hlx*r*0.3+r*0.5,q.y-r*0.75); ctx.arc(q.x+hlx*r*0.3,q.y-r*0.75,r*0.5,0,TAU); }
+  ctx.fillStyle='rgba(196,190,128,.55)'; ctx.fill();
+  ctx.beginPath();
+  for(const q of trees){ if(q.kind!==2) continue; const r=q.hh;
+    ctx.moveTo(q.x-r,q.y); ctx.lineTo(q.x-r*0.45,q.y-r*0.85); ctx.lineTo(q.x+r*0.35,q.y-r*0.95);
+    ctx.lineTo(q.x+r,q.y); ctx.closePath(); }
+  ctx.fillStyle='#9a9186'; ctx.fill();
+  ctx.beginPath();
+  for(const q of trees){ if(q.kind!==2) continue; const r=q.hh;
+    ctx.moveTo(q.x+hlx*r*0.2-r*0.35,q.y-r*0.9); ctx.lineTo(q.x+hlx*r*0.2+r*0.25,q.y-r*0.98);
+    ctx.lineTo(q.x+hlx*r*0.2+r*0.4,q.y-r*0.55); ctx.lineTo(q.x+hlx*r*0.2-r*0.2,q.y-r*0.55); ctx.closePath(); }
+  ctx.fillStyle='rgba(226,220,206,.5)'; ctx.fill();
 
   // crowns, in two passes per species: the body, then the face the sun actually reaches. Distance washes
   // everything toward the haze, which is what stops a deep forest reading as a wall of flat green.
@@ -2363,11 +2496,15 @@ function drawNearScenery(g,ca,sa,cx,hy){
      for(let bi=0;bi<3;bi++){
       ctx.globalAlpha=BANDS[bi];
       for(const q of trees){
-        if(q.conif!==conif) continue;
+        if(q.kind || q.conif!==conif) continue;
         if(bandOf(q)!==bi) continue;
         const dark = q.c<0.5;
         if((shade===0) !== dark) continue;
-        ctx.fillStyle=haze(conif ? (dark?'#2f6d4a':'#3c8256') : (dark?'#478a49':'#5aa155'), far(q));
+        // the biome dresses the crown: snow loads it toward white, the rain belt soaks it dark and heavy
+        let hex=conif ? (dark?'#2f6d4a':'#3c8256') : (dark?'#478a49':'#5aa155');
+        if(q.sw>0.01) hex=mixHex(hex,'#dde7f0',q.sw*0.62);
+        else if(q.rw>0.01) hex=mixHex(hex,'#31513a',q.rw*0.45);
+        ctx.fillStyle=haze(hex, far(q));
         ctx.beginPath();
         if(conif){
           // a fir: three tiers, each a little wider than the one above
@@ -2393,6 +2530,7 @@ function drawNearScenery(g,ca,sa,cx,hy){
   // the sunlit face — same light that threw the shadows, so the whole verge agrees about where the sun is
   ctx.fillStyle='rgba(226,244,190,.42)'; ctx.beginPath();
   for(const q of trees){
+    if(q.kind) continue;
     const lean=(q.sdx||0)/(Math.abs(q.sdx||0)+40);
     if(q.conif){
       const H=q.hh*0.86, base=q.y-q.hh*0.10, wmax=q.hh*0.30;
@@ -3144,17 +3282,57 @@ function drawGibs(g,proj){                                                      
   ctx.globalAlpha=1;
 }
 /* the rain: streaks raked by your own speed — near-vertical at a crawl, driven toward you flat-out —
-   plus a cool veil that mutes the sunlit palette. Random per frame on purpose: rain doesn't replay. */
-function drawRain(g,horizon){
-  const n=64, lean=clamp(g.speed/790,0,1)*10;
-  ctx.strokeStyle='rgba(190,205,220,.34)'; ctx.lineWidth=1.1; ctx.lineCap='round';
+   plus a cool veil that mutes the sunlit palette. Random per frame on purpose: rain doesn't replay.
+   `k` is the biome's blend weight, so a border crossing fades the shower in and out. */
+function drawRain(g,horizon,k){
+  k=k===undefined?1:k;
+  const n=Math.round(64*k), lean=clamp(g.speed/790,0,1)*10;
+  ctx.strokeStyle='rgba(190,205,220,'+(0.34*Math.min(1,k*1.3)).toFixed(3)+')'; ctx.lineWidth=1.1; ctx.lineCap='round';
   ctx.beginPath();
   for(let i=0;i<n;i++){ const x=Math.random()*W, y=Math.random()*H*0.86, l=7+Math.random()*13;
     ctx.moveTo(x,y); ctx.lineTo(x-l*0.22-lean, y+l); }
   ctx.stroke();
   const veil=ctx.createLinearGradient(0,0,0,H);
-  veil.addColorStop(0,'rgba(88,104,124,.16)'); veil.addColorStop(1,'rgba(88,104,124,.07)');
+  veil.addColorStop(0,'rgba(88,104,124,'+(0.16*k).toFixed(3)+')'); veil.addColorStop(1,'rgba(88,104,124,'+(0.07*k).toFixed(3)+')');
   ctx.fillStyle=veil; ctx.fillRect(0,0,W,H);
+}
+/* the snow: flakes that KEEP their identity frame to frame (a hash per flake, not a dice roll — snow falls,
+   it doesn't strobe), drifting on a slow sine and raked into streaks by your own speed exactly as the rain
+   is. One batched path. */
+function drawSnowFall(g,k){
+  const n=Math.round(84*k), t=g.time, lean=clamp(g.speed/VTOP,0,1);
+  ctx.fillStyle='rgba(246,250,253,'+(0.55+0.25*k).toFixed(2)+')';
+  ctx.beginPath();
+  for(let i=0;i<n;i++){
+    const sp=30+h01(i*29+7)*46;
+    const y=(h01(i*7+1)*H + t*sp*(1+lean*3.4)) % H;
+    const x=(((h01(i*13+3)*W + Math.sin(t*(0.4+h01(i*11)*0.5)+i)*26 - t*lean*110) % W)+W)%W;
+    const r=(0.8+h01(i*17+5)*1.5)*(0.7+0.5*k);
+    if(lean>0.45){ ctx.rect(x,y,1.3,3+lean*7); }
+    else { ctx.moveTo(x+r,y); ctx.arc(x,y,r,0,TAU); }
+  }
+  ctx.fill();
+}
+/* the desert dust: only speed kicks it up — a warm haze low over the road and a few motes streaking past.
+   Sitting still, the desert is just heat and distance. */
+function drawDust(g,k){
+  const v=clamp(g.speed/VTOP,0,1), a=k*v;
+  if(a<0.04) return;
+  const gd=ctx.createLinearGradient(0,H*0.55,0,H);
+  gd.addColorStop(0,'rgba(214,182,120,0)'); gd.addColorStop(1,'rgba(214,182,120,'+(0.16*a).toFixed(3)+')');
+  ctx.fillStyle=gd; ctx.fillRect(0,H*0.55,W,H*0.45);
+  ctx.strokeStyle='rgba(226,198,140,'+(0.30*a).toFixed(3)+')'; ctx.lineWidth=1.1; ctx.beginPath();
+  const n=Math.round(26*a);
+  for(let i=0;i<n;i++){ const x=Math.random()*W, y=H*0.45+Math.random()*H*0.5, l=6+Math.random()*18*v;
+    ctx.moveTo(x,y); ctx.lineTo(x-l,y+l*0.18); }
+  ctx.stroke();
+}
+/* the biome's ambient light, one translucent wash over the finished world: snow country lifts everything
+   cool and pale, the desert warms it. The rain belt's veil lives in drawRain, where it always has. */
+function bioVeil(w){
+  const s=w[BIO_SNOW], d=w[BIO_DES];
+  if(s>0.03){ ctx.fillStyle='rgba(226,236,248,'+(0.10*s).toFixed(3)+')'; ctx.fillRect(0,0,W,H); }
+  if(d>0.03){ ctx.fillStyle='rgba(255,214,140,'+(0.07*d).toFixed(3)+')'; ctx.fillRect(0,0,W,H); }
 }
 function drawFlecks(g){                                                          // ichor on the glass, sliding down
   for(const f of g.flecks){ const al=clamp(f.life,0,1);
@@ -3291,11 +3469,12 @@ function drawRoad(g){
     ctx.lineTo(p.x-p.ty*a.out*s, p.y+p.tx*a.out*s);
     ctx.closePath();
   }
-  ctx.fillStyle=game&&game.wet?'#8f96a2':'#a2a8b3'; ctx.fill();   // service tarmac, a shade off the road's
+  const bwR=(g.bio||{w:[1,0,0,0]}).w, rwR=(game&&game.wet)?[0,1,0,0]:bwR;   // a daily rain day soaks it all
+  ctx.fillStyle=bioCol(P_TOPAPR,rwR); ctx.fill();   // service tarmac, a shade off the road's
   ctx.beginPath();
   for(let i=lo;i<hi;i++){ const p=R.pts[i]; ctx.lineTo(p.x-p.ty*ROAD_HALF, p.y+p.tx*ROAD_HALF); }
   for(let i=hi-1;i>=lo;i--){ const p=R.pts[i]; ctx.lineTo(p.x+p.ty*ROAD_HALF, p.y-p.tx*ROAD_HALF); }
-  ctx.closePath(); ctx.fillStyle=game&&game.wet?'#99a0ac':'#adb3bd'; ctx.fill();
+  ctx.closePath(); ctx.fillStyle=bioCol(P_TOPROAD,rwR); ctx.fill();
   ctx.lineJoin='round'; ctx.lineCap='round';
   // edge lines, per segment — the solid line stands down only across the drive's two mouths, where the
   // lane-drop dashes (drawRestTop) carry the edge instead
@@ -3358,13 +3537,20 @@ function drawRestTop(g){
 }
 function drawSkid(g){
   ctx.lineCap='round';
-  for(const s of g.skid){ const a=clamp(1-(g.time-s.t)/4.5,0,1)*0.4;
+  const sn=g.bio?g.bio.snow:0;                       // tracks cut deeper against snow — the one place they show
+  for(const s of g.skid){ const a=clamp(1-(g.time-s.t)/4.5,0,1)*(0.4+0.3*sn);
     ctx.strokeStyle='rgba(40,42,48,'+a+')'; ctx.lineWidth=7;
     ctx.beginPath(); ctx.moveTo(s.ax,s.ay); ctx.lineTo(s.bx,s.by); ctx.stroke(); }
 }
+// tyre smoke — warm rubber normally, a colder paler cloud in snow country, and the desert's dust plume (k:1)
+function smokeCol(g,s,a){
+  if(s.k===1) return 'rgba(198,172,120,'+(a*0.42)+')';
+  if(g.bio && g.bio.snow>0.5) return 'rgba(235,242,248,'+(a*0.5)+')';
+  return 'rgba(255,'+Math.round(190+40*a)+','+Math.round(90+70*(1-a))+','+(a*0.5)+')';
+}
 function drawSmoke(g){
   for(const s of g.smoke){ const a=clamp(s.life,0,1);
-    ctx.fillStyle='rgba(255,'+Math.round(190+40*a)+','+Math.round(90+70*(1-a))+','+(a*0.5)+')';
+    ctx.fillStyle=smokeCol(g,s,a);
     ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,TAU); ctx.fill(); }
 }
 /* the phantom: today's best line, driven again. Drawn as a hologram, not a car — it must never be
@@ -3523,7 +3709,13 @@ function updateHUD(){
     const h='GHOST '+(gp.ended?'FINISHED · ':'')+(d>=0?'<b>+'+d+' m</b>':'<b class="beh">−'+Math.abs(d)+' m</b>');
     if(h!==g._ghHtml){ ge.style.display='block'; ge.innerHTML=h; g._ghHtml=h; }
   } else if(ge.style.display!=='none') ge.style.display='none';
-  const we=document.getElementById('wetEl'), wetShow=g.wet?'block':'none';
+  // the grip flag: a daily rain day flies it all run; otherwise the rain belt (and, gentler, snow country)
+  // raises it as the car actually crosses in — and it names the weather it's warning about
+  const wf=g.wet?1:(g.bio?g.bio.wet:0);
+  const we=document.getElementById('wetEl'), wetShow=wf>0.3?'block':'none';
+  const wLbl=(!g.wet && g.bio && g.bio.snow>g.bio.rain*2) ? '❄ SNOW ROAD · GRIP −'+Math.round(12*wf)+'%'
+                                                          : '🌧 WET ROAD · GRIP −12%';
+  if(we.textContent!==wLbl) we.textContent=wLbl;
   if(we.style.display!==wetShow) we.style.display=wetShow;
   const wv=document.getElementById('waveEl');
   if(g.waveT>0){
@@ -4139,9 +4331,13 @@ renderArmory(); renderShelf();   // the shop is open and the shelf is dusted bef
 window.__drift={
   get state(){ return state; }, get game(){ return game; }, get best(){ return best; },
   get dailyMode(){ return dailyMode; },
-  start(){ startGame(false); },
-  startDaily(){ startGame(true); },
+  // the harness entry points pin the canonical temperate world — every physics band, choreography and
+  // score in the suites was measured on it. The biomes probe unlocks the weather ON PURPOSE via bio.lock.
+  start(){ bioLock=true; startGame(false); },
+  startDaily(){ bioLock=true; startGame(true); },
   daily:{ key:dayKey, seed:daySeed, best:loadDailyBest, wet:seedWet },
+  bio:{ lock:v=>{ bioLock=!!v; }, locked:()=>bioLock, mix:bioMix, zone:bioZone,
+        state:()=>game?game.bio:null, PTS:BIO_PTS, BLEND:BIO_BLEND },
   ghostAt(){ return game?ghostAt(game):null; },
   hud(){ updateHUD(); },   // probes step the sim synchronously, so no frame paints the HUD for them
   tier:chainTier,
