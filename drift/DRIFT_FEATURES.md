@@ -3,6 +3,47 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
+## The county isn't one county — rain, snow and desert biomes (2026-08-02)
+
+**What.** The endless road now drives through **four landscapes**: the existing temperate farmland, a
+**rain belt**, **snow country**, and **desert** — in ~5 km zones with ~1 km crossfade borders, all of it a
+pure function of `(road index, seed)` like everything else out here.
+
+* **The sequence is the seed's.** `bioZone(n, seed)` deals the zones — the starting biome is the seed's own
+  pick, no zone ever repeats its neighbour, and the same seed always drives the same journey.
+  `bioMix(i, seed)` turns distance into per-biome weights: pure inside a zone, a smoothstep trade across a
+  border. **Nothing hard-cuts**: sky, ground wash, road surface, verge, horizon hills/treeline, vegetation,
+  particles and ambient light all blend through the same weights.
+* **Rain belt**: heavy grey sky (the sun swallowed), desaturated sodden fields, rain-dark sheened tarmac,
+  the existing speed-raked rain streaks and cool veil now scaled by the biome's weight, crowns soaked
+  darker. **Grip −12%**, brakes −15% — the *existing* wet-road tax, now driven by `g.bio.wet`.
+* **Snow country**: white-blue ground cover, ploughed-snow verges, packed icy tarmac, flakes that keep
+  their identity frame to frame (hash per flake — snow falls, it doesn't strobe) raked into streaks by
+  your own speed, snow-laden crowns, thinner woods, skid marks cut deeper against the white, tyre smoke
+  gone cold and pale. **Grip −6%** (half the rain's tax), and the HUD names it: `❄ SNOW ROAD · GRIP −6%`.
+* **Desert**: sand in every surface, warm harsh light, the woods starved down to olive scrub and
+  sun-bleached boulders (per-index hash, so the swap is gradual and deterministic), hedgerow field
+  boundaries ending where the fields do, long sight lines — and **dust**: a warm haze and motes that only
+  speed kicks up, plus a dust plume off the rear wheels flat-out.
+* **Both lenses.** The top-down view blends the same weights through its own palettes (ground, tufts,
+  road, apron) and wears the same weather overlays and ambient veil.
+* **A daily rain day still soaks the whole run** — `g.wet` overrides to full wetness everywhere, exactly
+  the forecast the ghost recorded its line in.
+
+**Why.** The road was endless but the country wasn't: after the woods closed in once, the world had
+nowhere left to go. Distance now has a face — you *see* 5 km pass — and the grip tax finally has scenery
+that admits it.
+
+**The canonical car stays canonical.** Every physics band, choreography and score in the suites was
+measured on the temperate road, so the harness entry points (`__drift.start`/`startDaily`) pin
+`bioLock=true`; the real game never locks. The `biomes` suite unlocks the weather on purpose.
+
+**Defended by** the new **`biomes` suite**: the lock default, seeded determinism, 4/4 starting biomes
+across 60 seeds, zero neighbour-stutters, border weights summing to one and rising monotonically,
+`bio.wet` = 1 / 0.5 / 0 in rain / snow / temperate+desert, the HUD flags, and a pixel classification —
+snow's top frame reads >25% cold-bright, the desert's >25% warm, the farmland neither — plus the full
+existing suite, which the lock keeps green by construction.
+
 ## The cluster earns its glass — a premium EV instrument panel (2026-08-02)
 
 **What.** The driver-view binnacle is reworked into the cluster of a high-end electric car, inside the same
