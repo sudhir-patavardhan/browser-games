@@ -73,6 +73,7 @@ case "$PROBE" in
   horde) JS="$HERE/horde.js"; DIV="RESULTS" ;;
   bounty) JS="$HERE/bounty.js"; DIV="RESULTS" ;;
   packs) JS="$HERE/packs.js"; DIV="RESULTS" ;;
+  stereo) JS="$HERE/stereo.js"; DIV="RESULTS" ;;
   badges) JS="$HERE/badges.js"; DIV="RESULTS" ;;
   waves) JS="$HERE/waves.js"; DIV="RESULTS" ;;
   plane)  JS="$HERE/plane.js";  DIV="PLANE" ;;
@@ -85,7 +86,7 @@ case "$PROBE" in
   sound)  JS="$HERE/sound.js";  DIV="RESULTS" ;;
   analytics) JS="$HERE/analytics.js"; DIV="RESULTS" ;;
   cabin)  JS="$HERE/cabin.js";  DIV="RESULTS" ;;
-  *) echo "unknown probe '$PROBE' (want: assert | controls | contracts | garage | nearmiss | daily | ghost | report | weather | horde | bounty | packs | badges | waves | plane | music | land | pause | restnav | deer | traffic | sound | analytics | cabin)" >&2; exit 2 ;;
+  *) echo "unknown probe '$PROBE' (want: assert | controls | contracts | garage | nearmiss | daily | ghost | report | weather | horde | bounty | packs | badges | waves | plane | music | land | pause | restnav | deer | traffic | sound | stereo | analytics | cabin)" >&2; exit 2 ;;
 esac
 
 # splice the probe in just before </body>, after the game's own script has defined window.__drift

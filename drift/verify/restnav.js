@@ -120,6 +120,18 @@
       rec("...alongside a kiosk, squared up in the stall", Math.abs(latP-CHG_BAY)<40 && Math.abs(angWrap(cc.angle-want))<0.05,
           "stopped "+latP.toFixed(0)+"px out (bay line "+CHG_BAY+", kiosks at "+CHG_OFF+"), "
           +"heading off square by "+(angWrap(cc.angle-want)).toFixed(3)+" rad");
+      // ...and ALONGSIDE means alongside. The valet reverses in ACROSS the row, so it is the car's
+      // half-LENGTH that points at the post: park it on a bay line dimensioned for a smaller car and it
+      // comes to rest INSIDE the kiosk it drove up to. Asserting the bay line alone never caught that,
+      // because the bay line was exactly where the car was told to stop.
+      const tail=latP+CAR_L*0.5;
+      rec("...with its tail short of the post, not through it", tail<CHG_OFF,
+          "tail reaches "+tail.toFixed(0)+"px, post at "+CHG_OFF+" — "+((CHG_OFF-tail)/PX_M).toFixed(2)+" m of cable");
+      // and the bay it is standing in is a bay a car fits in, not paint it overhangs at both ends
+      const row=STALL_ROWS[STALL_ROWS.length-1];
+      rec("...inside a stall that is actually car-sized", row[1]-row[0]>=CAR_L && STALL_PTS*SEG>=CAR_W,
+          "far row is "+((row[1]-row[0])/PX_M).toFixed(2)+" m deep on a "+((STALL_PTS*SEG)/PX_M).toFixed(2)+
+          " m pitch, for a "+(CAR_L/PX_M).toFixed(2)+" x "+(CAR_W/PX_M).toFixed(2)+" m car");
     }
 
     // ---- and the ordinary case is untouched: a bay comfortably ahead is still taken forwards
