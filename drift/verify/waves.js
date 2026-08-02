@@ -13,14 +13,20 @@
   // bumper in a bend), with the rest of the road swept clear so the pay reading is exactly one head.
   const lat=()=>{ const R=D.game.road,c=D.game.car,p=R.pts[c.idx];
     return (c.x-p.x)*(-p.ty)+(c.y-p.y)*(p.tx); };
+  // The county pays at your MULTIPLIER as well as by the head, so a mow's cash is rank x mult x wave. To
+  // say anything about the WAVE the other two have to come out — and the multiplier is not a constant you
+  // can assume: a pass close enough to kill is often close enough to have shaved something on the way in.
+  // g.bountyMulMax is the game's own record of what the last kill was paid at, so zero it and read it back.
   const mow=()=>{ for(let a=0;a<4;a++){
       D.game.zombies.length=0;
       const c0=D.horde.run();
       D.horde.spawn(D.game.car.idx+8, lat()); const z=D.game.zombies[0]; z.sp=0;
+      D.game.bountyMulMax=1;
       const until=D.game.car.idx+12;
       for(let i=0;i<300 && D.game.car.idx<until;i++){ D.autopilot(); D.setInput(D.game.forceSteer,1,0); D.step(1); }
-      if(D.horde.run()>c0) return { pay:D.horde.run()-c0, kind:z.kind };
-    } return { pay:0, kind:'none' }; };
+      if(D.horde.run()>c0) return { pay:D.horde.run()-c0, kind:z.kind, mul:D.game.bountyMulMax||1 };
+    } return { pay:0, kind:'none', mul:1 }; };
+  const perHead=m=>m.pay/({walker:1,runner:2,brute:3,none:1}[m.kind]||1)/(m.mul||1);
 
   try{
     D.horde.wipe(); D.garage.wipe();
@@ -51,9 +57,10 @@
 
     // ---- double pay, and five heads clears for exactly +$120
     const wv=mow();
-    const rankMul={walker:1,runner:2,brute:3,none:0}[wv.kind]||1;
-    rec("wave rates are DOUBLE", wv.pay>0 && wv.pay/rankMul>basePay*1.55 && wv.pay/rankMul<basePay*2.6,
-        "same mow in-wave: $"+wv.pay+" ("+wv.kind+") vs $"+basePay+" base");
+    const wvHead=perHead(wv), baseHead=perHead(base);
+    rec("wave rates are DOUBLE", wv.pay>0 && wvHead>baseHead*1.55 && wvHead<baseHead*2.6,
+        "same mow in-wave: $"+wv.pay+" ("+wv.kind+" at x"+wv.mul.toFixed(1)+") => $"+wvHead.toFixed(0)+
+        "/head vs $"+baseHead.toFixed(0)+"/head base");
     while(D.game.waveKills<5 && D.game.waveT>0.5) mow();
     rec("five heads inside the window", D.game.waveKills>=5, D.game.waveKills+" kills, "+D.game.waveT.toFixed(1)+"s left");
     const cashPre=D.horde.run();

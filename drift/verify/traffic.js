@@ -74,8 +74,11 @@
         hits+" head-on(s), "+calls+" close call(s) over 6 roads x 70s of centreline driving (worst lateral +"+Math.round(worstLat)+")");
     // and the same claim as geometry rather than luck, on BOTH gates independently — a claim that rests on
     // one unlucky seed not happening is not a claim
-    const yieldedAt=l=>ROAD_HALF*0.50+(ROAD_HALF*0.80-ROAD_HALF*0.50)*Math.max(0,Math.min(1,l/120));
-    const widest=58, rWide=24*0.5+widest*0.5+6;            // the truck: the biggest thing that can meet you
+    // read from the live constants, not from literals: this used to hardcode a 2.4 m player and a 5.8 m
+    // "truck", which stopped describing the game the moment the vehicles were drawn at their real size
+    const bigRig=TRAF_KINDS[2];                            // the truck: the biggest thing that can meet you
+    const yieldedAt=l=>TRAF_LANE+((TRAF_YIELD_EDGE-bigRig.w*0.5)-TRAF_LANE)*Math.max(0,Math.min(1,l/TRAF_OVER));
+    const rWide=CAR_W*0.5+bigRig.w*0.5+6;
     const gap=yieldedAt(worstLat)-worstLat;
     rec("...and it clears the widest vehicle's bumper at that worst offset", gap-rWide>18,
         "worst lateral +"+Math.round(worstLat)+" -> truck at "+Math.round(yieldedAt(worstLat))+", clear by "+Math.round(gap-rWide)+"px");
@@ -105,8 +108,11 @@
         "vehicle sat at o="+oTidy.toFixed(0)+" (lane centre "+(ROAD_HALF*0.50).toFixed(0)+")");
     rec("drift across the line and they move over for you", oOver>oTidy+50,
         "o="+oTidy.toFixed(0)+" (tidy) -> "+oOver.toFixed(0)+" (car 120px over the line)");
-    rec("...and they stop at their verge — the road does not get wider", oVerge<=ROAD_HALF*0.80+2,
-        "o="+oVerge.toFixed(0)+" with the car on their verge (cap "+(ROAD_HALF*0.80).toFixed(0)+")");
+    // the cap is quoted as the vehicle's OUTER EDGE now, so read it the same way rather than re-hardcoding
+    // a fraction of the road: a saloon's centre stops at TRAF_YIELD_EDGE minus half its own width.
+    const carCap=TRAF_YIELD_EDGE-TRAF_KINDS[0].w*0.5;
+    rec("...and they stop at their verge — the road does not get wider", oVerge<=carCap+2,
+        "o="+oVerge.toFixed(0)+" with the car's outside wheels on the verge (cap "+carCap.toFixed(0)+")");
 
     // ---- the head-on: speed, charge and the chain, and not one cent
     seedRandom(31337); D.start();
@@ -137,13 +143,17 @@
       cruise(200);
       g.traffic.length=0; g.trafHits=0; g.calls=0; g.mult=1;
       const v=D.traffic.spawn(g.car.idx+40,'car');
-      for(let i=0;i<900;i++){ pin(g,lat,spd); D.step(1); if(g.traffic.indexOf(v)<0) break; }
+      // the heat has to be read AT the call, not after it: the pass keeps running until the vehicle is
+      // clear of the car's whole length, and a car driving dead straight lets the chain's grace lapse in
+      // the meantime. Reading g.mult at the end was measuring how long the loop happened to run.
+      let multAt=0;
+      for(let i=0;i<900;i++){ pin(g,lat,spd); D.step(1); if(g.calls>0&&!multAt) multAt=g.mult; if(g.traffic.indexOf(v)<0) break; }
       D.clearInput();
-      return { calls:g.calls, hits:g.trafHits, mult:g.mult };
+      return { calls:g.calls, hits:g.trafHits, mult:multAt };
     };
     const threaded=pass(126,340), tidyPass=pass(0,340), slowPass=pass(126,86), edgePass=pass(60,340);
     rec("threading one at speed pays a CLOSE CALL, exactly once", threaded.calls===1 && threaded.hits===0 && threaded.mult>1,
-        "calls="+threaded.calls+" hits="+threaded.hits+" mult="+threaded.mult.toFixed(2));
+        "calls="+threaded.calls+" hits="+threaded.hits+" mult at the call="+threaded.mult.toFixed(2));
     rec("passing one in your own lane pays nothing", tidyPass.calls===0 && tidyPass.hits===0,
         "calls="+tidyPass.calls+" hits="+tidyPass.hits+" at lateral 0");
     rec("...nor does clipping the centre line — you have to have properly taken their half", edgePass.calls===0 && edgePass.hits===0,
@@ -184,11 +194,16 @@
     // The facility's own pavement is exempt too, but it can't be posed: step() recomputes onFac from the
     // geometry every tick. It doesn't need to be — out there the exemption is redundant with the geometry,
     // and THAT is the thing worth pinning, because it is what makes a parked car unreachable.
-    rec("...and a car on the services' pavement is out of reach anyway",
-        ROAD_HALF+2 - ROAD_HALF*0.80 > 24*0.5+58*0.5+6,
-        "pavement starts at "+(ROAD_HALF+2).toFixed(0)+"px, a yielding truck caps at "+(ROAD_HALF*0.80).toFixed(0)+
-        "px, and its bumper reaches "+(24*0.5+58*0.5+6).toFixed(0)+"px — "+
-        ((ROAD_HALF+2)-(ROAD_HALF*0.80)-(24*0.5+58*0.5+6)).toFixed(0)+"px short");
+    // This used to assert that GEOMETRY alone put the pavement out of a yielding truck's reach, using
+    // frozen literals (24 and 58) for the two vehicles' widths. Those literals outlived the sizes they
+    // described: at the world's real scale a lorry is 2.5 m across, not 5.8 m, and its bumper now does
+    // reach the apron. So the redundancy is gone and g.onFac — the exemption — is the thing actually
+    // holding the line. Read the live constants and pin the exemption instead of a stale coincidence.
+    const truck=TRAF_KINDS[2], truckReach=TRAF_YIELD_EDGE-truck.w*0.5+(CAR_W*0.5+truck.w*0.5+6);
+    rec("...and a car on the services' pavement is exempt, which is now the only thing protecting it",
+        D.game.onFac===false && truckReach > ROAD_HALF+2,
+        "pavement starts at "+(ROAD_HALF+2).toFixed(0)+"px and a yielding truck's bumper now reaches "+
+        truckReach.toFixed(0)+"px — geometry no longer covers it, the onFac exemption does");
     g=D.game;
 
     // ---- the badge and the contract read the same counter
