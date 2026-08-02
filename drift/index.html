@@ -312,9 +312,26 @@ function resize(){ DPR=Math.min(window.devicePixelRatio||1,2); W=innerWidth; H=i
 addEventListener('resize',resize); resize();
 
 /* ============================ constants ============================ */
-const SEG=26, ROAD_HALF=245, GRASS=85, BARRIER=ROAD_HALF+GRASS;
+/* THE RULER. The world is built at 50 game px to the metre (1 px = 2 cm), and almost everything already
+   obeys it: the road is 9.8 m wide, the barrier stands 6.6 m off the centreline, the eye sits 2.24 m up,
+   a shambler is 1.84 m tall, a deer 1.16 m at the shoulder, the bridge parapet 0.96 m, a charger post
+   2.24 m, a telegraph pole 12.4 m, a river 10-18 m across. The CARS did not: they were drawn against the
+   speedo's ruler instead (1 px = 0.1 m, the one the trip meter and km/h still use), which made the player's
+   car 0.92 m long and an oncoming saloon 1.08 m — five times under, on a road built to the other scale.
+   That is the whole reason the road read as an aerodrome, the traffic as toys and the horde as giants: the
+   horde was always human-sized, it just had nothing correctly-sized to stand next to.
+   So the vehicles are quoted in metres now, and PX_M is the only ruler the world is measured with. The
+   speedo and the odometer keep their own 0.1 m/px convention on purpose — they're tuned so that flat out
+   FEELS flat out, and re-pricing them would rewrite every challenge, badge and best score in the game. */
+const PX_M=50;                     // game px per metre — the one ruler the WORLD is drawn to
+const SEG=26, ROAD_HALF=245, GRASS=85, BARRIER=ROAD_HALF+GRASS;   // 0.52 m / 9.8 m road / 1.7 m verge / 6.6 m
 const TOPZOOM=0.72;      // top view is pulled back — it's there to read the road, not to drive by
-const CAR_L=46, CAR_W=24;
+const CAR_L=4.4*PX_M, CAR_W=1.85*PX_M;     // 4.4 m x 1.85 m — a road-going coupe, at the world's own scale
+// Every strike in the game happens at the NOSE, which is CAR_L*0.45 ahead of the point the road indexes the
+// car by. At the old toy scale that was 0.4 m and a flat "within 3 road points" window comfortably held it;
+// at 4.4 m it is 2 m — nearly four points — so the same window shut the bumper out of its own test and
+// nothing could be run over. Every such gate is quoted against the nose's real reach now.
+const NOSE_PTS=CAR_L*0.45/SEG;             // how far ahead the bumper sits, in road points
 
 /* ============================ state ============================ */
 let state='start';               // start | play | paused | over
@@ -1439,7 +1456,7 @@ function forestAt(i,seed){
 const KM_PTS=Math.round(1000/(SEG*0.1));            // road points per kilometre (SEG px/point, 1px≈0.1m)
 const REST_IN=77, REST_OUT=40;                      // the drive in (~200 m) and the drive back out (~104 m)
 const LOT_IN=BARRIER+110, LOT_OUT=BARRIER+860;      // the lot: set back off the road, ~75 m deep
-const LANE_HALF=150;                                 // the drive itself: a broad ~30 m roadway
+const LANE_HALF=150;                                 // the drive itself: a broad 6 m two-way service road
 // …and broader still where it meets the carriageway. A slip road that keeps one width all the way to the
 // gore is a track with a kerb on it; a real one opens into a TRUMPET at the mouth, so the turn-in is a
 // wide sweep you can take at speed rather than a gap you have to aim at. Both mouths get it — the drive in
@@ -1447,8 +1464,8 @@ const LANE_HALF=150;                                 // the drive itself: a broa
 const MOUTH_HALF=LANE_HALF+110, MOUTH_U=0.34;        // the flare's width, and how far up the drive it reaches
 const LOT_MID=(LOT_IN+LOT_OUT)/2;
 const STALL_ROWS=[[LOT_IN+34,LOT_IN+170],[LOT_MID-68,LOT_MID+68],[LOT_OUT-170,LOT_OUT-34]];  // three rows of stalls
-// The charger row along the far side: KIOSKS, not posts — four of them, set a good 40 m apart so each one
-// owns its own bay and the row reads as a charging plaza rather than a picket fence. Six posts at 20 m
+// The charger row along the far side: KIOSKS, not posts — four of them, set a good 8 m apart so each one
+// owns its own bay and the row reads as a charging plaza rather than a picket fence. Six posts at half that
 // pitch used to crowd into one dark smear at any distance, and none of them was big enough to aim at.
 const CHG_D=[-24,-8,8,24];                          // where they stand along the road, in road points
 const CHG_OFF=LOT_OUT-26;                           // …how far out: at the head of the far stall row
@@ -1693,7 +1710,7 @@ function drawRestStop(g,zside,toScreen,lo,hi){
   kiosks.sort((A,B)=>A.sc-B.sc);                                       // far ones first
   const lit=!!(game && game.parked && game.parked.charger);
   for(const b of kiosks){
-    const w=clamp(46*b.sc,3,96), h=clamp(150*b.sc,8,300);              // ~4.6 m wide, ~15 m to the canopy
+    const w=clamp(46*b.sc,3,96), h=clamp(150*b.sc,8,300);              // ~0.9 m wide, ~3 m to the canopy
     const x=b.x, y=b.y;
     ctx.fillStyle='rgba(38,44,52,.22)';                                // it stands on the tarmac, not above it
     ctx.beginPath(); ctx.ellipse(x,y,w*0.72,Math.max(1,w*0.20),0,0,TAU); ctx.fill();
@@ -2539,10 +2556,11 @@ function buzz(g){
   if(el){ el.textContent='CLOSE SHAVE'; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
   sfx('whoosh');
 }
-// Z_H is sized against the CAMERA, not a tape measure: the eye sits CAMH=112 up, so a 92-px shambler's
-// head rides at ~82% of the horizon line at every distance — an adult seen from an SUV seat. The old 60
-// put heads at half eye-height and the whole horde read as toddlers. Z_HIT is a bumper radius: the car is
-// 24 wide, so 55 means catching one with a wing counts — a clean miss is still a miss.
+// Z_H is a tape measure after all: at PX_M=50 a 92-px shambler is 1.84 m, an adult, and the eye at
+// CAMH=112 is 2.24 m up — a tall seat looking slightly down at a standing man, which is exactly the read.
+// The horde was never the thing that was wrong; it only LOOKED like giants because the car parked next to
+// it was a fifth of its real size. Z_HIT is a bumper radius: 55 is 1.1 m, and the car is 1.85 m across,
+// so catching one with a wing counts — a clean miss is still a miss.
 const Z_SHIRT=['#6b7a5a','#7a6a58','#5a6b7a','#7a5a6b','#c2691e','#c9c3ae'], Z_SKIN='#7fbb4e';
 const GORE=['#8f1e12','#6f1610','#a5261a','#586b3a'];
 function roadAt(R,fi){ const i=clamp(fi|0,0,R.pts.length-1), p=R.pts[i], q=R.pts[i+1]||p, f=fi-i;
@@ -2629,7 +2647,7 @@ function updateZombies(g,dt){
     z.o+=z.dir*z.sp*dt;                                                          // the shamble is ACROSS the road
     if(Math.abs(z.o)>BARRIER+250) z.dir=-Math.sign(z.o);                        // wander back toward the action
     const dz=(z.fi-c.idx)*SEG;
-    if(Math.abs(z.fi-c.idx)<3){                                                  // close enough to check the bumper
+    if(Math.abs(z.fi-c.idx)<NOSE_PTS+Z_HIT/SEG){                                 // close enough to check the bumper
       const bx=c.x+Math.cos(c.angle)*CAR_L*0.45, by=c.y+Math.sin(c.angle)*CAR_L*0.45;   // the strike happens at the NOSE
       const p=zPos(R,z), d2=(p.x-bx)*(p.x-bx)+(p.y-by)*(p.y-by);
       if(d2<z.r*z.r){ killZombie(g,z,'car'); continue; }                        // a brute's bulk is a bigger target
@@ -2781,7 +2799,7 @@ function updateDeer(g,dt){
     const z=g.deer[i];
     z.ph+=dt*7; z.o+=z.dir*z.sp*dt;
     if(Math.abs(z.o)>BARRIER+140){ g.deer.splice(i,1); continue; }               // made the far verge, gone
-    if(Math.abs(z.fi-c.idx)<3){
+    if(Math.abs(z.fi-c.idx)<NOSE_PTS+DEER_HIT/SEG){
       const bx=c.x+Math.cos(c.angle)*CAR_L*0.45, by=c.y+Math.sin(c.angle)*CAR_L*0.45;
       const p=zPos(R,z), d2=(p.x-bx)*(p.x-bx)+(p.y-by)*(p.y-by);
       if(d2<DEER_HIT*DEER_HIT){ strikeDeer(g,z); g.deer.splice(i,1); continue; }
@@ -2846,10 +2864,12 @@ function drawDeerTop(g){
   for(const z of g.deer){ const p=zPos(R,z);
     const ang=Math.atan2(p.tx*z.dir,-p.ty*z.dir)+Math.PI/2, sc=z.sc||1;
     ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang); ctx.scale(sc,sc);
-    ctx.fillStyle='rgba(20,30,16,.20)'; ctx.beginPath(); ctx.ellipse(0,2,10,6,0,0,TAU); ctx.fill();
-    ctx.fillStyle='#8a5f3c'; ctx.beginPath(); ctx.ellipse(0,0,9,5.5,0,0,TAU); ctx.fill();       // body
-    ctx.beginPath(); ctx.ellipse(0,-7,4.2,3.6,0,0,TAU); ctx.fill();                              // head
-    ctx.fillStyle='#f4ede0'; ctx.beginPath(); ctx.ellipse(0,6,2.4,1.6,0,0,TAU); ctx.fill();       // tail-flash
+    // the sprite is drawn nose-up, so radiusY is the deer's LENGTH — which is why the old 9x5.5 read as a
+    // 0.36 m rabbit lying across its own path. A deer is 1.4 m long and 0.45 m across, not the other way round.
+    ctx.fillStyle='rgba(20,30,16,.20)'; ctx.beginPath(); ctx.ellipse(0.04*PX_M,0.06*PX_M,0.26*PX_M,0.76*PX_M,0,0,TAU); ctx.fill();
+    ctx.fillStyle='#8a5f3c'; ctx.beginPath(); ctx.ellipse(0,0,0.22*PX_M,0.70*PX_M,0,0,TAU); ctx.fill();     // body
+    ctx.beginPath(); ctx.ellipse(0,-0.80*PX_M,0.11*PX_M,0.16*PX_M,0,0,TAU); ctx.fill();                     // head, out front
+    ctx.fillStyle='#f4ede0'; ctx.beginPath(); ctx.ellipse(0,0.72*PX_M,0.09*PX_M,0.07*PX_M,0,0,TAU); ctx.fill();   // tail-flash
     ctx.restore(); }
 }
 /* ============================ the road isn't yours ============================ */
@@ -2876,7 +2896,12 @@ function drawDeerTop(g){
    that stands the horde down for a clean measurement gets an empty road without needing to know traffic
    exists. And it rolls its own rng stream, so adding it does not shift the horde's or the road's. */
 const TRAF_LANE=ROAD_HALF*0.50;        // their lane centre — the far half, screen right, where the wear bands say
-const TRAF_YIELD=ROAD_HALF*0.80;       // as far over as a driver will go for you, and not one inch further
+// As far over as a driver will go for you: outside wheels off the tarmac and onto the verge, and not one
+// inch further. This is quoted as the vehicle's OUTER EDGE rather than its centre, because a lorry pulling
+// its centre to where a saloon put its centre would be a metre deep in the barrier. Re-anchoring it this
+// way is also what keeps the thread possible now the cars are their real size: the old flat cap was tuned
+// against a 2.4 m-wide player and a 4.4 m-wide "car", and against honest bodywork it left ~0.6 m of gap.
+const TRAF_YIELD_EDGE=ROAD_HALF+GRASS*0.42;   // ~0.7 m of the vehicle on the grass at full lock
 const TRAF_SHOULDER=52;                // clearance past the bumpers that still counts as threading it
 const TRAF_OVER=ROAD_HALF*0.30;        // and how far past the centre line you have to have BEEN for it to count
 const TRAF_DEBRIS=['#dfe9f2','#b9c6d2','#8e9aa6','#ffd24a'];   // glass, plastic, and somebody's lamp
@@ -2884,10 +2909,12 @@ const TRAF_DEBRIS=['#dfe9f2','#b9c6d2','#8e9aa6','#ffd24a'];   // glass, plastic
 // the windshield, w and len are the footprint from above. Deriving one from the other is what made the first
 // cut of this read as a narrow box front-on while carrying a hitbox three times its drawn width — a hazard
 // that hits you when the picture says it missed.
+// Quoted in METRES against PX_M, like the player's car — these used to be eyeballed numbers that made a
+// saloon 4.4 m WIDE and 4.8 m TALL, taller than it was wide, and a lorry no taller than a man.
 const TRAF_KINDS=[
-  { id:'car',   wt:0.56, w:44, hgt:48, len:54, sp:330, rf:'#2a3b4c', cols:['#3d6ea8','#b9c2cb','#2f6b4a','#8e2f2f','#d9d3c4'] },
-  { id:'van',   wt:0.27, w:50, hgt:72, len:70, sp:300, rf:'#cfcabb', cols:['#eae6da','#dfe3e8','#c9d6df'] },
-  { id:'truck', wt:0.17, w:58, hgt:88, len:96, sp:250, rf:'#5f6b74', cols:['#8a3a2c','#2f4a63','#6d6a54'] },
+  { id:'car',   wt:0.56, w:1.82*PX_M, hgt:1.45*PX_M, len:4.5*PX_M, sp:330, rf:'#2a3b4c', cols:['#3d6ea8','#b9c2cb','#2f6b4a','#8e2f2f','#d9d3c4'] },
+  { id:'van',   wt:0.27, w:2.00*PX_M, hgt:2.35*PX_M, len:5.4*PX_M, sp:300, rf:'#cfcabb', cols:['#eae6da','#dfe3e8','#c9d6df'] },
+  { id:'truck', wt:0.17, w:2.50*PX_M, hgt:3.60*PX_M, len:9.4*PX_M, sp:250, rf:'#5f6b74', cols:['#8a3a2c','#2f4a63','#6d6a54'] },
 ];
 function spawnTraffic(g,fi,kind){
   const r=g.trng, R=g.road;
@@ -2921,14 +2948,21 @@ function updateTraffic(g,dt){
   for(let i=g.traffic.length-1;i>=0;i--){
     const v=g.traffic[i];
     v.fi-=v.sp*dt/SEG;                               // they run the road against your grain
-    if(v.fi<c.idx-6){ g.traffic.splice(i,1); continue; }
+    // ...and are only gone once their whole LENGTH is behind you — a 9.4 m lorry is still alongside at the
+    // point a 4.5 m saloon has cleared you, which a fixed 6-point cutoff quietly forgot
+    const vpts=v.len/(2*SEG);                        // half the vehicle, in road points
+    if(v.fi<c.idx-6-vpts){ g.traffic.splice(i,1); continue; }
     // the yield: a real driver hugs their verge for a car drifting over the line, and stops at the verge.
     // Proportional, so "a bit wide" is free, "properly over" is nerve, and "in their lane" is a head-on.
-    const want=TRAF_LANE+(TRAF_YIELD-TRAF_LANE)*clamp(lat/120,0,1);
+    // and the ramp finishes by the time you are PROPERLY over, not at some absolute 120 px — with real
+    // bodywork that old number landed inside the collision envelope, so the driver was still easing across
+    // at the moment you arrived. They commit to the verge as soon as you have clearly taken their half.
+    const yieldTo=TRAF_YIELD_EDGE-v.w*0.5;
+    const want=TRAF_LANE+(yieldTo-TRAF_LANE)*clamp(lat/TRAF_OVER,0,1);
     v.o+=clamp(want-v.o,-200*dt,200*dt);
     if(!v.horn && lat>40 && (v.fi-c.idx)*SEG<1400){ v.horn=true; v.flash=1.1; sfx('horn'); }
     if(v.flash>0) v.flash-=dt;
-    if(Math.abs(v.fi-c.idx)<3){                      // close enough to check the bumper — same test the horde uses
+    if(Math.abs(v.fi-c.idx)<NOSE_PTS+vpts+v.r/SEG){  // close enough to check the bumper — the nose's reach plus theirs
       const bx=c.x+Math.cos(c.angle)*CAR_L*0.45, by=c.y+Math.sin(c.angle)*CAR_L*0.45;
       const q=zPos(R,v), d2=(q.x-bx)*(q.x-bx)+(q.y-by)*(q.y-by);
       if(d2<v.r*v.r && !onRails){ strikeTraffic(g,v); g.traffic.splice(i,1); continue; }
@@ -3006,12 +3040,13 @@ function drawTrafficTop(g){
   for(const v of g.traffic){
     const p=zPos(R,v), L=v.len, Wd=v.w;
     ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(Math.atan2(-p.ty,-p.tx)+Math.PI/2);
-    ctx.fillStyle='rgba(20,40,20,.22)'; rr(-Wd/2+3,-L/2+5,Wd,L,7); ctx.fill();
-    ctx.fillStyle=v.col; rr(-Wd/2,-L/2,Wd,L,7); ctx.fill();
-    ctx.fillStyle=v.rf;  rr(-Wd/2+3,-L*0.16,Wd-6,L*0.44,4); ctx.fill();
-    ctx.fillStyle='#1f2c3a'; rr(-Wd/2+4,-L*0.34,Wd-8,L*0.17,3); ctx.fill();
+    const rad=Wd*0.18;                               // fractions of the vehicle, not pixels — see drawCar
+    ctx.fillStyle='rgba(20,40,20,.22)'; rr(-Wd/2+Wd*0.13,-L/2+L*0.09,Wd,L,rad); ctx.fill();
+    ctx.fillStyle=v.col; rr(-Wd/2,-L/2,Wd,L,rad); ctx.fill();
+    ctx.fillStyle=v.rf;  rr(-Wd/2+Wd*0.13,-L*0.16,Wd*0.74,L*0.44,Wd*0.17); ctx.fill();
+    ctx.fillStyle='#1f2c3a'; rr(-Wd/2+Wd*0.18,-L*0.34,Wd*0.64,L*0.17,Wd*0.13); ctx.fill();
     ctx.fillStyle=(v.flash>0 && Math.sin(g.time*38)>0) ? '#ffffff' : '#fff3c4';
-    ctx.beginPath(); ctx.arc(-Wd/2+4.5,-L/2+4,2.6,0,TAU); ctx.arc(Wd/2-4.5,-L/2+4,2.6,0,TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(-Wd/2+Wd*0.20,-L/2+L*0.07,Wd*0.11,0,TAU); ctx.arc(Wd/2-Wd*0.20,-L/2+L*0.07,Wd*0.11,0,TAU); ctx.fill();
     ctx.restore();
   }
 }
@@ -3252,14 +3287,16 @@ function drawGhostTop(g){
   const gp=ghostAt(g); if(!gp||gp.ended) return;
   ctx.save(); ctx.translate(gp.x,gp.y); ctx.rotate(gp.a+Math.PI/2); ctx.globalAlpha=0.38;
   ctx.fillStyle='#59d6e8';
-  rr(-CAR_W/2,-CAR_L/2,CAR_W,CAR_L,7); ctx.fill();
-  ctx.fillStyle='#bdf2fa'; rr(-CAR_W*0.32,-CAR_L*0.16,CAR_W*0.64,CAR_L*0.36,4); ctx.fill();   // glasshouse
+  rr(-CAR_W/2,-CAR_L/2,CAR_W,CAR_L,CAR_W*0.18); ctx.fill();
+  ctx.fillStyle='#bdf2fa'; rr(-CAR_W*0.32,-CAR_L*0.16,CAR_W*0.64,CAR_L*0.36,CAR_W*0.17); ctx.fill();   // glasshouse
   ctx.globalAlpha=1; ctx.restore();
 }
 function drawGhostDriver(g,proj){
   const gp=ghostAt(g); if(!gp||gp.ended) return;
   const P=proj(gp.x,gp.y); if(!P) return;
-  const w=clamp(CAR_W*2.1*P.sc,3,190), h=w*0.72;
+  // the 2.1 here was a legibility fudge for a car drawn a fifth of its real width; at the world's own
+  // scale the ghost is simply a car, seen from behind — 1.85 m across and 1.45 m to the roof
+  const w=clamp(CAR_W*P.sc,3,420), h=w*0.78;
   ctx.save(); ctx.globalAlpha=clamp(0.5*Math.min(P.sc*3,1),0.12,0.5);
   ctx.fillStyle='rgba(40,150,170,.5)';                                            // a soft holographic shell
   ctx.beginPath(); ctx.ellipse(P.x,P.y,w*0.62,Math.max(1,h*0.14),0,0,TAU); ctx.fill();   // its shadow keeps it grounded
@@ -3268,17 +3305,21 @@ function drawGhostDriver(g,proj){
   ctx.fillStyle='#bdf2fa'; rr(P.x-w*0.34,P.y-h*0.92,w*0.68,h*0.34,w*0.10); ctx.fill();    // rear glass
   ctx.globalAlpha=1; ctx.restore();
 }
+// every inset here is a FRACTION of the car, not a pixel count — the old absolute 3s and 5s were tuned
+// against a 24 px body and vanished the moment the car was drawn at its real size
 function drawCar(g){
-  const c=g.car;
+  const c=g.car, w=CAR_W, l=CAR_L, rad=w*0.18;   // ~0.33 m corner, not a bar of soap
   ctx.save(); ctx.translate(c.x,c.y); ctx.rotate(c.angle+Math.PI/2);
-  ctx.fillStyle='rgba(20,40,20,.22)'; rr(-CAR_W/2+3,-CAR_L/2+5,CAR_W,CAR_L,8); ctx.fill();
-  const bg=ctx.createLinearGradient(-CAR_W/2,0,CAR_W/2,0); bg.addColorStop(0,'#ff7a3d'); bg.addColorStop(.5,'#ff5a2f'); bg.addColorStop(1,'#e64a26');
-  ctx.fillStyle=bg; rr(-CAR_W/2,-CAR_L/2,CAR_W,CAR_L,8); ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,.85)'; ctx.fillRect(-3,-CAR_L/2+3,6,CAR_L-6);
-  ctx.fillStyle='#1f2c3a'; rr(-CAR_W/2+4,-CAR_L*0.16,CAR_W-8,CAR_L*0.34,5); ctx.fill();
-  ctx.fillStyle='#3a5a78'; rr(-CAR_W/2+5,-CAR_L*0.12,CAR_W-10,CAR_L*0.12,4); ctx.fill();
-  ctx.fillStyle='#fff3c4'; ctx.beginPath(); ctx.arc(-CAR_W/2+5,-CAR_L/2+4,2.6,0,TAU); ctx.arc(CAR_W/2-5,-CAR_L/2+4,2.6,0,TAU); ctx.fill();
-  ctx.fillStyle='#c0202a'; ctx.fillRect(-CAR_W/2+3,CAR_L/2-5,4,3); ctx.fillRect(CAR_W/2-7,CAR_L/2-5,4,3);
+  ctx.fillStyle='rgba(20,40,20,.22)'; rr(-w/2+w*0.12,-l/2+l*0.11,w,l,rad); ctx.fill();
+  const bg=ctx.createLinearGradient(-w/2,0,w/2,0); bg.addColorStop(0,'#ff7a3d'); bg.addColorStop(.5,'#ff5a2f'); bg.addColorStop(1,'#e64a26');
+  ctx.fillStyle=bg; rr(-w/2,-l/2,w,l,rad); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.85)'; ctx.fillRect(-w*0.125,-l/2+l*0.065,w*0.25,l*0.87);      // the stripe up the spine
+  ctx.fillStyle='#1f2c3a'; rr(-w/2+w*0.167,-l*0.16,w*0.666,l*0.34,w*0.21); ctx.fill();           // glasshouse
+  ctx.fillStyle='#3a5a78'; rr(-w/2+w*0.21,-l*0.12,w*0.58,l*0.12,w*0.17); ctx.fill();             // windscreen band
+  ctx.fillStyle='#fff3c4'; ctx.beginPath();                                                       // headlights, 0.2 m across
+  ctx.arc(-w/2+w*0.21,-l/2+l*0.087,w*0.108,0,TAU); ctx.arc(w/2-w*0.21,-l/2+l*0.087,w*0.108,0,TAU); ctx.fill();
+  ctx.fillStyle='#c0202a'; ctx.fillRect(-w/2+w*0.125,l/2-l*0.109,w*0.167,l*0.065);               // tail lights
+                           ctx.fillRect(w/2-w*0.29,l/2-l*0.109,w*0.167,l*0.065);
   ctx.restore();
 }
 function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
