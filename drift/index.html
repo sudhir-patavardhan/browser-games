@@ -574,12 +574,14 @@ function step(dt){
   else g.stall=Math.max(0,g.stall-dt*2);
 
   // AUTO-PARK: drive onto a services' pavement and the valet takes it from there — the wheel is the car's,
-  // it idles down the drive at the limit, picks a stall on the charger row and plugs in. Cancelling (the
-  // pause key) hands the wheel back and stands the valet down until you've left the facility.
+  // it idles down the drive at the limit, drives up to the first free KIOSK on the charger row and backs
+  // into the bay alongside it. Cancelling (the pause key) hands the wheel back and stands the valet down
+  // until you've left the facility.
   if(g.onFac && g.apArm && !g.pullIn && !g.pullOut && !g.parked && Math.abs(g.slip)<0.35){
     // (the slip gate: a slide carried wide onto the lane's pavement is a mistake, not a request to park)
     g.cc=0;
-    g.pullIn={ c:fac.r.c, side:fac.side, off:(LOT_OUT-95)*fac.side, dir:(fac.r.c>=c.idx?1:-1), auto:true };
+    const dir=fac.r.c>=c.idx?1:-1;
+    g.pullIn={ c:chgIdx(fac.r,dir), bay:fac.r.c, side:fac.side, off:CHG_BAY*fac.side, dir, auto:true };
     setPauseUI();
   }
   if(!g.onFac) g.apArm=true;
@@ -1437,10 +1439,23 @@ function forestAt(i,seed){
 const KM_PTS=Math.round(1000/(SEG*0.1));            // road points per kilometre (SEG px/point, 1px≈0.1m)
 const REST_IN=77, REST_OUT=40;                      // the drive in (~200 m) and the drive back out (~104 m)
 const LOT_IN=BARRIER+110, LOT_OUT=BARRIER+860;      // the lot: set back off the road, ~75 m deep
-const LANE_HALF=100;                                 // the drive itself: a broad ~20 m roadway
+const LANE_HALF=150;                                 // the drive itself: a broad ~30 m roadway
+// …and broader still where it meets the carriageway. A slip road that keeps one width all the way to the
+// gore is a track with a kerb on it; a real one opens into a TRUMPET at the mouth, so the turn-in is a
+// wide sweep you can take at speed rather than a gap you have to aim at. Both mouths get it — the drive in
+// and the drive back out are the same taper run in opposite directions.
+const MOUTH_HALF=LANE_HALF+110, MOUTH_U=0.34;        // the flare's width, and how far up the drive it reaches
 const LOT_MID=(LOT_IN+LOT_OUT)/2;
 const STALL_ROWS=[[LOT_IN+34,LOT_IN+170],[LOT_MID-68,LOT_MID+68],[LOT_OUT-170,LOT_OUT-34]];  // three rows of stalls
-const CHG_D=[-20,-12,-4,4,12,20];                   // the charger row: six posts, spaced along the far side
+// The charger row along the far side: KIOSKS, not posts — four of them, set a good 40 m apart so each one
+// owns its own bay and the row reads as a charging plaza rather than a picket fence. Six posts at 20 m
+// pitch used to crowd into one dark smear at any distance, and none of them was big enough to aim at.
+const CHG_D=[-24,-8,8,24];                          // where they stand along the road, in road points
+const CHG_OFF=LOT_OUT-26;                           // …how far out: at the head of the far stall row
+const CHG_BAY=LOT_OUT-62;                           // …and the bay alongside, where the valet leaves the car
+// which kiosk the car takes: the first one it meets. Coming down the drive that's the near end of the row,
+// coming back after a U-turn it's the far end — either way, you stop at the first free bay you reach.
+const chgIdx=(r,dir)=> r.c + (dir<0 ? CHG_D[CHG_D.length-1] : CHG_D[0]);
 // The facility has a speed limit and the car itself enforces it: cross onto a services' own pavement and
 // you're idled down to ~10 km/h (28 px/s at 1px≈0.1m), walking pace for a lot full of parked cars. Only
 // the drive back OUT is exempt — an exit ramp exists to get you back up to road speed.
@@ -1494,7 +1509,8 @@ function restGeom(i,seed){
       if(u<=0) continue;
       lane=true;
       const c0=lerp(ROAD_HALF+58,(LOT_IN+LOT_OUT)/2,smoo(u));            // the drive slides away from the road…
-      const hw=u<0.72 ? LANE_HALF                                        // …holding lane width most of the way,
+      const hw=u<MOUTH_U ? lerp(MOUTH_HALF,LANE_HALF,smoo(u/MOUTH_U))    // …opening into a trumpet at the mouth,
+             : u<0.72   ? LANE_HALF                                      // holding lane width down the middle,
              : lerp(LANE_HALF,(LOT_OUT-LOT_IN)/2,smoo((u-0.72)/0.28));   // then flaring open into the lot
       in_=c0-hw; out=c0+hw;
     }
@@ -1664,19 +1680,34 @@ function drawRestStop(g,zside,toScreen,lo,hi){
       ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke();
     }
   }
+  // the kiosks. Four of them, well apart, each a real piece of forecourt furniture rather than a stick: a
+  // plinth on the tarmac, a body you could walk up to, a lit screen at head height, a cable slung across it
+  // and a canopy over the top. Drawn back-to-front along the row so a near one occludes a far one properly.
+  const kiosks=[];
   for(let i=lo;i<hi-1;i++){
     const a=restGeom(i,seed); if(!a || a.lane) continue;
     if(CHG_D.indexOf(a.d)<0) continue;                                 // the charger row, along the far side
-    const b=pt(i,(LOT_OUT-22)*a.side);
-    if(!b) continue;
-    const w=clamp(13*b.sc,2,26), h=clamp(112*b.sc,6,150);
-    ctx.fillStyle='#2b333d'; ctx.fillRect(b.x-w/2,b.y-h,w,h);          // the post
-    ctx.fillStyle='#7fe2ff'; ctx.fillRect(b.x-w*0.30,b.y-h*0.92,w*0.60,h*0.26);   // its lit face
-    if(game && game.parked && game.parked.charger){                     // plugged in: they breathe
-      ctx.globalAlpha=0.35+0.25*Math.sin(g.time*3.4);
-      ctx.fillStyle='#8affc1'; ctx.fillRect(b.x-w*0.30,b.y-h*0.92,w*0.60,h*0.26);
-      ctx.globalAlpha=1;
-    }
+    const b=pt(i,CHG_OFF*a.side);
+    if(b) kiosks.push(b);
+  }
+  kiosks.sort((A,B)=>A.sc-B.sc);                                       // far ones first
+  const lit=!!(game && game.parked && game.parked.charger);
+  for(const b of kiosks){
+    const w=clamp(46*b.sc,3,96), h=clamp(150*b.sc,8,300);              // ~4.6 m wide, ~15 m to the canopy
+    const x=b.x, y=b.y;
+    ctx.fillStyle='rgba(38,44,52,.22)';                                // it stands on the tarmac, not above it
+    ctx.beginPath(); ctx.ellipse(x,y,w*0.72,Math.max(1,w*0.20),0,0,TAU); ctx.fill();
+    ctx.fillStyle='#39434f'; ctx.fillRect(x-w*0.62,y-h*0.09,w*1.24,h*0.09);        // plinth
+    ctx.fillStyle='#2b333d'; ctx.fillRect(x-w/2,y-h*0.78,w,h*0.69);                // the body
+    ctx.fillStyle='#39434f'; ctx.fillRect(x-w*0.46,y-h*0.36,w*0.92,h*0.07);        // the cable, slung across it
+    ctx.fillStyle='#1b2129'; ctx.fillRect(x-w*0.82,y-h,w*1.64,h*0.13);             // canopy, overhanging both sides
+    ctx.fillStyle='#39434f'; ctx.fillRect(x-w*0.10,y-h*0.87,w*0.20,h*0.10);        // …on its own stalk
+    ctx.fillStyle=lit?'#8affc1':'#7fe2ff';                                          // the screen, at head height
+    if(lit) ctx.globalAlpha=0.55+0.35*Math.sin(g.time*3.4);                         // plugged in: it breathes
+    ctx.fillRect(x-w*0.33,y-h*0.71,w*0.66,h*0.28);
+    ctx.globalAlpha=1;
+    ctx.fillStyle=lit?'rgba(138,255,193,.85)':'rgba(127,226,255,.75)';              // the bolt on the canopy face
+    ctx.fillRect(x-w*0.06,y-h*0.99,w*0.12,h*0.11);
   }
 }
 // Countdown signage: a post every kilometre in the run-up to a stop, the way a real highway plants
@@ -2206,7 +2237,13 @@ function drawNearScenery(g,ca,sa,cx,hy){
     const nx=(-p.ty*co-p.tx*si)*sg, ny=(p.tx*co-p.ty*si)*sg;              // outward road-normal, tilted a touch
     const d0=BARRIER+140, d1=d0+780+h01(blk*13+8)*1150;                  // some short field edges, some long
     const nb=clamp(Math.round((d1-d0)/58)+3,8,32);                       // packed dense enough to read as one run
-    for(let j=0;j<nb;j++){ const d=d0+(d1-d0)*(j/(nb-1)); const q=put(p.x+nx*d,p.y+ny*d);
+    for(let j=0;j<nb;j++){ const d=d0+(d1-d0)*(j/(nb-1));
+      // a hedge is a FIELD boundary, and a services isn't a field: the run stops at the county's fence
+      // rather than growing up through the exit road and the parking lot. The tilt means a bush this far
+      // out sits at a different road index than the one the run started from, so ask at ITS index — that's
+      // the whole reason a plain onApron(at,…) was letting a hedgerow stripe straight across the lot.
+      if(onApron(at-Math.round(d*sg*si/SEG), d*sg*co)) continue;
+      const q=put(p.x+nx*d,p.y+ny*d);
       if(q){ q.r=clamp(29*q.sc,0.7,30); q.k=h01(blk*7+j)<0.5?0:1; hedge.push(q); } }
   }
   if(hedge.length){
@@ -2292,11 +2329,17 @@ function drawNearScenery(g,ca,sa,cx,hy){
   // give it overhead, the fence gives it underfoot). Both shoulders, set just past the marker posts; timber
   // jittered and the odd post skipped so it never reads as a ruler, with the same short contact shadow off the
   // one sun. Cheap: posts batched per side, each wire a single stroked path.
+  // …and where the county owns the land, the fence owns the county's boundary: at a services it BOWS OUT
+  // around the whole facility instead of marching straight across the exit road and the lot. A field fence
+  // drawn through a slip road you can drive down is the one thing out here that can make the picture and
+  // the physics disagree, and it looked exactly like a barrier standing in the mouth of the exit.
   const FOFF=BARRIER+40, FH=24;
   for(const sg of [1,-1]){
     const fp=[];
     for(let i=lo;i<hi;i++){ if(i%3||h01(i*61+sg*7)<0.06) continue;          // posts every ~6m, the odd one gone
-      const p=R.pts[i], wx=p.x-sg*p.ty*FOFF, wy=p.y+sg*p.tx*FOFF, q=put(wx,wy);
+      const gm=restGeom(i,seed);
+      const foff=(gm && gm.side===sg) ? gm.out+46 : FOFF;                   // outside the services, never through it
+      const p=R.pts[i], wx=p.x-sg*p.ty*foff, wy=p.y+sg*p.tx*foff, q=put(wx,wy);
       if(q){ q.h=(FH+h01(i*13)*7)*q.sc; q.wx=wx; q.wy=wy; fp.push(q); } }
     if(fp.length<2) continue;
     ctx.fillStyle='rgba(34,60,30,.14)'; ctx.beginPath();                    // contact shadows, thrown off the sun
@@ -3182,10 +3225,14 @@ function drawRestTop(g){
       }
       ctx.strokeStyle='#f6f8fb';
     }
-    if(!a.lane && CHG_D.indexOf(a.d)>=0){ const o=(LOT_OUT-22)*s, x=p.x-p.ty*o, y=p.y+p.tx*o;
-      ctx.fillStyle='#2b333d'; ctx.beginPath(); ctx.arc(x,y,11,0,TAU); ctx.fill();
+    // a kiosk from above: a canopy square on the tarmac with the lit face under it, aligned to the row
+    if(!a.lane && CHG_D.indexOf(a.d)>=0){ const o=CHG_OFF*s, x=p.x-p.ty*o, y=p.y+p.tx*o;
+      ctx.save(); ctx.translate(x,y); ctx.rotate(Math.atan2(p.ty,p.tx));
+      ctx.fillStyle='#1b2129'; rr(-15,-24,30,48,5); ctx.fill();
+      ctx.fillStyle='#2b333d'; rr(-9,-17,18,34,4); ctx.fill();
       ctx.fillStyle=(game&&game.parked&&game.parked.charger)?'#8affc1':'#7fe2ff';
-      ctx.beginPath(); ctx.arc(x,y,6.5,0,TAU); ctx.fill(); }
+      rr(-6,-12,12,24,3); ctx.fill();
+      ctx.restore(); }
   }
 }
 function drawSkid(g){
@@ -3561,8 +3608,10 @@ function nextRest(g){
   if(dA===Infinity && dB===Infinity) return null;   // nothing within reach either way: the hard shoulder
   const back = dB < dA-40;                          // ~100m of clear saving before a U-turn is worth it
   const i = back ? r.behind : r.ahead;
-  const gm=restGeom(i,g.seed);
-  return { c:i, side:gm.side, off:(LOT_OUT-95)*gm.side, dir: back?-1:1 };   // a stall in the charger row
+  const gm=restGeom(i,g.seed), dir=back?-1:1;
+  // the target is a KIOSK, not the middle of the lot: `c` is the bay alongside the first charger the car
+  // reaches, `bay` the facility it belongs to (which is what the drive-in pursuit steers by)
+  return { c:chgIdx(gm.r,dir), bay:i, side:gm.side, off:CHG_BAY*gm.side, dir };
 }
 function togglePause(){
   const g=game;
@@ -3584,6 +3633,7 @@ function togglePause(){
 // the only way it can — a U-turn, held slow until the nose is round, then the same braking curve home.
 function pullInDrive(g){
   const R=g.road, c=g.car, P=g.pullIn, dir=P.dir||1;
+  const bay=P.bay!=null?P.bay:P.c;                      // the facility we're driving to; P.c is the bay in it
   if(dir>0) ensureAhead(R,P.c+6);
   else R.start=Math.min(R.start, Math.max(0,P.c-30));   // the road behind still exists in pts[] — re-open it
                                                         // so the index tracker and look point can follow us down
@@ -3619,14 +3669,14 @@ function pullInDrive(g){
   // once the facility exists at the look point, chase ITS centreline instead of the road's — this is what
   // takes the car down the 200 m drive and into the lot, rather than mounting the verge at the bay
   const gl=P.shoulder ? null : restGeom(li,g.seed);
-  const po=(gl && gl.r.c===P.c) ? gl.path*gl.side : 0;
+  const po=(gl && gl.r.c===bay) ? gl.path*gl.side : 0;
   const hdg=angWrap(Math.atan2(look.y+look.tx*po-c.y, look.x-look.ty*po-c.x)-c.angle);
   const err=hdg + (po ? 0 : clamp(-off/240,-0.55,0.55)*dir);         // lateral reads mirrored running the road backwards
   const over=Math.max(0,Math.abs(g.slip)-0.22)*Math.sign(g.slip);
   g.steer=clamp(clamp(err*2.8,-1,1) - over*1.8,-1,1);
   let vWant=Math.min(VTOP, Math.sqrt(2*230*Math.max(0,to*SEG-24)));
   const gh=P.shoulder ? null : restGeom(c.idx,g.seed);
-  if(gh && gh.r.c===P.c) vWant=Math.min(vWant,REST_OUT_LIMIT);       // on the facility the limiter takes it from here
+  if(gh && gh.r.c===bay) vWant=Math.min(vWant,REST_OUT_LIMIT);       // on the facility the limiter takes it from here
   if(g.batt<0.25) vWant=Math.min(vWant,330);                         // limp mode: load scales with speed, and a
                                                                      // dying pack needs the range more than the pace
   if(dir<0 && Math.abs(hdg)>0.9){                                    // still coming about: slow, but alive —
@@ -3642,10 +3692,14 @@ function pullInDrive(g){
 function parkUp(g){
   const c=g.car, R=g.road, p=R.pts[c.idx];
   c.vx=0; c.vy=0; g.speed=0; g.slip=0; g.kw=0; g.stall=0;
-  c.angle=Math.atan2(p.ty,p.tx);                                     // straighten up in the bay
   const gm=restGeom(c.idx,g.seed);
   const lateral=(c.x-p.x)*(-p.ty)+(c.y-p.y)*p.tx;
   const onLot=!!(gm && (lateral>0?1:-1)===gm.side && !gm.lane && Math.abs(lateral)>=gm.in-8);
+  // square up in the stall. The lot's bays are painted ACROSS the row, so a car left lying along the road
+  // is a car parked over three of them — at a kiosk it sits square, reversed in with its tail to the post
+  // (which is where the socket is, and which leaves it pointing back across the lot for the drive out).
+  c.angle = onLot ? Math.atan2(-p.tx*gm.side, p.ty*gm.side)
+                  : Math.atan2(p.ty,p.tx);                           // a shoulder stop just straightens up
   g.parked={ charger:onLot, kwh:0, cost:0, idle:0, plugged:false };  // stopped anywhere short of the lot —
                                                                      // the drive, the shoulder — is no charger
   g.pullIn=null;

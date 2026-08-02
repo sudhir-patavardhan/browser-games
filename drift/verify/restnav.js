@@ -32,7 +32,7 @@
     // ---- the schedule: the county builds at the 3rd, 7th, 12th, 18th… km — each gap one km longer —
     // nudged off a river only, never scattered. And each bay has a REAL exit: a tongue that ramps in off
     // the shoulder, a full-width stand, and an end (no apron before the lane starts).
-    let sched=true, taper=true, signs=true;
+    let sched=true, taper=true, signs=true, mouth=true;
     for(let n=1;n<=4;n++){
       const r=restBlock(n,g.seed), want=Math.round(restKm(n)*KM_PTS);
       if(!r.ok || Math.abs(r.c-want)>180) sched=false;
@@ -40,11 +40,20 @@
       const lane=restGeom(r.c-r.len-Math.round(REST_IN/2),g.seed);       // half-way down the drive in
       const before=restGeom(r.c-r.len-REST_IN-4,g.seed);                 // upstream of the gore: plain road
       // a real facility: the drive is a BROAD lane OFF the road (grass between it and the carriageway,
-      // ~20 m of paving — a real two-way service road, not a track), it runs ~200 m, and it ends in a
+      // ~30 m of paving — a real two-way service road, not a track), it runs ~200 m, and it ends in a
       // BIG lot SET BACK from the road (~75 m deep) — not a widened shoulder
       if(!bay || bay.lane || bay.in<ROAD_HALF+80 || (bay.out-bay.in)<700) taper=false;
-      if(!lane || !lane.lane || lane.in<=ROAD_HALF+6 || (lane.out-lane.in)<180 || (lane.out-lane.in)>230) taper=false;
+      if(!lane || !lane.lane || lane.in<=ROAD_HALF+6 || (lane.out-lane.in)<280 || (lane.out-lane.in)>330) taper=false;
       if(before || REST_IN*SEG*0.1<190) taper=false;
+      // …and BOTH mouths open into a trumpet: where the drive meets the carriageway it is wider than it is
+      // half-way down, and it reaches across the road's own edge line so the turn-in is a sweep, not a gap
+      for(const [at,mid] of [[r.c-r.len-REST_IN+2, lane],
+                             [r.c+r.len+REST_OUT-2, restGeom(r.c+r.len+Math.round(REST_OUT/2),g.seed)]]){
+        const m=restGeom(at,g.seed);
+        if(!m || !m.lane || !mid) { mouth=false; continue; }
+        if((m.out-m.in) < (mid.out-mid.in)+120) mouth=false;             // broader at the mouth by a real margin
+        if(m.in > ROAD_HALF) mouth=false;                                // …and it actually meets the road
+      }
       // every bay announces itself: the gore gantry plus a full 3-2-1 countdown, each post standing on
       // dry land (nudged off a bridge, never dropped) and answering signAt at its own index
       if(!r.signs || r.signs.length!==4) signs=false;
@@ -58,7 +67,9 @@
     rec("bays keep the county's schedule: km 3, 7, 12, 18 (± a nudge off a river)", sched,
         [1,2,3,4].map(n=>{const r=restBlock(n,g.seed);return "n"+n+"@"+r.c+" (milestone "+Math.round(restKm(n)*KM_PTS)+")";}).join(", "));
     rec("each bay is a real facility: a broad ~200 m drive in, then a big set-back lot", taper,
-        "geometry checked before the gore, half-way down the drive (18-23 m wide), and on the lot (>=70 m deep), bays 1-4");
+        "geometry checked before the gore, half-way down the drive (28-33 m wide), and on the lot (>=70 m deep), bays 1-4");
+    rec("both mouths flare into a trumpet — the exit is broad where it meets the road", mouth,
+        "in/out mouths are >=12 m wider than the drive and reach inside the road edge, bays 1-4");
     rec("every bay carries its full signage: gore gantry + 3-2-1 km, all on dry land", signs,
         [1,2,3,4].map(n=>"n"+n+":"+restBlock(n,g.seed).signs.map(s=>s.km).sort().join("/")).join("  "));
 
@@ -78,8 +89,13 @@
     if(!setup) throw new Error("no test position — nothing below can run");
 
     const pick=nextRest(D.game);
-    rec("pause picks the bay behind when it's clearly nearer", !!pick && pick.dir===-1 && pick.c===setup.bay,
-        "picked "+JSON.stringify(pick)+" want c="+setup.bay+" dir=-1");
+    rec("pause picks the bay behind when it's clearly nearer", !!pick && pick.dir===-1 && pick.bay===setup.bay,
+        "picked "+JSON.stringify(pick)+" want bay="+setup.bay+" dir=-1");
+    // …and it aims at a KIOSK in that bay, not at the middle of the charger row
+    rec("...and targets a charging kiosk, not the middle of the lot",
+        !!pick && CHG_D.indexOf(pick.c-pick.bay)>=0 && Math.abs(Math.abs(pick.off)-CHG_BAY)<1,
+        "target is "+(pick?pick.c-pick.bay:"?")+" points along the row (kiosks at "+CHG_D.join("/")+"), "
+        +(pick?Math.abs(pick.off).toFixed(0):"?")+"px out (bay line "+CHG_BAY+")");
 
     // ---- the trip back: U-turn, run the road down, park ON the apron at a live charger
     const idx0=D.game.car.idx;
@@ -91,10 +107,20 @@
     rec("the car turns around, drives back, and parks", D.state==='paused',
         "state="+D.state+" after "+n+" ticks");
     if(D.state!=='paused') throw new Error("never parked — nothing below can run");
-    rec("...at the bay it aimed for, not somewhere en route", Math.abs(D.game.car.idx-setup.bay)<=6,
+    rec("...at the bay it aimed for, not somewhere en route",
+        Math.abs(D.game.car.idx-setup.bay)<=Math.max.apply(null,CHG_D.map(Math.abs))+6,
         "parked at idx "+D.game.car.idx+", bay at "+setup.bay+" (started from "+idx0+")");
     rec("...on the apron, plugged in — going back earns a charger, not a shoulder", !!D.game.parked && D.game.parked.charger===true,
         "parked="+JSON.stringify(D.game.parked));
+    // it stopped ALONGSIDE a kiosk, squared up in the stall — not lying across the row on the road's line
+    {
+      const cc=D.game.car, pp=D.game.road.pts[cc.idx], gmP=restGeom(cc.idx,D.game.seed);
+      const latP=Math.abs((cc.x-pp.x)*(-pp.ty)+(cc.y-pp.y)*pp.tx);
+      const want=Math.atan2(-pp.tx*gmP.side, pp.ty*gmP.side);
+      rec("...alongside a kiosk, squared up in the stall", Math.abs(latP-CHG_BAY)<40 && Math.abs(angWrap(cc.angle-want))<0.05,
+          "stopped "+latP.toFixed(0)+"px out (bay line "+CHG_BAY+", kiosks at "+CHG_OFF+"), "
+          +"heading off square by "+(angWrap(cc.angle-want)).toFixed(3)+" rad");
+    }
 
     // ---- and the ordinary case is untouched: a bay comfortably ahead is still taken forwards
     D.resume();
