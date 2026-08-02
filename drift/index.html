@@ -3711,7 +3711,9 @@ function updateHUD(){
   } else if(ge.style.display!=='none') ge.style.display='none';
   // the grip flag: a daily rain day flies it all run; otherwise the rain belt (and, gentler, snow country)
   // raises it as the car actually crosses in — and it names the weather it's warning about
-  const wf=g.wet?1:(g.bio?g.bio.wet:0);
+  // read g.wet live rather than through g.bio.wet — the flag must strike the moment the sky dries, not a
+  // step later (bio.wet is stamped in step(), and the weather probe flips g.wet between steps)
+  const wf=g.wet?1:(g.bio?clamp(g.bio.rain+g.bio.snow*0.5,0,1):0);
   const we=document.getElementById('wetEl'), wetShow=wf>0.3?'block':'none';
   const wLbl=(!g.wet && g.bio && g.bio.snow>g.bio.rain*2) ? '❄ SNOW ROAD · GRIP −'+Math.round(12*wf)+'%'
                                                           : '🌧 WET ROAD · GRIP −12%';
