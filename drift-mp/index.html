@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Drift</title>
+<title>Drift MP</title>
 <style>
   *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ width:100%; height:100%; overflow:hidden; background:#7ec96a; touch-action:none;
@@ -203,6 +203,74 @@
     border:none; border-radius:11px; padding:11px 0; font-weight:900; font-size:13px; letter-spacing:1.5px;
     cursor:pointer; touch-action:manipulation; }
   #resumeBtn:active{ transform:translateY(1px); }
+
+  /* ============================ multiplayer chrome ============================ */
+  /* the start card's second door: a name, and two ways onto a shared road */
+  .mprow{ display:flex; gap:7px; margin-bottom:14px; }
+  .mprow input{ flex:1; min-width:0; border:1.5px solid rgba(23,50,74,.22); border-radius:12px; padding:10px 12px;
+    font:inherit; font-weight:800; font-size:13px; letter-spacing:1px; color:#17324a; text-transform:uppercase;
+    text-align:center; background:#f6f8f6; outline:none; }
+  .mprow input:focus{ border-color:#4bb8e0; }
+  .mpbtn{ border:none; border-radius:12px; padding:10px 14px; cursor:pointer; font-weight:900; font-size:12px;
+    letter-spacing:1px; color:#06283a; background:linear-gradient(180deg,#7fe2ff,#4bb8e0); box-shadow:0 4px 0 #2f92b8;
+    touch-action:manipulation; }
+  .mpbtn:active{ transform:translateY(2px); box-shadow:0 2px 0 #2f92b8; }
+  .mpbtn.host{ background:linear-gradient(180deg,#8fe8a0,#3ec46a); color:#0a3a1a; box-shadow:0 4px 0 #2a9450; }
+  .mpbtn.host:active{ box-shadow:0 2px 0 #2a9450; }
+  .mpnote{ font-size:11.5px; color:#8a9aa8; font-weight:600; margin-bottom:12px; min-height:1em; }
+  .mpnote.err{ color:#c0392b; }
+  .linkbtn{ background:none; border:none; padding:0; font:inherit; color:#2f92b8; font-weight:800;
+    text-decoration:underline; cursor:pointer; }
+  /* the paddock */
+  .roomcode{ font-size:clamp(44px,14vw,64px); font-weight:900; letter-spacing:12px; text-indent:12px; color:#17324a;
+    margin:6px 0 4px; font-variant-numeric:tabular-nums; }
+  .mplist{ margin:12px 0 4px; text-align:left; }
+  .mplist .mpp{ display:flex; align-items:center; gap:9px; padding:6px 10px; border-radius:10px; font-weight:800;
+    font-size:14px; color:#17324a; }
+  .mplist .mpp.me{ background:rgba(75,184,224,.12); }
+  .mplist .dot{ width:14px; height:14px; border-radius:5px; flex:none; box-shadow:inset 0 -2px rgba(0,0,0,.18); }
+  .mplist .crown{ margin-left:auto; font-size:11px; font-weight:900; letter-spacing:1px; color:#c8891a; }
+  #mpCodeIn{ width:100%; border:1.5px solid rgba(23,50,74,.22); border-radius:14px; padding:12px;
+    font:inherit; font-weight:900; font-size:34px; letter-spacing:10px; text-indent:10px; text-align:center;
+    color:#17324a; text-transform:uppercase; background:#f6f8f6; outline:none; margin-top:10px; }
+  #mpCodeIn:focus{ border-color:#4bb8e0; }
+  .lenb.on{ border-color:#2e8f38; color:#2e8f38; background:#e9f6ea; }
+  /* the grid clock and the tower board — race furniture, drawn over either camera */
+  .mpclock{ position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:5; pointer-events:none;
+    font-weight:900; font-size:clamp(18px,4.5vw,26px); color:#fff; letter-spacing:1px;
+    text-shadow:0 2px 0 rgba(23,50,74,.7), 0 4px 14px rgba(0,0,0,.35); font-variant-numeric:tabular-nums; }
+  .mpclock.low{ color:#ffd23d; } .mpclock.crit{ color:#ff5a4d; }
+  .mpboard{ position:fixed; top:52px; left:50%; transform:translateX(-50%); z-index:5; pointer-events:none;
+    background:rgba(10,16,24,.58); border-radius:12px; padding:6px 12px; backdrop-filter:blur(5px);
+    font-size:11.5px; font-weight:800; letter-spacing:.4px; color:#dff2ff; min-width:150px; }
+  .mpboard .bp{ display:flex; align-items:center; gap:7px; padding:1.5px 0; }
+  .mpboard .bp.me{ color:#ffd23d; }
+  .mpboard .bp.out{ opacity:.45; }
+  .mpboard .dot{ width:8px; height:8px; border-radius:3px; flex:none; }
+  .mpboard b{ margin-left:auto; font-variant-numeric:tabular-nums; padding-left:14px; }
+  /* the countdown — the whole screen holds its breath */
+  .mpcount{ position:fixed; left:50%; top:34%; transform:translate(-50%,-50%); z-index:9; pointer-events:none;
+    font-weight:900; font-size:clamp(80px,24vw,160px); color:#fff; opacity:0;
+    text-shadow:0 4px 0 rgba(255,122,47,.9), 0 10px 30px rgba(0,0,0,.35); }
+  .mpcount.show{ animation:cnt .96s ease forwards; }
+  @keyframes cnt{ 0%{opacity:0; transform:translate(-50%,-50%) scale(1.5);} 18%{opacity:1; transform:translate(-50%,-50%) scale(1);}
+    80%{opacity:1;} 100%{opacity:0; transform:translate(-50%,-50%) scale(.92);} }
+  /* race wire news: joins, leaves, rivals dropping out */
+  .mptoast{ position:fixed; left:50%; bottom:12%; transform:translateX(-50%); z-index:6; pointer-events:none;
+    font-weight:900; font-size:clamp(13px,3.4vw,17px); color:#bfe8ff; opacity:0; letter-spacing:.8px;
+    text-shadow:0 2px 0 rgba(10,30,50,.75), 0 4px 14px rgba(0,0,0,.35); }
+  .mptoast.show{ animation:pop 2.2s ease forwards; }
+  /* the tower's final order, on the report card */
+  #mpStand{ margin:12px 0 2px; border-top:1px solid rgba(23,50,74,.1); padding-top:10px; text-align:left; }
+  #mpStand .sp{ display:flex; align-items:center; gap:8px; padding:4px 8px; border-radius:9px;
+    font-weight:800; font-size:14px; color:#17324a; }
+  #mpStand .sp.me{ background:rgba(75,184,224,.12); }
+  #mpStand .sp .pos{ width:22px; font-weight:900; color:#8a9aa8; }
+  #mpStand .sp .dot{ width:12px; height:12px; border-radius:4px; flex:none; }
+  #mpStand .sp b{ margin-left:auto; font-variant-numeric:tabular-nums; }
+  #mpStand .sp .liv{ margin-left:auto; font-size:10.5px; font-weight:900; letter-spacing:1px; color:#3ec46a; }
+  #mpStand .winline{ text-align:center; font-weight:900; letter-spacing:1.5px; font-size:13px; color:#c8891a;
+    margin-bottom:7px; }
 </style>
 </head>
 <body>
@@ -252,12 +320,18 @@
 
 <div class="panel" id="startPanel">
   <div class="card">
-    <h1>DRIFT</h1>
-    <div class="tag">SLIDE · CHAIN · SEND IT</div>
-    <video class="clip" id="clip" src="clip.webm" autoplay muted loop playsinline preload="auto"></video>
-    <p class="lead">An endless sunlit road with a horde problem. Brake into the bend, hold the slide —
-      and the county pays cash for every zombie under the bumper.</p>
-    <button class="go" id="startBtn">Drive</button>
+    <h1>DRIFT MP</h1>
+    <div class="tag">SAME ROAD · LIVE RIVALS · SEND IT</div>
+    <video class="clip" id="clip" src="../drift/clip.webm" autoplay muted loop playsinline preload="auto"></video>
+    <p class="lead">The county road, raced live. Everyone gets the same corners, the same horde, the same
+      clock — your rivals drift beside you as ghosts you can't hit, only beat.</p>
+    <div class="mprow">
+      <input id="mpName" maxlength="12" placeholder="YOUR NAME" autocomplete="off" spellcheck="false">
+      <button class="mpbtn host" id="hostBtn">HOST RACE</button>
+      <button class="mpbtn" id="joinBtn">JOIN</button>
+    </div>
+    <div class="mpnote" id="mpNote"></div>
+    <button class="go" id="startBtn">Solo Drive</button>
     <div class="modeRow">
       <button class="aux hot" id="dailyBtn">⚑ Today’s Road</button>
       <button class="aux" id="auxBtn">♪ Your music</button>
@@ -286,6 +360,7 @@
     <div class="newbest" id="newBest" style="display:none">NEW BEST!</div>
     <div class="best" id="overBest" style="color:#5a7a5a; font-weight:700; font-size:14px; margin-top:6px">Best 0</div>
     <div class="best" id="overCash" style="color:#2e8f38; font-weight:800; font-size:14px; margin-top:4px; display:none"></div>
+    <div id="mpStand" style="display:none"></div>
     <div class="statgrid" id="overStats"></div>
     <div id="overCtr" style="margin-top:8px"></div>
     <div class="armoryBox"></div>
@@ -294,7 +369,48 @@
   </div>
 </div>
 
+<!-- the paddock: room code up top, the grid below, and the green flag is the host's to wave -->
+<div class="panel hidden" id="mpPanel">
+  <div class="card">
+    <div class="finalsub">DRIFT MP · PADDOCK</div>
+    <div class="roomcode" id="mpCode">····</div>
+    <div class="mpnote" id="mpShare" style="display:none">share the code — or <button class="linkbtn" id="mpCopy">copy the invite link</button></div>
+    <div class="mplist" id="mpList"></div>
+    <div class="mpnote" id="mpLobbyNote"></div>
+    <div class="modeRow" id="mpLenRow" style="display:none; margin-top:12px">
+      <button class="aux lenb" data-len="120">2 MIN</button>
+      <button class="aux lenb on" data-len="180">3 MIN</button>
+      <button class="aux lenb" data-len="300">5 MIN</button>
+    </div>
+    <div style="margin-top:16px">
+      <button class="go" id="mpStartBtn" style="display:none">Start Race</button>
+    </div>
+    <button class="aux" id="mpLeaveBtn" style="margin-top:14px">Leave</button>
+  </div>
+</div>
+
+<!-- the join gate: four letters between you and the grid -->
+<div class="panel hidden" id="mpJoinPanel">
+  <div class="card">
+    <div class="finalsub">JOIN A RACE</div>
+    <input id="mpCodeIn" maxlength="4" placeholder="CODE" autocomplete="off" spellcheck="false">
+    <div class="mpnote" id="mpJoinNote"></div>
+    <div style="margin-top:16px"><button class="go" id="mpJoinGo">Join</button></div>
+    <button class="aux" id="mpJoinBack" style="margin-top:14px">Back</button>
+  </div>
+</div>
+
+<div class="mpcount" id="mpCount"></div>
+<div class="mpboard" id="mpBoard" style="display:none"></div>
+<div class="mpclock" id="mpClock" style="display:none">3:00</div>
+<div class="mptoast" id="mpToast"></div>
+
 <script src="music/tracks.js"></script>
+<!-- the wire. PeerJS wraps WebRTC and lends us its public broker for the handshake; after that the
+     DataChannel is browser-to-browser and the broker is out of the loop. If this script never loads
+     (offline, blocked CDN), window.Peer is undefined and the game degrades to solo — HOST/JOIN say so,
+     nothing else notices. Same contract as the stereo: the network is never load-bearing for the road. -->
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 "use strict";
 /* ============================ util ============================ */
@@ -468,6 +584,8 @@ const EV_KW=340, REGEN_KW=90, EV_RANGE=520, EV_BURN=0.0011;
 const OFFROAD_BURN=38;
 function step(dt){
   const g=game, c=g.car, R=g.road;
+  if(g.mp) mpStep(g,dt);              // the grid clock ticks at sim rate, so it can't drift from the physics
+  if(state!=='play') return;          // …and if it just called time, this step is already over
   const diff=clamp(g.dist/46000,0,1);
 
   // road frame
@@ -673,16 +791,17 @@ function gameOver(reason){
   state='over'; game.overReason=reason; game.shake=1.4;
   game.bestChain=Math.max(game.bestChain,game.chainScore);   // a chain you died holding still counts on the report
   const sc=Math.round(game.score);
-  // two ledgers: the endless best, and today's — a daily run only ever settles against today's
+  // three ledgers: the endless best, today's — and a race, which settles against the GRID, not a ledger
   let isBest;
-  if(dailyMode){ isBest=sc>loadDailyBest(); if(isBest){ saveDailyBest(sc); saveGhost(game.rec,sc); } dbCache=loadDailyBest(); }
+  if(game.mp){ isBest=false; }
+  else if(dailyMode){ isBest=sc>loadDailyBest(); if(isBest){ saveDailyBest(sc); saveGhost(game.rec,sc); } dbCache=loadDailyBest(); }
   else { isBest=sc>best; if(isBest){ best=sc; try{ localStorage.setItem('drift.best',best); }catch(e){} } }
   checkRunBadges(game,isBest);   // the shelf remembers what the score forgets
   /* How the run actually went — the same numbers the report card shows the player, plus the one thing the
      card can't: WHY it ended. `reason` is the interesting field; if the population is mostly SPUN OUT the
      grip budget is wrong, and if it's mostly OUT OF CHARGE the economy is. Rounded on the way out, because
      a float per run is a high-cardinality dimension that reports badly and tells you nothing extra. */
-  track('run_end', { reason:reason, mode: dailyMode?'daily':'endless', best:isBest?1:0,
+  track('run_end', { reason:reason, mode: game.mp?'mp':dailyMode?'daily':'endless', best:isBest?1:0,
     score:sc, duration_s:Math.round(game.time), distance_km:+(game.dist/10000).toFixed(2),
     top_speed:Math.round(game.vmax*0.36), best_chain:Math.round(game.bestChain),
     chain_tier:chainTier(game.bestChain)||'none', drift_s:Math.round(game.driftTotal),
@@ -690,10 +809,10 @@ function gameOver(reason){
     deer_dodges:game.spooks, deer_hits:game.deerHits,
     close_calls:game.calls, head_ons:game.trafHits,
     cash_run:Math.round(game.cashRun), wet:game.wet?1:0 });
-  document.getElementById('overReason').textContent=(dailyMode?'TODAY’S ROAD · ':'')+reason;
+  document.getElementById('overReason').textContent=(game.mp?'RACE · ':dailyMode?'TODAY’S ROAD · ':'')+reason;
   document.getElementById('finalScore').textContent=sc.toLocaleString();
-  document.getElementById('overBest').textContent=dailyMode
-    ? 'Today’s best '+loadDailyBest().toLocaleString()+' · resets at midnight'
+  document.getElementById('overBest').textContent=game.mp ? 'the tower is counting the grid in'
+    : dailyMode ? 'Today’s best '+loadDailyBest().toLocaleString()+' · resets at midnight'
     : 'Best '+best.toLocaleString();
   const nb=document.getElementById('newBest');
   nb.textContent=dailyMode?'NEW DAILY BEST!':'NEW BEST!';
@@ -719,6 +838,8 @@ function gameOver(reason){
   showHUD(false); document.getElementById('viewBtn').style.display='none';
   document.getElementById('pauseBtn').style.display='none';
   document.getElementById('hintL').style.display='none'; document.getElementById('hintR').style.display='none';
+  if(game.mp) mpOver(sc,reason);                                 // tell the grid, and add the tower's column
+  else document.getElementById('mpStand').style.display='none';  // a solo card carries no standings
   setTimeout(()=>{ if(state==='over') document.getElementById('overPanel').classList.remove('hidden'); },420);
   sfx('crash');
 }
@@ -766,7 +887,7 @@ function render(){
     const y=t.y+Math.round((g.cam.y-t.y)/4000)*4000;
     ctx.beginPath(); ctx.arc(x,y,t.r,0,TAU); ctx.fill();
   }
-  drawRiversTop(g); drawBridgeTop(g); drawRoad(g); drawRestTop(g); drawBillboardsTop(g); drawSkid(g); drawZombiesTop(g); drawDeerTop(g); drawTrafficTop(g); drawGhostTop(g); drawCar(g); drawSmoke(g); drawGibs(g);
+  drawRiversTop(g); drawBridgeTop(g); drawRoad(g); drawRestTop(g); drawBillboardsTop(g); drawSkid(g); drawZombiesTop(g); drawDeerTop(g); drawTrafficTop(g); drawGhostTop(g); drawRivalsTop(g); drawCar(g); drawSmoke(g); drawGibs(g);
   ctx.restore();
   bioVeil(bw);                                           // the biome's light, then its weather, on this glass too
   const rainI=g.wet?1:g.bio.rain;
@@ -930,6 +1051,7 @@ function drawWindshield(g,spd){
   drawDeerDriverAll(g, proj);
   drawTrafficDriver(g, proj);   // the far lane's owner, coming the other way
   drawGhostDriver(g, proj);   // the phantom runs the same tarmac, under the same barriers
+  drawRivalsDriver(g, proj);  // and so does the rest of the grid
   // barriers (red/white) — clamped so the nearest posts don't blow up or jitter. Over a bridge the posts
   // give way to a parapet, which is what actually keeps you out of the water. At a rest area they stand
   // BACK, tracing the apron's outer edge — exactly where wallAt() says the wall is, so what stops the car
@@ -3725,6 +3847,7 @@ function drawBillboardsTop(g){
 
 /* ============================ HUD ============================ */
 function updateHUD(){
+  mpClock(game);   // the grid clock lives with the rest of the dials
   const g=game; if(!g) return;
   document.getElementById('scoreEl').textContent=Math.round(g.score).toLocaleString();
   const mel=document.getElementById('multEl'); mel.textContent='x'+g.mult.toFixed(1);
@@ -4000,6 +4123,8 @@ function nextRest(g){
   return { c:chgIdx(gm.r,dir), bay:i, side:gm.side, off:CHG_BAY*gm.side, dir };
 }
 function togglePause(){
+  if(game&&game.mp) return;   // the grid clock waits for nobody — a race has no pause
+
   const g=game;
   if(state==='paused'){ resumeDrive(); return; }
   if(state!=='play' || !g) return;
@@ -4224,6 +4349,7 @@ function frame(t){
   } else if(state==='paused' && game){ chargeStep(dt); skidSound(false,0); driveSound(null,dt); }
   else { skidSound(false,0); driveSound(null,dt); }
   musicGate();          // the stereo follows the wheels, in every state — parked included
+  mpTick();             // the wire rides the frame: pose out at 12 Hz, the tower board at 4
   render();
 }
 requestAnimationFrame(frame);
@@ -4231,11 +4357,12 @@ requestAnimationFrame(frame);
 /* ============================ input ============================ */
 const keys={};
 addEventListener('keydown',e=>{ const k=e.key.toLowerCase();
+  if(e.target&&e.target.tagName==='INPUT') return;   // typing a name or a room code is not driving
   if(['arrowleft','arrowright','arrowup','arrowdown',' '].includes(k)) e.preventDefault();
   keys[k]=true;
   // touch a driving key and the right foot is yours again — no auto-throttle behind your back
   if(['arrowup','w','arrowdown','s','arrowleft','a','arrowright','d'].includes(k)) touchMode=false;
-  if((k===' '||k==='enter')&&state!=='play'&&state!=='paused'){ startGame(); }
+  if((k===' '||k==='enter')&&state!=='play'&&state!=='paused'&&!mpUiOpen()){ startGame(); }
   if(k==='escape'&&(state==='play'||state==='paused')) togglePause();
   if(k==='v'&&state==='play'){ toggleDriftView(); }
   if(k==='c'&&state==='play') toggleCruise();
@@ -4344,20 +4471,29 @@ function brakeInput(){
 }
 
 /* ============================ flow ============================ */
-function startGame(daily){
+function startGame(daily,mpSeed){
   dailyMode = daily===true; dbCache=dailyMode?loadDailyBest():0;
   if(dailyMode) bumpStreak();   // showing up is the feat the streak badges pay
-  audioInit(); newGame(dailyMode ? daySeed(dayKey()) : undefined); state='play'; last=performance.now(); acc=0;
+  audioInit(); newGame(mpSeed!==undefined ? mpSeed : (dailyMode ? daySeed(dayKey()) : undefined));
+  state='play'; last=performance.now(); acc=0;
+  if(mpSeed!==undefined){
+    game.mp=true; game.raceT=MP.roundLen; game.mpFreeze=3;   // the grid clock, and three beats of held score
+    game.wet=seedWet(mpSeed);        // the race's sky is the seed's sky — same rain on every windshield
+    game.apArm=false;                // no valet mid-race: a detour to a charger is the driver's own call
+  }
   // what kind of run this is, recorded at the start so an abandoned run (closed tab, no run_end) still counts
-  track('run_start', { mode: dailyMode?'daily':'endless', wet: game.wet?1:0, view: game.view,
+  track('run_start', { mode: game.mp?'mp':dailyMode?'daily':'endless', wet: game.wet?1:0, view: game.view,
     guns_owned: gunsOwned.length, mods_owned: modsOwned.length, badges: badgesOwned.length });
   if(MUSIC.length && !mPlaying) musicPlay();   // the Drive click is the gesture autoplay policy wants
   document.getElementById('startPanel').classList.add('hidden');
   document.getElementById('overPanel').classList.add('hidden');
+  document.getElementById('mpPanel').classList.add('hidden');
+  document.getElementById('mpJoinPanel').classList.add('hidden');
   const clip=document.getElementById('clip'); if(clip) clip.pause();
   showHUD(true);
   viewBtn.style.display='block'; setViewButton();   // sets the driver-view body class + the tap hints
-  document.getElementById('pauseBtn').style.display='block';
+  // no pausing a live race: the grid clock waits for nobody, and a frozen sim would fork the world
+  document.getElementById('pauseBtn').style.display=game.mp?'none':'block';
   setPauseUI();
 }
 /* the start card's nine seconds of gameplay. It's decoration, so it fails quietly: a browser too old for
@@ -4368,13 +4504,388 @@ function startGame(daily){
   clip.addEventListener('error',()=>{ clip.style.display='none'; });
   clip.play().catch(()=>{});                       // muted+playsinline, so this is allowed unprompted
 })();
-document.getElementById('startBtn').onclick=()=>startGame(false);
-document.getElementById('dailyBtn').onclick=e=>{ e.stopPropagation(); startGame(true); };
-document.getElementById('againBtn').onclick=()=>startGame(dailyMode);   // Again replays the mode you died in
+document.getElementById('startBtn').onclick=()=>{ if(MP.on) mpShutdown(false); startGame(false); };
+document.getElementById('dailyBtn').onclick=e=>{ e.stopPropagation(); if(MP.on) mpShutdown(false); startGame(true); };
+// Again replays the mode you died in — except after a race, where it walks you back to the paddock
+document.getElementById('againBtn').onclick=()=>{ if(game&&game.mp) mpBackToPaddock(); else startGame(dailyMode); };
 document.getElementById('pauseBtn').onclick=e=>{ e.stopPropagation(); togglePause(); };
 document.getElementById('resumeBtn').onclick=e=>{ e.stopPropagation(); resumeDrive(); };
 document.getElementById('startPanel').addEventListener('pointerdown',e=>{ if(e.target.id==='startPanel') startGame(false); });
 renderArmory(); renderShelf();   // the shop is open and the shelf is dusted before the first drive
+
+/* ============================ multiplayer: the paddock and the wire ============================ */
+/* The model is the daily ghost, made LIVE. Everyone on the grid drives the same seeded road — same
+   corners, same horde schedule, same sky — and each browser is the sole authority over its own car.
+   What crosses the wire is only what a rival needs to SEE you: a pose and a score, ~12 times a second.
+   No physics reconciliation, no car-to-car collision, no server. Latency can't corrupt a race run this
+   way — the worst it can do is make a hologram stutter.
+   Topology is a star: the HOST's browser is the room. Joiners connect to it over a PeerJS DataChannel
+   (WebRTC — the public broker only carries the handshake), and the host relays every message on to the
+   rest of the grid. A round is a fixed clock, host's choice; die early and your score stands where it
+   fell; the tower publishes the order once every car is in. */
+const MP_ALPHA='ABCDEFGHJKMNPQRSTUVWXYZ23456789';           // no 0/O, no 1/I/L — codes get read out loud
+const MP_PREFIX='kreeda-driftmp-';                          // namespace on the public broker
+const MP_COLORS=['#2f8fff','#9f5bff','#ffd23d','#3ddc84','#ff5bbf','#7fe2ff','#b8ff4d','#ff8a2f'];
+const MP_MAX=8, MP_SEND_MS=83, MP_LERP_MS=140, MP_EXTRA_MS=280, MP_STALE_MS=2200;
+const MP={ on:false, peer:null, isHost:false, code:'', pid:'', pidSeq:1,
+  conns:new Map(),      // host: pid → live DataConnection. A joiner keeps exactly one, under 'H'.
+  players:new Map(),    // pid → {name,color,snaps:[],score,dist,mult,over,reason,lastRx} — self included
+  roundLen:180, racing:false, sendT:0, boardT:0, finalDone:false };
+
+function mpNewCode(){ let s=''; for(let i=0;i<4;i++) s+=MP_ALPHA[(Math.random()*MP_ALPHA.length)|0]; return s; }
+function mpMe(){ return MP.players.get(MP.pid); }
+function mpName(){ const el=document.getElementById('mpName');
+  let n=(el&&el.value||'').trim().toUpperCase().slice(0,12);
+  if(!n) n='DRIFTER '+MP_ALPHA[(Math.random()*MP_ALPHA.length)|0]+MP_ALPHA[(Math.random()*MP_ALPHA.length)|0];
+  try{ localStorage.setItem('driftmp.name',n); }catch(e){}
+  return n; }
+function mpToast(msg){ const el=document.getElementById('mpToast');
+  el.textContent=msg; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+function mpNote(id,msg,err){ const el=document.getElementById(id); el.textContent=msg; el.classList.toggle('err',!!err); }
+
+/* ---- panels. One place decides what's on screen, so the flows can't strand two cards at once ---- */
+function mpShowPanel(id){ for(const p of ['startPanel','overPanel','mpPanel','mpJoinPanel'])
+  document.getElementById(p).classList.toggle('hidden', p!==id); }
+function mpUiOpen(){ return MP.on || !document.getElementById('mpPanel').classList.contains('hidden')
+  || !document.getElementById('mpJoinPanel').classList.contains('hidden'); }
+
+/* ---- the wire itself ---- */
+function mpSend(conn,msg){ try{ if(conn&&conn.open) conn.send(msg); }catch(e){} }
+function mpToHost(msg){ mpSend(MP.conns.get('H'),msg); }                       // joiner → host
+function mpBroadcast(msg,exceptPid){ for(const [pid,c] of MP.conns) if(pid!==exceptPid) mpSend(c,msg); }
+function mpLobbyMsg(){ return { t:'lobby', roundLen:MP.roundLen, racing:MP.racing,
+  players:[...MP.players].map(([pid,p])=>({ pid, name:p.name, color:p.color, over:p.over, score:p.score,
+    inRace:p.racing })) }; }
+
+/* `racing` is the GRID: who was on it when the flag dropped. A friend who joins the paddock mid-race is
+   a player but not a racer — without the flag they'd hold the result open forever, an over:false that
+   never resolves. They spectate the board and make the next grid. */
+function mpAddPlayer(pid,name,color){ MP.players.set(pid,{ name, color,
+  snaps:[], score:0, dist:0, mult:1, over:false, reason:'', lastRx:0, racing:false }); }
+
+/* HOST: every joiner's connection funnels through here */
+function mpHostConn(conn){
+  conn.on('data', m=>mpHostData(conn,m));
+  conn.on('close',()=>mpHostDrop(conn));
+  conn.on('error',()=>mpHostDrop(conn));
+}
+function mpHostData(conn,m){
+  if(!m||typeof m!=='object') return;
+  if(m.t==='hi'){
+    if(MP.players.size>=MP_MAX){ mpSend(conn,{t:'full'}); try{conn.close();}catch(e){} return; }
+    const pid='P'+(++MP.pidSeq);
+    conn._pid=pid; MP.conns.set(pid,conn);
+    mpAddPlayer(pid, String(m.name||'RIVAL').slice(0,12), MP_COLORS[MP.players.size%MP_COLORS.length]);
+    mpSend(conn,{ ...mpLobbyMsg(), t:'wel', pid });   // spread FIRST: the lobby's own t must not shadow the welcome's
+    mpBroadcast(mpLobbyMsg(),pid);
+    mpToast(MP.players.get(pid).name+' PULLED IN'); mpRenderLobby();
+    track('mp_join_seen',{players:MP.players.size});
+    return;
+  }
+  const pid=conn._pid; if(!pid) return;
+  if(m.t==='st'){ m.p=pid; mpTakeState(m); mpBroadcast(m,pid); }
+  else if(m.t==='over'){ m.p=pid; mpTakeOver(m); mpBroadcast(m,pid); }
+}
+function mpHostDrop(conn){ const pid=conn._pid; if(!pid||!MP.conns.has(pid)) return;
+  MP.conns.delete(pid);
+  const p=MP.players.get(pid);
+  // mid-race a dropped RACER keeps their last score on the board, marked out — a lost phone shouldn't
+  // erase a run the grid watched happen. Anyone else simply leaves.
+  if(MP.racing&&p&&p.racing){ p.over=true; p.reason='LOST SIGNAL'; }
+  else MP.players.delete(pid);
+  mpBroadcast(mpLobbyMsg());
+  if(p) mpToast(p.name+(MP.racing?' LOST SIGNAL':' LEFT'));
+  mpRenderLobby(); mpMaybeFinal();
+}
+
+/* JOINER: everything the host says lands here */
+function mpNetData(m){
+  if(!m||typeof m!=='object') return;
+  if(m.t==='wel'){ MP.pid=m.pid; mpApplyLobby(m); mpShowPanel('mpPanel'); mpRenderLobby();
+    mpNote('mpLobbyNote', m.racing ? 'race under way — you’re on the next grid' : 'waiting for the host to start'); }
+  else if(m.t==='lobby') { mpApplyLobby(m); mpRenderLobby(); mpMaybeFinal(); }
+  else if(m.t==='full'){ mpNote('mpJoinNote','that grid is full — 8 cars max',true); mpShutdown(false); }
+  else if(m.t==='start'){ MP.roundLen=m.len; mpBeginRace(m.seed); }
+  else if(m.t==='st') mpTakeState(m);
+  else if(m.t==='over') mpTakeOver(m);
+}
+function mpApplyLobby(m){
+  MP.roundLen=m.roundLen; MP.racing=!!m.racing;
+  const seen=new Set();
+  for(const q of m.players){ seen.add(q.pid);
+    const p=MP.players.get(q.pid);
+    if(p){ p.name=q.name; p.color=q.color; p.over=q.over; p.racing=!!q.inRace; if(q.pid!==MP.pid) p.score=q.score; }
+    else { mpAddPlayer(q.pid,q.name,q.color); const np=MP.players.get(q.pid);
+      np.over=q.over; np.score=q.score; np.racing=!!q.inRace; }
+  }
+  for(const pid of [...MP.players.keys()]) if(!seen.has(pid)) MP.players.delete(pid);
+}
+function mpTakeState(m){ const p=MP.players.get(m.p); if(!p||m.p===MP.pid) return;
+  p.lastRx=performance.now();
+  p.snaps.push({ rt:p.lastRx, x:m.x, y:m.y, a:m.a });
+  if(p.snaps.length>24) p.snaps.shift();
+  p.score=m.s; p.dist=m.d; p.mult=m.m; }
+function mpTakeOver(m){ const p=MP.players.get(m.p); if(!p||m.p===MP.pid) return;
+  p.over=true; p.score=m.s; p.reason=m.r||'OUT';
+  mpToast(p.name+' OUT — '+Math.round(m.s).toLocaleString());
+  mpMaybeFinal(); }
+
+/* ---- hosting and joining ---- */
+function mpPeerFail(noteId){ return err=>{
+  const why = err&&err.type==='peer-unavailable' ? 'no race at that code'
+    : err&&err.type==='unavailable-id' ? 'that code just got taken — try again'
+    : 'the broker is unreachable — check the connection';
+  mpNote(noteId, why, true); mpShutdown(false); }; }
+function mpHost(){
+  if(!window.Peer){ mpNote('mpNote','multiplayer needs the network — the wire never loaded',true); return; }
+  if(MP.on) mpShutdown(false);
+  const name=mpName(), code=mpNewCode();
+  mpNote('mpNote','opening the paddock…');
+  const peer=new Peer(MP_PREFIX+code,{debug:1});
+  MP.on=true; MP.peer=peer; MP.isHost=true; MP.code=code; MP.pid='H'; MP.pidSeq=1; MP.racing=false;
+  MP.conns=new Map(); MP.players=new Map(); mpAddPlayer('H',name,MP_COLORS[0]);
+  peer.on('open',()=>{ mpNote('mpNote',''); mpShowPanel('mpPanel'); mpRenderLobby(); track('mp_host',{}); });
+  peer.on('connection',mpHostConn);
+  peer.on('error',mpPeerFail('mpNote'));
+}
+function mpJoin(code){
+  if(!window.Peer){ mpNote('mpJoinNote','multiplayer needs the network — the wire never loaded',true); return; }
+  if(MP.on) mpShutdown(false);
+  code=(code||'').trim().toUpperCase();
+  if(code.length!==4){ mpNote('mpJoinNote','codes are four letters',true); return; }
+  const name=mpName();
+  mpNote('mpJoinNote','finding the paddock…');
+  const peer=new Peer({debug:1});
+  MP.on=true; MP.peer=peer; MP.isHost=false; MP.code=code; MP.pid=''; MP.racing=false;
+  MP.conns=new Map(); MP.players=new Map();
+  peer.on('open',()=>{
+    const conn=peer.connect(MP_PREFIX+code,{reliable:true});
+    MP.conns.set('H',conn);
+    conn.on('open',()=>{ mpNote('mpJoinNote',''); mpSend(conn,{t:'hi',name}); track('mp_join',{}); });
+    conn.on('data',mpNetData);
+    conn.on('close',()=>mpHostGone());
+    conn.on('error',()=>mpHostGone());
+  });
+  peer.on('error',mpPeerFail('mpJoinNote'));
+}
+function mpHostGone(){
+  if(!MP.on) return;
+  if(MP.racing && state==='play'){ mpToast('HOST LEFT — finish your run');   // the road is still yours
+    MP.conns=new Map(); }                                                    // board freezes where it stood
+  else { mpShutdown(true); mpNote('mpNote','the host left — paddock closed',true); }
+}
+function mpShutdown(showStart){
+  try{ if(MP.peer) MP.peer.destroy(); }catch(e){}
+  MP.on=false; MP.peer=null; MP.isHost=false; MP.racing=false; MP.code=''; MP.pid='';
+  MP.conns=new Map(); MP.players=new Map();
+  document.getElementById('mpBoard').style.display='none';
+  document.getElementById('mpClock').style.display='none';
+  if(showStart) mpShowPanel('startPanel');
+}
+
+/* ---- the paddock card ---- */
+function mpRenderLobby(){
+  if(!MP.on) return;
+  document.getElementById('mpCode').textContent=MP.code;
+  document.getElementById('mpShare').style.display=MP.isHost?'block':'none';
+  const list=document.getElementById('mpList');
+  list.innerHTML=[...MP.players].map(([pid,p])=>
+    '<div class="mpp'+(pid===MP.pid?' me':'')+'"><span class="dot" style="background:'+p.color+'"></span>'+
+    esc(p.name)+(pid==='H'?'<span class="crown">HOST</span>':'')+'</div>').join('');
+  document.getElementById('mpLenRow').style.display=MP.isHost?'flex':'none';
+  const sb=document.getElementById('mpStartBtn');
+  sb.style.display=MP.isHost?'inline-block':'none';
+  sb.textContent = MP.players.size<2 ? 'Start Anyway' : 'Start Race';
+  if(MP.isHost) mpNote('mpLobbyNote', MP.players.size<2 ? 'share the code — the grid is just you so far'
+    : MP.players.size+' cars on the grid');
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---- the race itself ---- */
+function mpBeginRace(seed){
+  MP.racing=true; MP.finalDone=false; MP.sendT=0; MP.boardT=0;
+  // everyone in the paddock when the flag drops IS the grid
+  for(const p of MP.players.values()){ p.snaps=[]; p.score=0; p.dist=0; p.mult=1; p.over=false; p.reason=''; p.racing=true; }
+  startGame(false,seed);
+  mpCountShow('3');
+  document.getElementById('mpBoard').style.display='block';
+  document.getElementById('mpClock').style.display='block';
+}
+function mpHostStart(){
+  const seed=(Math.random()*1e9)|0;
+  track('mp_race_start',{players:MP.players.size,len:MP.roundLen});
+  mpBroadcast({t:'start',seed,len:MP.roundLen});
+  mpBeginRace(seed);
+}
+function mpCountShow(txt){ const el=document.getElementById('mpCount');
+  el.textContent=txt; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+/* the grid clock. Runs inside step(), so it ticks at sim rate and can't drift from the physics.
+   During the count the road is live — roll if you like — but the score is pinned to zero, so the
+   race can't be won in the breath before it starts. */
+function mpStep(g,dt){
+  if(g.mpFreeze>0){
+    const before=Math.ceil(g.mpFreeze);
+    g.mpFreeze-=dt; g.score=0; g.mult=1; g.chainScore=0; g.driftTotal=0;
+    if(g.mpFreeze<=0) mpCountShow('DRIFT!');
+    else { const now=Math.ceil(g.mpFreeze); if(now!==before) mpCountShow(String(now)); }
+    return;
+  }
+  g.raceT-=dt;
+  if(g.raceT<=0){ g.raceT=0; gameOver('TIME UP'); }
+}
+/* the send loop rides the render frame — 12 Hz of pose, and the board redraws at 4 */
+function mpTick(){
+  if(!MP.on) return;
+  const now=performance.now();
+  if(MP.racing && state==='play' && game && game.mp && now-MP.sendT>=MP_SEND_MS){
+    MP.sendT=now;
+    const c=game.car;
+    const m={ t:'st', p:MP.pid, x:Math.round(c.x), y:Math.round(c.y), a:+c.angle.toFixed(3),
+      s:Math.round(game.score), d:Math.round(game.dist), m:+game.mult.toFixed(1) };
+    const me=mpMe(); if(me){ me.score=m.s; me.dist=m.d; me.mult=m.m; }
+    if(MP.isHost) mpBroadcast(m); else mpToHost(m);
+  }
+  if(now-MP.boardT>=250){ MP.boardT=now; mpBoard(); }
+}
+/* where a rival IS right now: their wire is 12 Hz, the screen is 60 — so draw them ~140 ms in the past,
+   between two known poses. Past the newest pose, coast on the last velocity for a beat; past that, admit
+   the signal's gone and let the hologram fade rather than teleport. */
+function mpPose(p){
+  const S=p.snaps; if(!S.length) return null;
+  const now=performance.now(), t=now-MP_LERP_MS, stale=now-p.lastRx>MP_STALE_MS;
+  if(t<=S[0].rt||S.length===1){ const s=S[0]; return {x:s.x,y:s.y,a:s.a,stale}; }
+  const last=S[S.length-1];
+  if(t>=last.rt){
+    const prev=S[S.length-2];
+    const span=Math.max(last.rt-prev.rt,1), f=Math.min((t-last.rt)/span, MP_EXTRA_MS/span);
+    return { x:last.x+(last.x-prev.x)*f, y:last.y+(last.y-prev.y)*f, a:last.a+angWrap(last.a-prev.a)*f, stale };
+  }
+  let i=S.length-2; while(i>0&&S[i].rt>t) i--;
+  const A=S[i], B=S[i+1], f=clamp((t-A.rt)/Math.max(B.rt-A.rt,1),0,1);
+  return { x:lerp(A.x,B.x,f), y:lerp(A.y,B.y,f), a:A.a+angWrap(B.a-A.a)*f, stale };
+}
+/* rivals on the road — the ghost's hologram treatment, in team colours, with a name over the roof.
+   Solid enough to race, translucent enough that they can never hide the corner you're reading. */
+function drawRivalsTop(g){
+  if(!MP.on||!MP.racing) return;
+  for(const [pid,p] of MP.players){ if(pid===MP.pid||p.over||!p.racing) continue;
+    const gp=mpPose(p); if(!gp) continue;
+    ctx.save(); ctx.globalAlpha=gp.stale?0.25:0.8;
+    ctx.translate(gp.x,gp.y); ctx.rotate(gp.a+Math.PI/2);
+    ctx.fillStyle=p.color; rr(-CAR_W/2,-CAR_L/2,CAR_W,CAR_L,CAR_W*0.18); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.75)'; rr(-CAR_W*0.32,-CAR_L*0.16,CAR_W*0.64,CAR_L*0.36,CAR_W*0.17); ctx.fill();
+    ctx.rotate(-(gp.a+Math.PI/2));                                   // the name stays upright whatever the car does
+    ctx.font='900 '+Math.round(15/TOPZOOM)+'px -apple-system,Segoe UI,Roboto,sans-serif';
+    ctx.textAlign='center'; ctx.fillStyle='rgba(255,255,255,.92)';
+    ctx.shadowColor='rgba(10,20,30,.7)'; ctx.shadowBlur=6;
+    ctx.fillText(p.name, 0, -CAR_L*0.85);
+    ctx.restore(); }
+}
+function drawRivalsDriver(g,proj){
+  if(!MP.on||!MP.racing) return;
+  for(const [pid,p] of MP.players){ if(pid===MP.pid||p.over||!p.racing) continue;
+    const gp=mpPose(p); if(!gp) continue;
+    const P=proj(gp.x,gp.y); if(!P) continue;
+    const w=clamp(CAR_W*P.sc,3,420), h=w*0.78;
+    ctx.save(); ctx.globalAlpha=(gp.stale?0.25:0.75)*clamp(P.sc*3,0.3,1);
+    ctx.fillStyle='rgba(20,35,45,.5)';
+    ctx.beginPath(); ctx.ellipse(P.x,P.y,w*0.62,Math.max(1,h*0.14),0,0,TAU); ctx.fill();
+    ctx.fillStyle=p.color; rr(P.x-w/2,P.y-h,w,h*0.97,w*0.16); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.7)'; rr(P.x-w*0.34,P.y-h*0.92,w*0.68,h*0.34,w*0.10); ctx.fill();
+    if(w>14){ ctx.font='900 '+Math.round(clamp(w*0.17,10,20))+'px -apple-system,Segoe UI,Roboto,sans-serif';
+      ctx.textAlign='center'; ctx.fillStyle='rgba(255,255,255,.92)';
+      ctx.shadowColor='rgba(10,20,30,.7)'; ctx.shadowBlur=5;
+      ctx.fillText(p.name,P.x,P.y-h-w*0.09); }
+    ctx.restore(); }
+}
+/* the tower board and the grid clock */
+function mpStandings(){ return [...MP.players].filter(([,p])=>p.racing).map(([pid,p])=>({pid,...p}))
+  .sort((a,b)=> b.score-a.score || a.name.localeCompare(b.name)); }
+function mpBoard(){
+  const el=document.getElementById('mpBoard');
+  if(!MP.on||!MP.racing){ el.style.display='none'; return; }
+  el.innerHTML=mpStandings().map(p=>
+    '<div class="bp'+(p.pid===MP.pid?' me':'')+(p.over?' out':'')+'">'+
+    '<span class="dot" style="background:'+p.color+'"></span>'+(p.over?'☠ ':'')+esc(p.name)+
+    '<b>'+Math.round(p.score).toLocaleString()+'</b></div>').join('');
+}
+function mpClock(g){
+  const el=document.getElementById('mpClock');
+  if(!g||!g.mp||state!=='play'){ el.style.display='none'; return; }
+  el.style.display='block';
+  const t=Math.max(g.raceT,0), mm=(t/60)|0, ss=Math.ceil(t%60)%60;
+  el.textContent=mm+':'+String(ss).padStart(2,'0');
+  el.classList.toggle('low',t<30&&t>=10); el.classList.toggle('crit',t<10);
+}
+/* the report card, with the tower's column added */
+function mpOver(sc,reason){
+  const me=mpMe(); if(me){ me.over=true; me.score=sc; me.reason=reason; }
+  const m={t:'over',p:MP.pid,s:sc,r:reason};
+  if(MP.isHost) mpBroadcast(m); else mpToHost(m);
+  document.getElementById('newBest').style.display='none';       // an MP round settles a race, not a ledger
+  document.getElementById('againBtn').textContent='Paddock';
+  mpRenderStand(); mpMaybeFinal();
+}
+function mpRenderStand(){
+  const el=document.getElementById('mpStand'); if(!MP.on){ el.style.display='none'; return; }
+  const st=mpStandings(), done=st.length&&st.every(p=>p.over);
+  if(!st.length){ el.style.display='none'; return; }
+  el.style.display='block';
+  el.innerHTML=(done?'<div class="winline">🏁 '+esc(st[0].name)+' TAKES IT</div>'
+    :'<div class="winline" style="color:#8a9aa8">'+st.filter(p=>!p.over).length+' STILL DRIVING…</div>')
+    +st.map((p,i)=>'<div class="sp'+(p.pid===MP.pid?' me':'')+'"><span class="pos">'+(i+1)+'</span>'+
+      '<span class="dot" style="background:'+p.color+'"></span>'+esc(p.name)+
+      (p.over?'<b>'+Math.round(p.score).toLocaleString()+'</b>':'<span class="liv">LIVE</span>')+'</div>').join('');
+}
+function mpMaybeFinal(){
+  if(!MP.on||!MP.racing) return;
+  const grid=[...MP.players.values()].filter(p=>p.racing);
+  if(!grid.length||!grid.every(p=>p.over)) { if(state==='over') mpRenderStand(); return; }
+  MP.racing=false; MP.finalDone=true;
+  document.getElementById('mpBoard').style.display='none';
+  if(state==='over') mpRenderStand();
+}
+function mpBackToPaddock(){
+  document.getElementById('mpBoard').style.display='none';
+  document.getElementById('mpClock').style.display='none';
+  if(!MP.on){ mpShowPanel('startPanel'); return; }
+  mpShowPanel('mpPanel'); mpRenderLobby();
+  mpNote('mpLobbyNote', MP.isHost?'':'waiting for the host to start the next one');
+}
+
+/* ---- wiring the doors ---- */
+(function(){
+  const nameEl=document.getElementById('mpName');
+  try{ nameEl.value=localStorage.getItem('driftmp.name')||''; }catch(e){}
+  document.getElementById('hostBtn').onclick=()=>mpHost();
+  document.getElementById('joinBtn').onclick=()=>{ mpShowPanel('mpJoinPanel');
+    setTimeout(()=>document.getElementById('mpCodeIn').focus(),50); };
+  document.getElementById('mpJoinGo').onclick=()=>mpJoin(document.getElementById('mpCodeIn').value);
+  document.getElementById('mpJoinBack').onclick=()=>{ mpShutdown(false); mpShowPanel('startPanel'); };
+  document.getElementById('mpLeaveBtn').onclick=()=>{ mpShutdown(true); };
+  document.getElementById('mpStartBtn').onclick=()=>mpHostStart();
+  document.getElementById('mpCopy').onclick=()=>{
+    const url=location.origin+location.pathname+'?room='+MP.code;
+    try{ navigator.clipboard.writeText(url); mpNote('mpLobbyNote','invite link copied'); }
+    catch(e){ mpNote('mpLobbyNote',url); } };
+  for(const b of document.querySelectorAll('.lenb')) b.onclick=()=>{
+    MP.roundLen=+b.dataset.len;
+    for(const q of document.querySelectorAll('.lenb')) q.classList.toggle('on',q===b);
+    mpBroadcast(mpLobbyMsg()); };
+  document.getElementById('mpCodeIn').addEventListener('keydown',e=>{ if(e.key==='Enter') mpJoin(e.target.value); });
+  nameEl.addEventListener('keydown',e=>{ if(e.key==='Enter') mpHost(); });
+  // arrive by invite link and the join gate is already open with the code filled in
+  const room=new URLSearchParams(location.search).get('room');
+  if(room&&/^[a-z0-9]{4}$/i.test(room)){ document.getElementById('mpCodeIn').value=room.toUpperCase();   // the alphabet has digits in it
+    mpShowPanel('mpJoinPanel'); mpNote('mpJoinNote','you’re invited — name up top sticks, then Join'); }
+  addEventListener('beforeunload',()=>{ try{ if(MP.peer) MP.peer.destroy(); }catch(e){} });
+  // the send loop normally rides the render frame — but a backgrounded tab has no frames, and a host
+  // glancing at another app would freeze the whole room's relay. This heartbeat is clamped to ~1 Hz in
+  // background tabs, which is enough to keep the wire warm; mpTick throttles itself, so the two callers
+  // never double-send.
+  setInterval(()=>{ if(MP.on) mpTick(); }, MP_SEND_MS);
+  if(!window.Peer) mpNote('mpNote','offline — solo only until the wire is back');
+})();
 
 /* ============================ test hooks ============================ */
 window.__drift={
@@ -4418,6 +4929,12 @@ window.__drift={
   resume(){ resumeDrive(); },
   // charging only advances on the wall clock, which a probe doesn't have — so let it hand us the seconds
   charge(secs){ for(let t=0;t<secs;t+=1/60) chargeStep(1/60); },
+  // the wire, without the world: probes drive the protocol with fake connections and fake clocks.
+  // hostData/netData are the two ends of the star; a "connection" is anything with send/open.
+  mp:{ MP, addPlayer:mpAddPlayer, hostConn:mpHostConn, hostData:mpHostData, netData:mpNetData,
+    pose:mpPose, standings:mpStandings, beginRace:mpBeginRace, lobbyMsg:mpLobbyMsg,
+    board:mpBoard, stand:mpRenderStand, over:mpOver, maybeFinal:mpMaybeFinal, code:mpNewCode,
+    shutdown:mpShutdown, tick:mpTick },
   autopilot(){ const g=game; if(!g) return; const R=g.road, c=g.car;
     // a tidy driver: pure-pursuit for the line, and a corner speed straight out of the grip budget (v ≤ sqrt(lat/curvature))
     const p=R.pts[c.idx];
