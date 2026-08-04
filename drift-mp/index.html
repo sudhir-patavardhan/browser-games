@@ -3,7 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Drift MP</title>
+<title>Drift MP — Kreeda</title>
+<meta name="description" content="Drift, raced live — host a room, share a code, and up to eight friends drive the same seeded road together.">
+<link rel="canonical" href="https://kreeda.games/drift-mp/">
+<meta name="theme-color" content="#7ec96a">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/drift-mp/">
+<meta property="og:title" content="Drift MP — Kreeda">
+<meta property="og:description" content="Drift, raced live — host a room, share a code, and up to eight friends drive the same seeded road together.">
+<meta property="og:image" content="https://kreeda.games/assets/drift-mp-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Drift MP — Kreeda">
+<meta name="twitter:description" content="Drift, raced live — host a room, share a code, and up to eight friends drive the same seeded road together.">
+<meta name="twitter:image" content="https://kreeda.games/assets/drift-mp-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Drift MP","description":"Drift, raced live — host a room, share a code, and up to eight friends drive the same seeded road together.","url":"https://kreeda.games/drift-mp/","image":"https://kreeda.games/assets/drift-mp-og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Racing","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
 <style>
   *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ width:100%; height:100%; overflow:hidden; background:#7ec96a; touch-action:none;
@@ -365,7 +389,7 @@
     <div id="overCtr" style="margin-top:8px"></div>
     <div class="armoryBox"></div>
     <div class="shelfBox"></div>
-    <div style="margin-top:22px"><button class="go" id="againBtn">Again</button></div>
+    <div class="modeRow" style="margin-top:22px"><button class="go" id="againBtn">Again</button><button class="aux" id="shareBtn">↗ Share</button></div>
   </div>
 </div>
 
@@ -791,6 +815,7 @@ function gameOver(reason){
   state='over'; game.overReason=reason; game.shake=1.4;
   game.bestChain=Math.max(game.bestChain,game.chainScore);   // a chain you died holding still counts on the report
   const sc=Math.round(game.score);
+  game.lastScore=sc;   // remembered for the share button, which fires well after this scope is gone
   // three ledgers: the endless best, today's — and a race, which settles against the GRID, not a ledger
   let isBest;
   if(game.mp){ isBest=false; }
@@ -4508,6 +4533,43 @@ document.getElementById('startBtn').onclick=()=>{ if(MP.on) mpShutdown(false); s
 document.getElementById('dailyBtn').onclick=e=>{ e.stopPropagation(); if(MP.on) mpShutdown(false); startGame(true); };
 // Again replays the mode you died in — except after a race, where it walks you back to the paddock
 document.getElementById('againBtn').onclick=()=>{ if(game&&game.mp) mpBackToPaddock(); else startGame(dailyMode); };
+document.getElementById('shareBtn').onclick=function(){ try{
+  const btn=document.getElementById('shareBtn');
+  let text;
+  if(game && game.mp){
+    const st=mpStandings(), idx=st.findIndex(p=>p.pid===MP.pid);
+    if(idx>=0 && st[idx].over){
+      const pos=idx+1, n=pos%100;
+      const suf=(n>=11&&n<=13)?'th':(pos%10===1?'st':pos%10===2?'nd':pos%10===3?'rd':'th');
+      text='I raced Drift MP and finished '+pos+suf+' 🏎️ — beat me:';
+    } else {
+      text='I just raced Drift MP with friends 🏎️ — join me:';
+    }
+  } else {
+    const sc=(game&&typeof game.lastScore==='number')?game.lastScore:0;
+    text='I scored '+sc.toLocaleString()+' in Drift MP 🏎️ — beat me:';
+  }
+  kreedaShare(text, 'https://kreeda.games/drift-mp/?ref=share', btn);
+}catch(e){} };
+function kreedaShare(text, url, btn){ try{
+  var full = text + ' ' + url;
+  if (navigator.share) {
+    navigator.share({ text: full }).catch(function(){});
+  } else if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(full).then(function(){
+      kreedaToast(btn, 'Copied!');
+    }).catch(function(){ kreedaToast(btn, full); });
+  } else {
+    kreedaToast(btn, full);
+  }
+}catch(e){} }
+function kreedaToast(anchorEl, msg){ try{
+  if(!anchorEl) return;
+  var prev=anchorEl.textContent;
+  anchorEl.textContent=msg.length>18 ? 'Copied!' : msg;
+  anchorEl.disabled=true;
+  setTimeout(function(){ anchorEl.textContent=prev; anchorEl.disabled=false; },1500);
+}catch(e){} }
 document.getElementById('pauseBtn').onclick=e=>{ e.stopPropagation(); togglePause(); };
 document.getElementById('resumeBtn').onclick=e=>{ e.stopPropagation(); resumeDrive(); };
 document.getElementById('startPanel').addEventListener('pointerdown',e=>{ if(e.target.id==='startPanel') startGame(false); });

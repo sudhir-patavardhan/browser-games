@@ -3,7 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Fairway Four</title>
+<title>Fairway Four — Kreeda</title>
+<meta name="description" content="Four holes of full-3D golf — three-click swing, wind and shape, then read the break on a sloped green.">
+<link rel="canonical" href="https://kreeda.games/fairway-four/">
+<meta name="theme-color" content="#0a1410">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/fairway-four/">
+<meta property="og:title" content="Fairway Four — Kreeda">
+<meta property="og:description" content="Four holes of full-3D golf — three-click swing, wind and shape, then read the break on a sloped green.">
+<meta property="og:image" content="https://kreeda.games/assets/fairway-four-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fairway Four — Kreeda">
+<meta name="twitter:description" content="Four holes of full-3D golf — three-click swing, wind and shape, then read the break on a sloped green.">
+<meta name="twitter:image" content="https://kreeda.games/assets/fairway-four-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Fairway Four","description":"Four holes of full-3D golf — three-click swing, wind and shape, then read the break on a sloped green.","url":"https://kreeda.games/fairway-four/","image":"https://kreeda.games/assets/fairway-four-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Sports","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
 <style>
   *{ box-sizing:border-box; margin:0; padding:0; }
   html,body{ width:100%; height:100%; overflow:hidden; background:#0a1410;
@@ -128,6 +152,7 @@
     <h2 id="scoreTitle">Hole 1</h2>
     <div id="scoreBody"></div>
     <button class="btn" id="scoreBtn">CONTINUE</button>
+    <button class="btn" id="shareBtn" style="display:none;background:rgba(255,255,255,0.12);color:#eef4ee;margin-left:8px;">Share</button>
   </div>
 </div>
 
@@ -1142,6 +1167,11 @@ function openScorecard(final){
   el('scoreBody').innerHTML=html;
   el('scoreBtn').textContent= final? 'PLAY AGAIN' : (game.hole<HOLES.length-1?'NEXT HOLE':'FINAL CARD');
   game.state= final?'FINAL':'SCORE';
+  const sb=el('shareBtn');
+  if(sb){
+    if(final){ sb.style.display='inline-block'; sb.dataset.scoreToPar=fmtPar(total-parSum); }
+    else{ sb.style.display='none'; }
+  }
   m.classList.add('open');
 }
 el('scoreBtn').addEventListener('click',()=>{
@@ -1150,6 +1180,44 @@ el('scoreBtn').addEventListener('click',()=>{
   if(game.hole<HOLES.length-1){ startHole(game.hole+1); }
   else { openScorecard(true); }
 });
+try{
+  const shareBtnEl=el('shareBtn');
+  if(shareBtnEl){
+    shareBtnEl.addEventListener('click',function(){
+      try{
+        const scoreToPar=shareBtnEl.dataset.scoreToPar||'E';
+        const text='I shot '+scoreToPar+' in Fairway Four ⛳ — beat me:';
+        const url='https://kreeda.games/fairway-four/?ref=share';
+        kreedaShare(text,url,shareBtnEl);
+      }catch(e){}
+    });
+  }
+}catch(e){}
+function kreedaShare(text,url,btn){
+  try{
+    const full=text+' '+url;
+    if(navigator.share){
+      navigator.share({text:full}).catch(function(){});
+    } else if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(full).then(function(){
+        kreedaToast(btn,'Copied!');
+      }).catch(function(){ kreedaToast(btn,full); });
+    } else {
+      kreedaToast(btn,full);
+    }
+  }catch(e){}
+}
+function kreedaToast(anchorEl,msg){
+  try{
+    if(!anchorEl) return;
+    const prev=anchorEl.textContent;
+    anchorEl.textContent=msg;
+    anchorEl.disabled=true;
+    setTimeout(function(){
+      try{ anchorEl.textContent=prev; anchorEl.disabled=false; }catch(e){}
+    },1500);
+  }catch(e){}
+}
 
 /* ============================== FLOW ============================== */
 function startHole(i){

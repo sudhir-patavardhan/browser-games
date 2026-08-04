@@ -3,7 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Last 16 — World Cup 2026 Arcade Football</title>
+<title>Last 16 — Kreeda</title>
+<meta name="description" content="World Cup Round of 16 — pick a nation, control one star player, and fight through the real bracket.">
+<link rel="canonical" href="https://kreeda.games/last-16/">
+<meta name="theme-color" content="#04140a">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/last-16/">
+<meta property="og:title" content="Last 16 — Kreeda">
+<meta property="og:description" content="World Cup Round of 16 — pick a nation, control one star player, and fight through the real bracket.">
+<meta property="og:image" content="https://kreeda.games/assets/last-16-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Last 16 — Kreeda">
+<meta name="twitter:description" content="World Cup Round of 16 — pick a nation, control one star player, and fight through the real bracket.">
+<meta name="twitter:image" content="https://kreeda.games/assets/last-16-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Last 16","description":"World Cup Round of 16 — pick a nation, control one star player, and fight through the real bracket.","url":"https://kreeda.games/last-16/","image":"https://kreeda.games/assets/last-16-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Sports","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
 <style>
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
   html,body{
@@ -215,7 +239,7 @@
   <div id="screen-champion" class="screen hidden">
     <h1 class="title" style="font-size:38px;">🏆 CHAMPIONS 🏆</h1>
     <div id="champStats"></div>
-    <div class="mode-row"><button class="btn" id="champMenuBtn">MAIN MENU</button></div>
+    <div class="mode-row"><button class="btn" id="champMenuBtn">MAIN MENU</button><button class="btn secondary" id="champShareBtn">SHARE</button></div>
   </div>
 
   <div id="pauseOverlay" class="overlay hidden">
@@ -1524,6 +1548,28 @@ function simulateAIMatch(keyA,keyB){
   return { winner, scoreText: drawn?`${wg}-${wg} (pens)`:`${wg}-${lg}` };
 }
 
+function kreedaShare(text, url, btn){
+  try{
+    var full = text + ' ' + url;
+    if (navigator.share) {
+      navigator.share({ text: full }).catch(function(){});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(full).then(function(){
+        kreedaToast(btn, 'Copied!');
+      }).catch(function(){ kreedaToast(btn, full); });
+    } else {
+      kreedaToast(btn, full);
+    }
+  }catch(e){}
+}
+function kreedaToast(anchorEl, msg){
+  try{
+    if(!anchorEl) return;
+    var original = anchorEl.textContent;
+    anchorEl.textContent = msg;
+    setTimeout(function(){ try{ anchorEl.textContent = original; }catch(e){} }, 1500);
+  }catch(e){}
+}
 function onMatchEnded(match){
   document.getElementById('penUI').classList.add('hidden');
   document.getElementById('shotMeterWrap').classList.add('hidden');
@@ -1541,9 +1587,13 @@ function onMatchEnded(match){
     const t = App.tournament;
     if(!humanWon){
       AudioEngine.miss();
+      const roundLabel = ['Round of 16','Quarter-Finals','Semi-Finals','Final'][t.round] || 'Round of 16';
       const btn = document.createElement('button'); btn.className='btn'; btn.textContent='MAIN MENU';
       btn.addEventListener('click',()=>{ resetToTitle(); });
+      const shareBtn = document.createElement('button'); shareBtn.className='btn secondary'; shareBtn.textContent='SHARE';
+      shareBtn.addEventListener('click',()=>{ kreedaShare(`I reached the ${roundLabel} in Last 16 ⚽ — beat me:`, 'https://kreeda.games/last-16/?ref=share', shareBtn); });
       btnWrap.appendChild(btn);
+      btnWrap.appendChild(shareBtn);
       showScreen('result');
       return;
     }
@@ -1575,11 +1625,14 @@ function onMatchEnded(match){
     }
     showScreen('result');
   } else {
+    const scoreText = `${human.score}-${opp.score}`;
     const btn1 = document.createElement('button'); btn1.className='btn'; btn1.textContent='PLAY AGAIN';
     btn1.addEventListener('click',()=>{ goModeSelect(); });
     const btn2 = document.createElement('button'); btn2.className='btn secondary'; btn2.textContent='MAIN MENU';
     btn2.addEventListener('click',()=>{ resetToTitle(); });
-    btnWrap.appendChild(btn1); btnWrap.appendChild(btn2);
+    const shareBtn = document.createElement('button'); shareBtn.className='btn secondary'; shareBtn.textContent='SHARE';
+    shareBtn.addEventListener('click',()=>{ kreedaShare(`I won ${scoreText} in Last 16 ⚽ — beat me:`, 'https://kreeda.games/last-16/?ref=share', shareBtn); });
+    btnWrap.appendChild(btn1); btnWrap.appendChild(btn2); btnWrap.appendChild(shareBtn);
     showScreen('result');
   }
 }
@@ -1589,6 +1642,11 @@ function showChampion(){
   showScreen('champion');
 }
 document.getElementById('champMenuBtn').addEventListener('click',()=>resetToTitle());
+document.getElementById('champShareBtn').addEventListener('click',()=>{
+  try{
+    kreedaShare('I won the World Cup in Last 16 ⚽ — beat me:', 'https://kreeda.games/last-16/?ref=share', document.getElementById('champShareBtn'));
+  }catch(e){}
+});
 function resetToTitle(){ App.mode=null; App.tournament=null; App.match=null; showScreen('title'); }
 
 /* ============================================================ PAUSE ============================================================ */

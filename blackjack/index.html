@@ -3,7 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Blackjack • Browser Games</title>
+    <title>Blackjack — Kreeda</title>
+    <meta name="description" content="Casino blackjack on green felt — bet the chips, split, double, and take your 3:2 on a natural.">
+    <link rel="canonical" href="https://kreeda.games/blackjack/">
+    <meta name="theme-color" content="#05140a">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Kreeda">
+    <meta property="og:url" content="https://kreeda.games/blackjack/">
+    <meta property="og:title" content="Blackjack — Kreeda">
+    <meta property="og:description" content="Casino blackjack on green felt — bet the chips, split, double, and take your 3:2 on a natural.">
+    <meta property="og:image" content="https://kreeda.games/assets/blackjack-og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Blackjack — Kreeda">
+    <meta name="twitter:description" content="Casino blackjack on green felt — bet the chips, split, double, and take your 3:2 on a natural.">
+    <meta name="twitter:image" content="https://kreeda.games/assets/blackjack-og.png">
+
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="../favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="../icon-180.png">
+
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"VideoGame","name":"Blackjack","description":"Casino blackjack on green felt — bet the chips, split, double, and take your 3:2 on a natural.","url":"https://kreeda.games/blackjack/","image":"https://kreeda.games/assets/blackjack-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Card","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;700&display=swap');
 
@@ -377,6 +401,7 @@
         .btn-deal  { background: linear-gradient(180deg, #f6dd6e, #e0b52e); color: #3a2a00; }
         .btn-hit   { background: linear-gradient(180deg, #ef5350, #c62828); color: #fff; }
         .btn-stand { background: linear-gradient(180deg, #546274, #37414f); color: #fff; }
+        .btn-share { background: linear-gradient(180deg, #34d16f, #128a3f); color: #04240f; }
 
         footer {
             text-align: center;
@@ -431,6 +456,7 @@
             <button class="btn-deal" id="deal-btn">DEAL</button>
             <button class="btn-hit" id="hit-btn" disabled style="display:none;">HIT</button>
             <button class="btn-stand" id="stand-btn" disabled style="display:none;">STAND</button>
+            <button class="btn-share" id="share-btn" style="display:none;">SHARE</button>
         </div>
     </div>
 
@@ -588,6 +614,7 @@
             document.getElementById('deal-btn').style.display  = inRound ? 'none' : 'block';
             document.getElementById('hit-btn').style.display   = inRound ? 'block' : 'none';
             document.getElementById('stand-btn').style.display = inRound ? 'block' : 'none';
+            if (inRound) { try{ document.getElementById('share-btn').style.display = 'none'; }catch(e){} }
             document.getElementById('hit-btn').disabled   = !inRound;
             document.getElementById('stand-btn').disabled = !inRound;
             document.getElementById('deal-btn').disabled  = inRound;
@@ -678,6 +705,12 @@
 
             if (winnings > 0) { balance += winnings; updateBalance(); }
 
+            try{
+                const shareBtn = document.getElementById('share-btn');
+                shareBtn.style.display = 'block';
+                shareBtn.textContent = 'SHARE';
+            }catch(e){}
+
             setTimeout(() => setControls(false), 900);
         }
 
@@ -685,6 +718,14 @@
         document.getElementById('deal-btn').addEventListener('click', dealInitial);
         document.getElementById('hit-btn').addEventListener('click', hit);
         document.getElementById('stand-btn').addEventListener('click', stand);
+        document.getElementById('share-btn').addEventListener('click', function(){
+            try{
+                const btn = this;
+                const text = "I'm up to " + balance + " chips in Blackjack ♠️ — beat me:";
+                const url = 'https://kreeda.games/blackjack/?ref=share';
+                kreedaShare(text, url, btn);
+            }catch(e){}
+        });
 
         document.querySelectorAll('.chip').forEach(chip => {
             chip.addEventListener('click', () => {
@@ -707,6 +748,32 @@
         setControls(false);
         updateBalance();
         showMessage('Place your bet', '#f4d35e');
+
+        function kreedaShare(text, url, btn){
+            try{
+                var full = text + ' ' + url;
+                if (navigator.share) {
+                    navigator.share({ text: full }).catch(function(){});
+                } else if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(full).then(function(){
+                        kreedaToast(btn, 'Copied!');
+                    }).catch(function(){ kreedaToast(btn, full); });
+                } else {
+                    kreedaToast(btn, full);
+                }
+            }catch(e){}
+        }
+        function kreedaToast(anchorEl, msg){
+            try{
+                if(!anchorEl) return;
+                var original = anchorEl.textContent;
+                anchorEl.textContent = msg.length > 24 ? 'Copied!' : msg;
+                clearTimeout(anchorEl._kreedaToastTimer);
+                anchorEl._kreedaToastTimer = setTimeout(function(){
+                    anchorEl.textContent = original;
+                }, 1500);
+            }catch(e){}
+        }
     </script>
 <script src="../analytics.js"></script>
 </body>

@@ -3,7 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Daśānana — a Rāmāyaṇa Astra-Duel</title>
+<title>Daśānana — Kreeda</title>
+<meta name="description" content="A Rāmāyaṇa astra-duel — counter Rāvaṇa's divine missiles, chant to restore your tejas, loose the Brahmāstra.">
+<link rel="canonical" href="https://kreeda.games/dasanana/">
+<meta name="theme-color" content="#8ed4ff">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/dasanana/">
+<meta property="og:title" content="Daśānana — Kreeda">
+<meta property="og:description" content="A Rāmāyaṇa astra-duel — counter Rāvaṇa's divine missiles, chant to restore your tejas, loose the Brahmāstra.">
+<meta property="og:image" content="https://kreeda.games/assets/dasanana-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Daśānana — Kreeda">
+<meta name="twitter:description" content="A Rāmāyaṇa astra-duel — counter Rāvaṇa's divine missiles, chant to restore your tejas, loose the Brahmāstra.">
+<meta name="twitter:image" content="https://kreeda.games/assets/dasanana-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Daśānana","description":"A Rāmāyaṇa astra-duel — counter Rāvaṇa's divine missiles, chant to restore your tejas, loose the Brahmāstra.","url":"https://kreeda.games/dasanana/","image":"https://kreeda.games/assets/dasanana-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Action","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
 <style>
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
   html,body{
@@ -209,6 +233,7 @@
     <div class="row">
       <button class="btn" id="endPrimaryBtn">CONTINUE</button>
       <button class="btn secondary" id="endMenuBtn">MAIN MENU</button>
+      <button class="btn secondary" id="endShareBtn" style="display:none;">SHARE</button>
     </div>
   </div>
 
@@ -1579,6 +1604,25 @@ function battleWon(b){
     const btn=document.getElementById('endPrimaryBtn');
     if(storyIdx>=0 && storyIdx<STORY_ORDER.length-1){ btn.textContent='NEXT BATTLE'; }
     else { btn.textContent='PLAY AGAIN'; }
+    try{
+      const shareBtn=document.getElementById('endShareBtn');
+      if(shareBtn){
+        if(isRavana){
+          shareBtn.style.display='';
+          shareBtn.textContent='SHARE';
+          shareBtn.onpointerdown=function(e){
+            try{
+              e.stopPropagation();
+              const text='I defeated Rāvaṇa in Daśānana 🏹 — beat me:';
+              const url=location.origin + location.pathname + '?ref=share';
+              kreedaShare(text, url, shareBtn);
+            }catch(e){}
+          };
+        } else {
+          shareBtn.style.display='none';
+        }
+      }
+    }catch(e){}
     document.getElementById('endOverlay').classList.remove('hidden');
   }, b.enemy.key==='ravana'?2600:1200);
 }
@@ -1592,6 +1636,10 @@ function battleLost(b){
     document.getElementById('endIast').textContent='The heroes of the epic fall — and rise.';
     document.getElementById('endStats').innerHTML=`Heads felled: <b>${b.headsDestroyed}</b> / ${b.enemy.heads}<br>The heroes of the epic fall — and rise.`;
     document.getElementById('endPrimaryBtn').textContent='RISE AGAIN';
+    try{
+      const shareBtn=document.getElementById('endShareBtn');
+      if(shareBtn) shareBtn.style.display='none';
+    }catch(e){}
     document.getElementById('endOverlay').classList.remove('hidden');
   },1100);
 }
@@ -2040,6 +2088,28 @@ document.getElementById('endMenuBtn').addEventListener('pointerdown',()=>{
   document.getElementById('endOverlay').classList.add('hidden');
   battle=null; AudioEngine.stopDrone(); showScreen('mode');
 });
+function kreedaShare(text, url, btn){
+  try{
+    var full = text + ' ' + url;
+    if (navigator.share) {
+      navigator.share({ text: full }).catch(function(){});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(full).then(function(){
+        kreedaToast(btn, 'Copied!');
+      }).catch(function(){ kreedaToast(btn, full); });
+    } else {
+      kreedaToast(btn, full);
+    }
+  }catch(e){}
+}
+function kreedaToast(anchorEl, msg){
+  try{
+    if(!anchorEl) return;
+    const prev = anchorEl.textContent;
+    anchorEl.textContent = msg.length>18 ? 'Copied!' : msg;
+    setTimeout(()=>{ try{ anchorEl.textContent = prev; }catch(e){} }, 1500);
+  }catch(e){}
+}
 document.getElementById('endPrimaryBtn').addEventListener('pointerdown',()=>{
   document.getElementById('endOverlay').classList.add('hidden');
   if(battle && battle.result==='defeat'){

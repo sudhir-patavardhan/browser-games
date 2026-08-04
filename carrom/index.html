@@ -3,8 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Carrom — Kreeda</title>
+<meta name="description" content="The Indian classic, flick-perfect — pull the striker back, pocket your nine and the red queen.">
+<link rel="canonical" href="https://kreeda.games/carrom/">
 <meta name="theme-color" content="#15181c">
-<title>Carrom</title>
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/carrom/">
+<meta property="og:title" content="Carrom — Kreeda">
+<meta property="og:description" content="The Indian classic, flick-perfect — pull the striker back, pocket your nine and the red queen.">
+<meta property="og:image" content="https://kreeda.games/assets/carrom-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Carrom — Kreeda">
+<meta name="twitter:description" content="The Indian classic, flick-perfect — pull the striker back, pocket your nine and the red queen.">
+<meta name="twitter:image" content="https://kreeda.games/assets/carrom-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Carrom","description":"The Indian classic, flick-perfect — pull the striker back, pocket your nine and the red queen.","url":"https://kreeda.games/carrom/","image":"https://kreeda.games/assets/carrom-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Board","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
 <style>
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{
@@ -201,6 +224,7 @@
       <div><b id="tally1">0</b>Black</div>
     </div>
     <button class="btn primary" id="btnRematch">Rematch</button>
+    <button class="btn" id="btnShare">Share</button>
     <button class="btn" id="btnWinMenu">Main Menu</button>
   </div>
 </div>
@@ -1055,6 +1079,20 @@ function endGame(winner){
   $('tally0').textContent = game.players[0].count;
   $('tally1').textContent = game.players[1].count;
   if (youWon) { Snd.jingle(); confettiBurst(); } else Snd.sad();
+  try{
+    const shareBtn = $('btnShare');
+    if (game.mode === 'cpu'){
+      if (youWon){
+        shareBtn.style.display = '';
+        shareBtn.dataset.shareText = `I scored ${game.players[0].count} in Carrom \u{1F3AF} — beat me:`;
+      } else {
+        shareBtn.style.display = 'none';
+      }
+    } else {
+      shareBtn.style.display = '';
+      shareBtn.dataset.shareText = `${winner.label} won Carrom \u{1F3AF} — your turn:`;
+    }
+  }catch(e){}
   setTimeout(()=> $('winScreen').classList.remove('hidden'), 900);
 }
 
@@ -1344,6 +1382,34 @@ cv.addEventListener('pointerup', pointerUp);
 cv.addEventListener('pointercancel', pointerUp);
 document.addEventListener('pointerdown', () => Snd.ensure(), { once: true });
 
+/* ---------------- share ---------------- */
+function kreedaShare(text, url, btn){
+  try{
+    var full = text + ' ' + url;
+    if (navigator.share) {
+      navigator.share({ text: full }).catch(function(){});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(full).then(function(){
+        kreedaToast(btn, 'Copied!');
+      }).catch(function(){ kreedaToast(btn, full); });
+    } else {
+      kreedaToast(btn, full);
+    }
+  }catch(e){}
+}
+function kreedaToast(anchorEl, msg){
+  try{
+    if (!anchorEl) return;
+    var original = anchorEl.dataset.origLabel || anchorEl.textContent;
+    anchorEl.dataset.origLabel = original;
+    anchorEl.textContent = msg.length > 18 ? 'Copied!' : msg;
+    clearTimeout(anchorEl._kreedaToastTimer);
+    anchorEl._kreedaToastTimer = setTimeout(function(){
+      anchorEl.textContent = anchorEl.dataset.origLabel;
+    }, 1500);
+  }catch(e){}
+}
+
 /* ---------------- menus / buttons ---------------- */
 function newGame(mode, diff){
   game.mode = mode;
@@ -1390,6 +1456,14 @@ $('btnRestart').addEventListener('click', () => { Snd.click(); newGame(game.mode
 $('btnMainMenu').addEventListener('click', () => { Snd.click(); toMenu(); });
 $('btnWinMenu').addEventListener('click', () => { Snd.click(); toMenu(); });
 $('btnRematch').addEventListener('click', () => { Snd.click(); newGame(game.mode, game.diff); });
+$('btnShare').addEventListener('click', function(){
+  try{
+    Snd.click();
+    const text = this.dataset.shareText || `I played Carrom \u{1F3AF}:`;
+    const url = 'https://kreeda.games/carrom/?ref=share';
+    kreedaShare(text, url, this);
+  }catch(e){}
+});
 $('btnSound').addEventListener('click', function(){
   Snd.muted = !Snd.muted;
   this.textContent = 'Sound: ' + (Snd.muted ? 'Off' : 'On');

@@ -3,7 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Break Room — 8-Ball Pool</title>
+<title>Break Room — Kreeda</title>
+<meta name="description" content="8-ball with real physics — spin, fouls, ball-in-hand, and an AI that punishes a loose safety.">
+<link rel="canonical" href="https://kreeda.games/break-room/">
+<meta name="theme-color" content="#0d0a08">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/break-room/">
+<meta property="og:title" content="Break Room — Kreeda">
+<meta property="og:description" content="8-ball with real physics — spin, fouls, ball-in-hand, and an AI that punishes a loose safety.">
+<meta property="og:image" content="https://kreeda.games/assets/break-room-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Break Room — Kreeda">
+<meta name="twitter:description" content="8-ball with real physics — spin, fouls, ball-in-hand, and an AI that punishes a loose safety.">
+<meta name="twitter:image" content="https://kreeda.games/assets/break-room-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Break Room","description":"8-ball with real physics — spin, fouls, ball-in-hand, and an AI that punishes a loose safety.","url":"https://kreeda.games/break-room/","image":"https://kreeda.games/assets/break-room-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Sports","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
 <style>
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
   html,body{
@@ -132,6 +156,7 @@
     <div id="endStats"></div>
     <div class="row">
       <button class="btn" id="rematchBtn">REMATCH</button>
+      <button class="btn secondary" id="shareBtn">SHARE</button>
       <button class="btn secondary" id="endMenuBtn">MAIN MENU</button>
     </div>
   </div>
@@ -919,6 +944,22 @@ function endGameUI(winner){
     AudioEngine.victory();
     for(let i=0;i<6;i++) setTimeout(()=>spawnConfetti(TABLE_W/2+rand(-200,200), TABLE_H/2+rand(-80,80), 18), i*180);
   }
+  try{
+    const shareBtn = document.getElementById('shareBtn');
+    if (game.mode==='ai'){
+      if (winner===game.humanPlayer){
+        shareBtn.style.display = '';
+        shareBtn.dataset.shareText = 'I beat the AI at Break Room \u{1F3B1} — beat me:';
+      } else {
+        shareBtn.style.display = 'none';
+      }
+    } else if (game.mode==='2p'){
+      shareBtn.style.display = '';
+      shareBtn.dataset.shareText = `Player ${winner} won a game of Break Room \u{1F3B1} — your turn:`;
+    } else {
+      shareBtn.style.display = 'none';
+    }
+  }catch(e){}
   document.getElementById('endOverlay').classList.remove('hidden');
 }
 
@@ -1051,6 +1092,41 @@ document.getElementById('menuBtn').addEventListener('click',()=>{ paused=false; 
 document.getElementById('muteBtn').addEventListener('click',()=>{ AudioEngine.muted=!AudioEngine.muted; document.getElementById('muteBtn').textContent=AudioEngine.muted?'🔇':'🔊'; });
 document.getElementById('rematchBtn').addEventListener('click',()=>{ document.getElementById('endOverlay').classList.add('hidden'); newGame(game.mode, game.difficulty); });
 document.getElementById('endMenuBtn').addEventListener('click',()=>{ document.getElementById('endOverlay').classList.add('hidden'); document.getElementById('screen-game').classList.add('hidden'); showScreen('screen-mode'); });
+
+/* ---------------- share ---------------- */
+function kreedaShare(text, url, btn){
+  try{
+    var full = text + ' ' + url;
+    if (navigator.share) {
+      navigator.share({ text: full }).catch(function(){});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(full).then(function(){
+        kreedaToast(btn, 'Copied!');
+      }).catch(function(){ kreedaToast(btn, full); });
+    } else {
+      kreedaToast(btn, full);
+    }
+  }catch(e){}
+}
+function kreedaToast(anchorEl, msg){
+  try{
+    if (!anchorEl) return;
+    var original = anchorEl.dataset.origLabel || anchorEl.textContent;
+    anchorEl.dataset.origLabel = original;
+    anchorEl.textContent = msg.length > 18 ? 'Copied!' : msg;
+    clearTimeout(anchorEl._kreedaToastTimer);
+    anchorEl._kreedaToastTimer = setTimeout(function(){
+      anchorEl.textContent = anchorEl.dataset.origLabel;
+    }, 1500);
+  }catch(e){}
+}
+document.getElementById('shareBtn').addEventListener('click', function(){
+  try{
+    const text = this.dataset.shareText || 'I played Break Room \u{1F3B1}:';
+    const url = 'https://kreeda.games/break-room/?ref=share';
+    kreedaShare(text, url, this);
+  }catch(e){}
+});
 
 /* ============================================================ MAIN LOOP ============================================================ */
 setupInput();
