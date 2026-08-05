@@ -3,7 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Ennead — Tic-Tac-Toe</title>
+<title>Ennead — Kreeda</title>
+<meta name="description" content="Tic-tac-toe taken seriously — 3×3 up to 9×9 gomoku, plus Ultimate's nine nested boards.">
+<link rel="canonical" href="https://kreeda.games/ennead/">
+<meta name="theme-color" content="#0e1220">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/ennead/">
+<meta property="og:title" content="Ennead — Kreeda">
+<meta property="og:description" content="Tic-tac-toe taken seriously — 3×3 up to 9×9 gomoku, plus Ultimate's nine nested boards.">
+<meta property="og:image" content="https://kreeda.games/assets/ennead-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Ennead — Kreeda">
+<meta name="twitter:description" content="Tic-tac-toe taken seriously — 3×3 up to 9×9 gomoku, plus Ultimate's nine nested boards.">
+<meta name="twitter:image" content="https://kreeda.games/assets/ennead-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Ennead","description":"Tic-tac-toe taken seriously — 3×3 up to 9×9 gomoku, plus Ultimate's nine nested boards.","url":"https://kreeda.games/ennead/","image":"https://kreeda.games/assets/ennead-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Strategy","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
 <style>
   :root{
     --x:#e8543f; --o:#2f8fd8;
@@ -195,7 +219,10 @@
     <div id="bannerMark"></div>
     <div class="big" id="bannerTitle">X wins</div>
     <p id="bannerSub">Three in a row.</p>
-    <button class="btn primary" id="rematchBtn">Rematch</button>
+    <div style="display:flex; gap:10px;">
+      <button class="btn primary" id="rematchBtn">Rematch</button>
+      <button class="btn" id="shareBtn" style="display:none;">Share</button>
+    </div>
   </div>
 </div>
 
@@ -458,6 +485,7 @@ function drawWinLine(){
 /* ============================ result banner ============================ */
 function showBanner(){
   const b=$('banner');
+  const shareBtn=$('shareBtn');
   if(G.status==='draw'){ $('bannerMark').innerHTML=''; $('bannerTitle').textContent='Draw'; $('bannerSub').textContent='No line — nobody wins.'; }
   else{
     $('bannerMark').innerHTML=MK[G.winner];
@@ -465,9 +493,51 @@ function showBanner(){
     $('bannerTitle').textContent=win;
     $('bannerSub').textContent = G.mode==='ultimate' ? 'Three sub-boards in a row.' : `${G.k} in a row.`;
   }
+  try{
+    const humanWon = G.status==='won' && (settings.opponent!=='ai' || G.winner==='X');
+    if(humanWon && shareBtn){
+      shareBtn.style.display='';
+      shareBtn.textContent='Share';
+      shareBtn.onclick=function(){
+        try{
+          const text = settings.opponent==='ai'
+            ? 'I beat the AI at Ennead ⭕ — beat me:'
+            : 'I won at Ennead ⭕ — beat me:';
+          const url = location.origin + location.pathname + '?ref=share';
+          kreedaShare(text, url, shareBtn);
+        }catch(e){}
+      };
+    } else if(shareBtn){
+      shareBtn.style.display='none';
+    }
+  }catch(e){}
   b.classList.add('open');
 }
 function closeBanner(){ $('banner').classList.remove('open'); }
+
+/* ============================ share (kreeda) ============================ */
+function kreedaShare(text, url, btn){
+  try{
+    var full = text + ' ' + url;
+    if (navigator.share) {
+      navigator.share({ text: full }).catch(function(){});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(full).then(function(){
+        kreedaToast(btn, 'Copied!');
+      }).catch(function(){ kreedaToast(btn, full); });
+    } else {
+      kreedaToast(btn, full);
+    }
+  }catch(e){}
+}
+function kreedaToast(anchorEl, msg){
+  try{
+    if(!anchorEl) return;
+    const prev = anchorEl.textContent;
+    anchorEl.textContent = msg.length>18 ? 'Copied!' : msg;
+    setTimeout(()=>{ try{ anchorEl.textContent = prev; }catch(e){} }, 1500);
+  }catch(e){}
+}
 
 /* ============================ sound ============================ */
 let actx=null;

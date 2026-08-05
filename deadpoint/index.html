@@ -3,7 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Deadpoint — Climbing</title>
+<title>Deadpoint — Kreeda</title>
+<meta name="description" content="Rock climbing about the commit — latch the hold, fight the barn-door, and beat the pump clock.">
+<link rel="canonical" href="https://kreeda.games/deadpoint/">
+<meta name="theme-color" content="#0c0f16">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/deadpoint/">
+<meta property="og:title" content="Deadpoint — Kreeda">
+<meta property="og:description" content="Rock climbing about the commit — latch the hold, fight the barn-door, and beat the pump clock.">
+<meta property="og:image" content="https://kreeda.games/assets/deadpoint-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Deadpoint — Kreeda">
+<meta name="twitter:description" content="Rock climbing about the commit — latch the hold, fight the barn-door, and beat the pump clock.">
+<meta name="twitter:image" content="https://kreeda.games/assets/deadpoint-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Deadpoint","description":"Rock climbing about the commit — latch the hold, fight the barn-door, and beat the pump clock.","url":"https://kreeda.games/deadpoint/","image":"https://kreeda.games/assets/deadpoint-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Action","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
 <style>
   *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
   html,body{ width:100%; height:100%; overflow:hidden; background:#0c0f16; touch-action:none;
@@ -84,6 +108,7 @@
     <div class="sub" id="resStyle">FLASH</div>
     <div id="resStats" style="margin:14px 0"></div>
     <button class="btn" id="againBtn">Climb again</button>
+    <button class="btn alt" id="shareBtn">Share</button>
     <button class="btn alt" id="menuBtn">Choose route</button>
   </div>
 </div>
@@ -823,6 +848,10 @@ function showResults(){
     `<div class="stat"><span>Falls</span><b>${g.falls}</b></div>`+
     `<div class="stat"><span>Time</span><b>${g.time.toFixed(1)}s</b></div>`+
     `<div class="stat"><span>Score</span><b>${score}</b></div>`;
+  try{
+    const sb=document.getElementById('shareBtn');
+    if(sb){ sb.dataset.grade=g.route.grade; sb.dataset.flash=(style==='FLASH')?'1':'0'; }
+  }catch(e){}
   show('resultPanel');
 }
 
@@ -930,6 +959,47 @@ document.getElementById('howBtn').onclick=()=>{ const k=document.getElementById(
 document.getElementById('backBtn').onclick=()=>show('titlePanel');
 document.getElementById('againBtn').onclick=()=>{ hideAll(); newClimb(game.route); game.mode='climb'; };
 document.getElementById('menuBtn').onclick=()=>{ buildRouteList(); show('routePanel'); };
+try{
+  const shareBtnEl=document.getElementById('shareBtn');
+  if(shareBtnEl){
+    shareBtnEl.addEventListener('click',function(){
+      try{
+        const grade=shareBtnEl.dataset.grade||(game.route&&game.route.grade)||'';
+        const isFlash=shareBtnEl.dataset.flash==='1';
+        const verb=isFlash?'flashed':'sent';
+        const text='I '+verb+' '+grade+' in Deadpoint 🧗 — beat me:';
+        const url='https://kreeda.games/deadpoint/?ref=share';
+        kreedaShare(text,url,shareBtnEl);
+      }catch(e){}
+    });
+  }
+}catch(e){}
+function kreedaShare(text,url,btn){
+  try{
+    const full=text+' '+url;
+    if(navigator.share){
+      navigator.share({text:full}).catch(function(){});
+    } else if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(full).then(function(){
+        kreedaToast(btn,'Copied!');
+      }).catch(function(){ kreedaToast(btn,full); });
+    } else {
+      kreedaToast(btn,full);
+    }
+  }catch(e){}
+}
+function kreedaToast(anchorEl,msg){
+  try{
+    if(typeof toast==='function' && msg==='Copied!'){ toast(msg); return; }
+    if(!anchorEl) return;
+    const prev=anchorEl.textContent;
+    anchorEl.textContent=msg;
+    anchorEl.disabled=true;
+    setTimeout(function(){
+      try{ anchorEl.textContent=prev; anchorEl.disabled=false; }catch(e){}
+    },1500);
+  }catch(e){}
+}
 
 /* ============================== boot ============================== */
 cv=document.getElementById('c'); ctx=cv.getContext('2d'); resize();

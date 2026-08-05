@@ -3,8 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Road Rumble — Kreeda</title>
+<meta name="description" content="A Road Rash-style brawler — race five rivals down a pseudo-3D highway and punch your way past them.">
+<link rel="canonical" href="https://kreeda.games/road-rumble/">
 <meta name="theme-color" content="#4aa3ff">
-<title>Road Rumble</title>
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/road-rumble/">
+<meta property="og:title" content="Road Rumble — Kreeda">
+<meta property="og:description" content="A Road Rash-style brawler — race five rivals down a pseudo-3D highway and punch your way past them.">
+<meta property="og:image" content="https://kreeda.games/assets/road-rumble-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Road Rumble — Kreeda">
+<meta name="twitter:description" content="A Road Rash-style brawler — race five rivals down a pseudo-3D highway and punch your way past them.">
+<meta name="twitter:image" content="https://kreeda.games/assets/road-rumble-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Road Rumble","description":"A Road Rash-style brawler — race five rivals down a pseudo-3D highway and punch your way past them.","url":"https://kreeda.games/road-rumble/","image":"https://kreeda.games/assets/road-rumble-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Racing","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
 <script>
 /* Fail loud: never let an error leave a silent black screen — surface it as visible text. */
 window.addEventListener('error', function(ev){
@@ -147,6 +170,7 @@ window.addEventListener('error', function(ev){
     <div class="rsub" id="finalTime">Time 0:00</div>
     <div class="newbest" id="newBest" style="display:none">NEW BEST FINISH!</div>
     <div style="margin-top:22px"><button class="go" id="againBtn">Ride again</button></div>
+    <div style="margin-top:12px"><button class="go" id="shareBtn" style="background:linear-gradient(180deg,#8ec9ff,#4a90d8); box-shadow:0 8px 0 #2f6aa8; font-size:16px; padding:11px 34px;">Share</button></div>
   </div>
 </div>
 
@@ -442,6 +466,29 @@ function updateTraffic(dt){
 function crashPlayer(reason){ const g=game; if(g.crash||g.finished) return;
   g.crash=true; g.crashT=1.35; g.crashReason=reason; g.spin=0; g.health=Math.max(0,g.health); sfx.crash(); }
 
+function kreedaShare(text, url, btn){
+  try{
+    var full = text + ' ' + url;
+    if (navigator.share) {
+      navigator.share({ text: full }).catch(function(){});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(full).then(function(){
+        kreedaToast(btn, 'Copied!');
+      }).catch(function(){ kreedaToast(btn, full); });
+    } else {
+      kreedaToast(btn, full);
+    }
+  }catch(e){}
+}
+function kreedaToast(anchorEl, msg){
+  try{
+    if(!anchorEl) return;
+    var original = anchorEl.textContent;
+    anchorEl.textContent = msg;
+    setTimeout(function(){ try{ anchorEl.textContent = original; }catch(e){} }, 1500);
+  }catch(e){}
+}
+let lastFinishOrd='';
 function liveRank(){ const g=game; let ahead=0; for(const r of g.rivals) if(r.dist>g.position) ahead++; return ahead+1; }
 function finishRacer(who){ const g=game;
   if(who==='player'){ g.finished=true; g.finishOrder.push('player'); g.finishPlace=g.finishOrder.length;
@@ -453,6 +500,7 @@ function endRace(){ const g=game; state='over';
   const place=g.finishPlace, field=g.rivals.length+1;
   const isBest=(best===0)||place<best; if(isBest){ best=place; try{ localStorage.setItem('rumble.best',best); }catch(e){} }
   const ord=['1st','2nd','3rd','4th','5th','6th'][place-1]||place+'th';
+  lastFinishOrd=ord;
   document.getElementById('overTitle').textContent = place===1?'YOU WON':'FINISHED';
   document.getElementById('finalPos').textContent = ord;
   const m=Math.floor(g.elapsed/60), s=Math.floor(g.elapsed%60);
@@ -694,6 +742,12 @@ function startGame(){
 }
 document.getElementById('startBtn').onclick=startGame;
 document.getElementById('againBtn').onclick=startGame;
+document.getElementById('shareBtn').addEventListener('click',function(){
+  try{
+    const btn=document.getElementById('shareBtn');
+    kreedaShare('I finished '+lastFinishOrd+' in Road Rumble 🏍️ — beat me:', 'https://kreeda.games/road-rumble/?ref=share', btn);
+  }catch(e){}
+});
 
 /* ============================ test hooks ============================ */
 window.__rumble={

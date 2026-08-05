@@ -3,7 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Drift</title>
+<title>Drift — Kreeda</title>
+<meta name="description" content="Endless drifting from behind the wheel — no handbrake, just throttle, brake and a grip budget. Chain slides, dodge traffic, run down the horde.">
+<link rel="canonical" href="https://kreeda.games/drift/">
+<meta name="theme-color" content="#7ec96a">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/drift/">
+<meta property="og:title" content="Drift — Kreeda">
+<meta property="og:description" content="Endless drifting from behind the wheel — no handbrake, just throttle, brake and a grip budget. Chain slides, dodge traffic, run down the horde.">
+<meta property="og:image" content="https://kreeda.games/assets/drift-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Drift — Kreeda">
+<meta name="twitter:description" content="Endless drifting from behind the wheel — no handbrake, just throttle, brake and a grip budget. Chain slides, dodge traffic, run down the horde.">
+<meta name="twitter:image" content="https://kreeda.games/assets/drift-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Drift","description":"Endless drifting from behind the wheel — no handbrake, just throttle, brake and a grip budget. Chain slides, dodge traffic, run down the horde.","url":"https://kreeda.games/drift/","image":"https://kreeda.games/assets/drift-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Racing","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
 <style>
   *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ width:100%; height:100%; overflow:hidden; background:#7ec96a; touch-action:none;
@@ -290,7 +314,7 @@
     <div id="overCtr" style="margin-top:8px"></div>
     <div class="armoryBox"></div>
     <div class="shelfBox"></div>
-    <div style="margin-top:22px"><button class="go" id="againBtn">Again</button></div>
+    <div class="modeRow" style="margin-top:22px"><button class="go" id="againBtn">Again</button><button class="aux" id="shareBtn">↗ Share</button></div>
   </div>
 </div>
 
@@ -673,6 +697,7 @@ function gameOver(reason){
   state='over'; game.overReason=reason; game.shake=1.4;
   game.bestChain=Math.max(game.bestChain,game.chainScore);   // a chain you died holding still counts on the report
   const sc=Math.round(game.score);
+  game.lastScore=sc;   // remembered for the share button, which fires well after this scope is gone
   // two ledgers: the endless best, and today's — a daily run only ever settles against today's
   let isBest;
   if(dailyMode){ isBest=sc>loadDailyBest(); if(isBest){ saveDailyBest(sc); saveGhost(game.rec,sc); } dbCache=loadDailyBest(); }
@@ -4371,6 +4396,30 @@ function startGame(daily){
 document.getElementById('startBtn').onclick=()=>startGame(false);
 document.getElementById('dailyBtn').onclick=e=>{ e.stopPropagation(); startGame(true); };
 document.getElementById('againBtn').onclick=()=>startGame(dailyMode);   // Again replays the mode you died in
+document.getElementById('shareBtn').onclick=function(){ try{
+  const sc=(game&&typeof game.lastScore==='number')?game.lastScore:0;
+  kreedaShare('I scored '+sc.toLocaleString()+' in Drift 🏎️ — beat me:',
+    'https://kreeda.games/drift/?ref=share', document.getElementById('shareBtn'));
+}catch(e){} };
+function kreedaShare(text, url, btn){ try{
+  var full = text + ' ' + url;
+  if (navigator.share) {
+    navigator.share({ text: full }).catch(function(){});
+  } else if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(full).then(function(){
+      kreedaToast(btn, 'Copied!');
+    }).catch(function(){ kreedaToast(btn, full); });
+  } else {
+    kreedaToast(btn, full);
+  }
+}catch(e){} }
+function kreedaToast(anchorEl, msg){ try{
+  if(!anchorEl) return;
+  var prev=anchorEl.textContent;
+  anchorEl.textContent=msg.length>18 ? 'Copied!' : msg;
+  anchorEl.disabled=true;
+  setTimeout(function(){ anchorEl.textContent=prev; anchorEl.disabled=false; },1500);
+}catch(e){} }
 document.getElementById('pauseBtn').onclick=e=>{ e.stopPropagation(); togglePause(); };
 document.getElementById('resumeBtn').onclick=e=>{ e.stopPropagation(); resumeDrive(); };
 document.getElementById('startPanel').addEventListener('pointerdown',e=>{ if(e.target.id==='startPanel') startGame(false); });
