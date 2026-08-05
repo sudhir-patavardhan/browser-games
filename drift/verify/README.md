@@ -30,7 +30,6 @@ Chrome/Chromium. The game exposes `window.__drift` (`start()`, `setInput(steer, 
 ./drift/verify/run.sh stereo       # the music rides with the wheels: over 10 km/h it plays, stopped it doesn't
 ./drift/verify/run.sh analytics    # telemetry: silent on file://, unable to throw at the game, honest about the run
 ./drift/verify/run.sh cabin        # the cabin never closes on the horizon — every window shape keeps its road
-./drift/verify/run.sh biomes       # rain / snow / desert zones: seeded sequence, real crossfades, grip that agrees with the sky
 ./drift/verify/shoot.sh driver f.png   # screenshot the car mid-drive, so you can LOOK at it
 ./drift/verify/shoot.sh driver b.png 14000 500,900 70 bridge   # ...having driven until a bridge is ahead
 ./drift/verify/clip.sh                 # re-cut drift/clip.webm — the 9 s of real driving on the start card
