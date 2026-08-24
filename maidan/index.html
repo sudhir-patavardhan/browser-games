@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Maidan — Kreeda</title>
+<meta name="description" content="A daily cricket grid. Three criteria down, three across, nine cells, nine guesses — name a cricketer for every square before the guesses run out.">
+<link rel="canonical" href="https://kreeda.games/maidan/">
+<meta name="theme-color" content="#c9a86a">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/maidan/">
+<meta property="og:title" content="Maidan — Kreeda">
+<meta property="og:description" content="A daily cricket grid. Three criteria down, three across, nine cells, nine guesses — name a cricketer for every square before the guesses run out.">
+<meta property="og:image" content="https://kreeda.games/assets/maidan-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Maidan — Kreeda">
+<meta name="twitter:description" content="A daily cricket grid. Three criteria down, three across, nine cells, nine guesses — name a cricketer for every square before the guesses run out.">
+<meta name="twitter:image" content="https://kreeda.games/assets/maidan-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Maidan","description":"A daily cricket grid. Three criteria down, three across, nine cells, nine guesses — name a cricketer for every square before the guesses run out.","url":"https://kreeda.games/maidan/","image":"https://kreeda.games/assets/maidan-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+<style>
+/* ============================ tokens ============================
+   An evening maidan: dusty ochre ground, a cut green square, floodlight white on the panels.
+   Every colour lives here once. Light is the base; the two dark blocks below only REDEFINE
+   these same names, so no rule downstream ever needs to know which theme it is painting in. */
+:root{
+  --ground:#c9a86a;  --ground-dark:#a8874c;  --square:#5f7f4a;  --crease:#f6f1e4;
+  --dusk-hi:#2c3f5e; --dusk-lo:#e8925a;      --lamp:#fff3c8;
+  --ink:#20180c;     --ink-dim:#5d4e35;      --rule:rgba(60,44,20,.45);
+  --panel:#f6f1e4;   --panel-2:#efe6d2;      --shade:rgba(32,24,12,.55);
+  --ok:#2f6b34;      --no:#9a3b21;
+}
+/* The default "system" theme stamps nothing on <html>, so prefers-color-scheme is the only signal.
+   Guarded with :not([data-theme="light"]) so an explicit light choice still wins over the media query. */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#3a3222; --ground-dark:#241f14; --square:#2c3a26; --crease:#d8d2c2;
+    --dusk-hi:#101a28; --dusk-lo:#6b4630;    --lamp:#efe0a8;
+    --ink:#efe8d6;    --ink-dim:#a89a7c;     --rule:rgba(216,210,194,.30);
+    --panel:#241f14;  --panel-2:#2e2718;     --shade:rgba(0,0,0,.66);
+    --ok:#8ec98a;     --no:#e8907a;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#3a3222; --ground-dark:#241f14; --square:#2c3a26; --crease:#d8d2c2;
+  --dusk-hi:#101a28; --dusk-lo:#6b4630;    --lamp:#efe0a8;
+  --ink:#efe8d6;    --ink-dim:#a89a7c;     --rule:rgba(216,210,194,.30);
+  --panel:#241f14;  --panel-2:#2e2718;     --shade:rgba(0,0,0,.66);
+  --ok:#8ec98a;     --no:#e8907a;
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  /* An explicit background is mandatory: the artifact/host paints its own ground behind the page and a
+     transparent body would borrow the host's theme rather than ours. */
+  background:
+    radial-gradient(120% 60% at 50% -10%, var(--dusk-lo) 0%, transparent 55%),
+    linear-gradient(180deg, var(--dusk-hi) 0%, var(--ground-dark) 38%, var(--ground) 100%);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  min-height:100vh;
+  /* overflow-x hidden is NOT the fix for wide content — every wide child scrolls in its own box.
+     This is only a belt-and-braces guard so a rounding error can never rock the whole page sideways. */
+  overflow-x:hidden;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{ max-width:560px; margin:0 auto; padding: max(10px, env(safe-area-inset-top)) 12px
+        calc(24px + env(safe-area-inset-bottom)); }
+
+/* ============================ chrome ============================ */
+header.top{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:6px 0 10px; }
+h1{ font-size:26px; font-weight:900; letter-spacing:.5px; margin:0; color:var(--lamp);
+    text-shadow:0 2px 0 rgba(0,0,0,.28); }
+h1 small{ display:block; font-size:11px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase;
+    color:var(--crease); opacity:.72; margin-top:2px; text-shadow:none; }
+.datechip{ margin-left:auto; font-size:12px; font-weight:800; color:var(--crease); opacity:.85;
+    border:1px solid var(--rule); border-radius:999px; padding:4px 10px; background:rgba(0,0,0,.14); }
+.datechip.arch{ color:var(--lamp); border-color:var(--lamp); }
+
+.scorebar{ display:flex; gap:8px; align-items:stretch; margin:0 0 10px; }
+.stat{ flex:1; background:var(--panel); border:1px solid var(--rule); border-radius:12px;
+  padding:7px 9px; min-width:0; }
+.stat b{ display:block; font-size:19px; font-weight:900; line-height:1.1; }
+.stat span{ display:block; font-size:10px; font-weight:700; letter-spacing:.7px; text-transform:uppercase;
+  color:var(--ink-dim); margin-top:1px; }
+
+/* ============================ the grid ============================
+   4x4: a corner, three column headers, three row headers, nine cells. aspect-ratio keeps it square so
+   the headers never reflow the cells when a longer criterion lands tomorrow. */
+.gridwrap{ overflow-x:auto; }                 /* the one place a narrow phone may pan, not the page */
+#grid{
+  display:grid; grid-template-columns:74px repeat(3,1fr); grid-template-rows:56px repeat(3,1fr);
+  gap:5px; width:min(94vw,420px); margin:0 auto; aspect-ratio:1;
+}
+@media (min-width:560px){ #grid{ width:min(94vw,480px); grid-template-columns:96px repeat(3,1fr);
+  grid-template-rows:64px repeat(3,1fr); } }
+.corner{ display:flex; align-items:center; justify-content:center; }
+.corner svg{ width:100%; height:100%; opacity:.85; }
+.hd{
+  background:rgba(0,0,0,.20); border:1px solid var(--rule); border-radius:10px;
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  font-size:11px; line-height:1.15; font-weight:800; letter-spacing:.2px;
+  color:var(--crease); padding:4px 3px; cursor:pointer; overflow:hidden;
+  min-width:0; hyphens:auto; overflow-wrap:anywhere;
+}
+.hd:focus-visible{ outline:3px solid var(--lamp); outline-offset:2px; }
+.cell{
+  position:relative; background:var(--ground-dark);
+  border:1px solid var(--rule); border-radius:10px;
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  padding:6px 4px; cursor:pointer; min-width:0; overflow:hidden;
+  font-size:12px; font-weight:700; color:var(--crease);
+  transition:background .18s ease, transform .12s ease;
+}
+.cell:focus-visible{ outline:3px solid var(--lamp); outline-offset:2px; }
+.cell .plus{ font-size:22px; font-weight:400; opacity:.42; }
+/* A filled cell is a name chalked on the crease-white panel. The corner notch is the point: state is
+   never colour-only, so a red/green-blind player still reads "laid" from the geometry. */
+.cell.on{ background:var(--crease); color:#20180c; cursor:default; }
+.cell.on::after{
+  content:''; position:absolute; top:0; right:0; width:0; height:0;
+  border-top:14px solid var(--square); border-left:14px solid transparent;
+  border-top-right-radius:9px;
+}
+.cell .nm{ font-size:12px; font-weight:800; line-height:1.15; overflow-wrap:anywhere; }
+.cell .wt{ position:absolute; left:4px; bottom:3px; font-size:9px; font-weight:800; color:#5d4e35; }
+.cell .hint{
+  position:absolute; right:3px; bottom:1px; font-size:11px; font-weight:800; line-height:1;
+  color:var(--crease); opacity:.55; padding:4px 5px; border:0; background:none; cursor:pointer;
+}
+.cell.on .hint{ display:none; }
+@media (prefers-reduced-motion:no-preference){
+  .cell.lay{ animation:lay .34s ease; }
+  @keyframes lay{ 0%{ transform:scale(.9); } 60%{ transform:scale(1.04); } 100%{ transform:scale(1); } }
+}
+
+.msg{ min-height:34px; margin:10px auto 0; max-width:min(94vw,480px); font-size:13px; font-weight:700;
+  line-height:1.35; text-align:center; color:var(--crease); }
+.msg .yes{ color:var(--ok); } .msg .nope{ color:var(--no); }
+
+.tools{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:12px 0 6px; }
+button.btn{
+  font:inherit; font-size:13px; font-weight:800; letter-spacing:.2px;
+  background:var(--panel); color:var(--ink); border:1px solid var(--rule);
+  border-radius:11px; padding:10px 14px; min-height:44px; cursor:pointer;
+}
+button.btn:focus-visible{ outline:3px solid var(--lamp); outline-offset:2px; }
+button.btn.primary{ background:var(--square); color:#fff; border-color:rgba(0,0,0,.25); }
+button.btn[aria-pressed="true"]{ background:var(--lamp); color:#20180c; }
+
+footer.foot{ margin:18px auto 0; max-width:min(94vw,480px); font-size:11px; line-height:1.6;
+  color:var(--crease); opacity:.82; text-align:center; }
+footer.foot a{ color:var(--lamp); }
+
+/* the staleness guard. Persistent, dismissible, and deliberately not styled as an error — the dataset
+   being old is a fact about the game, not a fault of the player's. */
+.stale{ background:var(--panel-2); border:1px solid var(--rule); border-radius:12px; padding:10px 12px;
+  font-size:12px; line-height:1.45; color:var(--ink); margin:0 0 10px; display:none; }
+.stale.show{ display:flex; gap:10px; align-items:flex-start; }
+.stale button{ margin-left:auto; flex:0 0 auto; font:inherit; font-size:16px; font-weight:800;
+  background:none; border:0; color:var(--ink-dim); cursor:pointer; padding:0 4px; min-height:32px; }
+
+/* ============================ bottom sheet ============================
+   A text field inside a 100px cell loses a fight with the mobile keyboard every time, so the input
+   lives in a sheet pinned to the bottom and re-anchored off visualViewport when the keyboard opens. */
+.scrim{ position:fixed; inset:0; background:var(--shade); opacity:0; pointer-events:none;
+  transition:opacity .18s ease; z-index:40; }
+.scrim.show{ opacity:1; pointer-events:auto; }
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:50;
+  background:var(--panel); border-top:1px solid var(--rule);
+  border-radius:18px 18px 0 0; padding:14px 14px calc(14px + env(safe-area-inset-bottom));
+  transform:translateY(110%); transition:transform .22s ease;
+  max-height:88vh; overflow-y:auto;
+}
+.sheet.show{ transform:translateY(0); }
+@media (min-width:560px){
+  .sheet{ left:50%; right:auto; bottom:auto; top:50%; width:min(94vw,460px);
+    transform:translate(-50%,-40%) scale(.96); opacity:0; border-radius:18px; border:1px solid var(--rule); }
+  .sheet.show{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+}
+@media (prefers-reduced-motion:reduce){
+  .sheet,.scrim{ transition:none; }
+}
+.sheet h2{ font-size:13px; margin:0 0 8px; font-weight:800; letter-spacing:.3px; color:var(--ink-dim);
+  text-transform:uppercase; }
+.crit{ font-size:15px; font-weight:800; line-height:1.35; margin:0 0 2px; }
+.crit em{ font-style:normal; color:var(--ink-dim); font-size:12px; font-weight:800; letter-spacing:1px;
+  text-transform:uppercase; display:inline-block; min-width:52px; }
+.sheetmeta{ font-size:12px; color:var(--ink-dim); font-weight:700; margin:9px 0 6px; }
+.sheet input[type=text]{
+  width:100%; font:inherit; font-size:16px; font-weight:700;  /* 16px or iOS zooms the page on focus */
+  padding:12px 12px; border-radius:11px; border:1px solid var(--rule);
+  background:var(--panel-2); color:var(--ink); min-height:48px;
+}
+.sheet input[type=text]:focus{ outline:3px solid var(--lamp); outline-offset:1px; }
+.ta{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:5px; }
+.ta li button{ width:100%; text-align:left; font:inherit; font-size:14px; font-weight:700;
+  padding:10px 12px; min-height:44px; border-radius:10px; border:1px solid var(--rule);
+  background:var(--panel-2); color:var(--ink); cursor:pointer; }
+.ta li button small{ display:block; font-size:11px; font-weight:600; color:var(--ink-dim); }
+.disamb{ margin:9px 0 0; font-size:13px; font-weight:700; }
+.disamb .row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.disamb .row button{ font:inherit; font-size:13px; font-weight:800; padding:9px 11px; min-height:44px;
+  border-radius:10px; border:1px solid var(--rule); background:var(--lamp); color:#20180c; cursor:pointer; }
+.sheetmsg{ min-height:20px; font-size:13px; font-weight:700; margin-top:9px; line-height:1.4; }
+.sheetbtns{ display:flex; gap:8px; margin-top:11px; }
+.sheetbtns .btn{ flex:1; }
+
+/* ============================ reveal ============================ */
+.reveal{ position:fixed; inset:0; z-index:60; background:var(--panel); overflow-y:auto;
+  display:none; padding: max(14px, env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom)); }
+.reveal.show{ display:block; }
+.reveal .inner{ max-width:600px; margin:0 auto; }
+.reveal h2{ font-size:22px; margin:2px 0 4px; font-weight:900; }
+.reveal h3{ font-size:13px; margin:20px 0 6px; font-weight:900; line-height:1.35;
+  padding-bottom:5px; border-bottom:1px solid var(--rule); }
+.reveal p{ font-size:13px; line-height:1.55; margin:8px 0; }
+.reveal .note{ font-size:12px; color:var(--ink-dim); line-height:1.55; }
+.ans{ list-style:none; margin:0; padding:0; }
+.ans li{ font-size:12.5px; line-height:1.45; padding:5px 0 5px 0; border-bottom:1px dashed var(--rule); }
+.ans li b{ font-size:13px; }
+.ans li.mine{ background:var(--lamp); border-radius:8px; padding-left:7px; padding-right:7px; }
+.ans li .g{ display:block; color:var(--ink-dim); }
+.ans li .w{ font-weight:800; color:var(--square); }
+.sharebox{ width:100%; font:inherit; font-size:13px; line-height:1.5; font-family:ui-monospace,SFMono-Regular,
+  Menlo,Consolas,monospace; padding:10px; border-radius:11px; border:1px solid var(--rule);
+  background:var(--panel-2); color:var(--ink); resize:none; }
+.sr{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0);
+  white-space:nowrap; border:0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="stale" id="stale" role="status">
+    <span id="staleTxt"></span>
+    <button type="button" id="staleX" aria-label="Dismiss">&times;</button>
+  </div>
+
+  <header class="top">
+    <h1>Maidan<small>Kreeda · Daily</small></h1>
+    <span class="datechip" id="datechip"></span>
+  </header>
+
+  <div class="scorebar">
+    <div class="stat"><b id="sCells">0/9</b><span>Filled</span></div>
+    <div class="stat"><b id="sGuess">9</b><span>Guesses left</span></div>
+    <div class="stat"><b id="sWeight">0</b><span>Weight</span></div>
+    <div class="stat"><b id="sStreak">0</b><span>Streak</span></div>
+  </div>
+
+  <div class="gridwrap">
+    <div id="grid" role="grid" aria-label="Today's cricket grid, three criteria down and three across"></div>
+  </div>
+
+  <p class="msg" id="msg" role="status" aria-live="polite"></p>
+
+  <div class="tools">
+    <button class="btn" type="button" id="bHow">How to play</button>
+    <button class="btn" type="button" id="bSound" aria-pressed="true">Sound on</button>
+    <button class="btn" type="button" id="bType" aria-pressed="true">Typeahead on</button>
+    <button class="btn" type="button" id="bTheme">Theme: auto</button>
+    <button class="btn primary" type="button" id="bReveal" hidden>See every answer</button>
+  </div>
+
+  <footer class="foot">
+    <span id="asof"></span><br>
+    Names, dates and milestones are facts, compiled by hand from public references.
+    No images, no logos, no crests — <a href="../">Kreeda</a>
+  </footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <h2 id="sheetTitle">Name a cricketer</h2>
+  <p class="crit"><em>Row</em> <span id="critRow"></span></p>
+  <p class="crit"><em>Column</em> <span id="critCol"></span></p>
+  <p class="sheetmeta" id="sheetMeta"></p>
+  <label class="sr" for="guess">Type a cricketer's name</label>
+  <input type="text" id="guess" autocapitalize="words" autocorrect="off" autocomplete="off"
+         spellcheck="false" inputmode="text" enterkeyhint="go" placeholder="e.g. Kumar Sangakkara">
+  <div class="disamb" id="disamb" hidden></div>
+  <ul class="ta" id="ta"></ul>
+  <p class="sheetmsg" id="sheetMsg" role="status" aria-live="polite"></p>
+  <div class="sheetbtns">
+    <button class="btn" type="button" id="bCancel">Cancel</button>
+    <button class="btn primary" type="button" id="bSubmit">Submit</button>
+  </div>
+</section>
+
+<section class="reveal" id="reveal" role="dialog" aria-modal="true" aria-labelledby="revTitle" hidden>
+  <div class="inner" id="revInner"></div>
+</section>
+
+<script>
+'use strict';
+/* ============================================================================================
+   MAIDAN — a daily cricket grid.  One file, no build, no network, no images.  Opens off a disk.
+
+   The whole game rests on one idea, stated in CRICKET_GRID.md §3.1 and worth restating here so the
+   next person to edit the data cannot miss it:
+
+     EVERY CRITERION IS A MONOTONE FACT — an event that happened, or a threshold that has been
+     crossed. Never a ranking, never a current-form statistic, never "most" or "leading" or "best".
+
+   A monotone dataset can never become WRONG. It can only become INCOMPLETE. That asymmetry is the
+   entire strategy for shipping cricket facts with no backend to refresh from: a wrong dataset
+   rejects a correct answer AND accepts an incorrect one, and the player cannot tell which failure
+   they are looking at; an incomplete one only ever rejects a correct answer, which is a single
+   explicable failure mode that DATA_AS_OF below makes explicable in the interface.
+   ============================================================================================ */
+
+/* ---- Kreeda daily contract — see /DAILY.md. Copied, not imported: the game stays one file. ---- */
+const SLUG='maidan';
+function dayKey(d){ d=d||new Date(); const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function prevDayKey(k){ const a=k.split('-'), t=new Date(+a[0],+a[1]-1,+a[2]);
+  t.setDate(t.getDate()-1); return dayKey(t); }
+function daySeed(k){ let h=5381; for(let i=0;i<k.length;i++) h=(h*33 ^ k.charCodeAt(i))|0; return h>>>0; }
+function mulberry32(a){ return function(){ a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a);
+  t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+
+const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+
+/* a day-stamped value: returns 0 unless the stamp is today */
+function loadToday(key){ const s=LS.get(key), i=s.indexOf('|');
+  return (i<0 || s.slice(0,i)!==dayKey()) ? 0 : (+s.slice(i+1)||0); }
+function saveToday(key,v){ LS.set(key, dayKey()+'|'+Math.round(v)); }
+
+/* consecutive-days counter against one key. Same day = no change; yesterday = +1; older = reset to 1. */
+function bumpStreak(key){
+  const s=LS.get(key), i=s.indexOf('|'), last=i<0?'':s.slice(0,i), n=i<0?0:(+s.slice(i+1)||0);
+  const today=dayKey(), count = last===today ? (n||1) : (last===prevDayKey(today) ? n+1 : 1);
+  LS.set(key, today+'|'+count); return count;
+}
+
+/* call once when a DAILY run is completed — not on every game over, not in endless mode */
+function dailyDone(){
+  const today=dayKey(), k='kreeda.daily.'+today;
+  const had=LS.get(k).split(',').filter(Boolean);
+  if(!had.includes(SLUG)) LS.set(k, had.concat(SLUG).join(','));
+  bumpStreak(SLUG+'.streak');
+  return bumpStreak('kreeda.streak');            // site-wide, and the number worth showing
+}
+
+/* ============================ the freeze date ============================
+   ONE constant, shipped in the file, displayed in the footer and in the reveal panel. A player whose
+   correct answer is rejected can see immediately why, which converts an infuriating bug into a
+   comprehensible limitation. Nothing asserted anywhere in PLAYERS happened after this date.
+   Refresh cadence and checklist: CRICKET_GRID.md §3.3. */
+const DATA_AS_OF='2025-12-31';
+const DATA_AS_OF_HUMAN='31 December 2025';
+const STALE_AFTER_DAYS=400;
+
+/* ============================ name normalisation ============================
+   RAMAYANA_GRID.md §3.1's architecture decision, unchanged: the runtime normaliser is deliberately
+   small and conservative, and ambiguity is absorbed by a hand-curated `alt` list on each player.
+   Every blanket transformation fires on EVERY name in the roster, so each one is a collision risk;
+   every alias fires on exactly one player, so it is free. When in doubt, write an alias.
+
+   Cricket brings its own spelling problem — Tendulkar/Sachin/SR Tendulkar, de Villiers/deVilliers/AB,
+   Dhoni/MS Dhoni/Mahendra Singh Dhoni, Muralitharan/Muralidaran/Murali — and step 4 (letters only)
+   quietly does most of the initials work by eating the periods and the spaces. */
+const DEV_CONS={ 'क':'k','ख':'k','ग':'g','घ':'g','ङ':'n','च':'c','छ':'c','ज':'j','झ':'j','ञ':'n',
+  'ट':'t','ठ':'t','ड':'d','ढ':'d','ण':'n','त':'t','थ':'t','द':'d','ध':'d','न':'n',
+  'प':'p','फ':'p','ब':'b','भ':'b','म':'m','य':'y','र':'r','ल':'l','व':'v','ळ':'l',
+  'श':'s','ष':'s','स':'s','ह':'h','क़':'k','ख़':'k','ग़':'g','ज़':'j','ड़':'d','ढ़':'d','फ़':'f' };
+const DEV_MATRA={ 'ा':'a','ि':'i','ी':'i','ु':'u','ू':'u','ृ':'ri','ॄ':'ri','े':'e','ै':'ai','ो':'o','ौ':'au' };
+const DEV_VOWEL={ 'अ':'a','आ':'a','इ':'i','ई':'i','उ':'u','ऊ':'u','ऋ':'ri','ए':'e','ऐ':'ai','ओ':'o','औ':'au' };
+/* The key simplification (RAMAYANA_GRID.md §3.3): step 2 of norm() strips every diacritic anyway, so
+   this transliterator only ever needs to emit plain ASCII. ष/श/स all emit `s`; ण/न → `n`. That turns
+   correct ISO 15919 transliteration (hard) into a table lookup (easy). */
+function devToAscii(s){
+  let out='', pend='';
+  const flush=()=>{ out+=pend; pend=''; };
+  for(const ch of s){
+    if(DEV_CONS[ch]!==undefined){ flush(); out+=DEV_CONS[ch]; pend='a'; }
+    else if(DEV_MATRA[ch]!==undefined){ pend=DEV_MATRA[ch]; }
+    else if(ch==='्'){ pend=''; }                       // virāma cancels the inherent vowel
+    else if(DEV_VOWEL[ch]!==undefined){ flush(); out+=DEV_VOWEL[ch]; }
+    else if(ch==='ं'||ch==='ँ'){ flush(); out+='m'; }   // anusvāra / candrabindu
+    else if(ch==='ः'){ flush(); out+='h'; }                  // visarga
+    else { flush(); }                                             // avagraha, daṇḍa, ZWJ, digits, spaces
+  }
+  flush(); return out;
+}
+function norm(s){
+  if(!s) return '';
+  // 1. Devanāgarī → plain ASCII, only if any Devanāgarī is present
+  if(/[ऀ-ॿ]/.test(s)) s = devToAscii(s);
+  // 2. decompose, then drop every combining mark. THIS ONE LINE folds the whole diacritic problem:
+  //    every IAST character is a precomposed Latin letter plus a mark with a canonical NFD form, so
+  //    Saṅgakkāra, Muralīdaran and Miṣbaḥ all fall out as plain ASCII with no table to maintain.
+  s = s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+  // 3. case
+  s = s.toLowerCase();
+  // 4. letters only — drops spaces, hyphens, periods, apostrophes, digits. `M.S. Dhoni` → `msdhoni`.
+  s = s.replace(/[^a-z]/g, '');
+  // 5. Anglo long vowels (Sreesanth/Srisanth, Younus/Younis handled by aliases, not here)
+  s = s.replace(/ee/g, 'i').replace(/oo/g, 'u');
+  // 6. w → v   (Waugh/Vaugh, Warne/Varne — consistent, so harmless)
+  s = s.replace(/w/g, 'v');
+  // 7. x → ks  (Laxman)
+  s = s.replace(/x/g, 'ks');
+  // 8. aspirates and sibilants collapse. Order matters: ksh before sh.
+  s = s.replace(/ksh/g, 'ks')
+       .replace(/chh?/g, 'c')
+       .replace(/sh/g, 's')
+       .replace(/kh/g, 'k').replace(/gh/g, 'g').replace(/jh/g, 'j')
+       .replace(/th/g, 't').replace(/dh/g, 'd')
+       .replace(/ph/g, 'p').replace(/bh/g, 'b');
+  // 9. honorifics, post-fold forms, looped
+  var prev; do { prev = s;
+    s = s.replace(/^(sri|jai|jay|lord|svami|maaraj)/, '')
+         .replace(/(ji)$/, '');
+  } while (s !== prev && s.length > 2);
+  // 10. collapse any run of the same letter (Sangakkara/Sangakara, Chanderpaul/Chandarpaul)
+  s = s.replace(/(.)\1+/g, '$1');
+  // 11. drop a single trailing 'a' — schwa deletion. Sharma/Sharm, Rohit Sharma typed either way.
+  s = s.replace(/a$/, '');
+  return s;
+}
+
+/* Damerau–Levenshtein, bounded. At ~2,000 keys a full scan is a fraction of a millisecond and an
+   index would be more code and one more thing to get wrong. */
+function dl(a,b,cap){
+  const n=a.length, m=b.length;
+  if(Math.abs(n-m)>cap) return cap+1;
+  let prev2=null, prev=new Array(m+1), cur=new Array(m+1);
+  for(let j=0;j<=m;j++) prev[j]=j;
+  for(let i=1;i<=n;i++){
+    cur[0]=i; let best=cur[0];
+    for(let j=1;j<=m;j++){
+      const c = a.charCodeAt(i-1)===b.charCodeAt(j-1) ? 0 : 1;
+      let v = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+c);
+      if(i>1 && j>1 && a.charCodeAt(i-1)===b.charCodeAt(j-2) && a.charCodeAt(i-2)===b.charCodeAt(j-1))
+        v = Math.min(v, prev2[j-2]+1);
+      cur[j]=v; if(v<best) best=v;
+    }
+    if(best>cap) return cap+1;
+    prev2=prev; prev=cur; cur=new Array(m+1);
+  }
+  return prev[m];
+}
+function fuzzCap(k){ return k.length<=4 ? 0 : (k.length<=7 ? 1 : 2); }
+
+/* ============================================================================================
+   THE ROSTER
+   ============================================================================================
+   International cricketers, men's and women's, one mixed roster, all three formats, all eras.
+
+   Schema, per CRICKET_GRID.md §1.2:
+     id        stable slug. Saves store these. NEVER renumber or rename — a rename silently
+               invalidates every in-progress grid in the world.
+     name      canonical display form
+     sur       surname override, ONLY where the last whitespace-separated token is not the name a
+               cricket follower would say. Bare surnames are added to the lookup automatically and
+               ONLY where they are unambiguous in the roster (see buildKeys) — where two players
+               share one, typing it must prompt, never guess.
+     nations   MULTI-VALUED. Wessels played for Australia and then South Africa; Morgan, Joyce and
+               Rankin each played for Ireland and England. Most nation pairs are empty and the
+               generator's popcount throws those out for free — there is no special rule and there
+               must not be one.
+     debut     year of first Test, ODI or T20I appearance. Applied uniformly; this is the definition
+               the era axis is derived from, and it is stated in the reveal panel.
+     last      year of last international appearance, or 0 if still playing at DATA_AS_OF.
+     formats   test | odi | t20i
+     roles     keeper captain lhb opener pace lpace spin leg off lspin
+               (leg/off/lspin each also carry spin; lpace also carries pace, so a criterion is a
+                plain tag lookup and never a computation)
+     marks     EVENTS AND CROSSED THRESHOLDS ONLY. See the vocabulary note above MARK_LABELS.
+     domestic  coarse and geographic. county = played in the County Championship in England.
+     fame      1..5, drives Weight (= 6 - fame). 5 = a name anyone who has heard of cricket knows.
+     gloss     one line for the reveal panel. The reveal panel is the point; a player who fills two
+               cells should still leave having read something true.
+     alt       hand-written aliases. Initials, nicknames in common usage, and the spellings people
+               actually type. Nothing derogatory, nothing racialised, nothing a player objected to.
+
+   Correctness beats coverage. Where a threshold membership could not be confirmed against a public
+   reference the player is simply left out of that mark — the dataset is then incomplete, which
+   rejects a correct answer and apologises for it, rather than wrong, which would also ACCEPT an
+   incorrect one. See the reveal panel's data note.
+   ============================================================================================ */
+const PLAYERS=[
+
+/* ---------------------------------- India ---------------------------------- */
+{id:'gavaskar-s',name:'Sunil Gavaskar',nations:['ind'],debut:1971,last:1987,formats:['test','odi'],
+ roles:['opener','captain'],marks:['test200','test10k','test100m','wcfinal','wcwin'],domestic:['county'],fame:5,
+ gloss:'Opened for India for sixteen years; the first man to 10,000 Test runs; opened in the 1983 World Cup final.',
+ alt:['Sunil Gavasker','SM Gavaskar','Sunny Gavaskar','Sunny','सुनील गावस्कर']},
+{id:'viswanath-g',name:'Gundappa Viswanath',nations:['ind'],debut:1969,last:1983,formats:['test','odi'],
+ roles:[],marks:['debut100'],domestic:[],fame:3,
+ gloss:'Wristy Karnataka batter who made 137 on Test debut against Australia in 1969; India never lost a Test in which he made a century.',
+ alt:['GR Viswanath','Vishwanath','Gundappa Vishwanath','Vishy']},
+{id:'bedi-b',name:'Bishan Singh Bedi',nations:['ind'],debut:1966,last:1979,formats:['test','odi'],
+ roles:['captain','lspin','spin'],marks:['test5wi'],domestic:['county'],fame:3,
+ gloss:'Left-arm spinner of the famous Indian quartet; 266 Test wickets, and a long county career with Northamptonshire.',
+ alt:['BS Bedi','Bishen Bedi','Bishan Bedi']},
+{id:'chandrasekhar-b',name:'Bhagwath Chandrasekhar',nations:['ind'],debut:1964,last:1979,formats:['test','odi'],
+ roles:['leg','spin'],marks:['test5wi'],domestic:[],fame:3,
+ gloss:'Leg-spinner who bowled with an arm withered by childhood polio; his 6 for 38 won India the Oval Test of 1971.',
+ alt:['BS Chandrasekhar','Chandra','Bhagwat Chandrasekhar']},
+{id:'prasanna-e',name:'Erapalli Prasanna',nations:['ind'],debut:1962,last:1978,formats:['test'],
+ roles:['off','spin'],marks:['test5wi'],domestic:[],fame:2,
+ gloss:'Off-spinner of flight and guile, second of the Indian spin quartet; 189 Test wickets.',
+ alt:['EAS Prasanna','Erapalli Prasana']},
+{id:'venkataraghavan-s',name:'Srinivas Venkataraghavan',nations:['ind'],debut:1965,last:1983,formats:['test','odi'],
+ roles:['off','spin','captain'],marks:['test5wi'],domestic:[],fame:2,
+ gloss:'Off-spinner and captain, the fourth of the quartet; led India at the 1975 and 1979 World Cups.',
+ alt:['S Venkataraghavan','Venkat','Venkatraghavan']},
+{id:'pataudi-m',name:'Mansur Ali Khan Pataudi',sur:'Pataudi',nations:['ind'],debut:1961,last:1975,formats:['test'],
+ roles:['captain'],marks:[],domestic:['county'],fame:3,
+ gloss:'Captained India in 40 Tests from the age of 21, batting with the sight of one eye after a car accident.',
+ alt:['Nawab of Pataudi','Tiger Pataudi','MAK Pataudi','Mansoor Ali Khan Pataudi']},
+{id:'amarnath-m',name:'Mohinder Amarnath',nations:['ind'],debut:1969,last:1989,formats:['test','odi'],
+ roles:['pace'],marks:['wcfinal','wcwin'],domestic:[],fame:4,
+ gloss:'Player of the match in both the semi-final and the final of the 1983 World Cup; famously brave against fast bowling.',
+ alt:['Jimmy Amarnath','M Amarnath','Mohinder Amarnath Bhardwaj']},
+{id:'srikkanth-k',name:'Kris Srikkanth',nations:['ind'],debut:1981,last:1992,formats:['test','odi'],
+ roles:['opener','captain'],marks:['wcfinal','wcwin'],domestic:[],fame:3,
+ gloss:'Attacking opener; top-scored with 38 in the 1983 World Cup final at Lord’s.',
+ alt:['Krishnamachari Srikkanth','K Srikkanth','Cheeka']},
+{id:'shastri-r',name:'Ravi Shastri',nations:['ind'],debut:1981,last:1992,formats:['test','odi'],
+ roles:['lhb','lspin','spin','captain'],marks:['test200'],domestic:[],fame:4,
+ gloss:'Left-arm spinner turned opening batter; made 206 against Australia at Sydney in 1992.',
+ alt:['RJ Shastri','Ravishankar Shastri']},
+{id:'kirmani-s',name:'Syed Kirmani',nations:['ind'],debut:1976,last:1986,formats:['test','odi'],
+ roles:['keeper'],marks:['wcfinal','wcwin'],domestic:[],fame:3,
+ gloss:'India’s wicketkeeper through the Gavaskar years; kept in the 1983 World Cup final.',
+ alt:['SMH Kirmani','Syed Mujtaba Hussein Kirmani']},
+{id:'madan-lal',name:'Madan Lal',sur:'Madan Lal',nations:['ind'],debut:1974,last:1987,formats:['test','odi'],
+ roles:['pace'],marks:['wcfinal','wcwin'],domestic:[],fame:2,
+ gloss:'Medium-pacer who took the wicket of Viv Richards in the 1983 World Cup final.',
+ alt:['Madanlal','M Lal']},
+{id:'binny-r',name:'Roger Binny',nations:['ind'],debut:1979,last:1987,formats:['test','odi'],
+ roles:['pace'],marks:['wcfinal','wcwin'],domestic:[],fame:2,
+ gloss:'Seam-bowling all-rounder and the leading wicket-taker of the 1983 World Cup.',
+ alt:['RMH Binny','Roger Michael Humphrey Binny']},
+{id:'chetan-sharma',name:'Chetan Sharma',nations:['ind'],debut:1983,last:1994,formats:['test','odi'],
+ roles:['pace'],marks:['test5wi','hattrick'],domestic:[],fame:2,
+ gloss:'Fast-medium bowler; took the first hat-trick in World Cup history, against New Zealand in 1987.',
+ alt:['C Sharma']},
+{id:'kapil-dev',name:'Kapil Dev',sur:'Kapil',nations:['ind'],debut:1978,last:1994,formats:['test','odi'],
+ roles:['pace','captain'],marks:['test300w','test100m','test5wi','wcfinal','wcwin'],domestic:['county'],fame:5,
+ gloss:'Fast-bowling all-rounder from Haryana; 434 Test wickets, and the captain who lifted the 1983 World Cup.',
+ alt:['Kapil Dev Nikhanj','Kapildev','Haryana Hurricane','कपिल देव']},
+{id:'azharuddin-m',name:'Mohammad Azharuddin',nations:['ind'],debut:1984,last:2000,formats:['test','odi'],
+ roles:['captain'],marks:['debut100'],domestic:[],fame:4,
+ gloss:'Wristy Hyderabad batter who made centuries in each of his first three Tests; captained India in 47 Tests.',
+ alt:['Azhar','Mohammed Azharuddin','M Azharuddin']},
+{id:'sidhu-n',name:'Navjot Singh Sidhu',sur:'Sidhu',nations:['ind'],debut:1983,last:1999,formats:['test','odi'],
+ roles:['opener'],marks:[],domestic:[],fame:3,
+ gloss:'Punjab opener who hit spin bowling into the stands; nine Test centuries in the 1990s.',
+ alt:['NS Sidhu','Navjot Sidhu']},
+{id:'kumble-a',name:'Anil Kumble',nations:['ind'],debut:1990,last:2008,formats:['test','odi'],
+ roles:['leg','spin','captain'],marks:['test300w','odi300w','test100m','test5wi'],domestic:['county'],fame:5,
+ gloss:'Leg-spinner of relentless accuracy; 619 Test wickets, and all ten in an innings against Pakistan at Delhi in 1999.',
+ alt:['A Kumble','Jumbo','अनिल कुंबले']},
+{id:'srinath-j',name:'Javagal Srinath',nations:['ind'],debut:1991,last:2003,formats:['test','odi'],
+ roles:['pace'],marks:['odi300w','test5wi','wcfinal'],domestic:['county'],fame:4,
+ gloss:'India’s fastest bowler of the 1990s; 315 ODI wickets, and a beaten finalist in 2003.',
+ alt:['J Srinath','Sri']},
+{id:'prasad-v',name:'Venkatesh Prasad',nations:['ind'],debut:1994,last:2001,formats:['test','odi'],
+ roles:['pace'],marks:['test5wi'],domestic:[],fame:2,
+ gloss:'Seam bowler who partnered Srinath through the late 1990s; 6 for 33 against Pakistan at Chennai in 1999.',
+ alt:['BKV Prasad','Venky Prasad']},
+{id:'tendulkar-s',name:'Sachin Tendulkar',nations:['ind'],debut:1989,last:2013,formats:['test','odi','t20i'],
+ roles:[],marks:['test200','odi200','test10k','odi10k','test100m','wcfinal','wcwin'],domestic:['county'],fame:5,
+ gloss:'Debuted at sixteen and played 200 Tests; the first man to score a double century in a one-day international, in 2010.',
+ alt:['Sachin','SR Tendulkar','Sachin Ramesh Tendulkar','Tendlya','Little Master','सचिन तेंडुलकर','सचिन']},
+{id:'dravid-r',name:'Rahul Dravid',nations:['ind'],debut:1996,last:2012,formats:['test','odi','t20i'],
+ roles:['keeper','captain'],marks:['test200','test10k','odi10k','test100m','wcfinal'],domestic:['county'],fame:5,
+ gloss:'Batted at three for sixteen years and kept wicket in one-day cricket so India could play an extra bowler.',
+ alt:['R Dravid','The Wall','Rahul Sharad Dravid','Jammy','राहुल द्रविड़']},
+{id:'ganguly-s',name:'Sourav Ganguly',nations:['ind'],debut:1992,last:2007,formats:['test','odi'],
+ roles:['lhb','opener','captain'],marks:['test200','odi10k','debut100','test100m','wcfinal'],domestic:['county'],fame:5,
+ gloss:'Made 131 on Test debut at Lord’s in 1996; captained India to the 2003 World Cup final.',
+ alt:['Saurav Ganguly','SC Ganguly','Dada','Prince of Kolkata','सौरव गांगुली']},
+{id:'laxman-v',name:'VVS Laxman',sur:'Laxman',nations:['ind'],debut:1996,last:2012,formats:['test','odi'],
+ roles:[],marks:['test200','test100m'],domestic:['county'],fame:4,
+ gloss:'Made 281 against Australia at Kolkata in 2001, an innings that turned a follow-on into a win.',
+ alt:['Vangipurappu Venkata Sai Laxman','VVS','Very Very Special Laxman','V V S Laxman','Lakshman']},
+{id:'sehwag-v',name:'Virender Sehwag',nations:['ind'],debut:1999,last:2013,formats:['test','odi','t20i'],
+ roles:['opener','off','spin'],marks:['test300','test200','odi200','test100m','debut100','wcfinal','wcwin'],
+ domestic:['county'],fame:5,
+ gloss:'India’s only man with two Test triple centuries; also made 219 in a one-day international in 2011.',
+ alt:['Viru','V Sehwag','Virender Sehwaag','Sehwaag','Nawab of Najafgarh','वीरेंद्र सहवाग']},
+{id:'harbhajan-s',name:'Harbhajan Singh',sur:'Harbhajan',nations:['ind'],debut:1998,last:2016,formats:['test','odi','t20i'],
+ roles:['off','spin'],marks:['test300w','test100m','test5wi','hattrick','wcfinal','wcwin','t20wcfinal'],domestic:[],fame:4,
+ gloss:'Off-spinner whose 32 wickets beat Australia in 2001, including the first Test hat-trick by an Indian.',
+ alt:['Bhajji','Harbhajan Singh Plaha','H Singh','Turbanator']},
+{id:'zaheer-khan',name:'Zaheer Khan',nations:['ind'],debut:2000,last:2014,formats:['test','odi','t20i'],
+ roles:['pace','lpace'],marks:['test5wi','wcfinal','wcwin'],domestic:['county'],fame:4,
+ gloss:'Left-arm quick who mastered reverse swing; joint leading wicket-taker of the 2011 World Cup.',
+ alt:['Zak','Z Khan','Zaheer']},
+{id:'yuvraj-singh',name:'Yuvraj Singh',sur:'Yuvraj',nations:['ind'],debut:2000,last:2017,formats:['test','odi','t20i'],
+ roles:['lhb','lspin','spin'],marks:['wcfinal','wcwin','t20wcfinal'],domestic:[],fame:5,
+ gloss:'Player of the 2011 World Cup; hit six sixes in an over off Stuart Broad at the 2007 World T20.',
+ alt:['Yuvi','Y Singh','Yuvraj Singh Bhundel','युवराज सिंह']},
+{id:'dhoni-ms',name:'MS Dhoni',sur:'Dhoni',nations:['ind'],debut:2004,last:2019,formats:['test','odi','t20i'],
+ roles:['keeper','captain'],marks:['test200','odi10k','wcfinal','wcwin','t20wcfinal'],domestic:[],fame:5,
+ gloss:'Wicketkeeper-captain from Ranchi; won the 2007 World T20 and finished the 2011 World Cup final with a six.',
+ alt:['Mahendra Singh Dhoni','MSD','Mahi','Dhoni','M S Dhoni','Captain Cool','महेंद्र सिंह धोनी']},
+{id:'kohli-v',name:'Virat Kohli',nations:['ind'],debut:2008,last:0,formats:['test','odi','t20i'],
+ roles:['captain'],marks:['test200','odi10k','test100m','wcfinal','wcwin','t20wcfinal'],domestic:[],fame:5,
+ gloss:'Delhi batter and long-time India captain; reached 10,000 one-day international runs faster than anyone before him.',
+ alt:['V Kohli','Virat','King Kohli','Cheeku','विराट कोहली']},
+{id:'rohit-sharma',name:'Rohit Sharma',sur:'Rohit',nations:['ind'],debut:2007,last:0,formats:['test','odi','t20i'],
+ roles:['opener','captain'],marks:['odi200','odi10k','test200','wcfinal','t20wcfinal'],domestic:[],fame:5,
+ gloss:'The only man with three double centuries in one-day internationals, the highest of them 264 against Sri Lanka in 2014.',
+ alt:['Rohit','RG Sharma','Hitman','रोहित शर्मा']},
+{id:'ashwin-r',name:'Ravichandran Ashwin',sur:'Ashwin',nations:['ind'],debut:2010,last:2024,formats:['test','odi','t20i'],
+ roles:['off','spin'],marks:['test300w','test100m','test5wi','t20wcfinal'],domestic:[],fame:4,
+ gloss:'Off-spinner and thinker; 537 Test wickets and six Test centuries before retiring in 2024.',
+ alt:['R Ashwin','Ravi Ashwin','Ravichandran Aswin','Ash']},
+{id:'jadeja-r',name:'Ravindra Jadeja',sur:'Jadeja',nations:['ind'],debut:2009,last:0,formats:['test','odi','t20i'],
+ roles:['lhb','lspin','spin'],marks:['test5wi','wcfinal','t20wcfinal'],domestic:[],fame:4,
+ gloss:'Left-arm spinner and left-hand bat from Saurashtra; one of the great modern fielders.',
+ alt:['Jaddu','RA Jadeja','Ravindrasinh Jadeja','Sir Jadeja']},
+{id:'bumrah-j',name:'Jasprit Bumrah',nations:['ind'],debut:2016,last:0,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test5wi','hattrick','wcfinal','t20wcfinal'],domestic:[],fame:5,
+ gloss:'Fast bowler with a slingshot action; took a Test hat-trick against the West Indies in 2019.',
+ alt:['JJ Bumrah','Boom Boom Bumrah','Jaspreet Bumrah']},
+{id:'shami-m',name:'Mohammed Shami',sur:'Shami',nations:['ind'],debut:2013,last:0,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test5wi','hattrick','wcfinal'],domestic:[],fame:4,
+ gloss:'Seam bowler from Bengal; a hat-trick against Afghanistan and 24 wickets at the 2023 World Cup.',
+ alt:['Mohammad Shami','M Shami','Shami Ahmed']},
+{id:'kuldeep-yadav',name:'Kuldeep Yadav',sur:'Kuldeep',nations:['ind'],debut:2017,last:0,formats:['test','odi','t20i'],
+ roles:['lspin','spin'],marks:['test5wi','hattrick','wcfinal','t20wcfinal'],domestic:[],fame:3,
+ gloss:'Left-arm wrist-spinner; the first Indian with two hat-tricks in one-day internationals.',
+ alt:['K Yadav','Kuldip Yadav']},
+{id:'pujara-c',name:'Cheteshwar Pujara',nations:['ind'],debut:2010,last:2023,formats:['test','odi'],
+ roles:[],marks:['test200','test100m'],domestic:['county'],fame:4,
+ gloss:'Saurashtra number three who batted time; three Test double centuries and long county seasons in England.',
+ alt:['CA Pujara','Chintu','Chesteshwar Pujara','Puji']},
+{id:'ishant-sharma',name:'Ishant Sharma',sur:'Ishant',nations:['ind'],debut:2007,last:2021,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test100m','test5wi'],domestic:['county'],fame:3,
+ gloss:'Tall Delhi seamer; 105 Tests, and 7 for 74 at Lord’s in 2014.',
+ alt:['I Sharma','Ishaant Sharma']},
+{id:'gill-s',name:'Shubman Gill',nations:['ind'],debut:2019,last:0,formats:['test','odi','t20i'],
+ roles:['opener','captain'],marks:['odi200','test200','wcfinal'],domestic:[],fame:4,
+ gloss:'Punjab batter; 208 against New Zealand in 2023 and 269 at Edgbaston in 2025.',
+ alt:['S Gill','Shubhman Gill','Shubman']},
+{id:'kishan-i',name:'Ishan Kishan',nations:['ind'],debut:2021,last:0,formats:['test','odi','t20i'],
+ roles:['keeper','lhb'],marks:['odi200'],domestic:[],fame:3,
+ gloss:'Left-handed keeper-batter; his 210 against Bangladesh in 2022 came off 126 balls.',
+ alt:['I Kishan','Ishaan Kishan']},
+{id:'dhawan-s',name:'Shikhar Dhawan',nations:['ind'],debut:2010,last:2022,formats:['test','odi','t20i'],
+ roles:['opener','lhb'],marks:['debut100'],domestic:[],fame:4,
+ gloss:'Left-handed opener who made 187 on Test debut against Australia in 2013.',
+ alt:['S Dhawan','Gabbar','Shikar Dhawan']},
+{id:'pathan-i',name:'Irfan Pathan',nations:['ind'],debut:2003,last:2012,formats:['test','odi','t20i'],
+ roles:['lpace','pace','lhb'],marks:['test5wi','hattrick','t20wcfinal'],domestic:[],fame:3,
+ gloss:'Left-arm swing bowler; took a hat-trick in the first over of a Test against Pakistan in 2006.',
+ alt:['IK Pathan','Irfan Khan Pathan']},
+{id:'shaw-p',name:'Prithvi Shaw',nations:['ind'],debut:2018,last:2021,formats:['test','odi','t20i'],
+ roles:['opener'],marks:['debut100'],domestic:[],fame:2,
+ gloss:'Mumbai opener who made 134 on Test debut against the West Indies at eighteen.',
+ alt:['P Shaw']},
+{id:'nair-k',name:'Karun Nair',nations:['ind'],debut:2016,last:0,formats:['test','odi'],
+ roles:[],marks:['test300','test200'],domestic:[],fame:2,
+ gloss:'Karnataka batter; his 303 not out against England at Chennai in 2016 was only his third Test.',
+ alt:['KK Nair','Karun Kaladharan Nair']},
+{id:'mithali-raj',name:'Mithali Raj',sur:'Mithali',nations:['ind'],debut:1999,last:2022,formats:['test','odi','t20i'],
+ roles:['captain'],marks:['test200','wwcfinal'],domestic:[],fame:4,
+ gloss:'Captained India in two Women’s World Cup finals; her 214 against England in 2002 stood as a women’s Test record for years.',
+ alt:['M Raj','Mithali Dorai Raj','Mitali Raj']},
+{id:'jhulan-goswami',name:'Jhulan Goswami',sur:'Jhulan',nations:['ind'],debut:2002,last:2022,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test5wi','wwcfinal'],domestic:[],fame:4,
+ gloss:'Fast bowler from Bengal who played in the 2005 and 2017 Women’s World Cup finals.',
+ alt:['J Goswami','Jhulan Nishit Goswami','Goswami']},
+{id:'harmanpreet-kaur',name:'Harmanpreet Kaur',sur:'Harmanpreet',nations:['ind'],debut:2009,last:0,formats:['test','odi','t20i'],
+ roles:['captain'],marks:['wwcfinal'],domestic:[],fame:4,
+ gloss:'Captained India to the 2025 Women’s World Cup, their first; made 171 not out in the 2017 semi-final.',
+ alt:['H Kaur','Harman']},
+{id:'smriti-mandhana',name:'Smriti Mandhana',sur:'Mandhana',nations:['ind'],debut:2013,last:0,formats:['test','odi','t20i'],
+ roles:['opener','lhb'],marks:['wwcfinal'],domestic:[],fame:4,
+ gloss:'Left-handed opener; played in the 2017 final and in the winning side of 2025.',
+ alt:['S Mandhana','Smriti']},
+{id:'deepti-sharma',name:'Deepti Sharma',sur:'Deepti',nations:['ind'],debut:2014,last:0,formats:['test','odi','t20i'],
+ roles:['off','spin'],marks:['wwcfinal'],domestic:[],fame:3,
+ gloss:'Off-spinning all-rounder; took 5 for 39 in the 2025 Women’s World Cup final.',
+ alt:['D Sharma','Dipti Sharma']},
+{id:'shafali-verma',name:'Shafali Verma',sur:'Shafali',nations:['ind'],debut:2019,last:0,formats:['test','odi','t20i'],
+ roles:['opener'],marks:['wwcfinal'],domestic:[],fame:3,
+ gloss:'Haryana opener; top-scored with 87 and took two wickets in the 2025 Women’s World Cup final.',
+ alt:['S Verma','Shefali Verma']},
+{id:'richa-ghosh',name:'Richa Ghosh',sur:'Richa',nations:['ind'],debut:2020,last:0,formats:['test','odi','t20i'],
+ roles:['keeper'],marks:['wwcfinal'],domestic:[],fame:3,
+ gloss:'Wicketkeeper-batter from Siliguri; kept in India’s winning 2025 Women’s World Cup final.',
+ alt:['R Ghosh']},
+{id:'edulji-d',name:'Diana Edulji',sur:'Edulji',nations:['ind'],debut:1976,last:1993,formats:['test','odi'],
+ roles:['lspin','spin','captain'],marks:[],domestic:[],fame:2,
+ gloss:'Left-arm spinner who captained India in the first decade of women’s international cricket in the country.',
+ alt:['D Edulji','Diana Fram Edulji']},
+
+/* ---------------------------------- Australia ---------------------------------- */
+{id:'bradman-d',name:'Don Bradman',nations:['aus'],debut:1928,last:1948,formats:['test'],
+ roles:['captain'],marks:['test200','test300'],domestic:[],fame:5,
+ gloss:'Averaged 99.94 across 52 Tests; scored 334 at Headingley in 1930 and 304 there in 1934.',
+ alt:['DG Bradman','Donald Bradman','The Don','Sir Don Bradman','Sir Donald Bradman','Bradmann']},
+{id:'oreilly-b',name:'Bill O’Reilly',sur:'O’Reilly',nations:['aus'],debut:1932,last:1946,formats:['test'],
+ roles:['leg','spin'],marks:['test5wi'],domestic:[],fame:2,
+ gloss:'Leg-spinner of the 1930s, nicknamed the Tiger; 144 wickets in 27 Tests.',
+ alt:['WJ O’Reilly','Bill OReilly','O Reilly','Tiger O’Reilly']},
+{id:'grimmett-c',name:'Clarrie Grimmett',nations:['aus'],debut:1925,last:1936,formats:['test'],
+ roles:['leg','spin'],marks:['test5wi'],domestic:[],fame:2,
+ gloss:'New Zealand-born leg-spinner and the first bowler to 200 Test wickets.',
+ alt:['CV Grimmett','Clarence Grimmett']},
+{id:'lindwall-r',name:'Ray Lindwall',nations:['aus'],debut:1946,last:1960,formats:['test'],
+ roles:['pace'],marks:['test5wi'],domestic:[],fame:2,
+ gloss:'Fast bowler of the Invincibles, remembered for the classical purity of his action.',
+ alt:['RR Lindwall','Raymond Lindwall']},
+{id:'miller-k',name:'Keith Miller',nations:['aus'],debut:1946,last:1956,formats:['test'],
+ roles:['pace'],marks:['test5wi'],domestic:[],fame:3,
+ gloss:'Fast-bowling all-rounder and wartime pilot; opened the bowling with Lindwall for a decade.',
+ alt:['KR Miller','Nugget Miller']},
+{id:'benaud-r',name:'Richie Benaud',nations:['aus'],debut:1952,last:1964,formats:['test'],
+ roles:['leg','spin','captain'],marks:['test5wi'],domestic:[],fame:4,
+ gloss:'Leg-spinning all-rounder who captained Australia 28 times and never lost a series.',
+ alt:['RB Benaud','Richard Benaud']},
+{id:'davidson-a',name:'Alan Davidson',nations:['aus'],debut:1953,last:1963,formats:['test'],
+ roles:['lpace','pace','lhb'],marks:['test5wi'],domestic:[],fame:2,
+ gloss:'Left-arm fast-medium all-rounder; the first man to take ten wickets and score 100 runs in the same Test.',
+ alt:['AK Davidson','Alan Keith Davidson']},
+{id:'simpson-b',name:'Bob Simpson',nations:['aus'],debut:1957,last:1978,formats:['test'],
+ roles:['opener','captain','leg','spin'],marks:['test300','test200'],domestic:[],fame:3,
+ gloss:'Opener, slip fielder and captain; made 311 at Old Trafford in 1964, and came out of retirement at 41.',
+ alt:['RB Simpson','Robert Simpson','Bobby Simpson']},
+{id:'lawry-b',name:'Bill Lawry',nations:['aus'],debut:1961,last:1971,formats:['test'],
+ roles:['opener','lhb','captain'],marks:[],domestic:[],fame:3,
+ gloss:'Left-handed opener of famous obduracy; captained Australia 25 times in the late 1960s.',
+ alt:['WM Lawry','William Lawry']},
+{id:'walters-d',name:'Doug Walters',nations:['aus'],debut:1965,last:1981,formats:['test','odi'],
+ roles:[],marks:['debut100'],domestic:[],fame:3,
+ gloss:'Made 155 on Test debut against England in 1965; a favourite of the Sydney hill.',
+ alt:['KD Walters','Kevin Douglas Walters']},
+{id:'chappell-i',name:'Ian Chappell',nations:['aus'],debut:1964,last:1980,formats:['test','odi'],
+ roles:['captain'],marks:[],domestic:[],fame:4,
+ gloss:'Captained Australia through the early 1970s and led the World Series Cricket side.',
+ alt:['IM Chappell','Ian Michael Chappell','Chappelli']},
+{id:'chappell-g',name:'Greg Chappell',nations:['aus'],debut:1970,last:1984,formats:['test','odi'],
+ roles:['captain'],marks:['test200','debut100'],domestic:['county'],fame:4,
+ gloss:'Made 108 on Test debut in 1970 and 182 in his last Test; 247 not out against New Zealand in 1974.',
+ alt:['GS Chappell','Gregory Chappell']},
+{id:'lillee-d',name:'Dennis Lillee',nations:['aus'],debut:1971,last:1984,formats:['test','odi'],
+ roles:['pace'],marks:['test300w','test5wi'],domestic:[],fame:5,
+ gloss:'Fast bowler of the 1970s and 1980s; 355 Test wickets, and the other half of "caught Marsh, bowled Lillee".',
+ alt:['DK Lillee','Dennis Keith Lillee','Lilee']},
+{id:'thomson-j',name:'Jeff Thomson',nations:['aus'],debut:1972,last:1985,formats:['test','odi'],
+ roles:['pace'],marks:['test5wi'],domestic:[],fame:3,
+ gloss:'Slinging fast bowler who partnered Lillee through the 1974-75 Ashes.',
+ alt:['JR Thomson','Thommo','Jeffrey Thomson']},
+{id:'marsh-rod',name:'Rod Marsh',nations:['aus'],debut:1970,last:1984,formats:['test','odi'],
+ roles:['keeper'],marks:[],domestic:[],fame:3,
+ gloss:'Australia’s wicketkeeper for fourteen years; 355 Test dismissals, 95 of them off Lillee.',
+ alt:['RW Marsh','Rodney Marsh','Iron Gloves']},
+{id:'border-a',name:'Allan Border',nations:['aus'],debut:1978,last:1994,formats:['test','odi'],
+ roles:['lhb','captain'],marks:['test200','test10k','test100m','wcfinal','wcwin'],domestic:['county'],fame:5,
+ gloss:'Left-hander who captained Australia in 93 Tests and lifted the 1987 World Cup.',
+ alt:['AR Border','Allan Robert Border','AB Border','Captain Grumpy']},
+{id:'boon-d',name:'David Boon',nations:['aus'],debut:1984,last:1996,formats:['test','odi'],
+ roles:['opener'],marks:['test100m','wcfinal','wcwin'],domestic:[],fame:4,
+ gloss:'Tasmanian batter; top-scored with 75 in the 1987 World Cup final at Kolkata.',
+ alt:['DC Boon','David Clarence Boon','Babs']},
+{id:'marsh-geoff',name:'Geoff Marsh',nations:['aus'],debut:1985,last:1992,formats:['test','odi'],
+ roles:['opener'],marks:['wcfinal','wcwin'],domestic:[],fame:2,
+ gloss:'Western Australian opener; batted through the 1987 World Cup final with David Boon.',
+ alt:['GR Marsh','Geoffrey Marsh','Swampy']},
+{id:'jones-d',name:'Dean Jones',nations:['aus'],debut:1984,last:1994,formats:['test','odi'],
+ roles:[],marks:['test200','wcfinal','wcwin'],domestic:['county'],fame:3,
+ gloss:'Made 210 in the tied Test at Chennai in 1986 and had to be taken to hospital afterwards.',
+ alt:['DM Jones','Deano','Dean Mervyn Jones']},
+{id:'taylor-mark',name:'Mark Taylor',nations:['aus'],debut:1989,last:1999,formats:['test','odi'],
+ roles:['opener','lhb','captain'],marks:['test300','test200','test100m','wcfinal'],domestic:[],fame:4,
+ gloss:'Left-handed opener and captain; declared on 334 not out in Peshawar in 1998 rather than pass Bradman.',
+ alt:['MA Taylor','Tubby Taylor','Mark Anthony Taylor']},
+{id:'waugh-steve',name:'Steve Waugh',nations:['aus'],debut:1985,last:2004,formats:['test','odi'],
+ roles:['captain'],marks:['test200','test10k','test100m','wcfinal','wcwin'],domestic:['county'],fame:5,
+ gloss:'Captained Australia to sixteen straight Test wins; played in the 1987 and 1999 World Cup finals, winning both.',
+ alt:['SR Waugh','Stephen Waugh','Steve Rodger Waugh','Tugga']},
+{id:'waugh-mark',name:'Mark Waugh',nations:['aus'],debut:1988,last:2002,formats:['test','odi'],
+ roles:['off','spin'],marks:['test100m','debut100','wcfinal','wcwin'],domestic:['county'],fame:4,
+ gloss:'Made 138 on Test debut in 1991 in place of his twin brother; a slip fielder of unusual ease.',
+ alt:['ME Waugh','Mark Edward Waugh','Junior Waugh','Afghan']},
+{id:'healy-ian',name:'Ian Healy',nations:['aus'],debut:1988,last:1999,formats:['test','odi'],
+ roles:['keeper'],marks:['test100m','wcfinal'],domestic:[],fame:4,
+ gloss:'Kept wicket in 119 Tests, most of them to Shane Warne.',
+ alt:['IA Healy','Heals','Ian Andrew Healy']},
+{id:'warne-s',name:'Shane Warne',nations:['aus'],debut:1992,last:2007,formats:['test','odi'],
+ roles:['leg','spin'],marks:['test300w','test100m','test5wi','hattrick','wcfinal','wcwin'],domestic:['county'],fame:5,
+ gloss:'Leg-spinner with 708 Test wickets; player of the match in the 1999 World Cup final.',
+ alt:['SK Warne','Shane Keith Warne','Warney','Hollywood']},
+{id:'mcgrath-g',name:'Glenn McGrath',nations:['aus'],debut:1993,last:2007,formats:['test','odi'],
+ roles:['pace'],marks:['test300w','odi300w','test100m','test5wi','wcfinal','wcwin'],domestic:['county'],fame:5,
+ gloss:'Fast-medium bowler of relentless line; 563 Test wickets and three World Cup winners’ medals.',
+ alt:['GD McGrath','Pigeon','Glenn Donald McGrath','Macgrath']},
+{id:'gilchrist-a',name:'Adam Gilchrist',nations:['aus'],debut:1996,last:2008,formats:['test','odi'],
+ roles:['keeper','lhb'],marks:['test200','wcfinal','wcwin'],domestic:[],fame:5,
+ gloss:'Left-handed keeper-batter who changed what a number seven was for; 149 in the 2007 World Cup final.',
+ alt:['AC Gilchrist','Gilly','Adam Craig Gilchrist','Gilcrist']},
+{id:'ponting-r',name:'Ricky Ponting',nations:['aus'],debut:1995,last:2012,formats:['test','odi','t20i'],
+ roles:['captain'],marks:['test200','test10k','odi10k','test100m','wcfinal','wcwin'],domestic:['county'],fame:5,
+ gloss:'Tasmanian batter who captained two World Cup-winning sides; 140 not out in the 2003 final.',
+ alt:['RT Ponting','Punter','Ricky Thomas Ponting']},
+{id:'hayden-m',name:'Matthew Hayden',nations:['aus'],debut:1993,last:2009,formats:['test','odi','t20i'],
+ roles:['opener','lhb'],marks:['test300','test200','test100m','wcfinal','wcwin'],domestic:['county'],fame:4,
+ gloss:'Left-handed opener; his 380 against Zimbabwe in 2003 was briefly the highest score in Test cricket.',
+ alt:['ML Hayden','Haydos','Matthew Lawrence Hayden']},
+{id:'langer-j',name:'Justin Langer',nations:['aus'],debut:1993,last:2007,formats:['test','odi'],
+ roles:['opener','lhb'],marks:['test200','test100m'],domestic:['county'],fame:4,
+ gloss:'Left-handed opener who partnered Hayden for 113 Tests; 250 against England at Melbourne in 2002.',
+ alt:['JL Langer','Justin Lee Langer','Alfie']},
+{id:'gillespie-j',name:'Jason Gillespie',nations:['aus'],debut:1996,last:2006,formats:['test','odi'],
+ roles:['pace'],marks:['test200','test5wi','wcfinal','wcwin'],domestic:['county'],fame:3,
+ gloss:'Fast bowler who, sent in as nightwatchman against Bangladesh in 2006, made 201 not out in his final Test.',
+ alt:['JN Gillespie','Dizzy Gillespie','Jason Neil Gillespie']},
+{id:'lee-b',name:'Brett Lee',nations:['aus'],debut:1999,last:2012,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['odi300w','test5wi','hattrick','wcfinal','wcwin'],domestic:[],fame:4,
+ gloss:'Genuinely fast; took a hat-trick against Kenya at the 2003 World Cup and 380 one-day wickets in all.',
+ alt:['B Lee','Binga','Brett Lee jr']},
+{id:'clarke-m',name:'Michael Clarke',nations:['aus'],debut:2003,last:2015,formats:['test','odi','t20i'],
+ roles:['captain'],marks:['test300','test200','test100m','debut100','wcfinal','wcwin'],domestic:[],fame:4,
+ gloss:'Made 151 on Test debut in Bangalore and 329 not out at Sydney in 2012; captained the 2015 World Cup winners.',
+ alt:['MJ Clarke','Pup Clarke','Michael John Clarke']},
+{id:'hussey-mike',name:'Mike Hussey',nations:['aus'],debut:2004,last:2013,formats:['test','odi','t20i'],
+ roles:['lhb'],marks:['wcfinal','wcwin'],domestic:['county'],fame:4,
+ gloss:'Left-hander who waited until 30 for a Test cap and then averaged over 50; played in the 2007 World Cup final.',
+ alt:['MEK Hussey','Mr Cricket','Michael Hussey','Michael Edward Killeen Hussey']},
+{id:'hussey-david',name:'David Hussey',nations:['aus'],debut:2008,last:2013,formats:['odi','t20i'],
+ roles:['off','spin'],marks:[],domestic:['county'],fame:2,
+ gloss:'Victorian middle-order batter and occasional off-spinner; the younger of the Hussey brothers.',
+ alt:['DJ Hussey','David John Hussey','Huss']},
+{id:'johnson-m',name:'Mitchell Johnson',nations:['aus'],debut:2005,last:2015,formats:['test','odi','t20i'],
+ roles:['lpace','pace'],marks:['test5wi','wcfinal','wcwin'],domestic:[],fame:4,
+ gloss:'Left-arm fast bowler; 37 wickets in the 2013-14 Ashes and a World Cup winner in 2015.',
+ alt:['MG Johnson','Mitch Johnson','Mitchell Guy Johnson']},
+{id:'starc-m',name:'Mitchell Starc',nations:['aus'],debut:2010,last:0,formats:['test','odi','t20i'],
+ roles:['lpace','pace'],marks:['test5wi','wcfinal','wcwin'],domestic:['county'],fame:4,
+ gloss:'Left-arm fast bowler; player of the tournament at the 2015 World Cup and a winner again in 2023.',
+ alt:['MA Starc','Mitch Starc','Mitchell Aaron Starc']},
+{id:'smith-steve',name:'Steve Smith',nations:['aus'],debut:2010,last:0,formats:['test','odi','t20i'],
+ roles:['captain','leg','spin'],marks:['test200','test10k','test100m','wcfinal','wcwin'],domestic:['county'],fame:5,
+ gloss:'Began as a leg-spinner and became the fifteenth man to 10,000 Test runs, at Galle in 2025.',
+ alt:['SPD Smith','Steven Smith','Steve Peter Devereux Smith','Smudge']},
+{id:'warner-d',name:'David Warner',nations:['aus'],debut:2009,last:2024,formats:['test','odi','t20i'],
+ roles:['opener','lhb'],marks:['test300','test200','test100m','wcfinal','wcwin'],domestic:['county'],fame:5,
+ gloss:'Left-handed opener; 335 not out against Pakistan at Adelaide in 2019 and two World Cup winners’ medals.',
+ alt:['DA Warner','Davey Warner','David Andrew Warner','Bull']},
+{id:'maxwell-g',name:'Glenn Maxwell',nations:['aus'],debut:2012,last:0,formats:['test','odi','t20i'],
+ roles:['off','spin'],marks:['odi200','wcfinal','wcwin'],domestic:['county'],fame:4,
+ gloss:'Made 201 not out against Afghanistan at the 2023 World Cup while barely able to run.',
+ alt:['GJ Maxwell','The Big Show','Glenn James Maxwell','Maxi']},
+{id:'lyon-n',name:'Nathan Lyon',nations:['aus'],debut:2011,last:0,formats:['test','odi'],
+ roles:['off','spin'],marks:['test300w','test100m','test5wi'],domestic:[],fame:4,
+ gloss:'Off-spinner who was a groundsman at Adelaide Oval three years before his Test debut.',
+ alt:['NM Lyon','Garry Lyon','Nathan Michael Lyon','GOAT']},
+{id:'cummins-p',name:'Pat Cummins',nations:['aus'],debut:2011,last:0,formats:['test','odi','t20i'],
+ roles:['pace','captain'],marks:['test5wi','wcfinal','wcwin'],domestic:[],fame:5,
+ gloss:'Fast bowler who captained Australia to the 2023 World Cup and the World Test Championship.',
+ alt:['PJ Cummins','Patrick Cummins','Patrick James Cummins']},
+{id:'hazlewood-j',name:'Josh Hazlewood',nations:['aus'],debut:2010,last:0,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test5wi','wcfinal','wcwin'],domestic:[],fame:3,
+ gloss:'Tall seam bowler of metronomic length; World Cup winner in 2015 and 2023.',
+ alt:['JR Hazlewood','Joshua Hazlewood']},
+{id:'wessels-k',name:'Kepler Wessels',nations:['aus','sa'],debut:1982,last:1994,formats:['test','odi'],
+ roles:['opener','lhb','captain'],marks:['debut100'],domestic:['county'],fame:3,
+ gloss:'Made 162 on Test debut for Australia in 1982, then captained South Africa on their return in 1992.',
+ alt:['KC Wessels','Kepler Christoffel Wessels']},
+{id:'clark-b',name:'Belinda Clark',nations:['aus'],debut:1991,last:2005,formats:['test','odi'],
+ roles:['captain'],marks:['odi200','wwcfinal'],domestic:[],fame:4,
+ gloss:'Made 229 not out against Denmark in 1997, the first double century in any one-day international.',
+ alt:['BJ Clark','Belinda Jane Clark']},
+{id:'fitzpatrick-c',name:'Cathryn Fitzpatrick',nations:['aus'],debut:1991,last:2007,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['wwcfinal'],domestic:[],fame:3,
+ gloss:'The fastest bowler in the women’s game of her era; won World Cups in 1997 and 2005.',
+ alt:['CL Fitzpatrick','Cathy Fitzpatrick']},
+{id:'rolton-k',name:'Karen Rolton',nations:['aus'],debut:1995,last:2009,formats:['test','odi','t20i'],
+ roles:['lhb'],marks:['test200','wwcfinal'],domestic:[],fame:3,
+ gloss:'Left-hander who made 209 not out in a Test against England in 2001 and 107 not out in the 2005 World Cup final.',
+ alt:['KL Rolton','Karen Louise Rolton']},
+{id:'sthalekar-l',name:'Lisa Sthalekar',nations:['aus'],debut:2001,last:2013,formats:['test','odi','t20i'],
+ roles:['off','spin'],marks:['wwcfinal'],domestic:[],fame:3,
+ gloss:'Off-spinning all-rounder born in Pune and raised in Sydney; World Cup winner in 2005 and 2013.',
+ alt:['LC Sthalekar','Lisa Caprini Sthalekar']},
+{id:'lanning-m',name:'Meg Lanning',nations:['aus'],debut:2010,last:2023,formats:['test','odi','t20i'],
+ roles:['captain'],marks:['wwcfinal'],domestic:[],fame:4,
+ gloss:'Captained Australia to the 2022 Women’s World Cup and to Commonwealth Games gold.',
+ alt:['MM Lanning','Megan Lanning','Meghann Lanning']},
+{id:'perry-e',name:'Ellyse Perry',nations:['aus'],debut:2007,last:0,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test200','wwcfinal'],domestic:[],fame:5,
+ gloss:'Fast bowler and batter who played football for Australia too; 213 not out in the 2017 Ashes Test.',
+ alt:['EA Perry','Ellyse Alexandra Perry']},
+{id:'healy-alyssa',name:'Alyssa Healy',nations:['aus'],debut:2010,last:0,formats:['test','odi','t20i'],
+ roles:['keeper','captain'],marks:['wwcfinal'],domestic:[],fame:4,
+ gloss:'Wicketkeeper-batter; made 170 in the 2022 Women’s World Cup final, the highest score in any World Cup final.',
+ alt:['AJ Healy','Alyssa Jean Healy']},
+{id:'schutt-m',name:'Megan Schutt',nations:['aus'],debut:2012,last:0,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['hattrick','wwcfinal'],domestic:[],fame:3,
+ gloss:'Swing bowler from South Australia; took a one-day hat-trick against the West Indies in 2019.',
+ alt:['MW Schutt','Megan Sara Schutt']},
+
+/* ---------------------------------- England ---------------------------------- */
+/* Every England men's international in this roster played in the County Championship, which is what
+   makes `county` a genuinely cross-national axis rather than a synonym for one nation: the overseas
+   entries are the interesting half. The competition is men's-only by name, so the label says so. */
+{id:'hobbs-j',name:'Jack Hobbs',nations:['eng'],debut:1908,last:1930,formats:['test'],
+ roles:['opener'],marks:[],domestic:['county'],fame:3,
+ gloss:'Surrey opener known as the Master; played Test cricket either side of the First World War.',
+ alt:['JB Hobbs','Sir Jack Hobbs','John Berry Hobbs','The Master']},
+{id:'hutton-l',name:'Len Hutton',nations:['eng'],debut:1937,last:1955,formats:['test'],
+ roles:['opener','captain'],marks:['test300','test200'],domestic:['county'],fame:4,
+ gloss:'Made 364 against Australia at the Oval in 1938; England’s first professional captain of the modern era.',
+ alt:['L Hutton','Sir Len Hutton','Leonard Hutton']},
+{id:'compton-d',name:'Denis Compton',nations:['eng'],debut:1937,last:1957,formats:['test'],
+ roles:[],marks:[],domestic:['county'],fame:3,
+ gloss:'Middlesex batter and Arsenal footballer; 3,816 first-class runs in the summer of 1947.',
+ alt:['DCS Compton','Denis Charles Scott Compton','Compo']},
+{id:'laker-j',name:'Jim Laker',nations:['eng'],debut:1948,last:1959,formats:['test'],
+ roles:['off','spin'],marks:['test5wi'],domestic:['county'],fame:4,
+ gloss:'Took 19 wickets in the Old Trafford Test of 1956, including all ten in the second innings.',
+ alt:['JC Laker','James Laker','James Charles Laker']},
+{id:'trueman-f',name:'Fred Trueman',nations:['eng'],debut:1952,last:1965,formats:['test'],
+ roles:['pace'],marks:['test300w','test5wi'],domestic:['county'],fame:3,
+ gloss:'Yorkshire fast bowler and the first man to 300 Test wickets, in 1964.',
+ alt:['FS Trueman','Fiery Fred','Frederick Trueman']},
+{id:'boycott-g',name:'Geoffrey Boycott',sur:'Boycott',nations:['eng'],debut:1964,last:1982,formats:['test','odi'],
+ roles:['opener'],marks:['test100m','wcfinal'],domestic:['county'],fame:4,
+ gloss:'Yorkshire opener of famous patience; opened in the 1979 World Cup final.',
+ alt:['G Boycott','Geoff Boycott','Sir Geoffrey Boycott']},
+{id:'knott-a',name:'Alan Knott',nations:['eng'],debut:1967,last:1981,formats:['test','odi'],
+ roles:['keeper'],marks:[],domestic:['county'],fame:3,
+ gloss:'Kent wicketkeeper of 95 Tests, and the standard against which English keepers were measured for a generation.',
+ alt:['APE Knott','Alan Philip Eric Knott','Knotty']},
+{id:'underwood-d',name:'Derek Underwood',nations:['eng'],debut:1966,last:1982,formats:['test','odi'],
+ roles:['lspin','spin'],marks:['test5wi'],domestic:['county'],fame:3,
+ gloss:'Left-arm spinner nicknamed Deadly; 297 Test wickets, and unplayable on a drying pitch.',
+ alt:['DL Underwood','Deadly Underwood','Derek Leslie Underwood']},
+{id:'willis-b',name:'Bob Willis',nations:['eng'],debut:1971,last:1984,formats:['test','odi'],
+ roles:['pace','captain'],marks:['test300w','test5wi'],domestic:['county'],fame:3,
+ gloss:'Fast bowler whose 8 for 43 won the Headingley Test of 1981; later captained England.',
+ alt:['RGD Willis','Robert Willis','Bob Dylan Willis']},
+{id:'greig-t',name:'Tony Greig',nations:['eng'],debut:1972,last:1977,formats:['test','odi'],
+ roles:['captain','pace'],marks:['test5wi'],domestic:['county'],fame:3,
+ gloss:'South African-born all-rounder who captained England and then recruited for World Series Cricket.',
+ alt:['AW Greig','Anthony William Greig','Greigy']},
+{id:'gooch-g',name:'Graham Gooch',nations:['eng'],debut:1975,last:1995,formats:['test','odi'],
+ roles:['opener','captain'],marks:['test300','test200','test100m','wcfinal'],domestic:['county'],fame:4,
+ gloss:'Essex opener; made 333 and 123 in the same Test against India at Lord’s in 1990.',
+ alt:['GA Gooch','Graham Alan Gooch','Goochie','Zap']},
+{id:'botham-i',name:'Ian Botham',nations:['eng'],debut:1977,last:1992,formats:['test','odi'],
+ roles:['pace'],marks:['test300w','test100m','test5wi','wcfinal'],domestic:['county'],fame:5,
+ gloss:'All-rounder of the 1981 Ashes; 383 Test wickets and fourteen Test centuries.',
+ alt:['IT Botham','Beefy','Sir Ian Botham','Ian Terence Botham','Guy the Gorilla']},
+{id:'gower-d',name:'David Gower',nations:['eng'],debut:1978,last:1992,formats:['test','odi'],
+ roles:['lhb','captain'],marks:['test200','test100m','wcfinal'],domestic:['county'],fame:4,
+ gloss:'Left-hander of unhurried elegance; 215 against Australia at Edgbaston in 1985.',
+ alt:['DI Gower','David Ivon Gower','Lubo']},
+{id:'gatting-m',name:'Mike Gatting',nations:['eng'],debut:1977,last:1995,formats:['test','odi'],
+ roles:['captain'],marks:['test200','wcfinal'],domestic:['county'],fame:3,
+ gloss:'Middlesex captain who led England to the 1987 World Cup final; on the receiving end of Warne’s first Ashes ball.',
+ alt:['MW Gatting','Michael William Gatting','Gatt']},
+{id:'lamb-a',name:'Allan Lamb',nations:['eng'],debut:1982,last:1992,formats:['test','odi'],
+ roles:[],marks:['wcfinal'],domestic:['county'],fame:3,
+ gloss:'South African-born Northamptonshire batter who played in two World Cup finals for England.',
+ alt:['AJ Lamb','Allan Joseph Lamb','Lambie']},
+{id:'stewart-a',name:'Alec Stewart',nations:['eng'],debut:1989,last:2003,formats:['test','odi'],
+ roles:['keeper','opener','captain'],marks:['test100m','wcfinal'],domestic:['county'],fame:4,
+ gloss:'Surrey keeper-batter of 133 Tests; opened, kept and captained, sometimes all in the same match.',
+ alt:['AJ Stewart','Alec James Stewart','The Gaffer']},
+{id:'atherton-m',name:'Michael Atherton',sur:'Atherton',nations:['eng'],debut:1989,last:2001,formats:['test','odi'],
+ roles:['opener','captain'],marks:['test100m'],domestic:['county'],fame:4,
+ gloss:'Lancashire opener who captained England 54 times; batted 643 minutes to save the Johannesburg Test of 1995.',
+ alt:['MA Atherton','Mike Atherton','Athers','Michael Andrew Atherton']},
+{id:'thorpe-g',name:'Graham Thorpe',nations:['eng'],debut:1993,last:2005,formats:['test','odi'],
+ roles:['lhb'],marks:['test100m'],domestic:['county'],fame:3,
+ gloss:'Left-handed Surrey batter of exactly 100 Tests, and England’s most reliable middle order of the 1990s.',
+ alt:['GP Thorpe','Graham Paul Thorpe','Thorpey']},
+{id:'hussain-n',name:'Nasser Hussain',nations:['eng'],debut:1989,last:2004,formats:['test','odi'],
+ roles:['captain'],marks:['test200'],domestic:['county'],fame:4,
+ gloss:'Madras-born Essex batter who captained England out of the 1990s; 207 against Australia in 1997.',
+ alt:['N Hussain','Nasser Hussein','Nasser Hussain jr']},
+{id:'trescothick-m',name:'Marcus Trescothick',nations:['eng'],debut:2000,last:2006,formats:['test','odi','t20i'],
+ roles:['opener','lhb'],marks:['test200'],domestic:['county'],fame:3,
+ gloss:'Somerset left-handed opener; 219 against South Africa at the Oval in 2003.',
+ alt:['ME Trescothick','Banger Trescothick','Marcus Edward Trescothick']},
+{id:'vaughan-m',name:'Michael Vaughan',nations:['eng'],debut:1999,last:2008,formats:['test','odi'],
+ roles:['captain'],marks:[],domestic:['county'],fame:4,
+ gloss:'Yorkshire batter who captained England to the 2005 Ashes.',
+ alt:['MP Vaughan','Michael Paul Vaughan','Virgil']},
+{id:'flintoff-a',name:'Andrew Flintoff',nations:['eng'],debut:1998,last:2009,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test5wi'],domestic:['county'],fame:4,
+ gloss:'Lancashire all-rounder of the 2005 Ashes; remembered as much for consoling Brett Lee at Edgbaston.',
+ alt:['A Flintoff','Freddie Flintoff','Andrew Freddie Flintoff','Fred']},
+{id:'pietersen-k',name:'Kevin Pietersen',nations:['eng'],debut:2004,last:2014,formats:['test','odi','t20i'],
+ roles:[],marks:['test200','test100m','t20wcfinal'],domestic:['county'],fame:5,
+ gloss:'Pietermaritzburg-born batter; 158 at the Oval in 2005 and player of the tournament at the 2010 World T20.',
+ alt:['KP Pietersen','KP','Kevin Peter Pietersen','Peterson']},
+{id:'cook-a',name:'Alastair Cook',nations:['eng'],debut:2006,last:2018,formats:['test','odi'],
+ roles:['opener','lhb','captain'],marks:['test200','test10k','test100m','debut100'],domestic:['county'],fame:5,
+ gloss:'Essex left-handed opener; 104 not out on debut in Nagpur, 244 not out in his 159th Test, 147 in his last.',
+ alt:['AN Cook','Sir Alastair Cook','Alastair Nathan Cook','Chef','Alistair Cook']},
+{id:'strauss-a',name:'Andrew Strauss',nations:['eng'],debut:2003,last:2012,formats:['test','odi'],
+ roles:['opener','lhb','captain'],marks:['test100m','debut100'],domestic:['county'],fame:4,
+ gloss:'Made 112 on Test debut at Lord’s in 2004 and captained the 2010-11 Ashes winners in Australia.',
+ alt:['AJ Strauss','Sir Andrew Strauss','Andrew John Strauss','Straussy','Muppet']},
+{id:'anderson-j',name:'James Anderson',nations:['eng'],debut:2002,last:2024,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test300w','test100m','test5wi'],domestic:['county'],fame:5,
+ gloss:'Lancashire swing bowler; 704 Test wickets across 188 Tests and 21 years.',
+ alt:['JM Anderson','Jimmy Anderson','James Michael Anderson','Burnley Express']},
+{id:'broad-s',name:'Stuart Broad',nations:['eng'],debut:2006,last:2023,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test300w','test100m','test5wi','hattrick','t20wcfinal'],domestic:['county'],fame:5,
+ gloss:'Took a Test hat-trick against India in 2011 and 8 for 15 against Australia at Trent Bridge in 2015.',
+ alt:['SCJ Broad','Stuart Christopher John Broad','Broady']},
+{id:'swann-g',name:'Graeme Swann',nations:['eng'],debut:2000,last:2013,formats:['test','odi','t20i'],
+ roles:['off','spin'],marks:['test5wi','t20wcfinal'],domestic:['county'],fame:3,
+ gloss:'Nottinghamshire off-spinner; 255 Test wickets and a World T20 winner in 2010.',
+ alt:['GP Swann','Graeme Peter Swann','Swanny']},
+{id:'prior-m',name:'Matt Prior',nations:['eng'],debut:2004,last:2014,formats:['test','odi','t20i'],
+ roles:['keeper'],marks:['debut100'],domestic:['county'],fame:3,
+ gloss:'Sussex keeper-batter who made 126 not out on Test debut against the West Indies in 2007.',
+ alt:['MJ Prior','Matthew Prior','Matthew James Prior','Cheese']},
+{id:'bell-i',name:'Ian Bell',nations:['eng'],debut:2004,last:2015,formats:['test','odi','t20i'],
+ roles:[],marks:['test100m'],domestic:['county'],fame:3,
+ gloss:'Warwickshire batter of 118 Tests; three centuries in the 2013 Ashes.',
+ alt:['IR Bell','Ian Ronald Bell','Belly','The Shermanator']},
+{id:'trott-j',name:'Jonathan Trott',nations:['eng'],debut:2009,last:2015,formats:['test','odi','t20i'],
+ roles:[],marks:['debut100'],domestic:['county'],fame:3,
+ gloss:'Cape Town-born Warwickshire batter who made 119 on Test debut in the Ashes-deciding Oval Test of 2009.',
+ alt:['IJL Trott','Jonathan Trott','Ian Jonathan Leonard Trott']},
+{id:'root-j',name:'Joe Root',nations:['eng'],debut:2012,last:0,formats:['test','odi','t20i'],
+ roles:['captain'],marks:['test200','test10k','test100m','wcfinal','wcwin','t20wcfinal'],domestic:['county'],fame:5,
+ gloss:'Yorkshire batter and England’s most-capped Test captain; played in the 2019 World Cup final.',
+ alt:['JE Root','Joseph Root','Joseph Edward Root','Rooty']},
+{id:'stokes-b',name:'Ben Stokes',nations:['eng'],debut:2011,last:0,formats:['test','odi','t20i'],
+ roles:['lhb','pace','captain'],marks:['test200','test100m','wcfinal','wcwin','t20wcfinal'],domestic:['county'],fame:5,
+ gloss:'Christchurch-born all-rounder; 84 not out in the 2019 World Cup final and 135 not out at Headingley six weeks later.',
+ alt:['BA Stokes','Benjamin Stokes','Benjamin Andrew Stokes','Stokesy']},
+{id:'buttler-j',name:'Jos Buttler',nations:['eng'],debut:2011,last:0,formats:['test','odi','t20i'],
+ roles:['keeper','captain'],marks:['wcfinal','wcwin','t20wcfinal'],domestic:['county'],fame:4,
+ gloss:'Wicketkeeper-batter who ran out Martin Guptill to end the 2019 World Cup final.',
+ alt:['JC Buttler','Joseph Buttler','Joseph Charles Buttler','Josh Buttler','Butler']},
+{id:'bairstow-j',name:'Jonny Bairstow',nations:['eng'],debut:2011,last:0,formats:['test','odi','t20i'],
+ roles:['keeper'],marks:['test100m','wcfinal','wcwin'],domestic:['county'],fame:4,
+ gloss:'Yorkshire keeper-batter; opened for England in the 2019 World Cup they won.',
+ alt:['JM Bairstow','Jonathan Bairstow','Jonathan Marc Bairstow','Bluey']},
+{id:'rashid-adil',name:'Adil Rashid',nations:['eng'],debut:2009,last:0,formats:['test','odi','t20i'],
+ roles:['leg','spin'],marks:['wcfinal','wcwin','t20wcfinal'],domestic:['county'],fame:3,
+ gloss:'Yorkshire leg-spinner; a World Cup winner in 2019 and a World T20 winner in 2022.',
+ alt:['AU Rashid','Adil Usman Rashid','Rash']},
+{id:'archer-j',name:'Jofra Archer',nations:['eng'],debut:2019,last:0,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['wcfinal','wcwin'],domestic:['county'],fame:4,
+ gloss:'Barbados-born fast bowler who bowled the super over in the 2019 World Cup final.',
+ alt:['JC Archer','Jofra Chioke Archer']},
+{id:'brook-h',name:'Harry Brook',nations:['eng'],debut:2022,last:0,formats:['test','odi','t20i'],
+ roles:['captain'],marks:['test300','test200','t20wcfinal'],domestic:['county'],fame:4,
+ gloss:'Yorkshire batter; made 317 against Pakistan at Multan in 2024.',
+ alt:['HC Brook','Harry Cherrington Brook','Brooky']},
+{id:'ali-moeen',name:'Moeen Ali',nations:['eng'],debut:2014,last:2023,formats:['test','odi','t20i'],
+ roles:['off','spin','lhb'],marks:['test5wi','wcfinal','wcwin','t20wcfinal'],domestic:['county'],fame:4,
+ gloss:'Worcestershire off-spinning all-rounder; a World Cup winner in 2019 and a World T20 winner in 2022.',
+ alt:['MM Ali','Moeen Munir Ali','Mo Ali','Moin Ali']},
+{id:'curran-sam',name:'Sam Curran',nations:['eng'],debut:2018,last:0,formats:['test','odi','t20i'],
+ roles:['lpace','pace','lhb'],marks:['t20wcfinal'],domestic:['county'],fame:3,
+ gloss:'Left-arm seamer and lower-order batter; player of the tournament at the 2022 World T20.',
+ alt:['SM Curran','Samuel Curran','Samuel Matthew Curran']},
+{id:'curran-tom',name:'Tom Curran',nations:['eng'],debut:2017,last:0,formats:['test','odi','t20i'],
+ roles:['pace'],marks:[],domestic:['county'],fame:2,
+ gloss:'Cape Town-born Surrey seam bowler and death-overs specialist; the elder of the Curran brothers.',
+ alt:['TK Curran','Thomas Curran','Thomas Kevin Curran']},
+{id:'edwards-c',name:'Charlotte Edwards',nations:['eng'],debut:1996,last:2016,formats:['test','odi','t20i'],
+ roles:['opener','captain'],marks:['wwcfinal'],domestic:[],fame:4,
+ gloss:'Captained England to the 2009 Women’s World Cup; debuted at sixteen and played for twenty years.',
+ alt:['CM Edwards','Charlotte Marie Edwards','Lottie Edwards']},
+{id:'brunt-k',name:'Katherine Sciver-Brunt',sur:'Sciver-Brunt',nations:['eng'],debut:2004,last:2023,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['wwcfinal'],domestic:[],fame:3,
+ gloss:'Yorkshire-born fast bowler who played in the 2009, 2017 and 2022 Women’s World Cup finals.',
+ alt:['KH Brunt','Katherine Brunt','Katherine Helen Brunt','Katherine Helen Sciver-Brunt']},
+{id:'taylor-sarah',name:'Sarah Taylor',nations:['eng'],debut:2006,last:2019,formats:['test','odi','t20i'],
+ roles:['keeper'],marks:['wwcfinal'],domestic:[],fame:3,
+ gloss:'Wicketkeeper widely regarded as the finest of her generation in the women’s game.',
+ alt:['SJ Taylor','Sarah Jane Taylor']},
+{id:'shrubsole-a',name:'Anya Shrubsole',nations:['eng'],debut:2008,last:2022,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['wwcfinal'],domestic:[],fame:3,
+ gloss:'Took 6 for 46 in the 2017 Women’s World Cup final at Lord’s to win England the title.',
+ alt:['A Shrubsole','Anya Shrubsole jr']},
+{id:'knight-h',name:'Heather Knight',nations:['eng'],debut:2010,last:0,formats:['test','odi','t20i'],
+ roles:['captain'],marks:['wwcfinal'],domestic:[],fame:4,
+ gloss:'Captained England to the 2017 Women’s World Cup at Lord’s.',
+ alt:['HC Knight','Heather Clare Knight']},
+{id:'sciver-brunt-n',name:'Nat Sciver-Brunt',sur:'Sciver-Brunt',nations:['eng'],debut:2013,last:0,formats:['test','odi','t20i'],
+ roles:['pace','captain'],marks:['wwcfinal'],domestic:[],fame:4,
+ gloss:'Tokyo-born all-rounder; 148 not out in the 2022 Women’s World Cup final on the losing side.',
+ alt:['NR Sciver','Nat Sciver','Natalie Sciver','Natalie Ruth Sciver-Brunt','Nat Sciver Brunt']},
+
+/* ---------------------------------- Pakistan ---------------------------------- */
+{id:'hanif-mohammad',name:'Hanif Mohammad',nations:['pak'],debut:1952,last:1969,formats:['test'],
+ roles:['opener','captain'],marks:['test300','test200'],domestic:[],fame:3,
+ gloss:'Batted 970 minutes for 337 against the West Indies at Bridgetown in 1958 to save the match.',
+ alt:['Hanif','Little Master Hanif','H Mohammad']},
+{id:'fazal-mahmood',name:'Fazal Mahmood',nations:['pak'],debut:1952,last:1962,formats:['test'],
+ roles:['pace'],marks:['test5wi'],domestic:[],fame:2,
+ gloss:'Medium-pacer whose twelve wickets beat England at the Oval in 1954, four years after Pakistan’s first Test.',
+ alt:['Fazal','F Mahmood']},
+{id:'mushtaq-mohammad',name:'Mushtaq Mohammad',nations:['pak'],debut:1959,last:1979,formats:['test','odi'],
+ roles:['leg','spin','captain'],marks:[],domestic:['county'],fame:2,
+ gloss:'Leg-spinning all-rounder and Pakistan captain; the youngest Test cricketer of his day at fifteen.',
+ alt:['Mushtaq','M Mohammad']},
+{id:'asif-iqbal',name:'Asif Iqbal',sur:'Asif Iqbal',nations:['pak'],debut:1964,last:1980,formats:['test','odi'],
+ roles:['captain'],marks:[],domestic:['county'],fame:2,
+ gloss:'Kent all-rounder and Pakistan captain; scored 146 from number nine at the Oval in 1967.',
+ alt:['Asif','A Iqbal','Asif Iqbal Razvi']},
+{id:'majid-khan',name:'Majid Khan',nations:['pak'],debut:1964,last:1983,formats:['test','odi'],
+ roles:['opener','captain'],marks:[],domestic:['county'],fame:2,
+ gloss:'Glamorgan and Pakistan opener who once hit 147 before lunch for the county against the Australians.',
+ alt:['Majid','MJ Khan','Majid Jahangir Khan']},
+{id:'zaheer-abbas',name:'Zaheer Abbas',sur:'Zaheer Abbas',nations:['pak'],debut:1969,last:1985,formats:['test','odi'],
+ roles:['captain'],marks:['test200'],domestic:['county'],fame:3,
+ gloss:'Gloucestershire and Pakistan batter called the Asian Bradman; 274 against England at Edgbaston in 1971.',
+ alt:['Zaheer','Z Abbas','Asian Bradman']},
+{id:'imran-khan',name:'Imran Khan',nations:['pak'],debut:1971,last:1992,formats:['test','odi'],
+ roles:['pace','captain'],marks:['test300w','test5wi','wcfinal','wcwin'],domestic:['county'],fame:5,
+ gloss:'Fast-bowling all-rounder who captained Pakistan to the 1992 World Cup at 39.',
+ alt:['Imran','I Khan','Imran Ahmed Khan Niazi','Kaptaan']},
+{id:'javed-miandad',name:'Javed Miandad',sur:'Miandad',nations:['pak'],debut:1975,last:1996,formats:['test','odi'],
+ roles:['captain'],marks:['test200','test100m','debut100','wcfinal','wcwin'],domestic:['county'],fame:5,
+ gloss:'Made 163 on Test debut at nineteen; the last-ball six at Sharjah in 1986 is the shot he is remembered for.',
+ alt:['Javed','JB Miandad','Javed Miandad Khan','Miandaad']},
+{id:'abdul-qadir',name:'Abdul Qadir',sur:'Qadir',nations:['pak'],debut:1977,last:1993,formats:['test','odi'],
+ roles:['leg','spin'],marks:['test5wi'],domestic:[],fame:3,
+ gloss:'Leg-spinner who kept the art alive through the fast-bowling 1980s; 9 for 56 against England in 1987.',
+ alt:['Qadir','A Qadir','Abdul Qadir Khan']},
+{id:'wasim-akram',name:'Wasim Akram',sur:'Wasim Akram',nations:['pak'],debut:1984,last:2003,formats:['test','odi'],
+ roles:['lpace','pace','lhb','captain'],marks:['test200','test300w','odi300w','test100m','test5wi','hattrick','wcfinal','wcwin'],
+ domestic:['county'],fame:5,
+ gloss:'Left-arm fast bowler and the first to 400 one-day wickets; two wickets in two balls turned the 1992 World Cup final.',
+ alt:['Wasim','W Akram','Sultan of Swing','Waseem Akram']},
+{id:'waqar-younis',name:'Waqar Younis',sur:'Waqar',nations:['pak'],debut:1989,last:2003,formats:['test','odi'],
+ roles:['pace','captain'],marks:['test300w','odi300w','test5wi','hattrick','wcfinal'],domestic:['county'],fame:5,
+ gloss:'Fast bowler of reverse swing and broken toes; 373 Test and 416 one-day wickets.',
+ alt:['Waqar','W Younis','Waqar Younus','Wiki']},
+{id:'moin-khan',name:'Moin Khan',nations:['pak'],debut:1990,last:2004,formats:['test','odi'],
+ roles:['keeper','captain'],marks:['wcfinal','wcwin'],domestic:[],fame:3,
+ gloss:'Wicketkeeper-batter who kept in the 1992 and 1999 World Cup finals.',
+ alt:['Moin','M Khan','Moin Khan jr']},
+{id:'mushtaq-ahmed',name:'Mushtaq Ahmed',sur:'Mushtaq Ahmed',nations:['pak'],debut:1989,last:2003,formats:['test','odi'],
+ roles:['leg','spin'],marks:['test5wi','wcfinal','wcwin'],domestic:['county'],fame:3,
+ gloss:'Leg-spinner of the 1992 World Cup-winning side; later took over 100 wickets in a county season for Sussex.',
+ alt:['M Ahmed','Mushy']},
+{id:'inzamam-ul-haq',name:'Inzamam-ul-Haq',sur:'Inzamam',nations:['pak'],debut:1991,last:2007,formats:['test','odi'],
+ roles:['captain'],marks:['test300','test200','odi10k','test100m','wcfinal','wcwin'],domestic:[],fame:5,
+ gloss:'Made 60 from 37 balls in the 1992 World Cup semi-final at nineteen; 329 against New Zealand in 2002.',
+ alt:['Inzimam','Inzamam ul Haq','Inzy','Inzamam-ul-Haque','Inzamamul Haq']},
+{id:'saeed-anwar',name:'Saeed Anwar',sur:'Saeed Anwar',nations:['pak'],debut:1989,last:2003,formats:['test','odi'],
+ roles:['opener','lhb'],marks:['wcfinal'],domestic:[],fame:4,
+ gloss:'Left-handed opener; his 194 against India at Chennai in 1997 stood as the one-day record for a decade.',
+ alt:['S Anwar','Saeed','Sayeed Anwar']},
+{id:'saqlain-mushtaq',name:'Saqlain Mushtaq',sur:'Saqlain',nations:['pak'],debut:1995,last:2004,formats:['test','odi'],
+ roles:['off','spin'],marks:['test5wi','hattrick','wcfinal'],domestic:['county'],fame:3,
+ gloss:'Off-spinner who invented the doosra; two hat-tricks in one-day internationals.',
+ alt:['S Mushtaq','Saqlain','Saklain Mushtaq']},
+{id:'shoaib-akhtar',name:'Shoaib Akhtar',sur:'Shoaib Akhtar',nations:['pak'],debut:1997,last:2011,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test5wi'],domestic:[],fame:4,
+ gloss:'The Rawalpindi Express; bowled the fastest delivery recorded in international cricket, at Cape Town in 2003.',
+ alt:['Shoaib','S Akhtar','Rawalpindi Express','Shoaib Aktar']},
+{id:'younis-khan',name:'Younis Khan',sur:'Younis Khan',nations:['pak'],debut:2000,last:2017,formats:['test','odi','t20i'],
+ roles:['captain'],marks:['test300','test200','test10k','test100m','t20wcfinal'],domestic:[],fame:4,
+ gloss:'Pakistan’s only man with 10,000 Test runs; 313 against Sri Lanka in 2009, and captain of the 2009 World T20 winners.',
+ alt:['Younus Khan','Y Khan','Younis','Younus']},
+{id:'misbah-ul-haq',name:'Misbah-ul-Haq',sur:'Misbah',nations:['pak'],debut:2001,last:2017,formats:['test','odi','t20i'],
+ roles:['captain'],marks:['t20wcfinal'],domestic:[],fame:4,
+ gloss:'Captained Pakistan through their years of home exile; the scoop that ended the 2007 World T20 final was his.',
+ alt:['Misbah ul Haq','M ul Haq','Misbahul Haq','Misbah-ul-Haque']},
+{id:'mohammad-yousuf',name:'Mohammad Yousuf',sur:'Yousuf',nations:['pak'],debut:1998,last:2010,formats:['test','odi','t20i'],
+ roles:['captain'],marks:['test200'],domestic:[],fame:4,
+ gloss:'Made 1,788 Test runs in the calendar year 2006, including 223 against England at Lord’s.',
+ alt:['Yousuf Youhana','M Yousuf','Mohammed Yousuf','Yousaf']},
+{id:'shahid-afridi',name:'Shahid Afridi',sur:'Shahid Afridi',nations:['pak'],debut:1996,last:2018,formats:['test','odi','t20i'],
+ roles:['leg','spin','captain'],marks:['odi300w','test5wi','wcfinal','t20wcfinal'],domestic:[],fame:5,
+ gloss:'Hit a 37-ball one-day century in his second match, at seventeen; took 395 one-day wickets with leg-spin.',
+ alt:['Afridi','Boom Boom','S Afridi','Sahibzada Mohammad Shahid Khan Afridi','Boom Boom Afridi']},
+{id:'saeed-ajmal',name:'Saeed Ajmal',sur:'Ajmal',nations:['pak'],debut:2008,last:2015,formats:['test','odi','t20i'],
+ roles:['off','spin'],marks:['test5wi','t20wcfinal'],domestic:['county'],fame:3,
+ gloss:'Off-spinner of the doosra; a World T20 winner in 2009 and Pakistan’s leading wicket-taker of the early 2010s.',
+ alt:['S Ajmal','Saeed Ajmal jr']},
+{id:'mohammad-amir',name:'Mohammad Amir',sur:'Amir',nations:['pak'],debut:2009,last:2020,formats:['test','odi','t20i'],
+ roles:['lpace','pace'],marks:['test5wi','t20wcfinal'],domestic:['county'],fame:3,
+ gloss:'Left-arm fast bowler; played in the 2009 World T20 final at seventeen and returned after a five-year ban.',
+ alt:['M Amir','Mohammad Aamer','Mohammad Aamir','Amir']},
+{id:'fakhar-zaman',name:'Fakhar Zaman',sur:'Fakhar',nations:['pak'],debut:2017,last:0,formats:['test','odi','t20i'],
+ roles:['opener','lhb'],marks:['odi200'],domestic:[],fame:3,
+ gloss:'Left-handed opener and former navy sailor; 210 not out against Zimbabwe in 2018, Pakistan’s first one-day double century.',
+ alt:['F Zaman','Fakhar Zaman jr','Fakar Zaman']},
+{id:'babar-azam',name:'Babar Azam',sur:'Babar',nations:['pak'],debut:2015,last:0,formats:['test','odi','t20i'],
+ roles:['captain'],marks:['t20wcfinal'],domestic:['county'],fame:5,
+ gloss:'Lahore batter who captained Pakistan to the 2022 World T20 final at the Melbourne Cricket Ground.',
+ alt:['B Azam','Mohammad Babar Azam','Baber Azam']},
+{id:'rizwan-m',name:'Mohammad Rizwan',sur:'Rizwan',nations:['pak'],debut:2015,last:0,formats:['test','odi','t20i'],
+ roles:['keeper','captain'],marks:['t20wcfinal'],domestic:['county'],fame:4,
+ gloss:'Wicketkeeper-batter from Peshawar; opened with Babar Azam through Pakistan’s run to the 2022 World T20 final.',
+ alt:['M Rizwan','Mohammed Rizwan','Rizzy']},
+{id:'shaheen-afridi',name:'Shaheen Shah Afridi',sur:'Shaheen',nations:['pak'],debut:2018,last:0,formats:['test','odi','t20i'],
+ roles:['lpace','pace'],marks:['test5wi','t20wcfinal'],domestic:[],fame:4,
+ gloss:'Left-arm fast bowler; opened the bowling in the 2022 World T20 final and left it injured.',
+ alt:['Shaheen Afridi','SS Afridi','Shahin Afridi','Shaheen Shah']},
+{id:'sana-mir',name:'Sana Mir',nations:['pak'],debut:2005,last:2019,formats:['odi','t20i'],
+ roles:['off','spin','captain'],marks:[],domestic:[],fame:3,
+ gloss:'Captained Pakistan’s women for a decade and took 151 one-day wickets with off-spin.',
+ alt:['S Mir','Sana Mir jr']},
+
+/* ---------------------------------- South Africa ---------------------------------- */
+{id:'pollock-graeme',name:'Graeme Pollock',nations:['sa'],debut:1963,last:1970,formats:['test'],
+ roles:['lhb'],marks:['test200'],domestic:[],fame:4,
+ gloss:'Left-hander whose 23-Test career ended with isolation in 1970; 274 against Australia in his last series.',
+ alt:['RG Pollock','Robert Graeme Pollock','Graham Pollock']},
+{id:'procter-m',name:'Mike Procter',nations:['sa'],debut:1967,last:1970,formats:['test'],
+ roles:['pace'],marks:[],domestic:['county'],fame:3,
+ gloss:'Fast bowler and Gloucestershire all-rounder who played only seven Tests before South Africa’s isolation.',
+ alt:['MJ Procter','Michael Procter','Proccy','Mike Proctor']},
+{id:'richards-barry',name:'Barry Richards',nations:['sa'],debut:1970,last:1970,formats:['test'],
+ roles:['opener'],marks:[],domestic:['county'],fame:3,
+ gloss:'Opened in four Tests and never played another; spent the rest of his career with Hampshire and South Australia.',
+ alt:['BA Richards','Barry Anderson Richards']},
+{id:'donald-a',name:'Allan Donald',nations:['sa'],debut:1991,last:2003,formats:['test','odi'],
+ roles:['pace'],marks:['test300w','test5wi'],domestic:['county'],fame:4,
+ gloss:'White Lightning; opened the bowling in South Africa’s first Test after readmission and took 330 wickets.',
+ alt:['AA Donald','White Lightning','Allan Anthony Donald']},
+{id:'cronje-h',name:'Hansie Cronje',nations:['sa'],debut:1992,last:2000,formats:['test','odi'],
+ roles:['captain'],marks:[],domestic:[],fame:4,
+ gloss:'Captained South Africa in 53 Tests and 138 one-day internationals; banned from the game for life in 2000.',
+ alt:['WJ Cronje','Wessel Johannes Cronje','Hansie','Cronye']},
+{id:'kirsten-g',name:'Gary Kirsten',nations:['sa'],debut:1993,last:2004,formats:['test','odi'],
+ roles:['opener','lhb'],marks:['test200','test100m'],domestic:[],fame:3,
+ gloss:'Left-handed opener; batted 878 minutes for 275 against England at Durban in 1999.',
+ alt:['G Kirsten','Gary Kirsten jr','Gary Kirstein']},
+{id:'klusener-l',name:'Lance Klusener',nations:['sa'],debut:1996,last:2004,formats:['test','odi'],
+ roles:['pace','lhb'],marks:['test5wi'],domestic:[],fame:3,
+ gloss:'Took 8 for 64 on Test debut and was player of the tournament at the 1999 World Cup.',
+ alt:['L Klusener','Zulu Klusener','Lance Klusner']},
+{id:'gibbs-herschelle',name:'Herschelle Gibbs',nations:['sa'],debut:1996,last:2010,formats:['test','odi','t20i'],
+ roles:['opener'],marks:['test200'],domestic:[],fame:4,
+ gloss:'Opener who hit six sixes in an over off Daan van Bunge at the 2007 World Cup; 228 against Pakistan in 2003.',
+ alt:['HH Gibbs','Hersch','Herschelle Herman Gibbs','Hershelle Gibbs']},
+{id:'pollock-shaun',name:'Shaun Pollock',nations:['sa'],debut:1995,last:2008,formats:['test','odi','t20i'],
+ roles:['pace','captain'],marks:['test300w','odi300w','test100m','test5wi'],domestic:['county'],fame:4,
+ gloss:'Seam bowler of immaculate line and nephew of Graeme; 421 Test and 393 one-day wickets.',
+ alt:['SM Pollock','Shaun Maclean Pollock','Polly']},
+{id:'kallis-j',name:'Jacques Kallis',nations:['sa'],debut:1995,last:2014,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test200','test10k','odi10k','test100m','test5wi'],domestic:['county'],fame:5,
+ gloss:'Scored over 10,000 runs and took over 250 wickets in both Tests and one-day internationals.',
+ alt:['JH Kallis','Jacques Henry Kallis','Jaques Kallis','Kalis']},
+{id:'boucher-m',name:'Mark Boucher',nations:['sa'],debut:1997,last:2012,formats:['test','odi','t20i'],
+ roles:['keeper'],marks:['test100m'],domestic:[],fame:4,
+ gloss:'Kept in 147 Tests, more than any other wicketkeeper, and took 555 catches in them.',
+ alt:['MV Boucher','Mark Verdon Boucher','Bouch']},
+{id:'ntini-m',name:'Makhaya Ntini',nations:['sa'],debut:1998,last:2009,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test300w','test100m','test5wi'],domestic:[],fame:4,
+ gloss:'Fast bowler from Mdingi in the Eastern Cape and the first Black African to play for South Africa; 390 Test wickets.',
+ alt:['M Ntini','Makhaya Ntini jr','Mdingi Express']},
+{id:'smith-graeme',name:'Graeme Smith',nations:['sa'],debut:2002,last:2014,formats:['test','odi','t20i'],
+ roles:['opener','lhb','captain'],marks:['test200','test100m'],domestic:['county'],fame:4,
+ gloss:'Left-handed opener who captained South Africa in 109 Tests from the age of 22; 277 at Edgbaston in 2003.',
+ alt:['GC Smith','Graeme Craig Smith','Biff']},
+{id:'amla-h',name:'Hashim Amla',nations:['sa'],debut:2004,last:2019,formats:['test','odi','t20i'],
+ roles:[],marks:['test300','test200','test100m'],domestic:['county'],fame:4,
+ gloss:'Made 311 not out at the Oval in 2012, the only triple century by a South African.',
+ alt:['HM Amla','Hashim Mahomed Amla','Hash','Hashim Amlaa']},
+{id:'devilliers-ab',name:'AB de Villiers',sur:'de Villiers',nations:['sa'],debut:2004,last:2018,formats:['test','odi','t20i'],
+ roles:['keeper'],marks:['test200','test100m'],domestic:[],fame:5,
+ gloss:'Kept wicket, batted anywhere, and made the fastest one-day century on record, from 31 balls in 2015.',
+ alt:['AB','ABD','AB deVilliers','Abraham Benjamin de Villiers','de Villiers','Mr 360','A B de Villiers']},
+{id:'steyn-d',name:'Dale Steyn',nations:['sa'],debut:2004,last:2020,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test300w','test5wi'],domestic:['county'],fame:5,
+ gloss:'Fast bowler from Phalaborwa; 439 Test wickets at a strike rate no one else with 400 has matched.',
+ alt:['DW Steyn','Dale Willem Steyn','Steyn Gun']},
+{id:'morkel-morne',name:'Morne Morkel',nations:['sa'],debut:2006,last:2018,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test300w','test5wi'],domestic:['county'],fame:3,
+ gloss:'Tall left-arm-of-the-wicket seam bowler; 309 Test wickets, often in partnership with Steyn and Philander.',
+ alt:['M Morkel','Morne Morkel jr','Morné Morkel']},
+{id:'morkel-albie',name:'Albie Morkel',nations:['sa'],debut:2004,last:2012,formats:['test','odi','t20i'],
+ roles:['pace','lhb'],marks:[],domestic:[],fame:2,
+ gloss:'Left-hand-hitting seam-bowling all-rounder and the elder of the Morkel brothers.',
+ alt:['JA Morkel','Johannes Albertus Morkel','Albie Morkel jr']},
+{id:'philander-v',name:'Vernon Philander',nations:['sa'],debut:2007,last:2020,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test5wi'],domestic:['county'],fame:3,
+ gloss:'Seam bowler who took 51 wickets in his first seven Tests.',
+ alt:['VD Philander','Vernon Darryl Philander','Vern']},
+{id:'rabada-k',name:'Kagiso Rabada',nations:['sa'],debut:2014,last:0,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test300w','test5wi','hattrick','t20wcfinal'],domestic:['county'],fame:4,
+ gloss:'Took a hat-trick on one-day debut in 2015 and reached 300 Test wickets in Dhaka in 2024.',
+ alt:['K Rabada','KG Rabada','Kagiso Rabada jr','KG']},
+{id:'duplessis-f',name:'Faf du Plessis',sur:'du Plessis',nations:['sa'],debut:2011,last:2021,formats:['test','odi','t20i'],
+ roles:['captain'],marks:[],domestic:['county'],fame:4,
+ gloss:'Batted 466 minutes on Test debut at Adelaide in 2012 to save the match; later captained South Africa.',
+ alt:['F du Plessis','Francois du Plessis','Faf','du Plessis','Faf duPlessis']},
+{id:'wolvaardt-l',name:'Laura Wolvaardt',nations:['sa'],debut:2016,last:0,formats:['test','odi','t20i'],
+ roles:['opener','captain'],marks:['wwcfinal'],domestic:[],fame:3,
+ gloss:'Captained South Africa in the 2025 Women’s World Cup final and made 101 in it.',
+ alt:['L Wolvaardt','Laura Wolvaart']},
+{id:'kapp-m',name:'Marizanne Kapp',nations:['sa'],debut:2009,last:0,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['wwcfinal'],domestic:[],fame:3,
+ gloss:'Seam-bowling all-rounder and South Africa’s most-capped women’s cricketer; played in the 2025 final.',
+ alt:['M Kapp','Marizanne Kapp jr']},

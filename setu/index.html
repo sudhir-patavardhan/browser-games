@@ -1,0 +1,2330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Setu — Kreeda</title>
+<meta name="description" content="A daily Rāmāyaṇa grid — nine cells, nine names, one bridge. Three criteria down, three across, and every stone you lay is a being from the epic who satisfies both.">
+<link rel="canonical" href="https://kreeda.games/setu/">
+<meta name="theme-color" content="#12586c">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/setu/">
+<meta property="og:title" content="Setu — Kreeda">
+<meta property="og:description" content="A daily Rāmāyaṇa grid — nine cells, nine names, one bridge. Three criteria down, three across, and every stone you lay is a being from the epic who satisfies both.">
+<meta property="og:image" content="https://kreeda.games/assets/setu-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Setu — Kreeda">
+<meta name="twitter:description" content="A daily Rāmāyaṇa grid — nine cells, nine names, one bridge. Three criteria down, three across, and every stone you lay is a being from the epic who satisfies both.">
+<meta name="twitter:image" content="https://kreeda.games/assets/setu-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Setu","description":"A daily Rāmāyaṇa grid — nine cells, nine names, one bridge. Three criteria down, three across, and every stone you lay is a being from the epic who satisfies both.","url":"https://kreeda.games/setu/","image":"https://kreeda.games/assets/setu-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+<style>
+  /* ------------------------------------------------------------------------
+     Daśānana's palette is a dawn over a battlefield. Setu is the same family
+     turned toward the sea: the strait at dawn, nine stones lying on the water.
+     Every colour is defined once on bare :root so that a viewer whose OS is set
+     to "no preference" still gets a complete palette; the dark blocks only ever
+     REDEFINE tokens, never introduce them.
+     ------------------------------------------------------------------------ */
+  :root{
+    --sea-deep:#0b3a4a; --sea:#12586c; --foam:rgba(255,255,255,.14);
+    --sky-hi:#6ec6ff;   --sky-lo:#ffd27a;
+    --stone:#f6efdd;    --stone-set:#ffe2a8;  --stone-rule:rgba(178,122,32,.5);
+    --ink:#2a1a0a;      --ink-dim:#6a5232;
+    --amber:#ff8a1e;    --gold:#ffb62e;
+    --panel:rgba(255,250,238,.94);
+    --panel-rule:rgba(178,122,32,.55);
+    --head-ink:#f4efe2;               /* criterion headers sit on the sea, not on a stone */
+    --shadow:rgba(12,40,52,.22);
+    --radius:16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --sea-deep:#04202a; --sea:#0a3948; --foam:rgba(255,255,255,.08);
+      --sky-hi:#1d5f86;   --sky-lo:#7a5a28;
+      --stone:#2a2418;    --stone-set:#4a3c20;  --stone-rule:rgba(214,168,80,.45);
+      --ink:#f6ecd6;      --ink-dim:#c3ac82;
+      --panel:rgba(24,32,36,.95);
+      --panel-rule:rgba(214,168,80,.35);
+      --head-ink:#e8dcc2;
+      --shadow:rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --sea-deep:#04202a; --sea:#0a3948; --foam:rgba(255,255,255,.08);
+    --sky-hi:#1d5f86;   --sky-lo:#7a5a28;
+    --stone:#2a2418;    --stone-set:#4a3c20;  --stone-rule:rgba(214,168,80,.45);
+    --ink:#f6ecd6;      --ink-dim:#c3ac82;
+    --panel:rgba(24,32,36,.95);
+    --panel-rule:rgba(214,168,80,.35);
+    --head-ink:#e8dcc2;
+    --shadow:rgba(0,0,0,.45);
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; }
+  body{
+    min-height:100%;
+    /* the strait: sky above, water below. A fixed attachment would judder on iOS
+       when the address bar collapses, so the gradient is on the body box itself. */
+    background:
+      linear-gradient(180deg, var(--sky-hi) 0, var(--sky-lo) 120px, var(--sea) 210px, var(--sea-deep) 420px)
+      var(--sea-deep) no-repeat;
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:16px; line-height:1.5;
+    padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
+             max(18px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+    -webkit-text-size-adjust:100%;
+  }
+
+  /* Devanāgarī gets an explicit stack because the site ships no webfont and games
+     must work offline. If none of these resolve, boot sets data-dev="off" (see
+     detectDevanagari) and every .dev goes away — a player must never see tofu. */
+  .dev{ font-family:"Noto Sans Devanagari","Nirmala UI","Kohinoor Devanagari",
+        "Devanagari Sangam MN","Mangal","Samanata","Lohit Devanagari",sans-serif; }
+  html[data-dev="off"] .dev{ display:none !important; }
+
+  .wrap{ max-width:560px; margin:0 auto; }
+
+  /* ---- masthead ---------------------------------------------------------- */
+  .top{ display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }
+  .top .id{ flex:1 1 auto; min-width:0; }
+  h1{ margin:0; font-size:clamp(26px,7.5vw,38px); font-weight:900; letter-spacing:1px;
+      color:var(--head-ink); line-height:1; text-shadow:0 2px 8px rgba(0,20,30,.35); }
+  h1 .sanskrit{ font-size:.52em; font-weight:700; opacity:.85; margin-left:8px; letter-spacing:0; }
+  .tagline{ margin:5px 0 0; font-size:12.5px; color:var(--head-ink); opacity:.86; }
+  .topbtns{ display:flex; gap:6px; flex:0 0 auto; }
+  .iconBtn{
+    width:38px; height:38px; min-width:38px; border-radius:11px; cursor:pointer;
+    background:var(--panel); border:1.5px solid var(--panel-rule); color:var(--ink);
+    font-size:15px; display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .iconBtn:active{ transform:scale(.94); }
+  .iconBtn:focus-visible, .btn:focus-visible, .stone:focus-visible, .hdr:focus-visible{
+    outline:3px solid var(--gold); outline-offset:2px; }
+
+  .status{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 10px; }
+  .chip{
+    font-size:12px; font-weight:700; letter-spacing:.2px;
+    background:var(--panel); border:1.5px solid var(--panel-rule); color:var(--ink);
+    border-radius:999px; padding:5px 11px;
+  }
+  .chip b{ font-variant-numeric:tabular-nums; }
+  .chip.warn{ border-color:var(--amber); }
+
+  /* ---- the grid ---------------------------------------------------------- */
+  /* 4×4: corner, three column headers, three row headers, nine stones. A fixed
+     min-height on the header cells keeps the grid from reflowing when the day
+     changes and a label wraps to a different number of lines. */
+  .board{
+    width:min(94vw,460px); margin:0 auto;
+    display:grid; grid-template-columns:74px repeat(3,1fr); gap:6px;
+  }
+  @media (min-width:560px){ .board{ width:520px; grid-template-columns:96px repeat(3,1fr); } }
+  /* display:contents lets the ARIA row wrappers exist for screen readers without
+     becoming grid items themselves, so the 4×4 track layout is unaffected. */
+  .board > [role="row"]{ display:contents; }
+  .corner{ display:flex; align-items:center; justify-content:center; }
+  .corner svg{ width:100%; height:auto; max-height:56px; opacity:.9; }
+  .hdr{
+    background:var(--panel); border:1.5px solid var(--panel-rule); border-radius:12px;
+    color:var(--ink); font:inherit; font-size:11px; font-weight:800; line-height:1.22;
+    padding:6px 4px; text-align:center; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    min-height:56px; overflow:hidden;
+  }
+  .hdr .d{ font-size:10px; font-weight:600; opacity:.72; }
+  .hdr.row{ min-height:0; }
+  .tierdot{ display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--amber); margin-left:3px; vertical-align:middle; }
+
+  .stone{
+    position:relative; aspect-ratio:1; min-height:78px;
+    background:var(--stone); border:1.5px solid var(--stone-rule); border-radius:14px;
+    color:var(--ink); font:inherit; cursor:pointer; padding:6px 4px 4px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+    box-shadow:0 2px 6px var(--shadow); overflow:hidden;
+  }
+  .stone:disabled{ cursor:default; }
+  .stone .nm{ font-size:13px; font-weight:800; line-height:1.15; word-break:break-word; }
+  .stone .nd{ font-size:11px; opacity:.75; line-height:1.2; }
+  .stone .wt{ font-size:10px; font-weight:700; color:var(--ink-dim); margin-top:2px; }
+  .stone.set{ background:var(--stone-set); }
+  /* correct is never conveyed by colour alone: a laid stone carries a filled
+     corner notch as well as the name it was laid with. */
+  .stone.set::after{
+    content:''; position:absolute; top:0; right:0; width:0; height:0;
+    border-top:16px solid var(--amber); border-left:16px solid transparent;
+  }
+  .stone .info{
+    position:absolute; left:2px; bottom:2px; width:26px; height:26px; border-radius:50%;
+    border:none; background:transparent; color:var(--ink-dim); font-size:13px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .stone .info:focus-visible{ outline:2px solid var(--gold); outline-offset:0; }
+  .stone .hint{ font-size:10px; font-weight:700; color:var(--ink-dim); }
+
+  /* ---- bridge strip ------------------------------------------------------ */
+  #bridge{ display:block; width:min(94vw,460px); height:52px; margin:10px auto 0; border-radius:12px; }
+  @media (min-width:560px){ #bridge{ width:520px; } }
+
+  /* ---- buttons ----------------------------------------------------------- */
+  .btn{
+    background:linear-gradient(90deg,var(--gold),var(--amber)); border:none; color:#3a2208;
+    font:inherit; font-weight:800; letter-spacing:.5px; padding:12px 22px; border-radius:24px;
+    font-size:15px; cursor:pointer; box-shadow:0 3px 10px rgba(160,90,10,.35); min-height:44px;
+  }
+  .btn:active{ transform:scale(.97); }
+  .btn.sec{ background:var(--panel); color:var(--ink); border:1.5px solid var(--panel-rule); box-shadow:none; }
+  .btnrow{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:14px; }
+
+  /* ---- live region / message -------------------------------------------- */
+  #say{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+  /* ---- sheet ------------------------------------------------------------- */
+  .scrim{ position:fixed; inset:0; background:rgba(4,20,28,.55); z-index:40; display:none; }
+  .scrim.on{ display:block; }
+  .sheet{
+    position:fixed; left:0; right:0; bottom:0; z-index:41;
+    background:var(--panel); border-top:1.5px solid var(--panel-rule);
+    border-radius:var(--radius) var(--radius) 0 0; color:var(--ink);
+    padding:14px 14px calc(14px + env(safe-area-inset-bottom));
+    max-height:88vh; overflow-y:auto; display:none;
+    box-shadow:0 -6px 24px var(--shadow);
+  }
+  .sheet.on{ display:block; }
+  @media (min-width:560px){
+    .sheet{ left:50%; right:auto; bottom:auto; top:50%; transform:translate(-50%,-50%);
+            width:480px; border-radius:var(--radius); border:1.5px solid var(--panel-rule); }
+  }
+  .sheet h2{ margin:0 0 8px; font-size:15px; font-weight:900; }
+  .crit{ font-size:13.5px; line-height:1.45; margin:0 0 2px; }
+  .crit .lab{ font-weight:800; color:var(--ink-dim); font-size:11px; text-transform:uppercase; letter-spacing:.6px; margin-right:5px; }
+  .sheet .meta{ font-size:12px; color:var(--ink-dim); margin:8px 0 6px; }
+  #guessInput{
+    width:100%; font:inherit; font-size:17px; padding:12px 12px; border-radius:12px;
+    border:1.5px solid var(--panel-rule); background:var(--stone); color:var(--ink); min-height:48px;
+  }
+  #guessInput:focus{ outline:3px solid var(--gold); outline-offset:1px; }
+  #typeahead{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:6px; }
+  #typeahead button, .disamb button{
+    font:inherit; font-size:14px; font-weight:700; padding:9px 13px; border-radius:999px; min-height:40px;
+    background:var(--stone); border:1.5px solid var(--panel-rule); color:var(--ink); cursor:pointer;
+  }
+  .msg{ margin:10px 0 0; font-size:13.5px; line-height:1.5; min-height:1.5em; }
+  .msg .ok{ font-weight:800; }
+  .msg .no{ color:#b8360a; font-weight:700; }
+  html[data-theme="dark"] .msg .no{ color:#ff9a6a; }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .msg .no{ color:#ff9a6a; } }
+  .disamb{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+
+  /* ---- reveal ------------------------------------------------------------ */
+  .panel{
+    background:var(--panel); border:1.5px solid var(--panel-rule); border-radius:var(--radius);
+    padding:14px; margin-top:14px; color:var(--ink);
+  }
+  .panel h2{ margin:0 0 4px; font-size:19px; font-weight:900; }
+  .panel h3{ margin:16px 0 6px; font-size:13px; font-weight:900; line-height:1.35; }
+  .panel p{ margin:6px 0; font-size:13.5px; line-height:1.55; }
+  .panel .small{ font-size:12px; color:var(--ink-dim); }
+  .ans{ margin:0; padding:0; list-style:none; }
+  .ans li{ padding:7px 0; border-top:1px solid var(--stone-rule); font-size:13px; line-height:1.5; }
+  .ans li:first-child{ border-top:none; }
+  .ans .nm{ font-weight:800; }
+  .ans .yours{ display:inline-block; font-size:10px; font-weight:900; letter-spacing:.6px;
+    background:var(--amber); color:#3a2208; border-radius:999px; padding:2px 7px; margin-left:6px; vertical-align:1px; }
+  .ans .cite{ color:var(--ink-dim); font-size:11.5px; }
+  .scoreline{ font-size:15px; font-weight:800; margin:8px 0 0; }
+  .shareblk{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:15px; line-height:1.25; white-space:pre; }
+  details.note{ margin-top:12px; }
+  details.note summary{ cursor:pointer; font-size:13px; font-weight:800; }
+  a{ color:#a85a06; }
+  html[data-theme="dark"] a{ color:var(--gold); }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) a{ color:var(--gold); } }
+
+  /* ---- settings ---------------------------------------------------------- */
+  .setrow{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0;
+    border-top:1px solid var(--stone-rule); font-size:14px; }
+  .setrow:first-of-type{ border-top:none; }
+  .seg{ display:flex; gap:4px; }
+  .seg button{ font:inherit; font-size:12px; font-weight:700; padding:7px 11px; min-height:38px; border-radius:9px;
+    background:var(--stone); border:1.5px solid var(--panel-rule); color:var(--ink); cursor:pointer; }
+  .seg button[aria-pressed="true"]{ background:var(--amber); color:#3a2208; border-color:var(--amber); }
+
+  .foot{ text-align:center; margin:18px 0 0; font-size:12px; color:var(--head-ink); opacity:.8; }
+  .foot a{ color:var(--head-ink); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="id">
+      <h1>Setu<span class="sanskrit dev" lang="sa">सेतु</span></h1>
+      <p class="tagline" id="tagline">Nine stones make a bridge.</p>
+    </div>
+    <div class="topbtns">
+      <button class="iconBtn" id="howBtn" aria-label="How to play" title="How to play">?</button>
+      <button class="iconBtn" id="setBtn" aria-label="Settings" title="Settings">⚙</button>
+    </div>
+  </header>
+
+  <div class="status" id="status"></div>
+
+  <div class="board" id="board" role="grid" aria-label="Setu grid, three criteria down and three across"></div>
+
+  <canvas id="bridge" width="920" height="104" aria-hidden="true"></canvas>
+
+  <div class="btnrow" id="actions"></div>
+
+  <div id="revealHost" aria-live="polite"></div>
+
+  <p class="foot">
+    <a href="../">← Kreeda</a> · a daily grid of the Vālmīki Rāmāyaṇa
+  </p>
+</div>
+
+<div id="say" role="status" aria-live="polite"></div>
+
+<div class="scrim" id="scrim"></div>
+
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <h2 id="sheetTitle">Lay a stone</h2>
+  <p class="crit" id="critRow"></p>
+  <p class="crit" id="critCol"></p>
+  <p class="meta" id="sheetMeta"></p>
+  <label for="guessInput" id="guessLabel" style="font-size:12px;font-weight:800;color:var(--ink-dim);display:block;margin-bottom:5px;">Name a being</label>
+  <input id="guessInput" type="text" autocapitalize="words" autocorrect="off" autocomplete="off"
+         spellcheck="false" inputmode="text" enterkeyhint="go" aria-describedby="sheetMsg">
+  <ul id="typeahead"></ul>
+  <div class="disamb" id="disamb"></div>
+  <p class="msg" id="sheetMsg"></p>
+  <div class="btnrow" style="justify-content:flex-end;margin-top:12px;">
+    <button class="btn sec" id="cancelBtn">Cancel</button>
+    <button class="btn" id="submitBtn">Lay</button>
+  </div>
+</div>
+
+<div class="sheet" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <h2 id="modalTitle"></h2>
+  <div id="modalBody"></div>
+  <div class="btnrow" style="justify-content:flex-end;margin-top:12px;">
+    <button class="btn sec" id="modalClose">Close</button>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================================================================================
+   THE DATA
+   --------------------------------------------------------------------------------
+   The spine is the Vālmīki Rāmāyaṇa. Sarga numbers follow the widely-circulated
+   vulgate (the numbering used by valmikiramayan.net and the Gita Press editions),
+   because that is the numbering a player who goes looking will actually find; the
+   reveal panel says so out loud. Where the Baroda critical edition disagrees the
+   difference is one of numbering, not of the facts asserted here.
+
+   THE kandas THRESHOLD, applied uniformly: an entity carries a kāṇḍa when it is
+   NAMED AS A PARTICIPANT IN THE NARRATIVE of that kāṇḍa. Being mentioned in a
+   genealogy, a simile or a list of the dead does not count; speaking, acting or
+   being acted upon does. This is the most-used axis in the game and the easiest
+   to get subtly wrong, so the threshold is written down rather than felt.
+
+   src:  V     attested in Vālmīki outside the Uttara Kāṇḍa
+         V-utt attested only in the Uttara Kāṇḍa
+         V?    disputed — NEVER the basis of a criterion (none shipped in v1)
+         R     regional tellings only — not in the roster
+
+   Facts the tellings disagree about are never criteria (§5.5). Tārā's parentage,
+   the Lakṣmaṇa-rekhā, who kills Rāvaṇa and whether Sītā was ever in Rāvaṇa's
+   presence are all handled in prose, never in a cell.
+   ================================================================================ */
+/* @DATA-BEGIN */
+const BEINGS = [
+
+/* ---------- Ayodhyā, Videha and the Ikṣvāku line ---------- */
+{ id:'rama', iast:'Rāma', dev:'राम',
+  gloss:'Eldest son of Daśaratha of Ayodhyā; exiled fourteen years; the epic is named for him.',
+  cls:'manusa', side:'rama', kandas:['bala','ayo','ara','kis','sun','yud','utt'],
+  parent:'', line:'iksvaku', deeds:['exile-companion','astra','lanka-war','svayamvara','ruled','ocean'],
+  fame:5, tier:'core', src:'V', ref:'throughout',
+  alt:['Rama','Ram','Raama','Raghava','Raghav','Ramachandra','Ramchandra','Dasharathi','Dasarathi',
+       'Kakutstha','Ramar','Raghunatha','Raghunath','राम','रामचन्द्र'] },
+
+{ id:'sita', iast:'Sītā', dev:'सीता',
+  gloss:'Daughter of Janaka of Videha, found in a furrow; wife of Rāma; held in the aśoka grove at Laṅkā.',
+  cls:'manusa', side:'rama', kandas:['bala','ayo','ara','sun','yud','utt'],
+  parent:'', line:'videha', deeds:['exile-companion','svayamvara'],
+  fame:5, tier:'core', src:'V', ref:'Bāla 66; Sundara 14–21',
+  alt:['Sita','Seeta','Seetha','Sitha','Janaki','Jaanaki','Vaidehi','Maithili','Bhumija','Siya',
+       'सीता','जानकी','वैदेही'] },
+
+{ id:'lakshmana', iast:'Lakṣmaṇa', dev:'लक्ष्मण',
+  gloss:'Son of Daśaratha and Sumitrā; followed Rāma into exile; killed Indrajit at Laṅkā.',
+  cls:'manusa', side:'rama', kandas:['bala','ayo','ara','kis','yud','utt'],
+  parent:'', line:'iksvaku', deeds:['exile-companion','astra','lanka-war','svayamvara','ocean'],
+  fame:5, tier:'core', src:'V', ref:'Yuddha 90 (Indrajit)',
+  alt:['Lakshmana','Lakshman','Laxman','Laxmana','Lakshaman','Lakhan','Saumitri','Soumitri','लक्ष्मण'] },
+
+{ id:'bharata', iast:'Bharata', dev:'भरत',
+  gloss:'Son of Daśaratha and Kaikeyī; refused the throne, ruled from Nandigrāma with Rāma’s sandals set before it.',
+  cls:'manusa', side:'rama', kandas:['bala','ayo','yud','utt'],
+  parent:'', line:'iksvaku', deeds:['ruled','svayamvara'],
+  fame:4, tier:'core', src:'V', ref:'Ayodhyā 100–112; Yuddha 127',
+  alt:['Bharat','Bharatha','भरत'] },
+
+{ id:'shatrughna', iast:'Śatrughna', dev:'शत्रुघ्न',
+  gloss:'Youngest son of Daśaratha, born of Sumitrā; Bharata’s constant companion; in the Uttara Kāṇḍa he kills Lavaṇa and founds Mathurā.',
+  cls:'manusa', side:'rama', kandas:['bala','ayo','yud','utt'],
+  parent:'', line:'iksvaku', deeds:['svayamvara','ruled'],
+  fame:4, tier:'core', src:'V', ref:'Ayodhyā 8; Uttara 61–70',
+  alt:['Shatrughna','Satrughna','Shatrughan','Shathrugna','शत्रुघ्न'] },
+
+{ id:'dasaratha', iast:'Daśaratha', dev:'दशरथ',
+  gloss:'King of Ayodhyā of the Ikṣvāku line; bound by a promise to Kaikeyī, he sent Rāma to the forest and died of the grief of it.',
+  cls:'manusa', side:'none', kandas:['bala','ayo','yud'],
+  parent:'', line:'iksvaku', deeds:['ruled','curse','svayamvara'],
+  fame:4, tier:'core', src:'V', ref:'Ayodhyā 12–64; Yuddha 119',
+  alt:['Dasharatha','Dashrath','Dasarath','Dasharath','दशरथ'] },
+
+{ id:'kausalya', iast:'Kausalyā', dev:'कौसल्या',
+  gloss:'Eldest queen of Daśaratha and mother of Rāma.',
+  cls:'manusa', side:'rama', kandas:['bala','ayo','yud'],
+  parent:'', line:'', deeds:[],
+  fame:4, tier:'core', src:'V', ref:'Ayodhyā 20–21',
+  alt:['Kausalya','Kaushalya','Kousalya','Koushalya','कौसल्या'] },
+
+{ id:'kaikeyi', iast:'Kaikeyī', dev:'कैकेयी',
+  gloss:'Queen of Daśaratha, mother of Bharata, daughter of the king of Kekaya; she called in two old boons and asked for Rāma’s exile.',
+  cls:'manusa', side:'none', kandas:['bala','ayo'],
+  parent:'', line:'', deeds:['boon'],
+  fame:4, tier:'core', src:'V', ref:'Ayodhyā 9–12',
+  alt:['Kaikeyi','Kaikeyee','Kekayi','कैकेयी'] },
+
+{ id:'sumitra', iast:'Sumitrā', dev:'सुमित्रा',
+  gloss:'Queen of Daśaratha; mother of Lakṣmaṇa and Śatrughna; she sends Lakṣmaṇa after Rāma without complaint.',
+  cls:'manusa', side:'rama', kandas:['bala','ayo'],
+  parent:'', line:'', deeds:[],
+  fame:3, tier:'wide', src:'V', ref:'Ayodhyā 40',
+  alt:['Sumitra','Sumithra','सुमित्रा'] },
+
+{ id:'manthara', iast:'Mantharā', dev:'मन्थरा',
+  gloss:'Kaikeyī’s attendant, who set the exile in motion by telling her what a coronation would cost her son.',
+  cls:'manusa', side:'none', kandas:['ayo'],
+  parent:'', line:'', deeds:['counsel'],
+  fame:3, tier:'wide', src:'V', ref:'Ayodhyā 7–9',
+  alt:['Manthara','Manthra','Mandhara','मन्थरा'] },
+
+{ id:'sumantra', iast:'Sumantra', dev:'सुमन्त्र',
+  gloss:'Daśaratha’s charioteer and chief minister; he drove Rāma to the forest and brought the empty chariot back.',
+  cls:'manusa', side:'rama', kandas:['bala','ayo'],
+  parent:'', line:'', deeds:['counsel','minister','exile-companion'],
+  fame:2, tier:'wide', src:'V', ref:'Bāla 8; Ayodhyā 46–58',
+  alt:['Sumantra','Sumanthra','Sumant','सुमन्त्र'] },
+
+{ id:'guha', iast:'Guha', dev:'गुह',
+  gloss:'Niṣāda chief of Śṛṅgaverapura on the Gaṅgā; he ferried Rāma, Sītā and Lakṣmaṇa across and kept watch on the bank all night.',
+  cls:'manusa', side:'rama', kandas:['ayo','yud'],
+  parent:'', line:'', deeds:['ruled','first-meeting'],
+  fame:2, tier:'wide', src:'V', ref:'Ayodhyā 50; Yuddha 124',
+  alt:['Guha','Guhan','Guhaka','गुह'] },
+
+{ id:'janaka', iast:'Janaka', dev:'जनक',
+  gloss:'King of Videha at Mithilā; he found Sītā in a furrow while ploughing, and set Śiva’s bow as the condition of her marriage.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'videha', deeds:['ruled','svayamvara'],
+  fame:4, tier:'core', src:'V', ref:'Bāla 66–73',
+  alt:['Janak','Janaka','Seeradhwaja','Siradhvaja','जनक'] },
+
+{ id:'kushadhvaja', iast:'Kuśadhvaja', dev:'कुशध्वज',
+  gloss:'Younger brother of Janaka and king of Sāṅkāśya; father of Māṇḍavī and Śrutakīrti.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'videha', deeds:['ruled','svayamvara'],
+  fame:1, tier:'deep', src:'V', ref:'Bāla 70–73',
+  alt:['Kushadhvaja','Kusadhwaja','Kushadhwaj','कुशध्वज'] },
+
+{ id:'urmila', iast:'Ūrmilā', dev:'ऊर्मिला',
+  gloss:'Younger daughter of Janaka; married to Lakṣmaṇa at Mithilā.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'videha', deeds:['svayamvara'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 73',
+  alt:['Urmila','Oormila','Urmilaa','ऊर्मिला'] },
+
+{ id:'mandavi', iast:'Māṇḍavī', dev:'माण्डवी',
+  gloss:'Daughter of Kuśadhvaja; married to Bharata at Mithilā.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'videha', deeds:['svayamvara'],
+  fame:2, tier:'wide', src:'V', ref:'Bāla 73',
+  alt:['Mandavi','Maandavi','माण्डवी'] },
+
+{ id:'shrutakirti', iast:'Śrutakīrti', dev:'श्रुतकीर्ति',
+  gloss:'Daughter of Kuśadhvaja; married to Śatrughna at Mithilā.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'videha', deeds:['svayamvara'],
+  fame:2, tier:'wide', src:'V', ref:'Bāla 73',
+  alt:['Shrutakirti','Srutakirti','Shrutakeerti','Shrutkirti','श्रुतकीर्ति'] },
+
+{ id:'yudhajit', iast:'Yudhājit', dev:'युधाजित्',
+  gloss:'Prince of Kekaya and Kaikeyī’s brother; he took Bharata and Śatrughna home to Kekaya, so that both were away when Daśaratha died.',
+  cls:'manusa', side:'none', kandas:['bala','ayo'],
+  parent:'', line:'', deeds:[],
+  fame:1, tier:'deep', src:'V', ref:'Bāla 77; Ayodhyā 1',
+  alt:['Yudhajit','Yudhajith','Yudhaajit','युधाजित्'] },
+
+{ id:'vasistha', iast:'Vasiṣṭha', dev:'वसिष्ठ',
+  gloss:'Family priest of the Ikṣvākus; keeper of the cow Śabalā, whose seizure began his long quarrel with Viśvāmitra; he crowned Rāma at the end.',
+  cls:'rsi', side:'rama', kandas:['bala','ayo','yud','utt'],
+  parent:'', line:'', deeds:['ascetic','counsel','minister','svayamvara'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 51–55; Yuddha 128',
+  alt:['Vasishtha','Vashishtha','Vasishta','Vashisht','Vasistha','वसिष्ठ'] },
+
+{ id:'jabali', iast:'Jābāli', dev:'जाबालि',
+  gloss:'A brāhmaṇa of Daśaratha’s court who argued to Rāma at Citrakūṭa that duty to a dead father was no reason to stay in the forest, and was answered.',
+  cls:'rsi', side:'none', kandas:['ayo'],
+  parent:'', line:'', deeds:['ascetic','counsel','minister'],
+  fame:2, tier:'wide', src:'V', ref:'Ayodhyā 108–109',
+  alt:['Jabali','Jaabaali','Javali','जाबालि'] },
+
+{ id:'vamadeva', iast:'Vāmadeva', dev:'वामदेव',
+  gloss:'A priest of Daśaratha’s court, named beside Vasiṣṭha among those who counselled Ayodhyā through the crisis.',
+  cls:'rsi', side:'none', kandas:['ayo'],
+  parent:'', line:'', deeds:['ascetic','minister','counsel'],
+  fame:1, tier:'deep', src:'V', ref:'Ayodhyā 67',
+  alt:['Vamadeva','Vaamadeva','वामदेव'] },
+
+{ id:'sagara', iast:'Sagara', dev:'सगर',
+  gloss:'Ikṣvāku king whose sixty thousand sons dug up the earth in search of the sacrificial horse and were burnt to ash by Kapila’s glance.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'iksvaku', deeds:['ruled'],
+  fame:2, tier:'wide', src:'V', ref:'Bāla 38–40',
+  alt:['Sagara','Sagar','Saagara','सगर'] },
+
+{ id:'asamanja', iast:'Asamañja', dev:'असमञ्ज',
+  gloss:'Son of Sagara, banished by his own father for cruelty to the children of Ayodhyā; grandfather of Bhagīratha’s line.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'iksvaku', deeds:[],
+  fame:1, tier:'deep', src:'V', ref:'Bāla 38',
+  alt:['Asamanja','Asamanjas','Asamanjasa','असमञ्ज'] },
+
+{ id:'amshuman', iast:'Aṃśumān', dev:'अंशुमान्',
+  gloss:'Grandson of Sagara; he found the horse and the ashes of his uncles and learnt from Garuḍa that only the Gaṅgā could redeem them.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'iksvaku', deeds:['ruled'],
+  fame:1, tier:'deep', src:'V', ref:'Bāla 41',
+  alt:['Amshuman','Anshuman','Amsuman','Anshumaan','अंशुमान्'] },
+
+{ id:'dilipa', iast:'Dilīpa', dev:'दिलीप',
+  gloss:'Son of Aṃśumān and father of Bhagīratha; he laboured thirty thousand years to bring down the Gaṅgā and did not succeed.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'iksvaku', deeds:['ruled','ascetic'],
+  fame:1, tier:'deep', src:'V', ref:'Bāla 42',
+  alt:['Dilipa','Dileepa','Dilip','दिलीप'] },
+
+{ id:'bhagiratha', iast:'Bhagīratha', dev:'भगीरथ',
+  gloss:'Ikṣvāku king whose austerities brought the Gaṅgā down from heaven to the ashes of Sagara’s sons; the river is called Bhāgīrathī for him.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'iksvaku', deeds:['ruled','ascetic','boon'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 42–44',
+  alt:['Bhagiratha','Bhageeratha','Bhagirath','भगीरथ'] },
+
+{ id:'trishanku', iast:'Triśaṅku', dev:'त्रिशङ्कु',
+  gloss:'Ikṣvāku king who wanted to enter heaven in his own body; Viśvāmitra sent him up, the gods sent him back, and he was left hanging between the two.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'iksvaku', deeds:['ruled','curse'],
+  fame:2, tier:'wide', src:'V', ref:'Bāla 57–60',
+  alt:['Trishanku','Trisanku','Thrishanku','त्रिशङ्कु'] },
+
+{ id:'ambarisha', iast:'Ambarīṣa', dev:'अम्बरीष',
+  gloss:'King of Ayodhyā whose interrupted sacrifice needed a human victim; he bought Śunaḥśepa, who was saved instead.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'iksvaku', deeds:['ruled'],
+  fame:1, tier:'deep', src:'V', ref:'Bāla 61',
+  alt:['Ambarisha','Ambareesha','Ambarish','अम्बरीष'] },
+
+{ id:'shunahshepha', iast:'Śunaḥśepa', dev:'शुनःशेप',
+  gloss:'A brāhmaṇa’s middle son, sold to be a sacrificial victim; Viśvāmitra gave him two mantras to the gods and he was released.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:[],
+  fame:1, tier:'deep', src:'V', ref:'Bāla 61–62',
+  alt:['Shunahshepa','Sunahsepa','Shunashepa','Sunashepha','शुनःशेप'] },
+
+{ id:'rishyasringa', iast:'Ṛśyaśṛṅga', dev:'ऋष्यशृङ्ग',
+  gloss:'A young ascetic raised in the forest by his father Vibhāṇḍaka; brought to Aṅga to end a drought, and later the priest of Daśaratha’s sacrifice.',
+  cls:'rsi', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:['ascetic'],
+  fame:2, tier:'wide', src:'V', ref:'Bāla 9–14',
+  alt:['Rishyashringa','Rishyasringa','Rushyashringa','Rusyasrnga','Rishyshring','Rishyasrunga',
+       'Rushyasrunga','ऋष्यशृङ्ग'] },
+
+{ id:'vibhandaka', iast:'Vibhāṇḍaka', dev:'विभाण्डक',
+  gloss:'Forest ascetic, son of Kaśyapa and father of Ṛśyaśṛṅga, whom he raised without letting him see a town.',
+  cls:'rsi', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:['ascetic'],
+  fame:1, tier:'deep', src:'V', ref:'Bāla 9–10',
+  alt:['Vibhandaka','Vibhaandaka','Vibhandak','विभाण्डक'] },
+
+{ id:'shanta', iast:'Śāntā', dev:'शान्ता',
+  gloss:'Daughter of Daśaratha, given in adoption to Romapāda of Aṅga and married to Ṛśyaśṛṅga.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:[],
+  fame:1, tier:'deep', src:'V', ref:'Bāla 9–11',
+  alt:['Shanta','Santha','Shantha','शान्ता'] },
+
+{ id:'romapada', iast:'Romapāda', dev:'रोमपाद',
+  gloss:'King of Aṅga, friend of Daśaratha; his kingdom’s drought was ended by bringing Ṛśyaśṛṅga to it.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:['ruled'],
+  fame:1, tier:'deep', src:'V', ref:'Bāla 9–11',
+  alt:['Romapada','Lomapada','Romapaada','रोमपाद'] },
+
+{ id:'kusha', iast:'Kuśa', dev:'कुश',
+  gloss:'Son of Rāma, raised in Vālmīki’s āśrama; with his twin he learnt the Rāmāyaṇa by heart and sang it in Rāma’s own hearing.',
+  cls:'manusa', side:'none', kandas:['bala','utt'],
+  parent:'', line:'iksvaku', deeds:['ruled'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 4; Uttara 93–94',
+  alt:['Kusha','Kush','Kusa','कुश'] },
+
+{ id:'lava', iast:'Lava', dev:'लव',
+  gloss:'Son of Rāma, raised in Vālmīki’s āśrama; with his twin he learnt the Rāmāyaṇa by heart and sang it in Rāma’s own hearing.',
+  cls:'manusa', side:'none', kandas:['bala','utt'],
+  parent:'', line:'iksvaku', deeds:['ruled'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 4; Uttara 93–94',
+  alt:['Lava','Luv','Lav','लव'] },
+
+/* ---------- ṛṣis and ascetics ---------- */
+{ id:'viswamitra', iast:'Viśvāmitra', dev:'विश्वामित्र',
+  gloss:'A king who became a brahmarṣi by austerity; he took Rāma and Lakṣmaṇa from Ayodhyā, taught them the astras, and led them to Mithilā.',
+  cls:'rsi', side:'rama', kandas:['bala'],
+  parent:'', line:'', deeds:['ascetic','astra','svayamvara','counsel'],
+  fame:4, tier:'core', src:'V', ref:'Bāla 18–77',
+  alt:['Vishvamitra','Viswamitra','Vishwamitra','Visvamitra','Kaushika','Kausika','विश्वामित्र'] },
+
+{ id:'agastya', iast:'Agastya', dev:'अगस्त्य',
+  gloss:'Sage of the southern forest; he gave Rāma the bow of Viṣṇu, and at Laṅkā taught him the Āditya-hṛdayam before the last day of the fight.',
+  cls:'rsi', side:'rama', kandas:['ara','yud','utt'],
+  parent:'', line:'', deeds:['ascetic','first-meeting','counsel'],
+  fame:3, tier:'wide', src:'V', ref:'Araṇya 11–13; Yuddha 105',
+  alt:['Agastya','Agasthya','Agasthiya','Agathiyar','अगस्त्य'] },
+
+{ id:'bharadvaja', iast:'Bharadvāja', dev:'भरद्वाज',
+  gloss:'Sage of the confluence at Prayāga; he set Rāma on the road to Citrakūṭa, fed Bharata’s whole army, and received Rāma again on the way home.',
+  cls:'rsi', side:'rama', kandas:['ayo','yud'],
+  parent:'', line:'', deeds:['ascetic','first-meeting'],
+  fame:2, tier:'wide', src:'V', ref:'Ayodhyā 54, 91; Yuddha 124',
+  alt:['Bharadwaja','Bharadvaja','Bharadwaj','भरद्वाज'] },
+
+{ id:'atri', iast:'Atri', dev:'अत्रि',
+  gloss:'Aged sage whose āśrama was the last stop before the deep forest; he received Rāma, Sītā and Lakṣmaṇa at the close of the Ayodhyā Kāṇḍa.',
+  cls:'rsi', side:'none', kandas:['ayo'],
+  parent:'', line:'', deeds:['ascetic','first-meeting'],
+  fame:2, tier:'wide', src:'V', ref:'Ayodhyā 117',
+  alt:['Atri','Athri','Atrimuni','अत्रि'] },
+
+{ id:'anasuya', iast:'Anasūyā', dev:'अनसूया',
+  gloss:'Wife of Atri, herself an ascetic of long standing; she gave Sītā ornaments and unfading garments and asked to hear how she was married.',
+  cls:'manusa', side:'none', kandas:['ayo'],
+  parent:'', line:'', deeds:['ascetic'],
+  fame:2, tier:'wide', src:'V', ref:'Ayodhyā 117–118',
+  alt:['Anasuya','Anasooya','Anusuya','Anusooya','अनसूया'] },
+
+{ id:'gautama', iast:'Gautama', dev:'गौतम',
+  gloss:'Sage of the deserted āśrama near Mithilā; husband of Ahalyā, father of Śatānanda.',
+  cls:'rsi', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:['ascetic'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 48–49',
+  alt:['Gautama','Gauthama','Gotama','गौतम'] },
+
+{ id:'ahalya', iast:'Ahalyā', dev:'अहल्या',
+  gloss:'Wife of Gautama. In Vālmīki his curse leaves her living on air in the empty āśrama, unseen by every being, until Rāma comes; the image of her turned to stone belongs to later retellings, not to this text.',
+  cls:'manusa', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:['ascetic','curse'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 48–49',
+  alt:['Ahalya','Ahilya','Ahalyaa','Ahalia','अहल्या'] },
+
+{ id:'shatananda', iast:'Śatānanda', dev:'शतानन्द',
+  gloss:'Son of Gautama and Ahalyā; family priest of Janaka, and the one who tells Rāma the whole history of Viśvāmitra at Mithilā.',
+  cls:'rsi', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:['ascetic','minister','svayamvara'],
+  fame:2, tier:'wide', src:'V', ref:'Bāla 50–65',
+  alt:['Shatananda','Satananda','Shathananda','शतानन्द'] },
+
+{ id:'valmiki', iast:'Vālmīki', dev:'वाल्मीकि',
+  gloss:'The poet of the Rāmāyaṇa. His grief at a hunter’s arrow became the first śloka; he taught the finished poem to Kuśa and Lava.',
+  cls:'rsi', side:'none', kandas:['bala','utt'],
+  parent:'', line:'', deeds:['ascetic'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 2–4; Uttara 93–94',
+  alt:['Valmiki','Vaalmiki','Valmeeki','Balmiki','वाल्मीकि'] },
+
+{ id:'narada', iast:'Nārada', dev:'नारद',
+  gloss:'Wandering sage; his answer to Vālmīki’s question — who alive is wholly good? — is the seed of the whole poem.',
+  cls:'rsi', side:'none', kandas:['bala','utt'],
+  parent:'', line:'', deeds:['ascetic','counsel'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 1',
+  alt:['Narada','Naarada','Naradha','Naradmuni','नारद'] },
+
+{ id:'sarabhanga', iast:'Śarabhaṅga', dev:'शरभङ्ग',
+  gloss:'Forest ascetic who waited to see Rāma before entering his own fire, having refused Indra’s offer to carry him to heaven first.',
+  cls:'rsi', side:'none', kandas:['ara'],
+  parent:'', line:'', deeds:['ascetic','first-meeting'],
+  fame:2, tier:'wide', src:'V', ref:'Araṇya 5',
+  alt:['Sharabhanga','Sarabhanga','Sharabhang','शरभङ्ग'] },
+
+{ id:'sutikshna', iast:'Sutīkṣṇa', dev:'सुतीक्ष्ण',
+  gloss:'Ascetic of the Daṇḍaka forest, disciple of Agastya; Rāma stayed at his āśrama and he sent them on to Agastya’s.',
+  cls:'rsi', side:'none', kandas:['ara'],
+  parent:'', line:'', deeds:['ascetic','first-meeting'],
+  fame:2, tier:'wide', src:'V', ref:'Araṇya 7–8',
+  alt:['Sutikshna','Suteekshna','Sutheekshna','सुतीक्ष्ण'] },
+
+{ id:'shabari', iast:'Śabarī', dev:'शबरी',
+  gloss:'Ascetic woman of the Pampā forest who had kept her teachers’ āśrama and waited years for Rāma; she pointed him toward Ṛśyamūka and Sugrīva.',
+  cls:'manusa', side:'rama', kandas:['ara'],
+  parent:'', line:'', deeds:['ascetic','first-meeting'],
+  fame:3, tier:'wide', src:'V', ref:'Araṇya 74',
+  alt:['Shabari','Sabari','Shabaree','Sabary','शबरी'] },
+
+{ id:'svayamprabha', iast:'Svayaṃprabhā', dev:'स्वयंप्रभा',
+  gloss:'Ascetic woman guarding Maya’s golden cave, where the southern search party was trapped; she carried them out with her eyes shut.',
+  cls:'manusa', side:'none', kandas:['kis'],
+  parent:'', line:'', deeds:['ascetic'],
+  fame:1, tier:'deep', src:'V', ref:'Kiṣkindhā 50–52',
+  alt:['Svayamprabha','Swayamprabha','Svayamprabhaa','स्वयंप्रभा'] },
+
+{ id:'nishakara', iast:'Niśākara', dev:'निशाकर',
+  gloss:'Sage of the Vindhya slopes who told the wingless Sampāti he would live to help Rāma’s search, and that his wings would grow again.',
+  cls:'rsi', side:'none', kandas:['kis'],
+  parent:'', line:'', deeds:['ascetic'],
+  fame:1, tier:'deep', src:'V', ref:'Kiṣkindhā 61',
+  alt:['Nishakara','Nisakara','Nishaakara','निशाकर'] },
+
+{ id:'parashurama', iast:'Paraśurāma', dev:'परशुराम',
+  gloss:'Rāma of the Bhṛgus, who met the wedding party on the road from Mithilā, challenged Rāma with Viṣṇu’s bow, and withdrew when he strung it.',
+  cls:'rsi', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:['ascetic','astra'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 74–76',
+  alt:['Parashurama','Parasurama','Parshuram','Parasuram','Bhargava','Jamadagnya','परशुराम'] },
+
+/* ---------- vānaras and ṛkṣas ---------- */
+{ id:'sugriva', iast:'Sugrīva', dev:'सुग्रीव',
+  gloss:'Son of Sūrya; younger brother of Vāli; king of Kiṣkindhā after Vāli’s death; he made his pact with Rāma by fire and sent the search parties out.',
+  cls:'vanara', side:'rama', kandas:['kis','sun','yud','utt'],
+  parent:'surya', line:'', deeds:['ruled','lanka-war','search-party','counsel','ocean','first-meeting','setu'],
+  fame:4, tier:'core', src:'V', ref:'Kiṣkindhā 5 (the pact by fire)',
+  alt:['Sugriva','Sugriv','Sugreev','Sugreeva','सुग्रीव'] },
+
+{ id:'vali', iast:'Vāli', dev:'वालि',
+  gloss:'Son of Indra; king of Kiṣkindhā; elder brother of Sugrīva, whom he drove out; killed by Rāma’s arrow, and given a long answer to his reproach.',
+  cls:'vanara', side:'none', kandas:['kis','utt'],
+  parent:'indra', line:'', deeds:['ruled'],
+  fame:4, tier:'core', src:'V', ref:'Kiṣkindhā 16–18',
+  alt:['Vali','Bali','Baali','Vaali','Valin','Balin','वालि','बालि'] },
+
+{ id:'angada', iast:'Aṅgada', dev:'अङ्गद',
+  gloss:'Son of Vāli and Tārā; heir of Kiṣkindhā; he led the southern search party and went alone into Rāvaṇa’s court as an envoy.',
+  cls:'vanara', side:'rama', kandas:['kis','sun','yud'],
+  parent:'', line:'', deeds:['search-party','duta','lanka-war','setu','ocean'],
+  fame:3, tier:'wide', src:'V', ref:'Kiṣkindhā 41; Yuddha 41',
+  alt:['Angada','Angad','Angadha','अङ्गद','अंगद'] },
+
+{ id:'hanuman', iast:'Hanumān', dev:'हनुमान्',
+  gloss:'Son of Vāyu and Añjanā; minister to Sugrīva; he leapt the ocean, found Sītā in the aśoka grove, burned Laṅkā and carried the herb-mountain.',
+  cls:'vanara', side:'rama', kandas:['kis','sun','yud','utt'],
+  parent:'vayu', line:'', deeds:['ocean','duta','lanka-war','burned-lanka','sanjivani','search-party',
+                                'disguise','minister','first-meeting','setu','boon'],
+  fame:5, tier:'core', src:'V', ref:'Sundara 1; Yuddha 74',
+  alt:['Hanuman','Hanumat','Hanumanta','Hanumantha','Anjaneya','Anjaneyar','Anjaneyulu','Maruti','Maruthi',
+       'Marutinandan','Pavanputra','Pavansut','Pavanaputra','Vayuputra','Kesarinandan','Bajrangbali',
+       'Bajrang','Anuman','हनुमान','आञ्जनेय','मारुति'] },
+
+{ id:'tara', iast:'Tārā', dev:'तारा',
+  gloss:'Wife of Vāli and mother of Aṅgada; she read the situation better than her husband and told him not to go out to Sugrīva’s challenge. Vālmīki makes her the daughter of the vānara physician Suṣeṇa; later sources make her an apsarā of the ocean-churning.',
+  cls:'vanara', side:'none', kandas:['kis'],
+  parent:'', line:'', deeds:['counsel'],
+  fame:3, tier:'wide', src:'V', ref:'Kiṣkindhā 15–24',
+  alt:['Tara','Taara','Thara','तारा'] },
+
+{ id:'ruma', iast:'Rumā', dev:'रुमा',
+  gloss:'Wife of Sugrīva, taken from him by Vāli during the quarrel and restored when Sugrīva took the throne.',
+  cls:'vanara', side:'rama', kandas:['kis'],
+  parent:'', line:'', deeds:[],
+  fame:2, tier:'wide', src:'V', ref:'Kiṣkindhā 26',
+  alt:['Ruma','Rumaa','Rooma','रुमा'] },
+
+{ id:'sushena', iast:'Suṣeṇa', dev:'सुषेण',
+  gloss:'Aged vānara counted in the Bāla Kāṇḍa among those the gods begot; father of Tārā, and the physician who named the four herbs and sent Hanumān for the mountain.',
+  cls:'vanara', side:'rama', kandas:['kis','yud'],
+  parent:'', line:'', deeds:['search-party','lanka-war','physician','sanjivani','ocean','counsel'],
+  fame:2, tier:'wide', src:'V', ref:'Kiṣkindhā 41; Yuddha 74',
+  alt:['Sushena','Susena','Susheena','Sushen','सुषेण'] },
+
+{ id:'nala', iast:'Nala', dev:'नल',
+  gloss:'Son of Viśvakarmā, and the vānara who built the causeway to Laṅkā; by his father’s boon whatever he set on the water held.',
+  cls:'vanara', side:'rama', kandas:['yud'],
+  parent:'visvakarma', line:'', deeds:['setu','lanka-war','boon','ocean'],
+  fame:3, tier:'wide', src:'V', ref:'Yuddha 22',
+  alt:['Nala','Nal','Nalan','नल'] },
+
+{ id:'nila', iast:'Nīla', dev:'नील',
+  gloss:'Son of Agni; commander of Sugrīva’s army; he killed Prahasta, Rāvaṇa’s general, on the field at Laṅkā.',
+  cls:'vanara', side:'rama', kandas:['kis','yud'],
+  parent:'agni', line:'', deeds:['search-party','lanka-war','setu','ocean'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 17; Yuddha 58–59',
+  alt:['Nila','Neel','Neela','Nil','नील'] },
+
+{ id:'kesari', iast:'Kesarī', dev:'केसरी',
+  gloss:'Vānara chief, husband of Añjanā; Hanumān is called Kesarī’s son as often as Vāyu’s.',
+  cls:'vanara', side:'none', kandas:['kis','utt'],
+  parent:'', line:'', deeds:[],
+  fame:2, tier:'wide', src:'V', ref:'Kiṣkindhā 66; Uttara 35',
+  alt:['Kesari','Kesaree','Kesharee','Kesharin','केसरी'] },
+
+{ id:'anjana', iast:'Añjanā', dev:'अञ्जना',
+  gloss:'Mother of Hanumān; an apsarā born as a vānara, who bore him to Vāyu on the mountain.',
+  cls:'vanara', side:'none', kandas:['kis','utt'],
+  parent:'', line:'', deeds:[],
+  fame:3, tier:'wide', src:'V', ref:'Kiṣkindhā 66; Uttara 35',
+  alt:['Anjana','Anjanaa','Anjani','Anjanadevi','अञ्जना','अंजना'] },
+
+{ id:'jambavan', iast:'Jāmbavān', dev:'जाम्बवान्',
+  gloss:'King of the ṛkṣas, oldest of the host; it was he who reminded Hanumān on the shore of what Hanumān could do.',
+  cls:'rksa', side:'rama', kandas:['kis','sun','yud','utt'],
+  parent:'', line:'', deeds:['search-party','lanka-war','counsel','ruled','ocean','setu'],
+  fame:3, tier:'wide', src:'V', ref:'Kiṣkindhā 65–66; Yuddha 74',
+  alt:['Jambavan','Jambavaan','Jambavantha','Jambavant','Jambavat','Jamvant','Jambuvan','जाम्बवान्','जाम्बवन्त'] },
+
+{ id:'satabali', iast:'Śatabali', dev:'शतबलि',
+  gloss:'Vānara chief given the northern quarter in the search for Sītā, with the Himālaya for its boundary.',
+  cls:'vanara', side:'rama', kandas:['kis','yud'],
+  parent:'', line:'', deeds:['search-party','lanka-war','ocean'],
+  fame:1, tier:'deep', src:'V', ref:'Kiṣkindhā 43',
+  alt:['Shatabali','Satabali','Shatabala','Satavali','शतबलि'] },
+
+{ id:'vinata', iast:'Vinata', dev:'विनत',
+  gloss:'Vānara chief given the eastern quarter in the search for Sītā; he came back after a month with nothing.',
+  cls:'vanara', side:'rama', kandas:['kis'],
+  parent:'', line:'', deeds:['search-party'],
+  fame:1, tier:'deep', src:'V', ref:'Kiṣkindhā 40, 47',
+  alt:['Vinata','Vinatha','Vinataa','विनत'] },
+
+{ id:'gavaksha', iast:'Gavākṣa', dev:'गवाक्ष',
+  gloss:'Vānara chief of the host, named among those who marched with Sugrīva and fought at Laṅkā.',
+  cls:'vanara', side:'rama', kandas:['kis','yud'],
+  parent:'', line:'', deeds:['search-party','lanka-war','ocean'],
+  fame:1, tier:'deep', src:'V', ref:'Kiṣkindhā 39; Yuddha 26',
+  alt:['Gavaksha','Gavaaksha','Gavax','गवाक्ष'] },
+
+{ id:'gavaya', iast:'Gavaya', dev:'गवय',
+  gloss:'Vānara chief of the host, named among those who marched with Sugrīva and fought at Laṅkā.',
+  cls:'vanara', side:'rama', kandas:['kis','yud'],
+  parent:'', line:'', deeds:['search-party','lanka-war','ocean'],
+  fame:1, tier:'deep', src:'V', ref:'Kiṣkindhā 39; Yuddha 26',
+  alt:['Gavaya','Gavay','गवय'] },
+
+{ id:'gaja', iast:'Gaja', dev:'गज',
+  gloss:'Vānara chief of the host, named among those who marched with Sugrīva and fought at Laṅkā.',
+  cls:'vanara', side:'rama', kandas:['kis','yud'],
+  parent:'', line:'', deeds:['search-party','lanka-war','ocean'],
+  fame:1, tier:'deep', src:'V', ref:'Kiṣkindhā 39; Yuddha 26',
+  alt:['Gaja','Gajah','गज'] },
+
+{ id:'sharabha', iast:'Śarabha', dev:'शरभ',
+  gloss:'Vānara chief of the host, named among those who marched with Sugrīva and fought at Laṅkā.',
+  cls:'vanara', side:'rama', kandas:['kis','yud'],
+  parent:'', line:'', deeds:['search-party','lanka-war','ocean'],
+  fame:1, tier:'deep', src:'V', ref:'Kiṣkindhā 39; Yuddha 26',
+  alt:['Sharabha','Sarabha','Sharabh','शरभ'] },
+
+{ id:'mainda', iast:'Mainda', dev:'मैन्द',
+  gloss:'Vānara chief; with Dvivida he is one of the twin sons of the Aśvins named in the Bāla Kāṇḍa’s roll of the vānaras the gods begot.',
+  cls:'vanara', side:'rama', kandas:['kis','yud'],
+  parent:'asvin', line:'', deeds:['search-party','lanka-war','ocean'],
+  fame:2, tier:'wide', src:'V', ref:'Bāla 17; Kiṣkindhā 41',
+  alt:['Mainda','Mainda','Maindha','मैन्द'] },
+
+{ id:'dvivida', iast:'Dvivida', dev:'द्विविद',
+  gloss:'Vānara chief; with Mainda he is one of the twin sons of the Aśvins named in the Bāla Kāṇḍa’s roll of the vānaras the gods begot.',
+  cls:'vanara', side:'rama', kandas:['kis','yud'],
+  parent:'asvin', line:'', deeds:['search-party','lanka-war','ocean'],
+  fame:2, tier:'wide', src:'V', ref:'Bāla 17; Kiṣkindhā 41',
+  alt:['Dvivida','Dwivida','Dvividha','द्विविद'] },
+
+{ id:'gandhamadana', iast:'Gandhamādana', dev:'गन्धमादन',
+  gloss:'Vānara chief, named in the Bāla Kāṇḍa as Kubera’s son; a commander of the host at Laṅkā.',
+  cls:'vanara', side:'rama', kandas:['kis','yud'],
+  parent:'kubera', line:'', deeds:['search-party','lanka-war','ocean'],
+  fame:1, tier:'deep', src:'V', ref:'Bāla 17; Yuddha 26',
+  alt:['Gandhamadana','Gandhamaadana','Gandhamadan','गन्धमादन'] },
+
+{ id:'kumuda', iast:'Kumuda', dev:'कुमुद',
+  gloss:'Vānara chief of the host, named among those who marched with Sugrīva and fought at Laṅkā.',
+  cls:'vanara', side:'rama', kandas:['kis','yud'],
+  parent:'', line:'', deeds:['search-party','lanka-war','ocean'],
+  fame:1, tier:'deep', src:'V', ref:'Kiṣkindhā 39; Yuddha 26',
+  alt:['Kumuda','Kumud','कुमुद'] },
+
+{ id:'panasa', iast:'Panasa', dev:'पनस',
+  gloss:'Vānara chief of the host, named among those who marched with Sugrīva and fought at Laṅkā.',
+  cls:'vanara', side:'rama', kandas:['kis','yud'],
+  parent:'', line:'', deeds:['search-party','lanka-war','ocean'],
+  fame:1, tier:'deep', src:'V', ref:'Kiṣkindhā 39; Yuddha 26',
+  alt:['Panasa','Panas','पनस'] },
+
+{ id:'dadhimukha', iast:'Dadhimukha', dev:'दधिमुख',
+  gloss:'Vānara uncle of Sugrīva, keeper of the Madhuvana; he went to complain that the returning search party had eaten the honey grove, and was told that was excellent news.',
+  cls:'vanara', side:'rama', kandas:['sun'],
+  parent:'', line:'', deeds:[],
+  fame:1, tier:'deep', src:'V', ref:'Sundara 61–63',
+  alt:['Dadhimukha','Dadhimukh','Dadimukha','दधिमुख'] },
+
+{ id:'dhumra', iast:'Dhūmra', dev:'धूम्र',
+  gloss:'Ṛkṣa chief who brought his own host of bears to Sugrīva’s muster.',
+  cls:'rksa', side:'rama', kandas:['kis','yud'],
+  parent:'', line:'', deeds:['lanka-war','ocean'],
+  fame:1, tier:'deep', src:'V', ref:'Kiṣkindhā 39',
+  alt:['Dhumra','Dhoomra','Dhumar','धूम्र'] },
+
+/* ---------- birds, nāgas and others ---------- */
+{ id:'jatayu', iast:'Jaṭāyu', dev:'जटायु',
+  gloss:'Vulture king of Aruṇa’s line and an old friend of Daśaratha; he fought Rāvaṇa’s chariot alone over Sītā and lived just long enough to say which way they had gone.',
+  cls:'paksin', side:'rama', kandas:['ara'],
+  parent:'', line:'', deeds:['bird','first-meeting'],
+  fame:4, tier:'core', src:'V', ref:'Araṇya 50, 68',
+  alt:['Jatayu','Jatayus','Jathayu','Jataayu','Jatayuvu','जटायु'] },
+
+{ id:'sampati', iast:'Sampāti', dev:'सम्पाति',
+  gloss:'Elder brother of Jaṭāyu, wingless since he shielded his brother from the sun; it was his far sight that told the search party Sītā was in Laṅkā.',
+  cls:'paksin', side:'rama', kandas:['kis'],
+  parent:'', line:'', deeds:['bird','curse'],
+  fame:3, tier:'wide', src:'V', ref:'Kiṣkindhā 56–63',
+  alt:['Sampati','Sampaathi','Sampaati','Sampathi','सम्पाति','संपाति'] },
+
+{ id:'garuda', iast:'Garuḍa', dev:'गरुड',
+  gloss:'King of birds; he came to Laṅkā and freed Rāma and Lakṣmaṇa from Indrajit’s serpent-arrows by the mere sight of him.',
+  cls:'paksin', side:'rama', kandas:['yud'],
+  parent:'', line:'', deeds:['bird'],
+  fame:3, tier:'wide', src:'V', ref:'Yuddha 50',
+  alt:['Garuda','Garud','Garuḍa','Garutman','Vainateya','गरुड'] },
+
+{ id:'surasa', iast:'Surasā', dev:'सुरसा',
+  gloss:'Mother of the nāgas, sent by the gods to test Hanumān in mid-ocean; he grew, she grew wider, and he went through her ear as a thumb-sized thing.',
+  cls:'naga', side:'none', kandas:['sun'],
+  parent:'', line:'', deeds:['disguise'],
+  fame:2, tier:'wide', src:'V', ref:'Sundara 1',
+  alt:['Surasa','Soorasa','Surasaa','सुरसा'] },
+
+{ id:'simhika', iast:'Siṃhikā', dev:'सिंहिका',
+  gloss:'Sea creature who seized what flew above her by its shadow; Hanumān let her take him, and came out through her.',
+  cls:'raksasa', side:'none', kandas:['sun'],
+  parent:'', line:'', deeds:['disguise'],
+  fame:1, tier:'deep', src:'V', ref:'Sundara 1',
+  alt:['Simhika','Sinhika','Simhikaa','सिंहिका'] },
+
+{ id:'vasuki', iast:'Vāsuki', dev:'वासुकि',
+  gloss:'King of the nāgas, who served as the churning rope when the devas and asuras churned the ocean — a tale Viśvāmitra tells on the road to Mithilā.',
+  cls:'naga', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:[],
+  fame:2, tier:'wide', src:'V', ref:'Bāla 45',
+  alt:['Vasuki','Vaasuki','Vasugi','वासुकि'] },
+
+{ id:'maya', iast:'Maya', dev:'मय',
+  gloss:'Architect of the asuras; father of Mandodarī, and the maker of the golden cave in which the southern search party was trapped.',
+  cls:'other', side:'none', kandas:['utt'],
+  parent:'', line:'', deeds:[],
+  fame:2, tier:'wide', src:'V-utt', ref:'Uttara 12',
+  alt:['Maya','Mayasura','Mayaasura','Mayan','मय'] },
+
+/* ---------- Laṅkā ---------- */
+{ id:'ravana', iast:'Rāvaṇa', dev:'रावण',
+  gloss:'Ten-headed king of Laṅkā; son of Viśravas and Kaikasī, grandson of Pulastya; Vedic scholar, Śiva-devotee and vīṇā player as well as the epic’s antagonist.',
+  cls:'raksasa', side:'lanka', kandas:['ara','sun','yud','utt'],
+  parent:'', line:'pulastya', deeds:['ruled','boon','lanka-war','astra','disguise','ocean'],
+  fame:5, tier:'core', src:'V', ref:'Araṇya 46; Yuddha 108',
+  alt:['Ravana','Ravan','Raavan','Raavana','Dashagriva','Dasagriva','Dashanana','Dasanana','Lankesh',
+       'Lankeshwar','Lankeswara','Ravanan','Dashmukh','रावण','दशग्रीव'] },
+
+{ id:'kumbhakarna', iast:'Kumbhakarṇa', dev:'कुम्भकर्ण',
+  gloss:'Brother of Rāvaṇa, sleeping out the term of a boon that came out wrong; woken for the war, he first told Rāvaṇa plainly that the abduction had been an error, and then went out to fight for him anyway.',
+  cls:'raksasa', side:'lanka', kandas:['yud','utt'],
+  parent:'', line:'pulastya', deeds:['lanka-war','boon','counsel'],
+  fame:4, tier:'core', src:'V', ref:'Yuddha 60–67',
+  alt:['Kumbhakarna','Kumbhkaran','Kumbakarna','Kumbhakarnan','Kumbhakaran','कुम्भकर्ण'] },
+
+{ id:'vibhisana', iast:'Vibhīṣaṇa', dev:'विभीषण',
+  gloss:'Youngest brother of Rāvaṇa; he argued in open court for returning Sītā, was struck down for it, crossed to Rāma, and was crowned king of Laṅkā at the end.',
+  cls:'raksasa', side:'turned', kandas:['sun','yud','utt'],
+  parent:'', line:'pulastya', deeds:['counsel','lanka-war','ruled','boon','minister','ocean'],
+  fame:4, tier:'core', src:'V', ref:'Sundara 52; Yuddha 16–19, 128',
+  alt:['Vibhishana','Vibhishan','Vibheeshan','Vibhisana','Bibhishan','Bibhishana','Bibhisan',
+       'Vibheeshana','विभीषण'] },
+
+{ id:'surpanakha', iast:'Śūrpaṇakhā', dev:'शूर्पणखा',
+  gloss:'Sister of Rāvaṇa, who met Rāma and Lakṣmaṇa in the Daṇḍaka forest; her disfigurement at Janasthāna set the whole of the rest of the epic moving.',
+  cls:'raksasa', side:'lanka', kandas:['ara'],
+  parent:'', line:'pulastya', deeds:['disguise'],
+  fame:4, tier:'core', src:'V', ref:'Araṇya 17–18',
+  alt:['Shurpanakha','Surpanakha','Soorpanakha','Shoorpanakha','Surpanaka','शूर्पणखा'] },
+
+{ id:'indrajit', iast:'Indrajit', dev:'इन्द्रजित्',
+  gloss:'Eldest son of Rāvaṇa and Mandodarī, called Meghanāda before he took his name from defeating Indra; he fought unseen, and Lakṣmaṇa killed him at the Nikumbhilā altar.',
+  cls:'raksasa', side:'lanka', kandas:['sun','yud','utt'],
+  parent:'', line:'pulastya', deeds:['lanka-war','astra','boon','disguise'],
+  fame:4, tier:'core', src:'V', ref:'Sundara 48; Yuddha 90',
+  alt:['Indrajit','Indrajith','Meghanada','Meghnad','Meghanad','Meghnath','Indrajeet','इन्द्रजित्','मेघनाद'] },
+
+{ id:'mandodari', iast:'Mandodarī', dev:'मन्दोदरी',
+  gloss:'Chief queen of Rāvaṇa, daughter of Maya; she told her husband to give Sītā back, and her lament over his body closes the Yuddha Kāṇḍa’s fighting.',
+  cls:'raksasa', side:'lanka', kandas:['yud','utt'],
+  parent:'', line:'', deeds:['counsel'],
+  fame:3, tier:'wide', src:'V', ref:'Yuddha 111',
+  alt:['Mandodari','Mandodhari','Mandodaree','मन्दोदरी'] },
+
+{ id:'trijata', iast:'Trijaṭā', dev:'त्रिजटा',
+  gloss:'Rākṣasī of the aśoka grove who dreamt of Rāvaṇa’s fall and comforted Sītā through her captivity.',
+  cls:'raksasa', side:'lanka', kandas:['sun','yud'],
+  parent:'', line:'', deeds:['counsel'],
+  fame:2, tier:'wide', src:'V', ref:'Sundara 27 (the dream)',
+  alt:['Trijata','Trijatha','Thrijata','Trijataa','त्रिजटा'] },
+
+{ id:'sarama', iast:'Saramā', dev:'सरमा',
+  gloss:'Rākṣasī and wife of Vibhīṣaṇa; she stayed beside Sītā and told her the head shown to her was an illusion.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'', deeds:['counsel'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 33–34',
+  alt:['Sarama','Saramaa','Saram','सरमा'] },
+
+{ id:'marica', iast:'Mārīca', dev:'मारीच',
+  gloss:'Son of Tāṭakā; hurled into the sea by Rāma’s arrow in his youth, and later made to take the form of the golden deer against his own advice.',
+  cls:'raksasa', side:'lanka', kandas:['bala','ara'],
+  parent:'', line:'', deeds:['disguise','counsel','curse','ocean'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 30; Araṇya 40–44',
+  alt:['Maricha','Marica','Mareecha','Mareech','Marich','Mareecha','मारीच'] },
+
+{ id:'subahu', iast:'Subāhu', dev:'सुबाहु',
+  gloss:'Rākṣasa who fouled Viśvāmitra’s sacrifice with Mārīca; Rāma killed him with the Āgneyāstra.',
+  cls:'raksasa', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:[],
+  fame:1, tier:'deep', src:'V', ref:'Bāla 30',
+  alt:['Subahu','Subaahu','Subhahu','सुबाहु'] },
+
+{ id:'tataka', iast:'Tāṭakā', dev:'ताटका',
+  gloss:'Yakṣī turned rākṣasī by Agastya’s curse, holding the forest between Ayodhyā and Mithilā; the first being Rāma is asked to kill, and he hesitates.',
+  cls:'raksasa', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:['curse','boon'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 25–26',
+  alt:['Tataka','Taataka','Thataka','Tadaka','Taadaka','Thadaka','ताटका','ताड़का'] },
+
+{ id:'khara', iast:'Khara', dev:'खर',
+  gloss:'Rākṣasa governor of Janasthāna and cousin of Rāvaṇa; he took fourteen thousand rākṣasas against Rāma alone and lost all of them.',
+  cls:'raksasa', side:'lanka', kandas:['ara'],
+  parent:'', line:'', deeds:['ruled'],
+  fame:3, tier:'wide', src:'V', ref:'Araṇya 19–30',
+  alt:['Khara','Kharan','Khar','खर'] },
+
+{ id:'dushana', iast:'Dūṣaṇa', dev:'दूषण',
+  gloss:'Khara’s second in command at Janasthāna, killed in the same day’s fighting.',
+  cls:'raksasa', side:'lanka', kandas:['ara'],
+  parent:'', line:'', deeds:[],
+  fame:2, tier:'wide', src:'V', ref:'Araṇya 26',
+  alt:['Dushana','Dooshana','Dushan','Dusana','दूषण'] },
+
+{ id:'trishiras', iast:'Triśiras', dev:'त्रिशिरस्',
+  gloss:'Three-headed rākṣasa of Khara’s command at Janasthāna. Vālmīki gives the same name to one of Rāvaṇa’s sons at Laṅkā; this is the Araṇya Kāṇḍa one.',
+  cls:'raksasa', side:'lanka', kandas:['ara'],
+  parent:'', line:'', deeds:[],
+  fame:2, tier:'wide', src:'V', ref:'Araṇya 26–27',
+  alt:['Trishiras','Trisiras','Trishira','Thrishiras','Trisira','त्रिशिरस्','त्रिशिरा'] },
+
+{ id:'akampana', iast:'Akampana', dev:'अकम्पन',
+  gloss:'Rākṣasa who escaped the ruin of Janasthāna and carried the news to Rāvaṇa, advising him to strike at Sītā rather than at Rāma; later killed at Laṅkā.',
+  cls:'raksasa', side:'lanka', kandas:['ara','yud'],
+  parent:'', line:'', deeds:['lanka-war','counsel'],
+  fame:1, tier:'deep', src:'V', ref:'Araṇya 31; Yuddha 56',
+  alt:['Akampana','Akampan','Akampanaa','अकम्पन'] },
+
+{ id:'prahasta', iast:'Prahasta', dev:'प्रहस्त',
+  gloss:'Rāvaṇa’s general and chief minister; he led the army out of Laṅkā’s western gate and was killed there by Nīla.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'', deeds:['lanka-war','minister'],
+  fame:2, tier:'wide', src:'V', ref:'Yuddha 58',
+  alt:['Prahasta','Prahastha','Prahast','प्रहस्त'] },
+
+{ id:'viradha', iast:'Virādha', dev:'विराध',
+  gloss:'Rākṣasa of the Daṇḍaka forest, a gandharva under a curse; buried alive by the brothers, he rose in his own form and told them where to find Śarabhaṅga.',
+  cls:'raksasa', side:'none', kandas:['ara'],
+  parent:'', line:'', deeds:['curse','first-meeting'],
+  fame:2, tier:'wide', src:'V', ref:'Araṇya 2–4',
+  alt:['Viradha','Viraadha','Virath','Viradh','विराध'] },
+
+{ id:'kabandha', iast:'Kabandha', dev:'कबन्ध',
+  gloss:'Headless forest being with an arm’s reach of a league, a gandharva under a curse; burned by the brothers, he rose free and sent them to Sugrīva.',
+  cls:'raksasa', side:'none', kandas:['ara'],
+  parent:'', line:'', deeds:['curse','first-meeting','counsel'],
+  fame:3, tier:'wide', src:'V', ref:'Araṇya 69–73',
+  alt:['Kabandha','Kabandh','Kabanda','कबन्ध'] },
+
+{ id:'atikaya', iast:'Atikāya', dev:'अतिकाय',
+  gloss:'Son of Rāvaṇa, armoured by Brahmā’s boon; Lakṣmaṇa killed him with the Brahmāstra when nothing else would reach him.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'pulastya', deeds:['lanka-war','boon','astra'],
+  fame:2, tier:'wide', src:'V', ref:'Yuddha 71',
+  alt:['Atikaya','Athikaya','Atikay','अतिकाय'] },
+
+{ id:'narantaka', iast:'Narāntaka', dev:'नरान्तक',
+  gloss:'Son of Rāvaṇa; he rode into the vānara host on a spear and was killed by Aṅgada.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'pulastya', deeds:['lanka-war'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 69',
+  alt:['Narantaka','Naraantaka','Narantak','नरान्तक'] },
+
+{ id:'devantaka', iast:'Devāntaka', dev:'देवान्तक',
+  gloss:'Son of Rāvaṇa, killed at Laṅkā by Hanumān.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'pulastya', deeds:['lanka-war'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 70',
+  alt:['Devantaka','Devaantaka','Devantak','देवान्तक'] },
+
+{ id:'aksha', iast:'Akṣa', dev:'अक्ष',
+  gloss:'Young son of Rāvaṇa, sent out against Hanumān when he was wrecking the pleasure grove, and killed there.',
+  cls:'raksasa', side:'lanka', kandas:['sun'],
+  parent:'', line:'pulastya', deeds:['lanka-war'],
+  fame:2, tier:'wide', src:'V', ref:'Sundara 47',
+  alt:['Aksha','Akshaya','Akshakumara','Akshayakumara','Aksa','अक्ष','अक्षकुमार'] },
+
+{ id:'jambumali', iast:'Jambumālī', dev:'जम्बुमालि',
+  gloss:'Son of Prahasta, and the first rākṣasa captain Rāvaṇa sent against Hanumān in the ruined grove.',
+  cls:'raksasa', side:'lanka', kandas:['sun'],
+  parent:'', line:'', deeds:['lanka-war'],
+  fame:1, tier:'deep', src:'V', ref:'Sundara 44',
+  alt:['Jambumali','Jambumalin','Jambumaali','जम्बुमालि'] },
+
+{ id:'dhumraksha', iast:'Dhūmrākṣa', dev:'धूम्राक्ष',
+  gloss:'Rākṣasa captain sent out of Laṅkā’s western gate; Hanumān killed him with a mountain crag.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'', deeds:['lanka-war'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 51–52',
+  alt:['Dhumraksha','Dhoomraksha','Dhumraksa','धूम्राक्ष'] },
+
+{ id:'vajradamshtra', iast:'Vajradaṃṣṭra', dev:'वज्रदंष्ट्र',
+  gloss:'Rākṣasa captain of Laṅkā, killed in the field by Aṅgada.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'', deeds:['lanka-war'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 53',
+  alt:['Vajradamshtra','Vajradanshtra','Vajradamstra','Vajradant','वज्रदंष्ट्र'] },
+
+{ id:'mahodara', iast:'Mahodara', dev:'महोदर',
+  gloss:'Rākṣasa counsellor of Rāvaṇa who urged the war on when Kumbhakarṇa would not; killed at Laṅkā by Nīla.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'', deeds:['lanka-war','minister','counsel'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 63, 97',
+  alt:['Mahodara','Mahodhara','Mahodar','महोदर'] },
+
+{ id:'mahaparshva', iast:'Mahāpārśva', dev:'महापार्श्व',
+  gloss:'Rākṣasa counsellor and captain of Laṅkā, killed in the last days of the fighting.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'', deeds:['lanka-war','minister'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 97',
+  alt:['Mahaparshva','Mahaparsva','Mahapaarshva','महापार्श्व'] },
+
+{ id:'makaraksha', iast:'Makarākṣa', dev:'मकराक्ष',
+  gloss:'Son of Khara; he came out of Laṅkā to avenge his father at Janasthāna and Rāma killed him with the Āgneyāstra.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'', deeds:['lanka-war'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 79–80',
+  alt:['Makaraksha','Makaraaksha','Makaraksa','मकराक्ष'] },
+
+{ id:'nikumbha', iast:'Nikumbha', dev:'निकुम्भ',
+  gloss:'Son of Kumbhakarṇa; he fought Hanumān at Laṅkā after his father was killed.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'pulastya', deeds:['lanka-war'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 76',
+  alt:['Nikumbha','Nikumbh','Nikumba','निकुम्भ'] },
+
+{ id:'kumbha', iast:'Kumbha', dev:'कुम्भ',
+  gloss:'Son of Kumbhakarṇa; he came out with his brother after their father’s death and was killed by Sugrīva.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'pulastya', deeds:['lanka-war'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 76',
+  alt:['Kumbha','Kumbh','कुम्भ'] },
+
+{ id:'virupaksha', iast:'Virūpākṣa', dev:'विरूपाक्ष',
+  gloss:'Rākṣasa captain of Laṅkā who fought beside Rāvaṇa on the last field and was killed by Sugrīva.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'', deeds:['lanka-war'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 96–97',
+  alt:['Virupaksha','Viroopaksha','Virupaksa','विरूपाक्ष'] },
+
+{ id:'yupaksha', iast:'Yūpākṣa', dev:'यूपाक्ष',
+  gloss:'Rākṣasa of Laṅkā, one of the four sent to wake Kumbhakarṇa and to guard him on the field.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'', deeds:['lanka-war'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 65',
+  alt:['Yupaksha','Yoopaksha','Yupaksa','यूपाक्ष'] },
+
+{ id:'vidyujjihva', iast:'Vidyujjihva', dev:'विद्युज्जिह्व',
+  gloss:'Rākṣasa sorcerer of Laṅkā who made the illusion of Rāma’s severed head and bow, which Rāvaṇa carried to Sītā in the grove.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'', deeds:['disguise'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 31',
+  alt:['Vidyujjihva','Vidyujjihwa','Vidyutjihva','Vidyujihva','विद्युज्जिह्व'] },
+
+{ id:'suka', iast:'Śuka', dev:'शुक',
+  gloss:'Rākṣasa envoy of Rāvaṇa; he flew as a bird to Sugrīva’s camp with an offer of friendship and was caught doing it.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'', deeds:['duta','disguise','minister'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 20–21',
+  alt:['Shuka','Suka','Shukan','शुक'] },
+
+{ id:'sarana', iast:'Sāraṇa', dev:'सारण',
+  gloss:'Rākṣasa spy of Rāvaṇa, sent with Śuka in vānara shape to count Rāma’s army, and released unhurt when he was found out.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'', deeds:['duta','disguise','minister'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 20, 25',
+  alt:['Sarana','Saarana','Saran','सारण'] },
+
+{ id:'shardula', iast:'Śārdūla', dev:'शार्दूल',
+  gloss:'Rākṣasa scout of Laṅkā who counted the vānara host and came back to tell Rāvaṇa there was no counting it.',
+  cls:'raksasa', side:'lanka', kandas:['yud'],
+  parent:'', line:'', deeds:['duta','disguise'],
+  fame:1, tier:'deep', src:'V', ref:'Yuddha 27–29',
+  alt:['Shardula','Sardula','Shaardula','शार्दूल'] },
+
+{ id:'malyavan', iast:'Mālyavān', dev:'माल्यवान्',
+  gloss:'Aged rākṣasa, maternal grandfather of Rāvaṇa; he read the omens and told the court that the war was already lost and Sītā should go back.',
+  cls:'raksasa', side:'lanka', kandas:['yud','utt'],
+  parent:'', line:'', deeds:['counsel','minister'],
+  fame:2, tier:'wide', src:'V', ref:'Yuddha 35',
+  alt:['Malyavan','Maalyavan','Malyavanta','Malyavat','माल्यवान्'] },
+
+{ id:'sumali', iast:'Sumālī', dev:'सुमालि',
+  gloss:'Rākṣasa of the old Laṅkā and father of Kaikasī; in the Uttara Kāṇḍa it is he who sends his daughter to Viśravas.',
+  cls:'raksasa', side:'none', kandas:['utt'],
+  parent:'', line:'', deeds:[],
+  fame:1, tier:'deep', src:'V-utt', ref:'Uttara 4–9',
+  alt:['Sumali','Sumaali','Sumalin','सुमालि'] },
+
+{ id:'mali', iast:'Mālī', dev:'माली',
+  gloss:'Rākṣasa brother of Sumālī and Mālyavān in the Uttara Kāṇḍa’s account of the older war between the rākṣasas and the devas.',
+  cls:'raksasa', side:'none', kandas:['utt'],
+  parent:'', line:'', deeds:[],
+  fame:1, tier:'deep', src:'V-utt', ref:'Uttara 5–7',
+  alt:['Mali','Maali','Malin','माली'] },
+
+{ id:'sukesha', iast:'Sukeśa', dev:'सुकेश',
+  gloss:'Rākṣasa father of Mālyavān, Sumālī and Mālī, from whom the Uttara Kāṇḍa traces the older line of Laṅkā.',
+  cls:'raksasa', side:'none', kandas:['utt'],
+  parent:'', line:'', deeds:['boon'],
+  fame:1, tier:'deep', src:'V-utt', ref:'Uttara 4–5',
+  alt:['Sukesha','Sukesa','Sukesh','सुकेश'] },
+
+{ id:'kaikasi', iast:'Kaikasī', dev:'कैकसी',
+  gloss:'Daughter of Sumālī and wife of Viśravas; mother of Rāvaṇa, Kumbhakarṇa, Vibhīṣaṇa and Śūrpaṇakhā.',
+  cls:'raksasa', side:'lanka', kandas:['utt'],
+  parent:'', line:'', deeds:[],
+  fame:2, tier:'wide', src:'V-utt', ref:'Uttara 9',
+  alt:['Kaikasi','Kaikasee','Kaikashi','कैकसी'] },
+
+{ id:'vishravas', iast:'Viśravas', dev:'विश्रवस्',
+  gloss:'Ṛṣi son of Pulastya; father of Kubera by Ilavilā and of Rāvaṇa and his siblings by Kaikasī.',
+  cls:'rsi', side:'none', kandas:['utt'],
+  parent:'', line:'pulastya', deeds:['ascetic'],
+  fame:2, tier:'wide', src:'V-utt', ref:'Uttara 3, 9',
+  alt:['Vishravas','Visravas','Vishrava','Vishrawa','विश्रवस्','विश्रवा'] },
+
+{ id:'pulastya', iast:'Pulastya', dev:'पुलस्त्य',
+  gloss:'One of Brahmā’s mind-born sons and the ancestor of the whole house of Laṅkā; Rāvaṇa and Kubera alike are called Paulastya for him.',
+  cls:'rsi', side:'none', kandas:['utt'],
+  parent:'brahma', line:'pulastya', deeds:['ascetic'],
+  fame:2, tier:'wide', src:'V-utt', ref:'Uttara 2–3',
+  alt:['Pulastya','Pulasthya','Pulasti','पुलस्त्य'] },
+
+{ id:'kubera', iast:'Kubera', dev:'कुबेर',
+  gloss:'Lord of wealth and elder half-brother of Rāvaṇa, from whom Rāvaṇa took Laṅkā and the Puṣpaka car.',
+  cls:'deva', side:'none', kandas:['utt'],
+  parent:'', line:'pulastya', deeds:['ruled','ascetic'],
+  fame:3, tier:'wide', src:'V-utt', ref:'Uttara 3, 11–15',
+  alt:['Kubera','Kuber','Kuvera','Vaishravana','Vaisravana','Kuberan','कुबेर','वैश्रवण'] },
+
+{ id:'lavanasura', iast:'Lavaṇāsura', dev:'लवणासुर',
+  gloss:'Asura of Madhuvana holding Śiva’s trident, killed by Śatrughna; Mathurā was founded on the ground he had held.',
+  cls:'other', side:'none', kandas:['utt'],
+  parent:'', line:'', deeds:['ruled','boon'],
+  fame:1, tier:'deep', src:'V-utt', ref:'Uttara 61–70',
+  alt:['Lavanasura','Lavana','Lavanaasura','लवणासुर'] },
+
+{ id:'ayomukhi', iast:'Ayomukhī', dev:'अयोमुखी',
+  gloss:'Rākṣasī of the Krauñca forest who seized Lakṣmaṇa; he cut off her ears and nose and let her go.',
+  cls:'raksasa', side:'none', kandas:['ara'],
+  parent:'', line:'', deeds:[],
+  fame:1, tier:'deep', src:'V', ref:'Araṇya 69',
+  alt:['Ayomukhi','Ayomukhee','Ayomuki','अयोमुखी'] },
+
+/* ---------- devas who appear as characters ---------- */
+{ id:'indra', iast:'Indra', dev:'इन्द्र',
+  gloss:'King of the devas. Gautama’s curse falls on him at the āśrama near Mithilā; on the last day at Laṅkā he sends down his own chariot and charioteer for Rāma.',
+  cls:'deva', side:'rama', kandas:['bala','yud','utt'],
+  parent:'', line:'', deeds:['ruled','curse'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 48; Yuddha 102',
+  alt:['Indra','Indran','Sakra','Shakra','Devendra','Purandara','इन्द्र','इंद्र'] },
+
+{ id:'brahma', iast:'Brahmā', dev:'ब्रह्मा',
+  gloss:'The creator; he blessed Vālmīki’s first śloka and told him to make the poem, and it is his boon that stands behind half the strength of Laṅkā.',
+  cls:'deva', side:'none', kandas:['bala','yud','utt'],
+  parent:'', line:'', deeds:['boon'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 2; Yuddha 117',
+  alt:['Brahma','Brahmaa','Brahman','Pitamaha','Chaturmukha','ब्रह्मा'] },
+
+{ id:'shiva', iast:'Śiva', dev:'शिव',
+  gloss:'He took the falling Gaṅgā on his head so that the earth could bear it, and the bow Janaka set at Mithilā was his.',
+  cls:'deva', side:'none', kandas:['bala','utt'],
+  parent:'', line:'', deeds:['boon'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 35–36, 66',
+  alt:['Shiva','Siva','Shiv','Mahadeva','Mahadev','Rudra','Shankara','Sankara','Shambhu','शिव','महादेव'] },
+
+{ id:'vishnu', iast:'Viṣṇu', dev:'विष्णु',
+  gloss:'The devas come to him in the Bāla Kāṇḍa with their case against Rāvaṇa, whose boon had left out men and beasts, and he answers them.',
+  cls:'deva', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:['boon'],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 15',
+  alt:['Vishnu','Visnu','Vishnoo','Narayana','Naaraayana','Hari','विष्णु','नारायण'] },
+
+{ id:'ganga', iast:'Gaṅgā', dev:'गङ्गा',
+  gloss:'Elder daughter of Himavān; brought down out of heaven by Bhagīratha’s austerity to reach the ashes of Sagara’s sons.',
+  cls:'deva', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:[],
+  fame:3, tier:'wide', src:'V', ref:'Bāla 35–44',
+  alt:['Ganga','Gangaa','Ganges','Bhagirathi','Jahnavi','गङ्गा','गंगा'] },
+
+{ id:'uma', iast:'Umā', dev:'उमा',
+  gloss:'Younger daughter of Himavān and wife of Śiva, whose story Viśvāmitra tells on the bank of the Gaṅgā on the road to Mithilā.',
+  cls:'deva', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:[],
+  fame:2, tier:'wide', src:'V', ref:'Bāla 35–36',
+  alt:['Uma','Umaa','Parvati','Paarvati','Haimavati','उमा','पार्वती'] },
+
+{ id:'kama', iast:'Kāma', dev:'काम',
+  gloss:'The god of desire, burnt to ash for interrupting Śiva’s austerity; the place is called Aṅga because his body was left there.',
+  cls:'deva', side:'none', kandas:['bala'],
+  parent:'', line:'', deeds:['curse'],
+  fame:2, tier:'wide', src:'V', ref:'Bāla 23',
+  alt:['Kama','Kaama','Kamadeva','Manmatha','Ananga','काम','कामदेव'] }
+
+];
+/* @DATA-END */
+
+/* ================================================================================
+   THE CRITERIA
+   Each criterion is a predicate over an entity, and every predicate is a LOOKUP
+   against a tag — never a computation, never a judgement call at runtime. `test`
+   runs exactly once per criterion at boot, to build the bitsets; it is never
+   called again during play.
+
+   `single` marks the families whose tag holds one value, so two of them facing
+   each other across the grid would guarantee an empty cell (§2.2). Devanāgarī is
+   carried only on the kāṇḍa names, which are actual names; the rest of the labels
+   are English, because Sanskrit as decoration is exactly what §6 forbids.
+   ================================================================================ */
+const CRITERIA = [
+ { id:'k-bala', family:'kanda', single:false, tier:'core', label:'Appears in the Bāla Kāṇḍa',
+   short:'Bāla Kāṇḍa', dev:'बालकाण्डम्', test:e=>e.kandas.indexOf('bala')>=0 },
+ { id:'k-ayo', family:'kanda', single:false, tier:'core', label:'Appears in the Ayodhyā Kāṇḍa',
+   short:'Ayodhyā Kāṇḍa', dev:'अयोध्याकाण्डम्', test:e=>e.kandas.indexOf('ayo')>=0 },
+ { id:'k-ara', family:'kanda', single:false, tier:'core', label:'Appears in the Araṇya Kāṇḍa',
+   short:'Araṇya Kāṇḍa', dev:'अरण्यकाण्डम्', test:e=>e.kandas.indexOf('ara')>=0 },
+ { id:'k-kis', family:'kanda', single:false, tier:'core', label:'Appears in the Kiṣkindhā Kāṇḍa',
+   short:'Kiṣkindhā', dev:'किष्किन्धाकाण्डम्', test:e=>e.kandas.indexOf('kis')>=0 },
+ { id:'k-sun', family:'kanda', single:false, tier:'core', label:'Appears in the Sundara Kāṇḍa',
+   short:'Sundara Kāṇḍa', dev:'सुन्दरकाण्डम्', test:e=>e.kandas.indexOf('sun')>=0 },
+ { id:'k-yud', family:'kanda', single:false, tier:'core', label:'Appears in the Yuddha Kāṇḍa',
+   short:'Yuddha Kāṇḍa', dev:'युद्धकाण्डम्', test:e=>e.kandas.indexOf('yud')>=0 },
+ { id:'k-utt', family:'kanda', single:false, tier:'deep', label:'Appears in the Uttara Kāṇḍa',
+   short:'Uttara Kāṇḍa', dev:'उत्तरकाण्डम्', test:e=>e.kandas.indexOf('utt')>=0 },
+
+ { id:'c-manusa', family:'class', single:true, tier:'core', label:'A human', short:'A human', dev:'',
+   test:e=>e.cls==='manusa' },
+ { id:'c-vanara', family:'class', single:true, tier:'core', label:'A vānara', short:'A vānara', dev:'',
+   test:e=>e.cls==='vanara' },
+ { id:'c-raksasa', family:'class', single:true, tier:'core', label:'A rākṣasa', short:'A rākṣasa', dev:'',
+   test:e=>e.cls==='raksasa' },
+ { id:'c-rsi', family:'class', single:true, tier:'wide', label:'A ṛṣi or brāhmaṇa ascetic', short:'A ṛṣi', dev:'',
+   test:e=>e.cls==='rsi' },
+
+ /* Vibhīṣaṇa's side is 'turned'; he belongs to "stood with Rāma" and to nothing
+    else, so the three side criteria stay mutually exclusive and the axis rule
+    below still means what it says. */
+ { id:'s-rama', family:'side', single:true, tier:'core', label:'Stood with Rāma', short:'With Rāma', dev:'',
+   test:e=>e.side==='rama'||e.side==='turned' },
+ { id:'s-lanka', family:'side', single:true, tier:'core', label:'Stood with Laṅkā', short:'With Laṅkā', dev:'',
+   test:e=>e.side==='lanka' },
+ { id:'s-none', family:'side', single:true, tier:'wide', label:'Took neither side in the war', short:'Neither side', dev:'',
+   test:e=>e.side==='none' },
+
+ { id:'l-iksvaku', family:'line', single:true, tier:'core', label:'Of the Ikṣvāku line', short:'Ikṣvāku line', dev:'',
+   test:e=>e.line==='iksvaku' },
+ { id:'l-pulastya', family:'line', single:true, tier:'wide', label:'Of Pulastya’s line', short:'Pulastya line', dev:'',
+   test:e=>e.line==='pulastya' },
+ { id:'l-videha', family:'line', single:true, tier:'wide', label:'Of Janaka’s house of Videha', short:'Janaka’s house', dev:'',
+   test:e=>e.line==='videha' },
+
+ /* Only one criterion in the parent family, because no single divine parent has
+    three attested children in this roster and a criterion that can never reach
+    three answers is a criterion the generator would only ever reject. */
+ { id:'p-deva', family:'parent', single:true, tier:'wide', label:'Begotten by a deva', short:'Born of a deva', dev:'',
+   test:e=>e.parent!=='' },
+
+ { id:'d-ocean', family:'deed', single:false, tier:'core', label:'Crossed the ocean to Laṅkā', short:'Crossed over', dev:'',
+   test:e=>e.deeds.indexOf('ocean')>=0 },
+ { id:'d-war', family:'deed', single:false, tier:'core', label:'Bore arms at Laṅkā', short:'Bore arms', dev:'',
+   test:e=>e.deeds.indexOf('lanka-war')>=0 },
+ { id:'d-ruled', family:'deed', single:false, tier:'core', label:'Ruled a kingdom in the narrative', short:'Ruled', dev:'',
+   test:e=>e.deeds.indexOf('ruled')>=0 },
+ { id:'d-ascetic', family:'deed', single:false, tier:'core', label:'Lived as an ascetic', short:'An ascetic', dev:'',
+   test:e=>e.deeds.indexOf('ascetic')>=0 },
+ { id:'d-counsel', family:'deed', single:false, tier:'wide', label:'Counselled a king against his course', short:'Counselled', dev:'',
+   test:e=>e.deeds.indexOf('counsel')>=0 },
+ { id:'d-search', family:'deed', single:false, tier:'wide', label:'Sent out in the search for Sītā', short:'In the search', dev:'',
+   test:e=>e.deeds.indexOf('search-party')>=0 },
+ { id:'d-mithila', family:'deed', single:false, tier:'wide', label:'Present at Mithilā for the bow', short:'At Mithilā', dev:'',
+   test:e=>e.deeds.indexOf('svayamvara')>=0 },
+ { id:'d-met', family:'deed', single:false, tier:'wide', label:'Rāma met them during the forest exile', short:'Met in exile', dev:'',
+   test:e=>e.deeds.indexOf('first-meeting')>=0 },
+ { id:'d-form', family:'deed', single:false, tier:'wide', label:'Took another form', short:'Took a form', dev:'',
+   test:e=>e.deeds.indexOf('disguise')>=0 },
+ { id:'d-astra', family:'deed', single:false, tier:'wide', label:'Wielded a named astra', short:'Wielded astra', dev:'',
+   test:e=>e.deeds.indexOf('astra')>=0 },
+ { id:'d-duta', family:'deed', single:false, tier:'wide', label:'Carried word between the two camps', short:'Carried word', dev:'',
+   test:e=>e.deeds.indexOf('duta')>=0 },
+ { id:'d-boon', family:'deed', single:false, tier:'deep', label:'Received a boon', short:'Had a boon', dev:'',
+   test:e=>e.deeds.indexOf('boon')>=0 },
+ { id:'d-curse', family:'deed', single:false, tier:'deep', label:'Bore a curse', short:'Bore a curse', dev:'',
+   test:e=>e.deeds.indexOf('curse')>=0 },
+ { id:'d-minister', family:'deed', single:false, tier:'deep', label:'Served as a king’s minister or counsellor', short:'A minister', dev:'',
+   test:e=>e.deeds.indexOf('minister')>=0 }
+];
+
+/* ---- Kreeda daily contract — see /DAILY.md. Copied, not imported: the game stays one file. ----
+   Setu's daily is the GRID ITSELF: six criteria drawn from one seeded stream, so every player in
+   the world opens the same nine questions with no server involved. Practice mode draws from
+   Math.random and writes only setu.best, because a grid you can re-roll must never touch the daily. */
+const SLUG='setu';
+function dayKey(d){ d=d||new Date(); const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function prevDayKey(k){ const a=k.split('-'), t=new Date(+a[0],+a[1]-1,+a[2]);
+  t.setDate(t.getDate()-1); return dayKey(t); }
+function daySeed(k){ let h=5381; for(let i=0;i<k.length;i++) h=(h*33 ^ k.charCodeAt(i))|0; return h>>>0; }
+function mulberry32(a){ return function(){ a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a);
+  t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+
+/* localStorage throws outright in Safari private mode and on some file:// origins. A game that
+   cannot save must still play, so every read returns '' and every write is a no-op. */
+const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} },
+           del:k=>{ try{ localStorage.removeItem(k); }catch(e){} } };
+
+function loadToday(key){ const s=LS.get(key), i=s.indexOf('|');
+  return (i<0 || s.slice(0,i)!==dayKey()) ? 0 : (+s.slice(i+1)||0); }
+function saveToday(key,v){ LS.set(key, dayKey()+'|'+Math.round(v)); }
+function loadBest(){ return +LS.get(SLUG+'.best')||0; }
+function saveBest(v){ LS.set(SLUG+'.best', String(Math.round(v))); }
+
+function bumpStreak(key){
+  const s=LS.get(key), i=s.indexOf('|'), last=i<0?'':s.slice(0,i), n=i<0?0:(+s.slice(i+1)||0);
+  const today=dayKey(), count = last===today ? (n||1) : (last===prevDayKey(today) ? n+1 : 1);
+  LS.set(key, today+'|'+count); return count;
+}
+function siteStreak(){ const s=LS.get('kreeda.streak'), i=s.indexOf('|');
+  return (i<0 || s.slice(0,i)!==dayKey()) ? 0 : (+s.slice(i+1)||0); }
+
+/* Called once when the grid ENDS, either way — 9/9 or out of guesses. A streak that demanded a
+   perfect grid would break for everybody in the first week and then mean nothing; showing up is
+   the feat the streak pays for. */
+function dailyDone(){
+  const today=dayKey(), k='kreeda.daily.'+today;
+  const had=LS.get(k).split(',').filter(Boolean);
+  if(!had.includes(SLUG)) LS.set(k, had.concat(SLUG).join(','));
+  bumpStreak(SLUG+'.streak');
+  return bumpStreak('kreeda.streak');
+}
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function shareDate(key){ const a=key.split('-'); return (+a[2])+' '+MONTHS[(+a[1])-1]; }
+
+/* ================================================================================
+   §3  VALIDATION
+   The runtime normaliser is deliberately small and conservative; ambiguity is
+   absorbed by the hand-written `alt` list on each entity. Every blanket rule here
+   fires on EVERY name in the roster, so each one is a collision risk; every alias
+   fires on exactly one entity, so it is free. When in doubt, write an alias.
+   ================================================================================ */
+
+/* Devanāgarī → plain ASCII. The whole trick is that step 2 of norm() strips every
+   diacritic anyway, so this only ever has to emit unmarked Latin: ष श स all give
+   's', ण न give 'n', ट त give 't', ड द give 'd'. That turns correct ISO 15919
+   transliteration (hard) into a table lookup (easy). */
+const DEV_CONS={ 'क':'k','ख':'k','ग':'g','घ':'g','ङ':'n','च':'c','छ':'c','ज':'j','झ':'j','ञ':'n',
+ 'ट':'t','ठ':'t','ड':'d','ढ':'d','ण':'n','त':'t','थ':'t','द':'d','ध':'d','न':'n',
+ 'प':'p','फ':'p','ब':'b','भ':'b','म':'m','य':'y','र':'r','ल':'l','व':'v','श':'s','ष':'s','स':'s',
+ 'ह':'h','ळ':'l','क़':'k','ख़':'k','ग़':'g','ज़':'j','ड़':'d','ढ़':'d','फ़':'p','य़':'y' };
+const DEV_MATRA={ 'ा':'a','ि':'i','ी':'i','ु':'u','ू':'u','ृ':'ri','ॄ':'ri','ॢ':'li','े':'e','ै':'ai',
+ 'ो':'o','ौ':'au','ॉ':'o','ॅ':'e' };
+const DEV_VOWEL={ 'अ':'a','आ':'a','इ':'i','ई':'i','उ':'u','ऊ':'u','ऋ':'ri','ॠ':'ri','ऌ':'li',
+ 'ए':'e','ऐ':'ai','ओ':'o','औ':'au','ऑ':'o' };
+function devToAscii(s){
+  let out='', pend='';
+  for(let i=0;i<s.length;i++){
+    const ch=s[i];
+    if(DEV_CONS[ch]!==undefined){ out+=pend; out+=DEV_CONS[ch]; pend='a'; }
+    else if(DEV_MATRA[ch]!==undefined){ pend=DEV_MATRA[ch]; }
+    else if(ch==='्'){ pend=''; }                      // virāma cancels the inherent vowel
+    else if(DEV_VOWEL[ch]!==undefined){ out+=pend; pend=''; out+=DEV_VOWEL[ch]; }
+    else if(ch==='ं'||ch==='ँ'){ out+=pend; pend=''; out+='m'; }   // anusvāra / candrabindu
+    else if(ch==='ः'){ out+=pend; pend=''; out+='h'; }                  // visarga
+    else { /* avagraha, daṇḍa, ZWJ/ZWNJ, digits, anything else: skip */ }
+  }
+  return out+pend;
+}
+
+function norm(s){
+  if(!s) return '';
+  if(/[\u0900-\u097F]/.test(s)) s = devToAscii(s);
+  /* Decompose, then drop every combining mark. This ONE LINE folds the whole of IAST:
+     ā→a+U+0304, ś→s+U+0301, ṇ→n+U+0323, ṛ→r+U+0323, ṁ→m+U+0307, ñ→n+U+0303 and the
+     rest all have canonical NFD decompositions, so stripping U+0300–U+036F leaves the
+     base letters. There is no table to maintain and no character to forget. */
+  s = s.normalize('NFD').replace(/[\u0300-\u036F]/g, '');
+  s = s.toLowerCase();
+  s = s.replace(/[^a-z]/g, '');
+  s = s.replace(/ee/g, 'i').replace(/oo/g, 'u');
+  s = s.replace(/w/g, 'v');
+  s = s.replace(/x/g, 'ks');
+  s = s.replace(/ksh/g, 'ks')
+       .replace(/chh?/g, 'c')
+       .replace(/sh/g, 's')
+       .replace(/kh/g, 'k').replace(/gh/g, 'g').replace(/jh/g, 'j')
+       .replace(/th/g, 't').replace(/dh/g, 'd')
+       .replace(/ph/g, 'p').replace(/bh/g, 'b');
+  var prev; do { prev = s;
+    s = s.replace(/^(sri|jai|jay|lord|svami|bagvan|bagavan|maaraj)/, '')
+         .replace(/(ji)$/, '');
+  } while (s !== prev && s.length > 2);
+  s = s.replace(/(.)\1+/g, '$1');
+  s = s.replace(/a$/, '');
+  return s;
+}
+
+/* Damerau–Levenshtein, bounded. At ~1,400 keys a full scan is a fraction of a
+   millisecond, so there is no index and no need for one. */
+function dlev(a,b,max){
+  const la=a.length, lb=b.length;
+  if(Math.abs(la-lb)>max) return max+1;
+  let prev2=null, prev=new Array(lb+1), cur=new Array(lb+1);
+  for(let j=0;j<=lb;j++) prev[j]=j;
+  for(let i=1;i<=la;i++){
+    cur[0]=i; let best=i;
+    for(let j=1;j<=lb;j++){
+      const cost = a.charCodeAt(i-1)===b.charCodeAt(j-1) ? 0 : 1;
+      let v = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+cost);
+      if(i>1 && j>1 && a[i-1]===b[j-2] && a[i-2]===b[j-1]) v = Math.min(v, prev2[j-2]+1);
+      cur[j]=v; if(v<best) best=v;
+    }
+    if(best>max) return max+1;
+    prev2=prev; prev=cur; cur=new Array(lb+1);
+  }
+  return prev[lb];
+}
+function fuzzThreshold(k){ return k.length<=4 ? 0 : (k.length<=7 ? 1 : 2); }
+
+/* ================================================================================
+   BOOT INDEX — keys, bitsets, and the self-tests that catch a bad data edit
+   ================================================================================ */
+const N = BEINGS.length;
+const WORDS = Math.ceil(N/32);
+BEINGS.forEach((e,i)=>{ e.index=i; e.weight = 6-e.fame; });
+
+/* KEYS: normalised string → entity index. Built from every canonical name and every
+   alias. A COLLISION here means the normaliser has folded two distinct beings into
+   one, which silently makes one of them unanswerable — so it is a hard error, not a
+   warning, and it is checked on every boot rather than only in a test file. */
+const KEYS = new Map();
+const SELFTEST = { collisions:[], roundtrip:[], thin:[] };
+BEINGS.forEach((e,i)=>{
+  const names=[e.iast].concat(e.alt||[]);
+  for(let n=0;n<names.length;n++){
+    const k=norm(names[n]);
+    if(k.length<2) continue;
+    if(KEYS.has(k) && KEYS.get(k)!==i) SELFTEST.collisions.push(k+' : '+BEINGS[KEYS.get(k)].id+' / '+e.id);
+    else KEYS.set(k,i);
+  }
+});
+BEINGS.forEach((e,i)=>{ if(KEYS.get(norm(e.iast))!==i) SELFTEST.roundtrip.push(e.id); });
+if(SELFTEST.collisions.length) SELFTEST.collisions.forEach(m=>console.error('SETU KEY COLLISION: '+m));
+if(SELFTEST.roundtrip.length) console.error('SETU CANONICAL DOES NOT ROUND-TRIP: '+SELFTEST.roundtrip.join(', '));
+
+/* One bitset per criterion. Cell candidacy is then one AND and a popcount, which is
+   why the generator can afford to reject grids as hard as §4 tells it to. */
+function newBits(){ return new Uint32Array(WORDS); }
+CRITERIA.forEach(c=>{
+  const b=newBits();
+  for(let i=0;i<N;i++) if(c.test(BEINGS[i])) b[i>>5] |= (1<<(i&31));
+  c.bits=b;
+  let n=0; for(let w=0;w<WORDS;w++) n+=popcount32(b[w]);
+  c.size=n;
+  if(n<3) SELFTEST.thin.push(c.id+'='+n);
+});
+if(SELFTEST.thin.length) console.error('SETU CRITERION WITH FEWER THAN 3 MEMBERS: '+SELFTEST.thin.join(', '));
+
+function popcount32(v){ v=v-((v>>>1)&0x55555555); v=(v&0x33333333)+((v>>>2)&0x33333333);
+  return (((v+(v>>>4))&0x0F0F0F0F)*0x01010101)>>>24; }
+function andBits(a,b){ const o=newBits(); for(let w=0;w<WORDS;w++) o[w]=a[w]&b[w]; return o; }
+function countBits(b){ let n=0; for(let w=0;w<WORDS;w++) n+=popcount32(b[w]); return n; }
+function bitsToList(b){ const o=[]; for(let i=0;i<N;i++) if(b[i>>5]&(1<<(i&31))) o.push(i); return o; }
+function hasBit(b,i){ return (b[i>>5]&(1<<(i&31)))!==0; }
+const CRIT_BY_ID = {}; CRITERIA.forEach(c=>{ CRIT_BY_ID[c.id]=c; });
+
+/* ================================================================================
+   §4  GENERATING THE DAY'S GRID
+   Every value that shapes the grid comes from ONE mulberry32(daySeed(dayKey()))
+   stream, drawn in a fixed order. A stray Math.random() here would silently
+   desynchronise players worldwide and is undetectable from inside the game — so
+   `rng` is threaded explicitly through every draw below and nothing else is used.
+   Nothing in this section iterates a Set, a Map or Object.keys().
+   ================================================================================ */
+
+/* (b) of §4.4 — the requirement implementations get wrong. Because each being may
+   be used once, per-cell non-emptiness does NOT imply the grid is solvable: three
+   cells whose only candidates are the same three beings, plus a fourth that also
+   needs one of them, is unsolvable while every cell individually looks fine. So we
+   run Kuhn's augmenting-path matching and demand a perfect matching of size 9. */
+function perfectMatching(cands){
+  const matchOf = new Int32Array(N).fill(-1);
+  const seen = new Uint8Array(N);
+  function tryCell(c){
+    const list=cands[c];
+    for(let x=0;x<list.length;x++){
+      const e=list[x];
+      if(seen[e]) continue;
+      seen[e]=1;
+      if(matchOf[e]===-1 || tryCell(matchOf[e])){ matchOf[e]=c; return true; }
+    }
+    return false;
+  }
+  let m=0;
+  for(let c=0;c<9;c++){ seen.fill(0); if(tryCell(c)) m++; }
+  return m===9;
+}
+
+/* Today's heaviest possible bridge: the maximum total weight over all perfect
+   matchings. The Hungarian algorithm on a 9 × (union of candidates) matrix is
+   microseconds at this size, so unlike §7.2's suggested twelve-rarest shortlist
+   this computes the exact optimum — which can only make the displayed target more
+   honest, never less achievable. */
+function heaviestMatching(cands){
+  const colOf={}, cols=[];
+  for(let c=0;c<9;c++) for(let x=0;x<cands[c].length;x++){
+    const e=cands[c][x]; if(colOf[e]===undefined){ colOf[e]=cols.length; cols.push(e); } }
+  const n=9, m=cols.length, BIG=1e6;
+  if(m<n) return 0;
+  const a=[]; for(let i=0;i<=n;i++){ a.push(new Float64Array(m+1).fill(BIG)); }
+  for(let c=0;c<9;c++) for(let x=0;x<cands[c].length;x++)
+    a[c+1][colOf[cands[c][x]]+1] = -BEINGS[cands[c][x]].weight;
+  const u=new Float64Array(n+1), v=new Float64Array(m+1);
+  const p=new Int32Array(m+1), way=new Int32Array(m+1);
+  for(let i=1;i<=n;i++){
+    p[0]=i; let j0=0;
+    const minv=new Float64Array(m+1).fill(Infinity), used=new Uint8Array(m+1);
+    do{
+      used[j0]=1; const i0=p[j0]; let delta=Infinity, j1=0;
+      for(let j=1;j<=m;j++) if(!used[j]){
+        const cur=a[i0][j]-u[i0]-v[j];
+        if(cur<minv[j]){ minv[j]=cur; way[j]=j0; }
+        if(minv[j]<delta){ delta=minv[j]; j1=j; }
+      }
+      for(let j=0;j<=m;j++){ if(used[j]){ u[p[j]]+=delta; v[j]-=delta; } else minv[j]-=delta; }
+      j0=j1;
+    } while(p[j0]!==0);
+    do{ const j1=way[j0]; p[j0]=p[j1]; j0=j1; } while(j0);
+  }
+  let total=0;
+  for(let j=1;j<=m;j++) if(p[j]){ const w=a[p[j]][j]; if(w>=BIG) return 0; total += -w; }
+  return total;
+}
+
+/* §2.2 exclusivity: two criteria from the same SINGLE-VALUED family must never sit
+   on opposite axes — nothing is both a vānara and a rākṣasa, so such a cell is
+   empty by construction and the shape must be rejected before we even count. */
+function axisRuleOK(rows,cols){
+  for(let i=0;i<3;i++) for(let j=0;j<3;j++){
+    if(rows[i].single && cols[j].single && rows[i].family===cols[j].family) return false;
+  }
+  return true;
+}
+
+function tierPool(weekday){
+  /* Mon should feel like an invitation, Sun like the reason you learned the names.
+     weekday is derived from dayKey, which is the same string everywhere for a given
+     day, so this stays a pure function of the date. */
+  if(weekday===1||weekday===2) return {tiers:['core'], maxDeep:0};
+  if(weekday===3||weekday===4) return {tiers:['core','wide'], maxDeep:0};
+  if(weekday===5||weekday===6) return {tiers:['core','wide','deep'], maxDeep:1};
+  return {tiers:['core','wide','deep'], maxDeep:9};
+}
+function weekdayOf(key){ const a=key.split('-'); return new Date(+a[0],+a[1]-1,+a[2]).getDay(); }
+
+function drawDistinct(rng, pool, k, taken){
+  const out=[];
+  let guard=0;
+  while(out.length<k && guard++ < 500){
+    const c = pool[Math.floor(rng()*pool.length)];
+    if(out.indexOf(c)>=0) continue;
+    if(taken && taken.indexOf(c)>=0) continue;
+    out.push(c);
+  }
+  return out.length===k ? out : null;
+}
+
+function buildGrid(rows, cols){
+  const cellBits=[], cands=[], counts=[];
+  for(let i=0;i<3;i++) for(let j=0;j<3;j++){
+    const b=andBits(rows[i].bits, cols[j].bits);
+    cellBits.push(b); const l=bitsToList(b); cands.push(l); counts.push(l.length);
+  }
+  return {rows:rows, cols:cols, cellBits:cellBits, cands:cands, counts:counts};
+}
+
+function everyCellHasAFamousAnswer(cands){
+  for(let c=0;c<9;c++){
+    let ok=false;
+    for(let x=0;x<cands[c].length;x++) if(BEINGS[cands[c][x]].fame>=3){ ok=true; break; }
+    if(!ok) return false;
+  }
+  return true;
+}
+
+/* Thirty shipped grids, each a pair of criterion-id triples. They exist so that a
+   data edit which accidentally narrows the roster can never produce a day with no
+   puzzle at all. Every one of them is checked against the live data by the audit
+   (?audit=365), which fails loudly if any has stopped being solvable. */
+const FALLBACK = FALLBACK_GRIDS;
+
+function generate(seedKey, rngOverride){
+  const rng = rngOverride || mulberry32(daySeed(seedKey));
+  const ramp = tierPool(weekdayOf(seedKey));
+  const pool = CRITERIA.filter(c=>ramp.tiers.indexOf(c.tier)>=0);
+  for(let attempt=0; attempt<200; attempt++){
+    const rows = drawDistinct(rng, pool, 3, null);          if(!rows) continue;
+    const cols = drawDistinct(rng, pool, 3, rows);           if(!cols) continue;
+    let deep=0; for(let i=0;i<3;i++){ if(rows[i].tier==='deep') deep++; if(cols[i].tier==='deep') deep++; }
+    if(deep>ramp.maxDeep) continue;
+    if(!axisRuleOK(rows,cols)) continue;
+    const g = buildGrid(rows,cols);
+    let min=99, sum=0;
+    for(let c=0;c<9;c++){ if(g.counts[c]<min) min=g.counts[c]; sum+=g.counts[c]; }
+    if(min<3) continue;                                       // §4.4(a) — three is the floor
+    if(sum<40 || sum>110) continue;                           // breadth band
+    if(!everyCellHasAFamousAnswer(g.cands)) continue;         // no cell solvable only by a specialist
+    if(!perfectMatching(g.cands)) continue;                   // §4.4(b) — the one that gets skipped
+    g.attempt=attempt; g.fallback=false;
+    g.heaviest=heaviestMatching(g.cands);
+    return g;
+  }
+  const f = FALLBACK[ daySeed(seedKey) % FALLBACK.length ];
+  const g = buildGrid(f[0].map(id=>CRIT_BY_ID[id]), f[1].map(id=>CRIT_BY_ID[id]));
+  g.attempt=200; g.fallback=true;
+  g.heaviest=heaviestMatching(g.cands);
+  return g;
+}
+
+/* ================================================================================
+   SETTINGS
+   ================================================================================ */
+const DEFAULTS={ snd:1, drone:0, dev:1, type:1, theme:'auto' };
+function loadSettings(){
+  const s=Object.assign({},DEFAULTS);
+  try{
+    LS.get(SLUG+'.settings').split(';').forEach(function(kv){
+      const i=kv.indexOf('='); if(i<0) return;
+      const k=kv.slice(0,i), v=kv.slice(i+1);
+      if(k==='theme'){ if(v==='auto'||v==='light'||v==='dark') s.theme=v; }
+      else if(DEFAULTS[k]!==undefined) s[k] = (v==='1')?1:0;
+    });
+  }catch(e){}                               // a corrupt row simply leaves the defaults standing
+  return s;
+}
+function saveSettings(s){
+  LS.set(SLUG+'.settings','snd='+s.snd+';drone='+s.drone+';dev='+s.dev+';type='+s.type+';theme='+s.theme);
+}
+const SET = loadSettings();
+
+function applyTheme(){
+  const r=document.documentElement;
+  if(SET.theme==='auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme',SET.theme);
+}
+/* Some machines have no Devanāgarī font at all, and a row of tofu boxes where a name
+   should be is worse than no name. Measure क in the stack and in a guaranteed
+   fallback; if the widths agree the stack is not resolving, so hide every .dev. IAST
+   alone is complete and correct — the Devanāgarī is enrichment. */
+function applyDev(){
+  const r=document.documentElement;
+  if(!SET.dev){ r.setAttribute('data-dev','off'); return; }
+  let ok=true;
+  try{
+    const cv=document.createElement('canvas'), cx=cv.getContext('2d');
+    cx.font='40px "Noto Sans Devanagari","Nirmala UI","Kohinoor Devanagari","Devanagari Sangam MN","Mangal","Samanata","Lohit Devanagari",monospace';
+    const a=cx.measureText('क').width;
+    cx.font='40px monospace';
+    const b=cx.measureText('क').width;
+    if(Math.abs(a-b)<0.5) ok=false;
+  }catch(e){ ok=true; }                     // if we cannot measure, show it and let the font stack try
+  r.setAttribute('data-dev', ok?'on':'off');
+}
+applyTheme(); applyDev();
+
+/* ================================================================================
+   AUDIO — WebAudio oscillators only, no files, because the game must work opened
+   straight off the disk. Shapes borrowed from Daśānana's AudioEngine.
+   ================================================================================ */
+const AudioEngine={
+  ctx:null, master:null, drone:null,
+  init(){
+    if(this.ctx){ if(this.ctx.state==='suspended') this.ctx.resume(); return; }
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    try{ this.ctx=new AC(); }catch(e){ return; }
+    this.master=this.ctx.createGain(); this.master.gain.value=SET.snd?1:0;
+    this.master.connect(this.ctx.destination);
+  },
+  setMuted(m){ if(this.master) this.master.gain.value=m?0:1; },
+  tone(freq,dur,type,peak,delay){
+    if(!this.ctx) return;
+    const t0=this.ctx.currentTime+(delay||0);
+    const o=this.ctx.createOscillator(), g=this.ctx.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,t0);
+    g.gain.setValueAtTime(0.0001,t0); g.gain.linearRampToValueAtTime(peak===undefined?0.14:peak,t0+0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    o.connect(g).connect(this.master); o.start(t0); o.stop(t0+dur+0.05);
+  },
+  noise(dur,peak,freq,q,delay){
+    if(!this.ctx) return;
+    const t0=this.ctx.currentTime+(delay||0);
+    const n=Math.floor(this.ctx.sampleRate*dur);
+    const buf=this.ctx.createBuffer(1,n,this.ctx.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
+    const src=this.ctx.createBufferSource(); src.buffer=buf;
+    const f=this.ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=freq||1200; f.Q.value=q||0.8;
+    const g=this.ctx.createGain(); g.gain.setValueAtTime(peak,t0); g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    src.connect(f).connect(g).connect(this.master); src.start(t0); src.stop(t0+dur+0.02);
+  },
+  /* a struck stone: two short sine bursts a fifth apart over a low thud */
+  stone(){ this.tone(392,0.09,'sine',0.16); this.tone(587,0.07,'sine',0.10,0.03); this.tone(98,0.16,'sine',0.18); this.noise(0.06,0.05,320,1); },
+  /* one damped low tone. No buzzer, no cartoon descent. */
+  wrong(){ this.tone(146,0.18,'triangle',0.16); },
+  conch(){
+    if(!this.ctx) return;
+    const t0=this.ctx.currentTime;
+    const o=this.ctx.createOscillator(), g=this.ctx.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(174,t0); o.frequency.linearRampToValueAtTime(186,t0+1.4);
+    g.gain.setValueAtTime(0.0001,t0); g.gain.linearRampToValueAtTime(0.20,t0+0.5);
+    g.gain.linearRampToValueAtTime(0.14,t0+1.2); g.gain.exponentialRampToValueAtTime(0.0001,t0+2.4);
+    o.connect(g).connect(this.master); o.start(t0); o.stop(t0+2.5);
+    this.tone(348,2.0,'sine',0.045,0.1); this.noise(1.8,0.035,900,0.6,0.15);
+  },
+  startDrone(){
+    if(!this.ctx || this.drone) return;
+    const g=this.ctx.createGain(); g.gain.value=0.0001;
+    const f=this.ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=520;
+    const oscs=[];
+    [[55,'sawtooth',1],[55.3,'sawtooth',0.7],[82.5,'triangle',0.5],[110,'sine',0.35]].forEach(function(spec){
+      const o=AudioEngine.ctx.createOscillator(), og=AudioEngine.ctx.createGain();
+      o.type=spec[1]; o.frequency.value=spec[0]; og.gain.value=spec[2]*0.012;
+      o.connect(og).connect(f); o.start(); oscs.push(o);
+    });
+    f.connect(g).connect(this.master);
+    g.gain.linearRampToValueAtTime(0.5,this.ctx.currentTime+1.5);
+    this.drone={oscs:oscs,g:g,f:f};
+  },
+  stopDrone(){
+    if(!this.drone) return;
+    const t=this.ctx.currentTime;
+    this.drone.g.gain.linearRampToValueAtTime(0.0001,t+0.5);
+    this.drone.oscs.forEach(function(o){ o.stop(t+0.6); });
+    this.drone=null;
+  },
+  /* the last guess: the bed drops a semitone */
+  lastGuess(){ if(this.drone) this.drone.oscs.forEach(function(o){ o.frequency.value=o.frequency.value*0.9439; }); }
+};
+
+/* ================================================================================
+   GAME STATE
+   ================================================================================ */
+const params = new URLSearchParams(location.search);
+const MODE = params.get('practice')!==null ? 'practice'
+           : (params.get('date') ? 'archive' : 'daily');
+const VIEW_KEY = params.get('date') && /^\d{4}-\d{2}-\d{2}$/.test(params.get('date')) ? params.get('date') : dayKey();
+
+let G=null, sheetCell=-1, pendingDisamb=null;
+
+function newGame(){
+  if(MODE==='practice'){
+    /* Practice is the one place a Math.random() stream is correct: the grid is not
+       shared with anybody, writes only setu.best, and never touches the daily. */
+    const seed = Math.floor(Math.random()*4294967296);
+    G = generate(dayKey(), mulberry32(seed));
+  } else {
+    G = generate(VIEW_KEY);
+  }
+  G.placed = [-1,-1,-1,-1,-1,-1,-1,-1,-1];
+  G.wrong  = [0,0,0,0,0,0,0,0,0];
+  G.guesses = 0;
+  G.done = false;
+  G.key = VIEW_KEY;
+  if(MODE==='daily') restoreState();
+}
+
+/* setu.state stores only the stones already laid — which the player already knows —
+   plus the guess count, the done flag and the per-cell wrong counts the share grid's
+   🟨 needs. Five pipe fields; a row with four is read as an older save with no wrong
+   counts, and a row from another day is dropped whole. */
+function saveState(){
+  if(MODE!=='daily') return;
+  const ids = G.placed.map(i=> i<0 ? '' : BEINGS[i].id).join(',');
+  LS.set(SLUG+'.state', G.key+'|'+ids+'|'+G.guesses+'|'+(G.done?1:0)+'|'+G.wrong.map(w=>Math.min(w,9)).join(''));
+}
+function restoreState(){
+  try{
+    const raw=LS.get(SLUG+'.state'); if(!raw) return;
+    const f=raw.split('|');
+    if(f.length<4 || f[0]!==G.key){ return; }
+    const ids=f[1].split(',');
+    for(let c=0;c<9 && c<ids.length;c++){
+      if(!ids[c]) continue;
+      let idx=-1; for(let i=0;i<N;i++) if(BEINGS[i].id===ids[c]){ idx=i; break; }
+      /* only accept a saved stone that is still valid for that cell — a data edit
+         between sessions must not resurrect an answer that is no longer true. */
+      if(idx>=0 && hasBit(G.cellBits[c],idx) && G.placed.indexOf(idx)<0) G.placed[c]=idx;
+    }
+    const g=parseInt(f[2],10); G.guesses = (isFinite(g) && g>=0 && g<=9) ? g : 0;
+    G.done = f[3]==='1';
+    if(f.length>4) for(let c=0;c<9 && c<f[4].length;c++){ const w=parseInt(f[4][c],10); G.wrong[c]=isFinite(w)?w:0; }
+  }catch(e){ /* corrupt row: fall through with a fresh grid rather than fail to boot */ }
+}
+
+function laidCount(){ let n=0; for(let c=0;c<9;c++) if(G.placed[c]>=0) n++; return n; }
+function weightTotal(){ let w=0; for(let c=0;c<9;c++) if(G.placed[c]>=0) w+=BEINGS[G.placed[c]].weight; return w; }
+function guessesLeft(){ return 9-G.guesses; }
+
+/* ================================================================================
+   §3.4  RESOLVING A SUBMISSION
+   Five outcomes and only ONE of them costs a guess. A typo, an unknown name and a
+   repeat are the three things a sincere player does most often; charging a guess
+   for any of them turns a puzzle into a punishment.
+   ================================================================================ */
+/* Bengali, Gurmukhi, Gujarati, Odia, Tamil, Telugu, Kannada, Malayalam. Checked on
+   the RAW input, because norm() would quietly strip them to an empty string and the
+   player would get "too short" instead of an answer they can act on. */
+const OTHER_INDIC=/[\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F]/;
+
+function resolveName(raw){
+  if(OTHER_INDIC.test(raw)) return {kind:'script'};
+  const k=norm(raw);
+  if(k.length<2) return {kind:'short'};
+  if(KEYS.has(k)) return {kind:'hit', e:KEYS.get(k)};
+  const max=fuzzThreshold(k);
+  if(max===0) return {kind:'miss'};
+  /* Two or more candidates within threshold: DO NOT GUESS. kaikeyi and kaikasi are
+     two edits apart and are two different women, and silently picking one would be
+     worse than any other failure mode in this game. */
+  const found=[];
+  KEYS.forEach(function(idx,key){            // play-time only; nothing here feeds daily setup
+    if(found.indexOf(idx)>=0) return;
+    if(dlev(k,key,max)<=max) found.push(idx);
+  });
+  if(found.length===1) return {kind:'hit', e:found[0]};
+  if(found.length>1){ found.sort(function(a,b){ return a-b; }); return {kind:'ambiguous', list:found.slice(0,4)}; }
+  return {kind:'miss'};
+}
+
+/* Typeahead. THE SUGGESTION LIST IS DRAWN FROM THE ENTIRE ROSTER AND IS NEVER
+   FILTERED BY WHAT IS VALID FOR THE OPEN CELL. Filtering it would hand over the
+   answer; it looks like a kindness and it is a spoiler. If anybody ever writes
+   roster.filter(validForCell) in here, the game is broken. */
+function suggest(raw){
+  const k=norm(raw);
+  if(k.length<2) return [];
+  const pre=[], sub=[], fuz=[];
+  for(let i=0;i<N;i++){
+    const key=norm(BEINGS[i].iast);
+    if(key.indexOf(k)===0) pre.push(i);
+    else if(key.indexOf(k)>=0) sub.push(i);
+    else {
+      let hit=false;
+      const alts=BEINGS[i].alt||[];
+      for(let a=0;a<alts.length && !hit;a++){ const ak=norm(alts[a]); if(ak.indexOf(k)===0||ak.indexOf(k)>=0) hit=true; }
+      if(hit) sub.push(i); else if(dlev(k,key,1)<=1) fuz.push(i);
+    }
+  }
+  const byFame=function(a,b){ return BEINGS[b].fame-BEINGS[a].fame || a-b; };
+  pre.sort(byFame); sub.sort(byFame); fuz.sort(byFame);
+  return pre.concat(sub, fuz).slice(0,6);
+}
+
+/* ================================================================================
+   RENDER
+   ================================================================================ */
+const $=function(id){ return document.getElementById(id); };
+const board=$('board'), sayEl=$('say');
+let focusCell=0;
+
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function say(msg){ sayEl.textContent=''; setTimeout(function(){ sayEl.textContent=msg; },30); }
+
+function critHTML(c, isRow){
+  return '<span lang="sa-Latn">'+esc(c.short)+'</span>'
+       + (c.dev ? '<span class="d dev" lang="sa">'+esc(c.dev)+'</span>' : '');
+}
+function cellLabel(c){
+  const r=G.rows[Math.floor(c/3)], k=G.cols[c%3];
+  let s='Row: '+r.label+'. Column: '+k.label+'. ';
+  if(G.placed[c]>=0) s+='Laid with '+BEINGS[G.placed[c]].iast+'.';
+  else s+='Empty. '+G.counts[c]+' beings fit here.';
+  return s;
+}
+
+function renderBoard(){
+  let h='<div role="row" aria-rowindex="1">';
+  h+='<div role="columnheader" class="corner">'+cornerSVG()+'</div>';
+  for(let j=0;j<3;j++)
+    h+='<button role="columnheader" class="hdr" data-crit="col'+j+'" aria-colindex="'+(j+2)+'">'+critHTML(G.cols[j])+'</button>';
+  h+='</div>';
+  for(let i=0;i<3;i++){
+    h+='<div role="row" aria-rowindex="'+(i+2)+'">';
+    h+='<button role="rowheader" class="hdr row" data-crit="row'+i+'" aria-colindex="1">'+critHTML(G.rows[i])+'</button>';
+    for(let j=0;j<3;j++){
+      const c=i*3+j, e=G.placed[c]>=0?BEINGS[G.placed[c]]:null;
+      h+='<button role="gridcell" class="stone'+(e?' set':'')+'" data-cell="'+c+'" aria-colindex="'+(j+2)+'"'
+       + ' tabindex="'+(c===focusCell?0:-1)+'" aria-label="'+esc(cellLabel(c))+'"'+(G.done&&!e?' disabled':'')+'>';
+      if(e){
+        h+='<span class="nm" lang="sa-Latn">'+esc(e.iast)+'</span>';
+        if(e.dev) h+='<span class="nd dev" lang="sa">'+esc(e.dev)+'</span>';
+        h+='<span class="wt">weight '+e.weight+'</span>';
+      } else if(SET.type!==undefined && SHOW_FIT){
+        h+='<span class="hint" aria-hidden="true">'+G.counts[c]+' fit</span>';
+      }
+      h+='</button>';
+    }
+    h+='</div>';
+  }
+  board.innerHTML=h;
+  board.querySelectorAll('.stone').forEach(function(el){
+    el.addEventListener('click',function(){ openSheet(+el.dataset.cell); });
+    el.addEventListener('keydown',onGridKey);
+    el.addEventListener('focus',function(){ focusCell=+el.dataset.cell; });
+  });
+  board.querySelectorAll('.hdr').forEach(function(el){
+    el.addEventListener('click',function(){
+      const d=el.dataset.crit, c = d.slice(0,3)==='row' ? G.rows[+d.slice(3)] : G.cols[+d.slice(3)];
+      showModal(c.short, '<p>'+esc(c.label)+'</p><p class="small">'+esc(c.size)+' beings in the roster satisfy this.</p>');
+    });
+  });
+}
+const SHOW_FIT=true;   /* §10.5's count hint, always on: free, unlimited, leaks no name,
+                          and visible to a screen reader as part of the cell label. */
+
+function cornerSVG(){
+  /* nine stones stepping across a strait — geometry only. §6: no figure stands for
+     any character, here or anywhere else in this file. */
+  return '<svg viewBox="0 0 90 56" aria-hidden="true">'
+    +'<rect x="0" y="30" width="90" height="26" fill="rgba(18,88,108,.35)"/>'
+    +'<g fill="var(--gold)">'
+    +[0,1,2,3,4,5,6,7,8].map(function(i){
+        return '<circle cx="'+(6+i*9.6)+'" cy="'+(34-Math.sin(i/2)*4)+'" r="'+(i<3?3.2:2.4)+'" opacity="'+(i<3?1:0.45)+'"/>';
+      }).join('')
+    +'</g></svg>';
+}
+
+function renderStatus(){
+  const laid=laidCount(), s=$('status');
+  let h='';
+  if(MODE==='practice') h+='<span class="chip">Practice</span>';
+  else if(MODE==='archive') h+='<span class="chip">Archive · '+esc(VIEW_KEY)+'</span>';
+  else h+='<span class="chip">'+esc(shareDate(VIEW_KEY))+'</span>';
+  h+='<span class="chip">Stones <b>'+laid+'/9</b></span>';
+  h+='<span class="chip'+(guessesLeft()<=2?' warn':'')+'">Guesses left <b>'+guessesLeft()+'</b></span>';
+  h+='<span class="chip">Weight <b>'+weightTotal()+'</b> of '+G.heaviest+'</span>';
+  const st=siteStreak();
+  if(MODE==='daily' && st>=2) h+='<span class="chip">Streak <b>'+st+'</b> 🔥</span>';
+  s.innerHTML=h;
+}
+
+function renderActions(){
+  const a=$('actions');
+  let h='';
+  if(G.done) h+='<button class="btn" id="shareBtn">SHARE</button>';
+  if(MODE==='practice') h+='<button class="btn sec" id="againBtn">New grid</button>';
+  else h+='<button class="btn sec" id="practiceBtn">Practice grid</button>';
+  h+='<button class="btn sec" id="archiveBtn">Archive</button>';
+  a.innerHTML=h;
+  if($('shareBtn')) $('shareBtn').addEventListener('click',doShare);
+  if($('againBtn')) $('againBtn').addEventListener('click',function(){ newGame(); renderAll(); $('revealHost').innerHTML=''; });
+  if($('practiceBtn')) $('practiceBtn').addEventListener('click',function(){ location.search='?practice=1'; });
+  if($('archiveBtn')) $('archiveBtn').addEventListener('click',openArchive);
+}
+
+function renderAll(){ renderBoard(); renderStatus(); renderActions(); drawBridge(); }
+
+/* ---- keyboard ---------------------------------------------------------------- */
+function onGridKey(ev){
+  const c=+ev.currentTarget.dataset.cell;
+  let t=-1;
+  if(ev.key==='ArrowRight') t = (c%3===2)? c : c+1;
+  else if(ev.key==='ArrowLeft') t = (c%3===0)? c : c-1;
+  else if(ev.key==='ArrowDown') t = (c>=6)? c : c+3;
+  else if(ev.key==='ArrowUp') t = (c<3)? c : c-3;
+  else if(ev.key==='Home') t = c-(c%3);
+  else if(ev.key==='End') t = c-(c%3)+2;
+  else return;
+  ev.preventDefault();
+  focusCell=t; renderBoard();
+  const el=board.querySelector('[data-cell="'+t+'"]'); if(el) el.focus();
+}
+
+/* ================================================================================
+   THE SHEET
+   A text field inside a 100 px cell loses a fight with the mobile keyboard every
+   time, so a tap opens a bottom sheet instead: both criteria in full, the guesses
+   remaining, one input, the typeahead, Cancel.
+   ================================================================================ */
+const sheet=$('sheet'), scrim=$('scrim'), input=$('guessInput'),
+      taList=$('typeahead'), disambEl=$('disamb'), msgEl=$('sheetMsg');
+let lastFocused=null;
+
+function openSheet(c){
+  if(G.done && G.placed[c]<0) { showModal('The grid is closed', '<p>This grid has ended. Open the reveal below for every valid answer.</p>'); return; }
+  if(G.placed[c]>=0){ showBeing(BEINGS[G.placed[c]]); return; }
+  sheetCell=c; lastFocused=document.activeElement;
+  const r=G.rows[Math.floor(c/3)], k=G.cols[c%3];
+  $('sheetTitle').textContent='Lay a stone — row '+(Math.floor(c/3)+1)+', column '+(c%3+1);
+  $('critRow').innerHTML='<span class="lab">Row</span>'+esc(r.label);
+  $('critCol').innerHTML='<span class="lab">Col</span>'+esc(k.label);
+  $('sheetMeta').textContent=guessesLeft()+' guess'+(guessesLeft()===1?'':'es')+' left · '+G.counts[c]+' beings fit this cell';
+  msgEl.innerHTML=''; disambEl.innerHTML=''; taList.innerHTML=''; input.value=''; pendingDisamb=null;
+  scrim.classList.add('on'); sheet.classList.add('on');
+  AudioEngine.init();
+  setTimeout(function(){ input.focus(); },40);
+  anchorSheet();
+}
+function closeSheet(){
+  sheet.classList.remove('on'); scrim.classList.remove('on'); sheetCell=-1;
+  if(lastFocused && lastFocused.focus) lastFocused.focus();
+}
+/* Anchor the sheet above the software keyboard. visualViewport is the only thing
+   that actually knows where the keyboard is; without it iOS scrolls the input under
+   its own keyboard and the player types blind. */
+function anchorSheet(){
+  if(!window.visualViewport || window.innerWidth>=560){ sheet.style.bottom=''; return; }
+  const vv=window.visualViewport;
+  const gap=Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+  sheet.style.bottom = gap+'px';
+}
+if(window.visualViewport){ window.visualViewport.addEventListener('resize',anchorSheet);
+                           window.visualViewport.addEventListener('scroll',anchorSheet); }
+
+scrim.addEventListener('click',function(){ closeSheet(); closeModal(); });
+$('cancelBtn').addEventListener('click',closeSheet);
+$('submitBtn').addEventListener('click',function(){ submit(input.value); });
+input.addEventListener('keydown',function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); submit(input.value); } });
+input.addEventListener('input',function(){
+  disambEl.innerHTML=''; pendingDisamb=null;
+  if(!SET.type){ taList.innerHTML=''; return; }
+  const list=suggest(input.value);
+  taList.innerHTML=list.map(function(i){
+    return '<li><button type="button" data-e="'+i+'"><span lang="sa-Latn">'+esc(BEINGS[i].iast)+'</span></button></li>';
+  }).join('');
+  taList.querySelectorAll('button').forEach(function(b){
+    b.addEventListener('click',function(){ submitEntity(+b.dataset.e); });
+  });
+});
+document.addEventListener('keydown',function(ev){
+  if(ev.key!=='Escape') return;
+  if(sheet.classList.contains('on')) closeSheet();
+  else if($('modal').classList.contains('on')) closeModal();
+});
+
+function submit(raw){
+  const r=resolveName(raw);
+  if(r.kind==='short'){ msgEl.innerHTML='<span class="no">A name, please.</span>'; return; }
+  if(r.kind==='script'){
+    msgEl.innerHTML='<span class="no">Setu reads Latin letters and Devanāgarī. <span class="dev" lang="sa">हनुमान्</span> works; other Indic scripts aren’t in yet — sorry. Try <b>Hanuman</b>.</span>';
+    say('Script not supported yet. No guess spent.'); return;
+  }
+  if(r.kind==='miss'){
+    msgEl.innerHTML='<span class="no">Setu doesn’t know that name.</span> The roster is '+N+' named beings of the Vālmīki Rāmāyaṇa. No guess spent.';
+    say('Not in the roster. No guess spent.'); return;
+  }
+  if(r.kind==='ambiguous'){
+    pendingDisamb=r.list;
+    msgEl.innerHTML='Did you mean —';
+    disambEl.innerHTML=r.list.map(function(i){
+      return '<button type="button" data-e="'+i+'"><span lang="sa-Latn">'+esc(BEINGS[i].iast)+'</span></button>';
+    }).join('');
+    disambEl.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){ submitEntity(+b.dataset.e); });
+    });
+    say('Two names are that close. Choose one. No guess spent.');
+    return;
+  }
+  submitEntity(r.e);
+}
+
+function submitEntity(idx){
+  const c=sheetCell; if(c<0) return;
+  const e=BEINGS[idx];
+  const at=G.placed.indexOf(idx);
+  if(at>=0){
+    msgEl.innerHTML='<span lang="sa-Latn"><b>'+esc(e.iast)+'</b></span> is already laid — row '+(Math.floor(at/3)+1)+', column '+(at%3+1)+'. Each being may be used once. No guess spent.';
+    say(e.iast+' is already laid. No guess spent.');
+    return;
+  }
+  const r=G.rows[Math.floor(c/3)], k=G.cols[c%3];
+  const okR=hasBit(r.bits,idx), okC=hasBit(k.bits,idx);
+  if(okR && okC){
+    G.placed[c]=idx; AudioEngine.stone();
+    saveState(); closeSheet(); renderAll();
+    say(e.iast+' laid, weight '+e.weight+'. '+laidCount()+' of 9.');
+    if(laidCount()===9) endGrid(true);
+    return;
+  }
+  /* Outcome (d): say WHICH HALF failed. It teaches, it makes the wrong guess feel
+     like it bought something, and it cannot reveal an answer — it states facts about
+     the being THEY named, never about one they didn't. */
+  G.guesses++; G.wrong[c]++; AudioEngine.wrong();
+  if(guessesLeft()===1) AudioEngine.lastGuess();
+  const line='<span lang="sa-Latn"><b>'+esc(e.iast)+'</b></span> — '
+    + esc(r.label)+' '+(okR?'✓':'✗')+' — but '+esc(k.label)+' '+(okC?'✓':'✗')+'.';
+  msgEl.innerHTML='<span class="no">Not this cell.</span><br>'+line;
+  say(e.iast+' is wrong for this cell. '+guessesLeft()+' guesses left.');
+  saveState(); renderStatus();
+  input.value=''; taList.innerHTML='';
+  if(guessesLeft()<=0){ closeSheet(); endGrid(false); }
+}
+
+/* ================================================================================
+   THE END OF A GRID
+   ================================================================================ */
+function endGrid(perfect){
+  if(G.done) return;
+  G.done=true; saveState(); renderAll();
+  let streak=0;
+  if(MODE==='daily'){
+    /* dailyDone() fires when the grid ENDS, either way — 9/9 or out of guesses. */
+    streak=dailyDone();
+    const w=weightTotal();
+    if(w>loadToday(SLUG+'.dbest')) saveToday(SLUG+'.dbest',w);
+  } else if(MODE==='practice'){
+    const w=weightTotal(); if(w>loadBest()) saveBest(w);
+  }
+  if(perfect){ AudioEngine.conch(); animateBridge(); }
+  renderReveal(streak);
+  setTimeout(function(){ const h=$('revealHost'); if(h.firstChild) h.firstChild.scrollIntoView({behavior:'smooth',block:'start'}); },120);
+}
+
+function renderReveal(streak){
+  const laid=laidCount(), w=weightTotal();
+  let h='<div class="panel">';
+  h+='<h2>'+(laid===9 ? 'The bridge is whole <span class="dev" lang="sa">पूर्ण सेतु</span>' : laid+' stone'+(laid===1?'':'s')+' stand. The bridge waits.')+'</h2>';
+  if(laid===9) h+='<p class="small">In the Yuddha Kāṇḍa the vānaras carry stones to the water one at a time until the causeway holds. Nine stones make a bridge.</p>';
+  h+='<p class="scoreline">'+laid+'/9 · guesses spent '+G.guesses+' · your bridge weighed <b>'+w+'</b>';
+  h+='<br><span class="small">Today’s heaviest possible bridge weighed '+G.heaviest+'.'
+   +(laid===9 && w===G.heaviest ? ' You laid every stone at the heaviest weight available — a perfect bridge.' : '')+'</span></p>';
+  if(MODE==='daily' && streak>=2) h+='<p class="small">Site streak '+streak+' 🔥</p>';
+  h+='<p class="small">Every valid answer for every cell is below, with a gloss and a citation. The puzzle is the excuse.</p>';
+
+  for(let c=0;c<9;c++){
+    const r=G.rows[Math.floor(c/3)], k=G.cols[c%3];
+    h+='<h3>'+esc(r.label)+' <span style="opacity:.6">×</span> '+esc(k.label)+'</h3>';
+    const list=G.cands[c].slice().sort(function(a,b){ return BEINGS[b].fame-BEINGS[a].fame || a-b; });
+    h+='<ul class="ans">';
+    for(let x=0;x<list.length;x++){
+      const e=BEINGS[list[x]];
+      h+='<li><span class="nm" lang="sa-Latn">'+esc(e.iast)+'</span>'
+        + (e.dev?' <span class="dev" lang="sa">'+esc(e.dev)+'</span>':'')
+        + (G.placed[c]===list[x] ? '<span class="yours">YOURS · WEIGHT '+e.weight+'</span>' : '')
+        + '<br>'+esc(e.gloss)
+        + '<br><span class="cite">'+esc(e.ref)+(e.src==='V-utt'?' · Uttara Kāṇḍa only':'')+'</span></li>';
+    }
+    h+='</ul>';
+  }
+
+  h+='<details class="note" open><summary>What Weight is, and what it is not</summary>'
+   +'<p class="small">This is not rarity scoring. Immaculate Grid’s rarity is a <i>social</i> measurement: it tells you how few of the other two hundred thousand players thought of your answer, and knowing that requires a server counting everybody. Setu has no server and never phones home. Its Weight is an <i>editorial</i> measurement — a number assigned to each being when the dataset was written, reflecting roughly how well known that being is in the tradition. It is a stable judgement about the text, not a live measurement of the crowd.</p>'
+   +'<p class="small">It has one property the real thing lacks: it is the same on day one as on day one thousand, and it works on a plane. It lacks one the real thing has: it can never surprise you by revealing that everyone else also thought of Jāmbavān.</p></details>';
+
+  h+='<details class="note"><summary>Sources, and what this game does not claim</summary>'
+   +'<p class="small">The spine is the Vālmīki Rāmāyaṇa. Sarga numbers follow the widely circulated vulgate rather than the Baroda critical edition; where the two differ the difference here is one of numbering. A being carries a kāṇḍa when it is named as a participant in that kāṇḍa’s narrative — a passing mention in a genealogy or a simile does not count.</p>'
+   +'<p class="small">The Uttara Kāṇḍa is included and marked. It is widely held by scholars to be a later addition, as is much of the Bāla Kāṇḍa; the criterion that asks for it is a hard one and only appears late in the week. The game reports the scholarly view and takes no position beyond it.</p>'
+   +'<p class="small">Nothing the tellings disagree about is ever asked as a question. Vālmīki has Rāma kill Rāvaṇa; the Jain <i>Paumacariya</i> of Vimalasūri has Lakṣmaṇa do it — so “killed Rāvaṇa” is not a criterion and “bore arms at Laṅkā” is. The <i>Adhyātma Rāmāyaṇa</i> has a Māyā Sītā abducted in Sītā’s place and Kamban has Rāvaṇa lift the ground she stands on rather than touch her, so the abduction is never a criterion either. The Lakṣmaṇa-rekhā is not in Vālmīki and is not a drawn line in the Rāmcaritmānas; it enters through medieval retellings such as the Bengali Kṛttivāsī Rāmāyaṇa, and Setu never asserts it. Tārā is Suṣeṇa’s daughter in Vālmīki and an apsarā of the ocean-churning in later sources, so her parentage is left unstated and both are given in her gloss.</p>'
+   +'<p class="small">The Agni-parīkṣā, Sītā’s exile in the Uttara Kāṇḍa and the killing of Śambūka are not used as puzzle material anywhere in this game.</p></details>';
+
+  h+='<p class="small" style="margin-top:14px">Something wrong here? Corrections are welcome and land in the next version of this file — '
+   +'<a href="mailto:hello@kreeda.games?subject=Setu%20correction">tell us what and where</a>.</p>';
+  h+='</div>';
+  $('revealHost').innerHTML=h;
+}
+
+/* ================================================================================
+   §9  SHARING — nine squares, and NOT ONE BIT MORE
+   The block grid encodes, per cell, exactly two things: solved or not, and cleanly
+   or not. It encodes nothing about WHICH being was named. The criteria themselves
+   are not secret — every player worldwide sees the identical six the moment they
+   open the page — so revealing which cells you found tells a reader nothing they
+   could not already see.
+   Therefore Weight is NEVER encoded per cell. Telling a reader that your answer to
+   a three-answer cell was a fame-1 being narrows their search to one. Weight appears
+   only as one total on the score line, where it is attributable to no cell at all.
+   ================================================================================ */
+function shareGrid(){
+  let out='';
+  for(let i=0;i<3;i++){
+    for(let j=0;j<3;j++){
+      const c=i*3+j;
+      out += G.placed[c]<0 ? '⬜' : (G.wrong[c]>0 ? '🟨' : '🟧');
+    }
+    if(i<2) out+='\n';
+  }
+  return out;
+}
+function shareText(){
+  const st=siteStreak();
+  let line=laidCount()+'/9 · weight '+weightTotal();
+  if(!SET.type) line+=' · recall';
+  if(MODE==='daily' && st>=2) line+=' · streak '+st+' 🔥';
+  return 'Kreeda · Setu · '+shareDate(MODE==='practice'?dayKey():VIEW_KEY)+'\n'
+       + shareGrid()+'\n'+line+'\nkreeda.games/setu/';
+}
+function doShare(){
+  const text=shareText(), btn=$('shareBtn');
+  try{
+    if(navigator.share){ navigator.share({text:text}).catch(function(){}); }
+    else if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ toast(btn,'Copied!'); })
+        .catch(function(){ showModal('Your result','<p class="shareblk">'+esc(text)+'</p>'); });
+    } else showModal('Your result','<p class="shareblk">'+esc(text)+'</p>');
+  }catch(e){ showModal('Your result','<p class="shareblk">'+esc(text)+'</p>'); }
+}
+function toast(el,msg){
+  if(!el) return;
+  const orig=el.textContent; el.textContent=msg;
+  clearTimeout(el._t); el._t=setTimeout(function(){ el.textContent=orig; },1500);
+}
