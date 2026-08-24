@@ -1293,7 +1293,9 @@ function endDaily(){
   removeStriker();
   updateHUD();
   const score = dailyScore(), cleared = score >= 10;
-  if (score > loadToday(SLUG + '.dbest')) saveToday(SLUG + '.dbest', score);
+  // stamped on every completion, not only on an improvement: the row is also the record that today
+  // was played, and a shut-out (score 0) is still a run the player finished.
+  saveToday(SLUG + '.dbest', Math.max(score, loadToday(SLUG + '.dbest')));
   const streak = dailyDone();          // exactly once, here, and from nowhere else in this file
   if (cleared){ Snd.jingle(); confettiBurst(); } else Snd.fanfare();
 
@@ -1760,6 +1762,7 @@ function newGame(mode, diff){
   $('pauseMenu').classList.add('hidden');
   $('menuBtn').style.display = 'block';
   game.paused = false;
+  if (!daily) saveSettings();   // whatever difficulty this match started on is the one to come back to
   beginTurn(false);
 }
 function toMenu(){
