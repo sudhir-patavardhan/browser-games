@@ -98,7 +98,10 @@ The claims it defends, in rough order of how much they matter:
   they drive the page from `file://` under a virtual clock, and a pending request can stall one), and
   `track()` cannot be made to throw by any call shape, including a `gtag` that throws on every hit. Then the
   part that has to be right: a real run driven to a real death reports numbers matching the run's own final
-  state, and a reason matching the actual reason.
+  state, a reason matching the actual reason, and the game it came from on every event. What the file does
+  on a real origin — going live, and timing how long the game was actually played — is invisible from
+  `file://` by design, so it is pinned separately by `../../verify/analytics.sh`, which serves the repo over
+  http on localhost.
 - **The car sounds like what it is doing.** What it sounds like is a pure function of the car (`driveTone`),
   so `run.sh sound` can check the *decision* — pitch is road speed and nothing else, loudness is |kW| and
   not speed, regen bends the note down proportionally, and the grass is louder and much darker than tarmac

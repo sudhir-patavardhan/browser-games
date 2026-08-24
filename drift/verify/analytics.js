@@ -7,7 +7,11 @@
 //   - the game must never be able to tell whether analytics worked. track() with the transport missing,
 //     with a gtag that throws, with circular params — none of it may reach the game loop
 //   - and then the part that has to be RIGHT: a real run, driven to a real death, reports a run_end whose
-//     numbers match the run's own state and whose reason is the actual reason
+//     numbers match the run's own state and whose reason is the actual reason, tagged with the game it
+//     came from
+//
+// What analytics.js does on a real origin — going live, and timing how long the game was actually played —
+// cannot be seen from here by design, so it is pinned separately by ../../verify/analytics.sh.
 //
 // This probe asserts against the LOCAL log (bgAnalytics.log), which analytics.js keeps whether or not a hit
 // went out. That is the point of the log: what the game believes it reported is checkable without a network.
@@ -33,6 +37,20 @@
            document.querySelectorAll('script[src*="googletagmanager"]').length===0),
         "dataLayer="+(typeof window.dataLayer)+" gtag="+(typeof window.gtag)+
         " gtm tags="+document.querySelectorAll('script[src*="googletagmanager"]').length);
+
+    // ---- and the play clock is just as silent: a heartbeat under the virtual clock would both invent
+    // time that nobody spent and perturb every other probe in this suite, which drives the game by hand
+    rec("...and the play clock never starts either — no timer, no game_time, no invented seconds",
+        location.protocol!=='file:' || (A.seconds()===0 && A.log().filter(e=>e.name==='game_time').length===0),
+        "seconds()="+A.seconds()+" game_time events="+A.log().filter(e=>e.name==='game_time').length);
+
+    // ---- every event says which game it came from, derived from the folder rather than declared here
+    A.clear(); window.bgTrack('probe_event', {});
+    const pe=A.last('probe_event'), gm=A.game();
+    rec("every event carries the game it came from, so GA4 can pivot on it",
+        !!pe && pe.params.game_id==='drift' && pe.params.game_name==='Drift' && gm.id==='drift',
+        pe? JSON.stringify(pe.params) : "nothing logged");
+    A.clear();
 
     // ---- track() cannot be made to throw, however badly it is called
     let threw=null;

@@ -41,18 +41,63 @@ No server required — just open the file directly, or serve the repo root with 
 ## Analytics
 
 Every page loads [`analytics.js`](analytics.js) from the repo root — one file, one GA4 measurement ID, so
-there is a single place to change it instead of a dozen copies drifting apart. Pageviews come for free
-(each game is its own path under one property), and Drift additionally reports gameplay: `run_start`,
-`run_end` (score, distance, top speed, longest chain and its tier, drift time, shamblers, shaves, deer
-dodges, close calls, head-ons — and crucially *why* the run ended), `shop_buy`, and `badge_earned`.
+there is a single place to change it instead of a dozen copies drifting apart. It answers two questions with
+no per-game code at all:
 
-Three things worth knowing before you rely on the numbers:
+- **Which game?** Every hit — the pageview, and every event a game sends — carries `game_id` (the folder:
+  `drift`, `carrom`, `home` for the hub) and `game_name` (the page's own `<title>`, suffix stripped). Both
+  are *derived*, not declared, so a new game is measured the moment its folder loads `analytics.js`, and a
+  renamed game renames itself in the reports.
+- **For how long?** A `game_time` event carries `active_seconds` (since the last report), `total_seconds`
+  (on this page so far) and `reason` (`tick` every 30 seconds of play, `hidden` when the tab goes to the
+  background, `unload` on the way out). Sum `active_seconds` by `game_id` and you have time spent per game.
+
+That clock is deliberately stricter than GA4's own "average engagement time", which is session-scoped and
+counts a tab that merely sits in the foreground. This one accrues only while the page is **visible** *and*
+the visitor has touched something in the last **3 minutes** — so a game left open on a second monitor
+overnight contributes its idle timeout, not eight hours. It is stored as whole seconds with the remainder
+carried forward, so a page's reports sum to its real elapsed time rather than drifting a fraction per hit.
+
+On top of that, Drift reports gameplay: `run_start`, `run_end` (score, distance, top speed, longest chain and
+its tier, drift time, shamblers, shaves, deer dodges, close calls, head-ons — and crucially *why* the run
+ended), `shop_buy`, and `badge_earned`. The hub reports `game_click` (which card the visit turned into) and
+`filter_select`. A game's own params outrank the derived ones, which is what lets `game_click` name the game
+*clicked* from a page whose own `game_id` is `home`.
+
+### Seeing it in GA4
+
+The events arrive on their own; the two dimensions do not. GA4 drops any custom parameter you have not
+registered, so do this once in **Admin → Data display → Custom definitions**:
+
+| Create | Name | Scope | Parameter | Unit |
+|---|---|---|---|---|
+| Custom dimension | Game | Event | `game_id` | — |
+| Custom dimension | Game name | Event | `game_name` | — |
+| Custom metric | Active seconds | Event | `active_seconds` | Seconds |
+
+Registration is not retroactive — only hits that arrive **after** you create these are broken out, so do it
+before you start reading the numbers. Then:
+
+- **Stats by game** — *Reports → Engagement → Events*, or an Exploration with `Game name` as the row
+  dimension and `Event count` / `Total users` / `Sessions` as values. Breaking any standard report down by
+  `Game` gives the same cut without leaving the report.
+- **Time spent by game** — an Exploration (*Explore → Free form*) with `Game name` as the row dimension and
+  `Active seconds` as the value; sort descending for the leaderboard. Add `Total users` and a calculated
+  ratio if you want *average* time per player rather than total. Filtering to `Event name` = `game_time`
+  is not required (only that event carries the metric) but makes the table cheaper to read.
+- **Live check** — *Admin → DebugView* with the [GA Debugger extension] on, or just open a hosted game and
+  run `bgAnalytics.log()` / `bgAnalytics.seconds()` in the console: the file records every event locally as
+  it sends it, so you can see what the page believes it reported with no network at all.
+
+[GA Debugger extension]: https://chromewebstore.google.com/detail/google-analytics-debugger/jnkmfdileelhofjcijamephohjechhna
+
+### Three things worth knowing before you rely on the numbers
 
 - **It is completely silent when a game is opened as a local file.** GA4 identifies a visitor by a cookie
   and browsers grant none to `file://` origins, so such a hit has no stable `client_id` and reports a
   `file:///…` path — junk, if it arrives at all. Since opening a game straight off the disk is the whole
-  point of this repo, `analytics.js` doesn't pretend otherwise: on `file://` it injects nothing and sends
-  nothing. **You will only ever see traffic from a hosted copy.**
+  point of this repo, `analytics.js` doesn't pretend otherwise: on `file://` it injects nothing, starts no
+  clock and sends nothing. **You will only ever see traffic from a hosted copy.**
 - **Ad blockers drop `googletagmanager.com` universally.** Expect a material undercount, and treat the
   numbers as a biased sample rather than as traffic.
 - **GA4 sets cookies, so there is no consent banner here and serving this to visitors in the EU/UK
@@ -60,9 +105,19 @@ Three things worth knowing before you rely on the numbers:
   is Google Consent Mode with `analytics_storage` denied until the visitor agrees.
 
 It cannot break a game: every entry point swallows its own failures, and Drift's `track()` is a no-op if
-the file never loaded. `./drift/verify/run.sh analytics` pins exactly that — silent on `file://`, unable to
-throw at the game loop however badly it is called (including with a `gtag` that throws), and reporting
-numbers that match the run's own final state rather than invented ones.
+the file never loaded. Two suites pin that, one per half of the contract:
+
+```
+./drift/verify/run.sh analytics   # from file://: silent, timerless, and unable to throw at the game loop
+./verify/analytics.sh             # from a real http origin: which game, and how long they played it
+```
+
+The first drives the real game and checks that a run's `run_end` reports the run's own numbers and the
+actual reason it ended, that nothing reaches the network or starts a heartbeat, and that no call shape —
+missing params, circular params, a `gtag` that throws — can reach the game loop. The second serves the repo
+on localhost (with `googletagmanager.com` resolved into a closed port, so it touches no network either) and
+checks the half that `file://` cannot show: that it goes live, that the identity rides on every hit, and
+that the play clock stops when the tab is hidden and when the visitor stops playing.
 
 ## Publishing to itch.io
 
