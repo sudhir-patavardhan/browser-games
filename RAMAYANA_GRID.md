@@ -95,13 +95,15 @@ grid guarantee an empty cell.
 > **Rule:** two criteria drawn from the same *single-valued* family must never sit on opposite axes.
 > They may both sit on the same axis (rows never intersect rows). Multi-valued families are unrestricted.
 
-So `rows = {vānara, rākṣasa, human}` × `cols = {Bāla, Araṇya, Yuddha}` is legal and good. So is
-`rows = {Araṇya, Kiṣkindhā, Sundara}` × `cols = {a vānara, child of Vāyu, carried a message}` — wait,
-no: `class` and `parent` are both single-valued but they are on the *same* axis, which is fine, and
-neither has a partner on the opposite axis. Legal.
+Legal and good: `rows = {vānara, rākṣasa, human}` × `cols = {Bāla, Araṇya, Yuddha}` — three `class`
+criteria, but all on one axis.
 
-`rows = {vānara, …}` × `cols = {rākṣasa, …}` is illegal and the generator must reject the shape before
-it even counts cells.
+Also legal: `rows = {Araṇya, Kiṣkindhā, Sundara}` × `cols = {a vānara, child of Vāyu, carried a message}`.
+`class` and `parent` are both single-valued, but they sit on the *same* axis and neither has a partner
+facing it.
+
+Illegal: `rows = {a vānara, …}` × `cols = {a rākṣasa, …}` — one cell is empty by construction. The
+generator must reject the shape before it even counts cells.
 
 ### 2.3 Criterion catalogue
 
@@ -160,9 +162,9 @@ exact order.
 function norm(s){
   if(!s) return '';
   // 1. Devanāgarī → plain ASCII, only if any Devanāgarī is present (§3.3)
-  if(/[ऀ-ॿ]/.test(s)) s = devToAscii(s);
+  if(/[\u0900-\u097F]/.test(s)) s = devToAscii(s);
   // 2. decompose, then drop every combining mark. This one line folds the whole of IAST.
-  s = s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+  s = s.normalize('NFD').replace(/[\u0300-\u036F]/g, '');
   // 3. case
   s = s.toLowerCase();
   // 4. letters only — drops spaces, hyphens, periods, apostrophes, digits, daṇḍas
