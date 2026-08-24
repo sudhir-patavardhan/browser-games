@@ -1411,11 +1411,14 @@ const LS = { get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return
              set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
 const FINISH_NAMES = ['Round of 16','Quarter-Finals','Semi-Finals','Runner-up','Champion'];
 
-// last-16.best = furthest tournament finish ever reached: 0..3 = knocked out in that round
-// (R16/QF/SF/FINAL), 4 = won the whole thing. Monotonic — a bad run afterward can't erase it.
+// last-16.best = furthest tournament finish ever reached: -1 none yet, 0..3 = knocked out in that
+// round (R16/QF/SF/FINAL), 4 = won the whole thing. Monotonic — a bad run afterward can't erase it.
+// -1 is the "never played" sentinel rather than 0, because 0 is itself a real finish (round-of-16
+// exit) — collapsing the two would hide a legitimate result behind "no finishes yet".
 function loadBestFinish(){
-  const v = Math.round(+LS.get(SLUG+'.best'));
-  return (Number.isFinite(v) && v>=0 && v<=4) ? v : 0;
+  const raw = LS.get(SLUG+'.best');
+  const v = raw==='' ? -1 : Math.round(+raw);
+  return (Number.isFinite(v) && v>=-1 && v<=4) ? v : -1;
 }
 let bestFinish = loadBestFinish();
 function saveBestFinish(finishIdx){
@@ -1493,7 +1496,7 @@ function goModeSelect(){ renderModeScreen(); showScreen('mode'); }
 function renderModeScreen(){
   try{
     const statsEl=document.getElementById('modeStats');
-    statsEl.textContent = bestFinish>0 ? ('Best finish: '+FINISH_NAMES[bestFinish]) : 'No tournament finishes yet';
+    statsEl.textContent = bestFinish>=0 ? ('Best finish: '+FINISH_NAMES[bestFinish]) : 'No tournament finishes yet';
     if(Settings.lastNation) statsEl.textContent += '  ·  Last played: '+NATIONS[Settings.lastNation].name;
 
     const row=document.getElementById('modeButtonsRow');

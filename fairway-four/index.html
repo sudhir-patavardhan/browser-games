@@ -826,7 +826,8 @@ const game={
   club:0, wind:new THREE.Vector2(), windGust:new THREE.Vector2(),
   introT:0, settleT:0, shotStart:new THREE.Vector3(),
   swing:{ phase:0, needle:0, dirUp:true, power:0, lastPow:null, lastAcc:null },
-  meterSpeed:140, holedOut:false, aimDirty:true, msgT:0
+  meterSpeed:140, holedOut:false, aimDirty:true, msgT:0,
+  daily:false, dailyPlan:null, dailyStreak:0
 };
 function H(){ return HOLES[game.hole]; }
 
@@ -879,8 +880,12 @@ function totalVsPar(){
 function fmtPar(n){ return n===0?'E':(n>0?'+'+n:''+n); }
 
 function newGust(){
-  const w=H().wind;
-  game.wind.set(w[0]+(Math.random()-0.5)*1.6, w[1]+(Math.random()-0.5)*1.6);
+  /* In a normal round the authored wind gusts around its base by ±0.8 each way, which is what makes a
+     hole feel alive. In the daily the day's wind IS the wind, drawn once and never jittered: that
+     re-roll is unseeded, and a single unseeded number in the conditions makes two players' rounds
+     quietly incomparable while looking perfectly fine from inside either one. */
+  if(game.daily){ const w=H().dayWind; game.wind.set(w[0], w[1]); }
+  else { const w=H().wind; game.wind.set(w[0]+(Math.random()-0.5)*1.6, w[1]+(Math.random()-0.5)*1.6); }
   AudioE.setWind(game.wind.length());
 }
 function suggestClub(){
@@ -983,7 +988,17 @@ function executeShot(power, errPct){
     let p=power, aim=game.aim, spinMul=1;
     if(ball.lie==='rough'){ p*=0.85; spinMul=0.6; }
     if(ball.lie==='sand'){ p*=0.75; }
-    if(Math.abs(errPct)>20){ p=40; aim+=(Math.random()<0.5?-1:1)*(5+Math.random()*5)*DEG; errPct=0; showMsg('Duffed it!'); }
+    if(Math.abs(errPct)>20){
+      /* A duff throws the ball 5-10° off, either way. In the daily that coin flip is derived from the
+         situation (this hole, this stroke number) rather than drawn from a stream: two players' stroke
+         counts diverge the moment one of them duffs, so a stream would desynchronise everything after
+         it, while a pure function of (day, hole, stroke) gives everyone who duffs the same shot the
+         same punishment. */
+      const dr = game.daily
+        ? mulberry32(daySeed(dayKey()) ^ (game.hole*7919 + game.strokes*104729))
+        : Math.random;
+      p=40; aim+=(dr()<0.5?-1:1)*(5+dr()*5)*DEG; errPct=0; showMsg('Duffed it!');
+    }
     const v0=V0[game.club]*Math.sqrt(p/100);   // carry ~ v0^2, so sqrt gives meter% ~ distance%
     const loft=club.loft;
     const dir=new THREE.Vector3(Math.sin(aim),0,Math.cos(aim));
@@ -1253,6 +1268,45 @@ function scoreLabel(strokes,par){
   if(d===1) return '<span class="lbl-bogey">Bogey</span>';
   return '<span class="lbl-double">+'+d+'</span>';
 }
+/* One square per hole, coloured by the score relative to par. Golf already reads this way — nobody
+   needs the key explained — and it leaks nothing: the pin positions and the wind stay the day's secret.
+   Squares only, no ZWJ sequences, so an Android paste is the same width as an iOS one. */
+function parSquare(d){ return d<=-2?'\u{1F7EA}' : d===-1?'\u{1F7E6}' : d===0?'\u{1F7E9}' : d===1?'\u{1F7E8}' : '\u{1F7E5}'; }
+function roundTotals(){
+  const played=game.scores.length;
+  return { total:game.scores.reduce((s,v)=>s+v,0),
+           parSum:HOLES.slice(0,played).reduce((s,h)=>s+h.par,0) };
+}
+/* Called exactly once, when the fourth hole's card is closed and the round is over — never on a
+   hole-by-hole card, and never in a normal round. */
+function finishRound(){
+  const { total }=roundTotals();
+  if(game.daily){
+    /* Golf inverts the repo's usual "bigger is better": fewer strokes wins. 0 is still safely "no
+       round today" — no legal round can total zero, the floor is four aces. */
+    const prev=loadToday(SLUG+'.dbest');
+    if(!prev || total<prev) saveToday(SLUG+'.dbest', total);
+    game.dailyStreak=dailyDone();
+  }else{
+    const b=loadInt(SLUG+'.best');
+    if(!b || total<b) LS.set(SLUG+'.best', String(total));
+  }
+}
+function dailyShareText(){
+  const d=new Date(), { total, parSum }=roundTotals(), streak=streakOf('kreeda.streak');
+  return 'Kreeda · Fairway Four · '+d.getDate()+' '+MONTHS[d.getMonth()]+'\n'
+    + game.scores.map((s,i)=>parSquare(s-HOLES[i].par)).join('')+'\n'
+    + fmtPar(total-parSum)+' ('+total+' strokes)'
+    + (streak>=2 ? ' · streak '+streak+' \u{1F525}' : '')+'\n';
+}
+function refreshTitleStats(){
+  const dbest=loadToday(SLUG+'.dbest'), streak=streakOf('kreeda.streak'), best=loadInt(SLUG+'.best');
+  const parSum=HOLES.reduce((s,h)=>s+h.par,0), bits=[];
+  if(dbest) bits.push('Today '+dbest+' ('+fmtPar(dbest-parSum)+')');
+  if(streak>=2) bits.push('streak '+streak+' \u{1F525}');
+  if(best) bits.push('best round '+best);
+  el('dailyNote').textContent=bits.join(' · ');
+}
 function openScorecard(final){
   const m=el('scoreModal');
   let html='<table><tr><th>Hole</th><th>Par</th><th>Strokes</th><th></th></tr>';
@@ -1263,7 +1317,13 @@ function openScorecard(final){
   const parSum=HOLES.slice(0,played).reduce((s,h)=>s+h.par,0);
   const total=game.scores.reduce((s,v)=>s+v,0);
   html+=`<tr><th>Total</th><th>${parSum}</th><th>${total}</th><th>${fmtPar(total-parSum)}</th></tr></table>`;
-  el('scoreTitle').textContent= final? 'Final Scorecard' : `Hole ${game.hole+1} — ${H().name}`;
+  if(final) finishRound();          // the one place a completed round is recorded, daily or not
+  if(final && game.daily){
+    html+=`<div class="sharegrid">${game.scores.map((s,i)=>parSquare(s-HOLES[i].par)).join('')}</div>`;
+    html+=`<p class="sharesub">${fmtPar(total-parSum)} (${total} strokes)`
+       + (game.dailyStreak>=2 ? ` · streak ${game.dailyStreak} \u{1F525}` : '')+`</p>`;
+  }
+  el('scoreTitle').textContent= final? (game.daily?'Today’s Round':'Final Scorecard') : `Hole ${game.hole+1} — ${H().name}`;
   el('scoreBody').innerHTML=html;
   el('scoreBtn').textContent= final? 'PLAY AGAIN' : (game.hole<HOLES.length-1?'NEXT HOLE':'FINAL CARD');
   game.state= final?'FINAL':'SCORE';
@@ -1285,6 +1345,7 @@ try{
   if(shareBtnEl){
     shareBtnEl.addEventListener('click',function(){
       try{
+        if(game.daily){ kreedaShare(dailyShareText(),'kreeda.games/fairway-four/',shareBtnEl); return; }
         const scoreToPar=shareBtnEl.dataset.scoreToPar||'E';
         const text='I shot '+scoreToPar+' in Fairway Four ⛳ — beat me:';
         const url='https://kreeda.games/fairway-four/?ref=share';
@@ -1295,7 +1356,9 @@ try{
 }catch(e){}
 function kreedaShare(text,url,btn){
   try{
-    const full=text+' '+url;
+    // a block grid is already newline-terminated, so the URL goes on its own last line rather than
+    // getting a stray leading space; a one-line brag still gets the old "text url" shape exactly.
+    const full = !url ? text : (text.slice(-1)==='\n' ? text+url : text+' '+url);
     if(navigator.share){
       navigator.share({text:full}).catch(function(){});
     } else if(navigator.clipboard && navigator.clipboard.writeText){

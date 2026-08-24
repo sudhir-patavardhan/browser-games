@@ -476,7 +476,9 @@
         // Both fields are read back as attacker-grade garbage: NaN, negatives, and an unknown chip value
         // all have to fall back to sane defaults instead of leaking into game state.
         function loadSave() {
-            const parts = LS.get(SLUG + '.settings').split('|');
+            const raw = LS.get(SLUG + '.settings');
+            if (!raw) return { bal: STAKE, bet: 25 };   // no save yet — +'' coerces to 0, which would otherwise read as a real $0 bankroll
+            const parts = raw.split('|');
             let bal = Math.round(+parts[0]);
             if (!Number.isFinite(bal) || bal < 0 || bal > 1e9) bal = STAKE;
             let bet = Math.round(+parts[1]);
