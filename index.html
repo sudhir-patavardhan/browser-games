@@ -698,6 +698,22 @@
 
 <script src="analytics.js"></script>
 <script>
+/* Service worker registration — same protocol guard as analytics.js and for the same
+   reason: registering on file:// throws (a service worker requires an http/https
+   origin), and this repo is built to be opened straight off disk, so doing nothing
+   there is the correct behavior, not a bug to fix. Registered on `load` rather than
+   immediately so it can never compete with first paint. */
+(function(){
+  if (!('serviceWorker' in navigator)) return;
+  try{
+    if (location.protocol === 'file:') return;
+    addEventListener('load', function(){
+      try{ navigator.serviceWorker.register('/sw.js'); }catch(e){}
+    });
+  }catch(e){}
+})();
+</script>
+<script>
 (function(){
   /* Sticky bar gets its background only once you've scrolled past the top, so the
      hero reads as full-bleed on first paint. */
