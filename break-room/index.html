@@ -59,6 +59,7 @@
   .choice-card:active{ transform:scale(0.96); }
   .choice-card h3{ margin:6px 0 4px; font-size:15px; }
   .choice-card p{ margin:0; font-size:11px; opacity:0.65; }
+  .choice-card p.record{ margin-top:5px; font-size:11px; font-weight:800; opacity:1; color:#ffd23f; min-height:13px; }
   .felt-swatch{ width:100%; height:70px; border-radius:16px; margin-top:8px; }
   #screen-game{ padding:0; }
   #hud{ position:absolute; top:0; left:0; right:0; z-index:6; display:flex; align-items:center; gap:6px; padding:6px 8px; flex-wrap:wrap; justify-content:center; }
@@ -102,11 +103,11 @@
   <div id="screen-mode" class="screen hidden">
     <h1 class="title" style="font-size:28px;">CHOOSE MODE</h1>
     <div class="choice-grid">
-      <div class="panel choice-card" data-mode="ai-casual"><h3>vs AI — Casual</h3><p>Forgiving opponent, full aim guide</p></div>
-      <div class="panel choice-card" data-mode="ai-sharp"><h3>vs AI — Sharp</h3><p>Solid aim, shorter guide</p></div>
-      <div class="panel choice-card" data-mode="ai-shark"><h3>vs AI — Shark</h3><p>Plays safeties, minimal guide</p></div>
+      <div class="panel choice-card" data-mode="ai-casual"><h3>vs AI — Casual</h3><p>Forgiving opponent, full aim guide</p><p class="record" id="rec-casual"></p></div>
+      <div class="panel choice-card" data-mode="ai-sharp"><h3>vs AI — Sharp</h3><p>Solid aim, shorter guide</p><p class="record" id="rec-sharp"></p></div>
+      <div class="panel choice-card" data-mode="ai-shark"><h3>vs AI — Shark</h3><p>Plays safeties, minimal guide</p><p class="record" id="rec-shark"></p></div>
       <div class="panel choice-card" data-mode="2p"><h3>2 Players</h3><p>Pass &amp; play, same device</p></div>
-      <div class="panel choice-card" data-mode="practice"><h3>Practice</h3><p>Open table, rack anytime</p></div>
+      <div class="panel choice-card" data-mode="practice"><h3>Practice</h3><p>Open table, rack anytime</p><p class="record" id="rec-practice"></p></div>
     </div>
     <div class="row">
       <span style="font-size:11px;opacity:0.6;width:100%;text-align:center;margin-bottom:4px;">FELT COLOR</span>
@@ -165,6 +166,72 @@
 <script>
 (function(){
 "use strict";
+
+/* ---- Kreeda persistence — see /DAILY.md. Copied, not imported: this file stays standalone. ---- */
+const SLUG = 'break-room';
+const LS = { get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+             set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+
+// break-room.best = fewest shots to clear a practice-mode rack. Lower is better; 0 means no record yet
+// (a real clear is always >=1 shot, so 0 can't collide with a genuine value).
+function loadBestShots(){
+  const v = Math.round(+LS.get(SLUG+'.best'));
+  return (Number.isFinite(v) && v>0 && v<10000) ? v : 0;
+}
+let bestShots = loadBestShots();
+
+// break-room.settings = "<lastAiDifficulty>|<wCasual>|<lCasual>|<wSharp>|<lSharp>|<wShark>|<lShark>".
+// Records only ever climb by 1 per finished match, so any parsed count outside a sane bound reads
+// as corruption rather than a legitimately huge total — clamp it back to 0 instead of trusting it.
+function loadSettings(){
+  const parts = LS.get(SLUG+'.settings').split('|');
+  const clampCount = n => { n=Math.round(+n); return (Number.isFinite(n) && n>=0 && n<1e6) ? n : 0; };
+  let diff = parts[0];
+  if(!['casual','sharp','shark'].includes(diff)) diff='';
+  return {
+    lastDifficulty: diff,
+    aiRecord: {
+      casual:{ w:clampCount(parts[1]), l:clampCount(parts[2]) },
+      sharp: { w:clampCount(parts[3]), l:clampCount(parts[4]) },
+      shark: { w:clampCount(parts[5]), l:clampCount(parts[6]) }
+    }
+  };
+}
+const Settings = loadSettings();
+let lastDifficulty = Settings.lastDifficulty;
+const aiRecord = Settings.aiRecord;
+function persistSettings(){
+  const r = aiRecord;
+  LS.set(SLUG+'.settings', [lastDifficulty, r.casual.w, r.casual.l, r.sharp.w, r.sharp.l, r.shark.w, r.shark.l].join('|'));
+}
+// called once a rack is over — practice banks a new low shot count, AI matches bank a win/loss
+function recordMatchResult(result){
+  if(game.mode==='practice'){
+    if(result.type==='win'){
+      const shots = game.shotCount;
+      if(bestShots===0 || shots<bestShots){ bestShots=shots; LS.set(SLUG+'.best', String(bestShots)); }
+    }
+    return;
+  }
+  if(game.mode==='ai'){
+    const rec = aiRecord[game.difficulty];
+    if(!rec) return;
+    if(result.winner===game.humanPlayer) rec.w++; else rec.l++;
+    persistSettings();
+  }
+}
+function renderModeStats(){
+  try{
+    ['casual','sharp','shark'].forEach(k=>{
+      const el=document.getElementById('rec-'+k);
+      if(!el) return;
+      const r=aiRecord[k];
+      el.textContent = (r.w+r.l)>0 ? (r.w+'W – '+r.l+'L') : '';
+    });
+    const pEl=document.getElementById('rec-practice');
+    if(pEl) pEl.textContent = bestShots>0 ? ('Best clear: '+bestShots+' shot'+(bestShots===1?'':'s')) : '';
+  }catch(e){}
+}
 
 /* ============================================================ CONFIG ============================================================ */
 const TABLE_W = 1000, TABLE_H = 500;
@@ -797,7 +864,7 @@ const game = {
   feltColor:'green', balls:[], rules:null,
   state:'TITLE', aim:{angle:0,power:0}, pendingSpin:0, pendingEnglish:0,
   placementInvalid:false, aiTimer:0, aiPhase:null, resolvePending:false,
-  timeScale:1, timeScaleTimer:0
+  timeScale:1, timeScaleTimer:0, shotCount:0
 };
 
 function newGame(mode, difficulty){
@@ -807,6 +874,7 @@ function newGame(mode, difficulty){
   game.state='AIM';
   game.aim = {angle:Math.PI, power:0};
   game.pendingSpin=0; game.pendingEnglish=0;
+  game.shotCount=0;
   shotEvents = resetShotEvents();
   game.balls.forEach(b=>b.contactedThisShot=false);
   updateHud();
@@ -821,6 +889,7 @@ function beginShotEvents(){
 }
 function executeShot(angle, power, spin, english){
   beginShotEvents();
+  if(game.mode==='practice') game.shotCount++;   // practice's own "AI" never fires — every shot here is the player's
   const cb = cueBall();
   const speed = power*MAX_SHOT_SPEED;
   cb.vx=Math.cos(angle)*speed; cb.vy=Math.sin(angle)*speed;
@@ -837,6 +906,7 @@ function afterAllStop(){
   if(result.type==='win' || result.type==='loss'){
     showBanner(result.type==='win' ? 'YOU WIN!' : 'GAME OVER');
     game.timeScale=0.35; game.timeScaleTimer=900;
+    recordMatchResult(result);
     setTimeout(()=>{ endGameUI(result.winner); }, 1400);
     game.state='GAME_OVER';
     return;
@@ -939,7 +1009,15 @@ function renderTrays(){
 }
 function endGameUI(winner){
   document.getElementById('endTitle').textContent = (game.mode!=='2p' && winner===game.humanPlayer) ? 'YOU WIN!' : (game.mode==='2p' ? `PLAYER ${winner} WINS!` : (winner===game.humanPlayer?'YOU WIN!':'AI WINS'));
-  document.getElementById('endStats').textContent = game.rules.loseReason ? `(${game.rules.loseReason})` : '';
+  let statsLine = game.rules.loseReason ? `(${game.rules.loseReason})` : '';
+  // echo the persisted record right where the result just landed — a saved best nobody sees might as well not exist
+  if(game.mode==='practice' && winner===game.humanPlayer){
+    statsLine += (statsLine?' — ':'') + `${game.shotCount} shot${game.shotCount===1?'':'s'}` + (game.shotCount===bestShots ? ' — new best!' : ` (best: ${bestShots})`);
+  } else if(game.mode==='ai'){
+    const r = aiRecord[game.difficulty];
+    statsLine += (statsLine?' — ':'') + `vs ${game.difficulty}: ${r.w}W – ${r.l}L`;
+  }
+  document.getElementById('endStats').textContent = statsLine;
   if(!(game.mode==='ai' && winner!==game.humanPlayer)){
     AudioEngine.victory();
     for(let i=0;i<6;i++) setTimeout(()=>spawnConfetti(TABLE_W/2+rand(-200,200), TABLE_H/2+rand(-80,80), 18), i*180);
@@ -1055,6 +1133,7 @@ function releaseAim(){
 /* ============================================================ SCREENS ============================================================ */
 function showScreen(name){
   ['title','mode','game'].forEach(s=>document.getElementById('screen-'+s).classList.toggle('hidden', ('screen-'+s)!==name && name!=='endOverlay-wrap'));
+  if(name==='screen-mode') renderModeStats();
 }
 document.getElementById('screen-title').addEventListener('click',()=>{ AudioEngine.init(); showScreen('screen-mode'); });
 window.addEventListener('keydown',()=>{ if(!document.getElementById('screen-title').classList.contains('hidden')){ AudioEngine.init(); showScreen('screen-mode'); } });
@@ -1076,7 +1155,11 @@ document.querySelectorAll('.choice-card[data-mode]').forEach(card=>{
   card.addEventListener('click',()=>{
     AudioEngine.init();
     const mode=card.getAttribute('data-mode');
-    if(mode.startsWith('ai-')){ newGame('ai', mode.split('-')[1]); }
+    if(mode.startsWith('ai-')){
+      const diff=mode.split('-')[1];
+      lastDifficulty=diff; persistSettings();
+      newGame('ai', diff);
+    }
     else { newGame(mode, 'casual'); }
     showScreen('screen-game');
     resizeTableCanvas();

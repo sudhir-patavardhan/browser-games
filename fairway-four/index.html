@@ -98,6 +98,13 @@
   .btn:hover{ background:#6fd282; }
   .lbl-birdie{ color:#7fd4ff; } .lbl-par{ color:#c8e8c8; } .lbl-bogey{ color:#e8b46a; }
   .lbl-eagle{ color:#c48ff0; } .lbl-double{ color:#e07a5a; }
+  /* ---- daily ---- */
+  #dailyBtn{ background:rgba(255,255,255,0.12); color:#eef4ee; margin-left:8px; }
+  #dailyBtn:hover{ background:rgba(255,255,255,0.2); }
+  #dailyNote{ margin-top:10px; font-size:12px; letter-spacing:.6px; opacity:0.55; min-height:15px; }
+  #condBadge{ margin-top:2px; font-size:11px; letter-spacing:1.2px; color:#9fd8a8; display:none; }
+  .sharegrid{ font-size:26px; letter-spacing:4px; margin:14px 0 4px; }
+  .sharesub{ font-size:12px; opacity:0.65; letter-spacing:.6px; margin:0 0 6px; }
 </style>
 </head>
 <body>
@@ -110,6 +117,7 @@
 <div id="hudTR" class="panel">
   <div><span id="windArrow"><svg viewBox="0 0 24 24"><path d="M12 2 L17 12 L13 10.5 L13 22 L11 22 L11 10.5 L7 12 Z" fill="#cfe8ff"/></svg></span><span id="hudWind">2.0 m/s</span></div>
   <div id="hudDist">340 m to pin</div>
+  <div id="condBadge">TODAY&rsquo;S ROUND</div>
 </div>
 <div id="hudBC" class="panel">
   <div style="font-size:15px;font-weight:600;" id="hudClub">Driver</div>
@@ -144,6 +152,8 @@
        Wind, water, sand, rough and slope all matter.</p>
     <p style="opacity:0.65;">Drag to orbit · Scroll to zoom · ← → aim · Q/E club · Space to address &amp; swing · Tab to toggle views</p>
     <button class="btn" id="playBtn">TEE OFF</button>
+    <button class="btn" id="dailyBtn">TODAY&rsquo;S ROUND</button>
+    <p id="dailyNote"></p>
   </div>
 </div>
 
@@ -169,6 +179,48 @@ const smoothstep=(a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); 
 const DEG=Math.PI/180;
 function mulberry32(seed){ return function(){ seed|=0; seed=(seed+0x6D2B79F5)|0; let t=Math.imul(seed^(seed>>>15),1|seed); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
 const layoutRng = mulberry32(1337);
+
+/* ---- Kreeda daily contract — see /DAILY.md. Copied, not imported: the game stays one file. ---- */
+const SLUG='fairway-four';
+function dayKey(d){ d=d||new Date(); const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function prevDayKey(k){ const a=k.split('-'), t=new Date(+a[0],+a[1]-1,+a[2]);
+  t.setDate(t.getDate()-1); return dayKey(t); }
+function daySeed(k){ let h=5381; for(let i=0;i<k.length;i++) h=(h*33 ^ k.charCodeAt(i))|0; return h>>>0; }
+
+const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+
+/* a day-stamped value: returns 0 unless the stamp is today */
+function loadToday(key){ const s=LS.get(key), i=s.indexOf('|');
+  return (i<0 || s.slice(0,i)!==dayKey()) ? 0 : (+s.slice(i+1)||0); }
+function saveToday(key,v){ LS.set(key, dayKey()+'|'+Math.round(v)); }
+
+/* consecutive-days counter against one key. Same day = no change; yesterday = +1; older = reset to 1. */
+function bumpStreak(key){
+  const s=LS.get(key), i=s.indexOf('|'), last=i<0?'':s.slice(0,i), n=i<0?0:(+s.slice(i+1)||0);
+  const today=dayKey(), count = last===today ? (n||1) : (last===prevDayKey(today) ? n+1 : 1);
+  LS.set(key, today+'|'+count); return count;
+}
+
+/* call once when a DAILY run is completed — not on every game over, not in endless mode */
+function dailyDone(){
+  const today=dayKey(), k='kreeda.daily.'+today;
+  const had=LS.get(k).split(',').filter(Boolean);
+  if(!had.includes(SLUG)) LS.set(k, had.concat(SLUG).join(','));
+  bumpStreak(SLUG+'.streak');
+  return bumpStreak('kreeda.streak');            // site-wide, and the number worth showing
+}
+/* the streak as it stands for DISPLAY. bumpStreak owns the writing; this only reads. A stamp of
+   yesterday still shows its count — the chain isn't broken until the day it was owed has passed —
+   but anything older is a chain the player already lost, and showing it would be a lie. */
+function streakOf(key){
+  const s=LS.get(key), i=s.indexOf('|'); if(i<0) return 0;
+  const stamp=s.slice(0,i), n=+s.slice(i+1)||0, today=dayKey();
+  return (stamp===today || stamp===prevDayKey(today)) ? n : 0;
+}
+function loadInt(key){ const n=+LS.get(key); return (isFinite(n) && n>0) ? Math.round(n) : 0; }
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // small value noise (hash grid + smooth interp), 2 octaves
 function hash2(x,y){ let h=Math.sin(x*127.1+y*311.7)*43758.5453; return h-Math.floor(h); }
@@ -432,8 +484,9 @@ const treeColliders=[];
   scene.add(trunks); scene.add(cans);
 }
 
-// pins: pole + waving flag + cup dot per hole
-const flagCloths=[];
+// pins: pole + waving flag + cup dot per hole.
+// Held by reference because the daily re-cuts the hole: the pin moves, the green does not.
+const flagCloths=[], pinParts=[];
 for(const H of HOLES){
   const h=rawHeight(H.pin.x,H.pin.z);
   const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,2.6,6), new THREE.MeshLambertMaterial({color:0xf2f2ea}));
@@ -445,6 +498,7 @@ for(const H of HOLES){
   scene.add(flag); flagCloths.push(fg);
   const cup=new THREE.Mesh(new THREE.CircleGeometry(0.16,14), new THREE.MeshBasicMaterial({color:0x142014}));
   cup.rotation.x=-Math.PI/2; cup.position.set(H.pin.x, h+0.03, H.pin.z); scene.add(cup);
+  pinParts.push({pole,flag,cup});
 }
 
 // ball + lie marker
@@ -605,11 +659,14 @@ let puttGrid=null, flowDots=null, flowVel=[];
 function buildPuttGrid(H){
   destroyPuttGrid();
   const cx=H.pin.x, cz=H.pin.z, rx=H.green.rx+3, rz=H.green.rz+3, step=2;
+  // the grid spans the green (anchored on the pin), but uphill/downhill is read against the CUP —
+  // in a normal round they are the same point, in the daily the cup is where the ball has to go.
+  const hole=cupOf(H);
   const verts=[], cols=[];
   const c=new THREE.Color();
   const hAt=(x,z)=>rawHeight(x,z)+0.07;
   const tint=(x,z)=>{
-    const rel=clamp((rawHeight(x,z)-rawHeight(cx,cz))/0.6, -1, 1);
+    const rel=clamp((rawHeight(x,z)-rawHeight(hole.x,hole.z))/0.6, -1, 1);
     // higher ground = uphill = blue; lower = downhill = red
     c.setRGB(0.85-0.5*Math.max(0,rel), 0.55, 0.85-0.5*Math.max(0,-rel));
     return c;
@@ -667,7 +724,10 @@ const AudioE={
     if(this.ctx) return;
     const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
     this.ctx=new AC();
-    this.master=this.ctx.createGain(); this.master.gain.value=1; this.master.connect(this.ctx.destination);
+    this.master=this.ctx.createGain();
+    // a mute restored from storage is set before the first gesture ever builds the graph, so the
+    // gain has to open at the remembered value — not at 1, which would un-mute on the first tap
+    this.master.gain.value=this.muted?0:1; this.master.connect(this.ctx.destination);
     // wind bed
     const n=this.ctx.sampleRate*2, buf=this.ctx.createBuffer(1,n,this.ctx.sampleRate);
     const d=buf.getChannelData(0); for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
@@ -769,11 +829,53 @@ const game={
   club:0, wind:new THREE.Vector2(), windGust:new THREE.Vector2(),
   introT:0, settleT:0, shotStart:new THREE.Vector3(),
   swing:{ phase:0, needle:0, dirUp:true, power:0, lastPow:null, lastAcc:null },
-  meterSpeed:140, holedOut:false, aimDirty:true, msgT:0
+  meterSpeed:140, holedOut:false, aimDirty:true, msgT:0,
+  daily:false, dailyPlan:null, dailyStreak:0
 };
 function H(){ return HOLES[game.hole]; }
-function pinPos(){ const p=H().pin; return new THREE.Vector3(p.x, rawHeight(p.x,p.z), p.z); }
-function distToPin(){ return Math.hypot(ball.pos.x-H().pin.x, ball.pos.z-H().pin.z); }
+
+/* =============================== TODAY'S CONDITIONS ===============================
+   The four holes stay the four holes: same tees, same fairways, same water, same trees, same par.
+   What the calendar date changes is exactly what a caddie would tell you walking to the first tee —
+   where the pins are cut and what the wind is doing. Four authored holes played under a new sky is a
+   different round; procedurally generated holes would be a different GAME, and out of scope.
+
+   H.pin is the green's ANCHOR and must never move: the terrain field derives the green's height and
+   tilt from it (rawHeight), classify() tests membership against it, and the tree scatter was excluded
+   around it at boot. Move the pin and the physics stops agreeing with the mesh. So the daily moves the
+   CUP instead — a second point, always inside the same green, on the same tilted plane. That is what a
+   pin change is in real golf: same green, new hole location, a completely different break to read.
+
+   Everything below comes from one mulberry32(daySeed(dayKey())) stream in a fixed order — for each
+   hole, in order: wind bearing, wind speed, cup bearing, cup radius. Nothing may call Math.random on
+   this path; a player in Bengaluru and a player in Bristol have to be reading the same putt. */
+function buildDailyPlan(){
+  const r = mulberry32(daySeed(dayKey()));
+  return HOLES.map(H=>{
+    const dir=r()*Math.PI*2;
+    const spd=1.2+r()*3.2;              // 1.2–4.4 m/s — the band the four holes were authored inside
+    const a=r()*Math.PI*2;
+    const rad=Math.sqrt(r())*0.62;      // sqrt keeps cups spread over the green instead of hugging the middle
+    return { wind:[Math.cos(dir)*spd, Math.sin(dir)*spd],
+             cup:{ x:H.pin.x+Math.cos(a)*H.green.rx*rad, z:H.pin.z+Math.sin(a)*H.green.rz*rad } };
+  });
+}
+function cupOf(H){ return H.cup || H.pin; }      // no daily plan = the authored pin, unchanged
+function applyRoundConditions(){
+  for(let i=0;i<HOLES.length;i++){
+    const p = game.daily ? game.dailyPlan[i] : null;
+    HOLES[i].cup     = p ? p.cup  : null;
+    HOLES[i].dayWind = p ? p.wind : null;
+    const c=cupOf(HOLES[i]), h=rawHeight(c.x,c.z), P=pinParts[i];
+    P.pole.position.set(c.x, h+1.3, c.z);
+    P.flag.position.set(c.x+0.52, h+2.28, c.z);
+    P.cup .position.set(c.x, h+0.03, c.z);
+  }
+  el('condBadge').style.display = game.daily ? 'block' : 'none';
+}
+function pinPos(){ const p=cupOf(H()); return new THREE.Vector3(p.x, rawHeight(p.x,p.z), p.z); }
+function distToPin(){ const p=cupOf(H()); return Math.hypot(ball.pos.x-p.x, ball.pos.z-p.z); }
+function aimAngleToPin(){ const p=cupOf(H()); return Math.atan2(p.x-ball.pos.x, p.z-ball.pos.z); }
 function totalVsPar(){
   let t=0; for(let i=0;i<game.scores.length;i++) t += game.scores[i]-HOLES[i].par;
   return t;
@@ -781,8 +883,12 @@ function totalVsPar(){
 function fmtPar(n){ return n===0?'E':(n>0?'+'+n:''+n); }
 
 function newGust(){
-  const w=H().wind;
-  game.wind.set(w[0]+(Math.random()-0.5)*1.6, w[1]+(Math.random()-0.5)*1.6);
+  /* In a normal round the authored wind gusts around its base by ±0.8 each way, which is what makes a
+     hole feel alive. In the daily the day's wind IS the wind, drawn once and never jittered: that
+     re-roll is unseeded, and a single unseeded number in the conditions makes two players' rounds
+     quietly incomparable while looking perfectly fine from inside either one. */
+  if(game.daily){ const w=H().dayWind; game.wind.set(w[0], w[1]); }
+  else { const w=H().wind; game.wind.set(w[0]+(Math.random()-0.5)*1.6, w[1]+(Math.random()-0.5)*1.6); }
   AudioE.setWind(game.wind.length());
 }
 function suggestClub(){
@@ -885,7 +991,17 @@ function executeShot(power, errPct){
     let p=power, aim=game.aim, spinMul=1;
     if(ball.lie==='rough'){ p*=0.85; spinMul=0.6; }
     if(ball.lie==='sand'){ p*=0.75; }
-    if(Math.abs(errPct)>20){ p=40; aim+=(Math.random()<0.5?-1:1)*(5+Math.random()*5)*DEG; errPct=0; showMsg('Duffed it!'); }
+    if(Math.abs(errPct)>20){
+      /* A duff throws the ball 5-10° off, either way. In the daily that coin flip is derived from the
+         situation (this hole, this stroke number) rather than drawn from a stream: two players' stroke
+         counts diverge the moment one of them duffs, so a stream would desynchronise everything after
+         it, while a pure function of (day, hole, stroke) gives everyone who duffs the same shot the
+         same punishment. */
+      const dr = game.daily
+        ? mulberry32(daySeed(dayKey()) ^ (game.hole*7919 + game.strokes*104729))
+        : Math.random;
+      p=40; aim+=(dr()<0.5?-1:1)*(5+dr()*5)*DEG; errPct=0; showMsg('Duffed it!');
+    }
     const v0=V0[game.club]*Math.sqrt(p/100);   // carry ~ v0^2, so sqrt gives meter% ~ distance%
     const loft=club.loft;
     const dir=new THREE.Vector3(Math.sin(aim),0,Math.cos(aim));
@@ -963,7 +1079,8 @@ function ballStep(dt){
     v.x+=ax*dt; v.z+=az*dt; v.y=0;
     p.x+=v.x*dt; p.z+=v.z*dt;
     // hole capture
-    const dPin=Math.hypot(p.x-H().pin.x, p.z-H().pin.z);
+    const cp=cupOf(H());
+    const dPin=Math.hypot(p.x-cp.x, p.z-cp.z);
     if(dPin<0.11 && Math.hypot(v.x,v.z)<3.4){ holeOut(); return; }
     const slope=Math.hypot(g.x,g.z);
     // settle when slow on flat ground, or when friction holds it still on a slope
@@ -981,7 +1098,8 @@ function waterPenalty(){
   AudioE.splash();
   showMsg('In the water — penalty stroke');
   ball.pos.copy(ball.lastDry);
-  const away=new THREE.Vector3(ball.pos.x-H().pin.x,0,ball.pos.z-H().pin.z).normalize();
+  const cp=cupOf(H());
+  const away=new THREE.Vector3(ball.pos.x-cp.x,0,ball.pos.z-cp.z).normalize();
   ball.pos.addScaledVector(away,2.5);
   placeBall(ball.pos.x, ball.pos.z);
   beginSettle();
@@ -995,7 +1113,8 @@ function obPenalty(){
 function holeOut(){
   game.holedOut=true;
   ball.vel.set(0,0,0); ball.mode='rest';
-  ball.pos.set(H().pin.x, rawHeight(H().pin.x,H().pin.z)-0.1, H().pin.z);
+  const cp=cupOf(H());
+  ball.pos.set(cp.x, rawHeight(cp.x,cp.z)-0.1, cp.z);
   AudioE.holeOut();
   beginSettle();
 }
@@ -1017,8 +1136,7 @@ function afterSettle(){
     return;
   }
   newGust(); suggestClub(); game.aimDirty=true;
-  const dir=Math.atan2(H().pin.x-ball.pos.x, H().pin.z-ball.pos.z);
-  game.aim=dir;
+  game.aim=aimAngleToPin();
   startWalk();                                     // stride up to the ball for the next shot
   if(ball.lie==='green'){
     game.state='GREEN';
@@ -1153,6 +1271,45 @@ function scoreLabel(strokes,par){
   if(d===1) return '<span class="lbl-bogey">Bogey</span>';
   return '<span class="lbl-double">+'+d+'</span>';
 }
+/* One square per hole, coloured by the score relative to par. Golf already reads this way — nobody
+   needs the key explained — and it leaks nothing: the pin positions and the wind stay the day's secret.
+   Squares only, no ZWJ sequences, so an Android paste is the same width as an iOS one. */
+function parSquare(d){ return d<=-2?'\u{1F7EA}' : d===-1?'\u{1F7E6}' : d===0?'\u{1F7E9}' : d===1?'\u{1F7E8}' : '\u{1F7E5}'; }
+function roundTotals(){
+  const played=game.scores.length;
+  return { total:game.scores.reduce((s,v)=>s+v,0),
+           parSum:HOLES.slice(0,played).reduce((s,h)=>s+h.par,0) };
+}
+/* Called exactly once, when the fourth hole's card is closed and the round is over — never on a
+   hole-by-hole card, and never in a normal round. */
+function finishRound(){
+  const { total }=roundTotals();
+  if(game.daily){
+    /* Golf inverts the repo's usual "bigger is better": fewer strokes wins. 0 is still safely "no
+       round today" — no legal round can total zero, the floor is four aces. */
+    const prev=loadToday(SLUG+'.dbest');
+    if(!prev || total<prev) saveToday(SLUG+'.dbest', total);
+    game.dailyStreak=dailyDone();
+  }else{
+    const b=loadInt(SLUG+'.best');
+    if(!b || total<b) LS.set(SLUG+'.best', String(total));
+  }
+}
+function dailyShareText(){
+  const d=new Date(), { total, parSum }=roundTotals(), streak=streakOf('kreeda.streak');
+  return 'Kreeda · Fairway Four · '+d.getDate()+' '+MONTHS[d.getMonth()]+'\n'
+    + game.scores.map((s,i)=>parSquare(s-HOLES[i].par)).join('')+'\n'
+    + fmtPar(total-parSum)+' ('+total+' strokes)'
+    + (streak>=2 ? ' · streak '+streak+' \u{1F525}' : '')+'\n';
+}
+function refreshTitleStats(){
+  const dbest=loadToday(SLUG+'.dbest'), streak=streakOf('kreeda.streak'), best=loadInt(SLUG+'.best');
+  const parSum=HOLES.reduce((s,h)=>s+h.par,0), bits=[];
+  if(dbest) bits.push('Today '+dbest+' ('+fmtPar(dbest-parSum)+')');
+  if(streak>=2) bits.push('streak '+streak+' \u{1F525}');
+  if(best) bits.push('best round '+best);
+  el('dailyNote').textContent=bits.join(' · ');
+}
 function openScorecard(final){
   const m=el('scoreModal');
   let html='<table><tr><th>Hole</th><th>Par</th><th>Strokes</th><th></th></tr>';
@@ -1163,7 +1320,13 @@ function openScorecard(final){
   const parSum=HOLES.slice(0,played).reduce((s,h)=>s+h.par,0);
   const total=game.scores.reduce((s,v)=>s+v,0);
   html+=`<tr><th>Total</th><th>${parSum}</th><th>${total}</th><th>${fmtPar(total-parSum)}</th></tr></table>`;
-  el('scoreTitle').textContent= final? 'Final Scorecard' : `Hole ${game.hole+1} — ${H().name}`;
+  if(final) finishRound();          // the one place a completed round is recorded, daily or not
+  if(final && game.daily){
+    html+=`<div class="sharegrid">${game.scores.map((s,i)=>parSquare(s-HOLES[i].par)).join('')}</div>`;
+    html+=`<p class="sharesub">${fmtPar(total-parSum)} (${total} strokes)`
+       + (game.dailyStreak>=2 ? ` · streak ${game.dailyStreak} \u{1F525}` : '')+`</p>`;
+  }
+  el('scoreTitle').textContent= final? (game.daily?'Today’s Round':'Final Scorecard') : `Hole ${game.hole+1} — ${H().name}`;
   el('scoreBody').innerHTML=html;
   el('scoreBtn').textContent= final? 'PLAY AGAIN' : (game.hole<HOLES.length-1?'NEXT HOLE':'FINAL CARD');
   game.state= final?'FINAL':'SCORE';
@@ -1185,6 +1348,7 @@ try{
   if(shareBtnEl){
     shareBtnEl.addEventListener('click',function(){
       try{
+        if(game.daily){ kreedaShare(dailyShareText(),'kreeda.games/fairway-four/',shareBtnEl); return; }
         const scoreToPar=shareBtnEl.dataset.scoreToPar||'E';
         const text='I shot '+scoreToPar+' in Fairway Four ⛳ — beat me:';
         const url='https://kreeda.games/fairway-four/?ref=share';
@@ -1195,7 +1359,9 @@ try{
 }catch(e){}
 function kreedaShare(text,url,btn){
   try{
-    const full=text+' '+url;
+    // a block grid is already newline-terminated, so the URL goes on its own last line rather than
+    // getting a stray leading space; a one-line brag still gets the old "text url" shape exactly.
+    const full = !url ? text : (text.slice(-1)==='\n' ? text+url : text+' '+url);
     if(navigator.share){
       navigator.share({text:full}).catch(function(){});
     } else if(navigator.clipboard && navigator.clipboard.writeText){
@@ -1211,7 +1377,8 @@ function kreedaToast(anchorEl,msg){
   try{
     if(!anchorEl) return;
     const prev=anchorEl.textContent;
-    anchorEl.textContent=msg;
+    // a block grid is far too big to sit inside a button; every other Kreeda game truncates the same way
+    anchorEl.textContent=msg.length>18?'Copied!':msg;
     anchorEl.disabled=true;
     setTimeout(function(){
       try{ anchorEl.textContent=prev; anchorEl.disabled=false; }catch(e){}
@@ -1226,7 +1393,7 @@ function startHole(i){
   placeBall(H().tee.x, H().tee.z);
   ball.lie='fairway';
   newGust();
-  game.aim=Math.atan2(H().pin.x-ball.pos.x, H().pin.z-ball.pos.z);
+  game.aim=aimAngleToPin();
   suggestClub(); game.aimDirty=true;
   game.swing.lastPow=null; game.swing.lastAcc=null;
   ghostPow.style.display='none'; ghostAcc.style.display='none';
@@ -1259,7 +1426,19 @@ function endIntro(){
   startWalk();                                     // walk onto the tee
 }
 function resetRound(){
-  game.scores=[]; startHole(0);
+  game.scores=[]; startHole(0);      // conditions are already applied and stay applied: same day, same round
+}
+/* The daily is a separate entry point, not a toggle mid-round: the conditions have to be settled
+   before the first tee shot, because the cup you are aiming at is part of the shot. */
+function startRound(daily){
+  AudioE.init();
+  game.daily=daily;
+  game.dailyPlan=daily?buildDailyPlan():null;
+  game.dailyStreak=0;
+  applyRoundConditions();
+  el('titleModal').classList.remove('open');
+  game.scores=[];
+  startHole(0);
 }
 
 /* ============================== INPUT ============================== */
@@ -1323,7 +1502,7 @@ window.addEventListener('keydown',(e)=>{
   if(e.key==='Tab'){ e.preventDefault(); toggleView(); return; }
   if(e.key===' '){ e.preventDefault(); onSpace(); return; }
   keys[e.key]=true;
-  if(e.key==='m'||e.key==='M'){ AudioE.setMuted(!AudioE.muted); showMsg(AudioE.muted?'Muted':'Sound on',900); }
+  if(e.key==='m'||e.key==='M'){ AudioE.setMuted(!AudioE.muted); el('btnMute').textContent=AudioE.muted?'♪̸':'♪'; showMsg(AudioE.muted?'Muted':'Sound on',900); saveSettings(); }
   if(e.key==='q'||e.key==='Q') cycleClub(-1);
   if(e.key==='e'||e.key==='E') cycleClub(1);
   const num=parseInt(e.key,10);
@@ -1352,11 +1531,8 @@ function onSpace(){
   }
   if(game.state==='SWING'){ meterClick(); return; }
 }
-document.getElementById('playBtn').addEventListener('click',()=>{
-  AudioE.init();
-  document.getElementById('titleModal').classList.remove('open');
-  startHole(0);
-});
+document.getElementById('playBtn').addEventListener('click',()=>startRound(false));
+document.getElementById('dailyBtn').addEventListener('click',()=>startRound(true));
 
 // on-screen controls (equivalent to keyboard; usable by touch or mouse)
 el('btnClubPrev').addEventListener('click',()=>{ AudioE.init(); if(allowedClub(game.club)) cycleClub(-1); });
@@ -1367,7 +1543,16 @@ el('btnMute').addEventListener('click',()=>{
   AudioE.init(); AudioE.setMuted(!AudioE.muted);
   el('btnMute').textContent=AudioE.muted?'♪̸':'♪';
   showMsg(AudioE.muted?'Muted':'Sound on',900);
+  saveSettings();
 });
+/* Settings are re-validated on read rather than trusted: a half-written or hand-edited value has to
+   land the player on the defaults, never on a silently muted game or a crash before the first frame. */
+function loadSettings(){
+  const a=LS.get(SLUG+'.settings').split('|');
+  if(a[0]==='off'){ AudioE.setMuted(true); el('btnMute').textContent='♪̸'; }
+}
+function saveSettings(){ LS.set(SLUG+'.settings', AudioE.muted?'off':'on'); }
+loadSettings(); refreshTitleStats();
 
 // held keys: aim + birdseye nudge (processed per frame)
 function heldKeys(dt){
@@ -1377,7 +1562,8 @@ function heldKeys(dt){
     if(keys['ArrowRight']||keys['d']||keys['D']){ game.aim-=aimSpd; game.aimDirty=true; }
   }
   if(game.state==='BIRDS'){
-    const toPin=new THREE.Vector3(H().pin.x-ball.pos.x,0,H().pin.z-ball.pos.z).normalize();
+    const cp=cupOf(H());
+    const toPin=new THREE.Vector3(cp.x-ball.pos.x,0,cp.z-ball.pos.z).normalize();
     if(keys['ArrowUp']||keys['w']||keys['W']) rig.nudge.addScaledVector(toPin, 60*dt);
     if(keys['ArrowDown']||keys['s']||keys['S']) rig.nudge.addScaledVector(toPin,-60*dt);
     rig.nudge.clampLength(0,120);
@@ -1440,11 +1626,25 @@ window.__golf={
   game, ball, CLUBS, HOLES, V0,
   terrainHeight, classify, gradient,
   start(){ document.getElementById('playBtn').click(); },
+  daily:{
+    key:dayKey, seed:daySeed,
+    start(){ startRound(true); },
+    plan(){ return game.dailyPlan; },
+    // conditions as applied, rounded so a last-bit float difference can't fake a mismatch
+    conditions(){ return HOLES.map((h,i)=>{
+      const w=h.dayWind||h.wind, c=cupOf(h);
+      return 'w'+w[0].toFixed(4)+','+w[1].toFixed(4)+' c'+c.x.toFixed(4)+','+c.z.toFixed(4); }).join(' '); },
+    share(){ return dailyShareText(); },
+    streak(){ return streakOf('kreeda.streak'); },
+    best(){ return loadToday(SLUG+'.dbest'); },
+    setScores(a){ game.scores=a.slice(); },
+    finish(){ openScorecard(true); },
+  },
   skipIntro(){ if(game.state==='INTRO') endIntro(); },
   address(){ onSpace(); },
   toggleView, suggest:suggestClub, allowedClub, golfer, PUTTER,
   setClub(i){ if(allowedClub(i)) { game.club=i; game.aimDirty=true; } },
-  aimAtPin(){ game.aim=Math.atan2(H().pin.x-ball.pos.x, H().pin.z-ball.pos.z); game.aimDirty=true; },
+  aimAtPin(){ game.aim=aimAngleToPin(); game.aimDirty=true; },
   hit(power,err){ if(game.state==='PLAYERS'||game.state==='GREEN'||game.state==='BIRDS') executeShot(power,err||0); },
   beginSwing(){ if(game.state==='PLAYERS'||game.state==='GREEN'){ game.swingReturn=game.state; game.state='SWING'; showMeter(); } },
   finishSettle(){ if(game.state==='SETTLE'){ game.settleT=99; } },

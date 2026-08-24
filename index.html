@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Kreeda — 12 free games that start the second you tap</title>
+<title>Kreeda — 11 free games that start the second you tap</title>
 <meta name="description" content="Free browser games you can play right now — drifting, pool, carrom, golf, football, blackjack and more. No download, no sign-up, works on any phone.">
 <link rel="canonical" href="https://kreeda.games/">
 <meta name="theme-color" content="#07070d">
@@ -13,13 +13,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/">
-<meta property="og:title" content="Kreeda — 12 free games that start the second you tap">
+<meta property="og:title" content="Kreeda — 11 free games that start the second you tap">
 <meta property="og:description" content="Drifting, pool, carrom, golf, football and more. No download, no sign-up, works on any phone.">
 <meta property="og:image" content="https://kreeda.games/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Kreeda — 12 free games that start the second you tap">
+<meta name="twitter:title" content="Kreeda — 11 free games that start the second you tap">
 <meta name="twitter:description" content="Drifting, pool, carrom, golf, football and more. No download, no sign-up, works on any phone.">
 <meta name="twitter:image" content="https://kreeda.games/og.png">
 
@@ -196,6 +196,76 @@
 
   .empty{ display:none; color:var(--ink-dim); padding:28px 2px; font-size:15px; }
 
+  /* ---- today strip --------------------------------------------------------- */
+  /* The daily loop, surfaced. Everything in here is written by script from what the
+     GAMES recorded (see /DAILY.md) — there is nothing a server could know, so the
+     element ships empty and hidden and is unhidden only when there is something true
+     to say. A first-time visitor with empty storage is the majority of traffic and
+     must see the page exactly as it looked before this existed: no scaffolding, no
+     "streak 0", no dangling header. Hence no display: on .today — the UA sheet's
+     [hidden]{display:none} is left free to do its job, unlike .card below it. */
+  .today{
+    margin:18px 0 0;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px 12px 13px;
+  }
+  .today-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 2px 10px; }
+  .today-head h2{ margin:0; font-size:15px; font-weight:800; letter-spacing:-.1px; }
+  .today-count{ margin-left:auto; font-size:12px; color:#7f7f92; }
+  .streak{
+    display:inline-flex; align-items:center; gap:5px; flex:none;
+    font-size:13px; font-weight:800; letter-spacing:-.1px;
+    color:var(--accent); background:rgba(92,255,110,.10);
+    border:1px solid rgba(92,255,110,.30); border-radius:999px; padding:4px 11px 4px 9px;
+  }
+  .streak svg{ width:12px; height:14px; flex:none; }
+
+  /* Same scroll idiom as the filter chips, for the same reason: at 360px a third
+     pill does not fit, and wrapping them would push the card grid off the fold —
+     which is the one thing this strip must never do to the page it sits on. */
+  .today-row{
+    display:flex; gap:8px; overflow-x:auto; scrollbar-width:none;
+    margin:0 -12px -13px; padding:0 12px 13px;
+    -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity;
+  }
+  .today-row::-webkit-scrollbar{ display:none; }
+  .dpill{
+    flex:none; scroll-snap-align:start;
+    display:inline-flex; align-items:center; gap:7px; white-space:nowrap;
+    font-size:13.5px; font-weight:700; color:var(--ink);
+    background:var(--surface-2); border:1px solid var(--line); border-radius:999px;
+    padding:0 15px; height:38px;
+    transition:color .15s, background .15s, border-color .15s, transform .15s;
+  }
+  .dpill svg{ width:11px; height:11px; flex:none; display:block; }
+  .dpill .tick{ display:inline-flex; color:var(--accent); }
+  .dpill .num{ color:#7f7f92; font-weight:700; font-variant-numeric:tabular-nums; }
+  .dpill:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  @media (hover:hover){ .dpill:hover{ border-color:var(--line-strong); transform:translateY(-1px); } }
+  /* The single most valuable pixel on the page: the next daily not yet played today.
+     Filled accent, same treatment as the featured card's Play button, because it is
+     the same kind of thing — the one action the page is asking for. */
+  .dpill.next{ background:var(--accent); color:#08110a; border-color:var(--accent); font-weight:800; }
+  .dpill.next .num{ color:rgba(8,17,10,.6); }
+  @media (hover:hover){ .dpill.next:hover{ background:#7dff8b; border-color:#7dff8b; } }
+  .dpill.done{ color:var(--ink-dim); }
+
+  /* Per-card daily state — a corner pill floated over the art, mirroring .badge on
+     the opposite side so the featured card can carry both without them colliding.
+     Offsets track each card's own padding (10px / 12px) so the pill sits a uniform
+     10px inside the thumbnail either way. */
+  .dstat{
+    position:absolute; top:20px; right:20px; z-index:2;
+    display:inline-flex; align-items:center; gap:5px; white-space:nowrap;
+    font-size:11px; font-weight:800; letter-spacing:.3px;
+    color:var(--ink); background:rgba(7,7,13,.82);
+    border:1px solid var(--line-strong); border-radius:999px; padding:4px 9px;
+    box-shadow:0 2px 10px rgba(0,0,0,.35);
+  }
+  .dstat svg{ width:10px; height:10px; flex:none; display:block; }
+  .dstat.done{ color:var(--accent); border-color:rgba(92,255,110,.45); }
+  .card.featured .dstat{ top:22px; right:22px; }
+
   /* ---- footer -------------------------------------------------------------- */
   footer{
     margin-top:46px; padding-top:22px; border-top:1px solid var(--line);
@@ -228,7 +298,7 @@
 
   <header class="hero">
     <h1>Games that start the second you <em>tap</em>.</h1>
-    <p class="sub">Twelve hand-built games that run straight in your browser — phone or laptop. Nothing to install, no account, no waiting.</p>
+    <p class="sub">Eleven hand-built games that run straight in your browser — phone or laptop. Nothing to install, no account, no waiting.</p>
     <ul class="trust">
       <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>Free to play</li>
       <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>No sign-up</li>
@@ -237,9 +307,16 @@
     </ul>
   </header>
 
+  <!-- Returning players' first stop: today's dailies and the streak riding on them.
+       Deliberately empty in the markup — see the "daily loop, surfaced" script at the
+       bottom of this file for why nothing here can be pre-rendered, and the .today
+       rules in the stylesheet for why an empty-storage visit shows nothing at all.
+       Sits above #sentinel so the sticky filter strip keeps pinning exactly as before. -->
+  <section class="today" id="today" hidden aria-label="Today&rsquo;s dailies"></section>
+
   <span id="sentinel" aria-hidden="true"></span>
   <nav class="filters" id="filters" aria-label="Filter games by kind">
-    <button class="chip" data-cat="all" aria-pressed="true">All 12</button>
+    <button class="chip" data-cat="all" aria-pressed="true">All 11</button>
     <button class="chip" data-cat="racing" aria-pressed="false">Racing</button>
     <button class="chip" data-cat="sports" aria-pressed="false">Sports</button>
     <button class="chip" data-cat="board" aria-pressed="false">Board &amp; cards</button>
@@ -272,37 +349,6 @@
       <span class="top"><h2>Drift</h2><span class="tag">Racing</span></span>
       <p>Endless drifting from behind the wheel. No handbrake — just throttle, brake and a grip budget. Chain slides to claw charge back, thread the oncoming traffic, and run down the zombies on the verge for bounty money.</p>
       <span class="foot"><span class="meta">Solo &middot; One-thumb touch or keyboard</span><span class="play">Play now <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
-    </a>
-
-    <a class="card" href="drift-mp/index.html" data-game="drift-mp" data-cat="racing">
-      <span class="badge">New · Multiplayer</span>
-      <span class="thumb">
-        <svg viewBox="0 0 320 120" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three cars drifting the same sunlit road together">
-          <rect width="320" height="120" fill="#79c665"/>
-          <path d="M92 120 C 96 70, 150 60, 210 40 L 300 8 L 320 20 L 244 56 C 190 80, 150 86, 148 120 Z" fill="#adb3bd"/>
-          <path d="M92 120 C 96 70, 150 60, 210 40 L 300 8" fill="none" stroke="#f6f8fb" stroke-width="3.5"/>
-          <path d="M148 120 C 150 86, 190 80, 244 56 L 320 20" fill="none" stroke="#f6f8fb" stroke-width="3.5"/>
-          <path d="M120 120 C 124 74, 172 70, 226 48 L 306 14" fill="none" stroke="#ffd24a" stroke-width="4" stroke-dasharray="12 12"/>
-          <path d="M150 108 C 158 92, 176 88, 190 80" fill="none" stroke="rgba(40,42,48,.34)" stroke-width="5" stroke-linecap="round"/>
-          <g transform="translate(178,78) rotate(38)">
-            <rect x="-12" y="-22" width="24" height="44" rx="8" fill="#ff5a2f"/>
-            <rect x="-2.5" y="-19" width="5" height="38" fill="rgba(255,255,255,.85)"/>
-            <rect x="-8" y="-8" width="16" height="16" rx="4" fill="#1f2c3a"/>
-            <circle cx="-8" cy="-19" r="2.4" fill="#fff3c4"/><circle cx="8" cy="-19" r="2.4" fill="#fff3c4"/>
-          </g>
-          <g transform="translate(232,50) rotate(30)" opacity="0.85">
-            <rect x="-10" y="-19" width="20" height="38" rx="7" fill="#2f8fff"/>
-            <rect x="-7" y="-7" width="14" height="14" rx="4" fill="rgba(255,255,255,.7)"/>
-          </g>
-          <g transform="translate(130,96) rotate(46)" opacity="0.85">
-            <rect x="-10" y="-19" width="20" height="38" rx="7" fill="#9f5bff"/>
-            <rect x="-7" y="-7" width="14" height="14" rx="4" fill="rgba(255,255,255,.7)"/>
-          </g>
-        </svg>
-      </span>
-      <span class="top"><h2>Drift MP</h2><span class="tag">Racing</span></span>
-      <p>Drift, raced live. Host a room, share a four-letter code, and up to eight friends drive the same seeded road from their own phones — rival cars beside you as holograms, a live scoreboard, and a grid clock that waits for nobody.</p>
-      <span class="foot"><span class="meta">2&ndash;8 players &middot; Peer-to-peer, no server</span><span class="play">Play now <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
 
     <a class="card" href="carrom/index.html" data-game="carrom" data-cat="board">
@@ -729,6 +775,22 @@
 
 <script src="analytics.js"></script>
 <script>
+/* Service worker registration — same protocol guard as analytics.js and for the same
+   reason: registering on file:// throws (a service worker requires an http/https
+   origin), and this repo is built to be opened straight off disk, so doing nothing
+   there is the correct behavior, not a bug to fix. Registered on `load` rather than
+   immediately so it can never compete with first paint. */
+(function(){
+  if (!('serviceWorker' in navigator)) return;
+  try{
+    if (location.protocol === 'file:') return;
+    addEventListener('load', function(){
+      try{ navigator.serviceWorker.register('/sw.js'); }catch(e){}
+    });
+  }catch(e){}
+})();
+</script>
+<script>
 (function(){
   /* Sticky bar gets its background only once you've scrolled past the top, so the
      hero reads as full-bleed on first paint. */
@@ -797,6 +859,181 @@
 })();
 </script>
 
+<script>
+/* ========================= the daily loop, surfaced =========================
+   Every game here ships its own date-seeded daily and records it under the keys in
+   /DAILY.md. Nothing on this page ever read them, so the one screen every visit starts
+   on was the one screen that never mentioned the reason to come back tomorrow.
+
+   This block is the reader. Four rules it lives by, in order of importance:
+
+   1. IT NEVER WRITES. kreeda.streak, kreeda.daily.* and <slug>.dbest belong to the
+      games; this page only reports them. Even a "harmless" normalisation of a malformed
+      value from here would forge a streak the player never earned or flatten one they
+      did, and the game that owns the key would have no way to tell.
+
+   2. IT HAS NO LIST OF WHICH GAMES HAVE A DAILY. Games are growing dailies right now and
+      a list in this file would be wrong within the week — and wrong in the worst
+      direction, promising a daily that isn't there. The storage IS the evidence: a game
+      that has ever written <slug>.dbest or <slug>.streak has a daily, whatever date is
+      on it; one that never has, doesn't, and gets no badge invented for it. A game that
+      grows a daily next month lights up here the first time somebody finishes it,
+      with no edit to this file.
+
+   3. A STAMP FROM ANOTHER DAY IS WORTH ZERO, not stale-but-usable (/DAILY.md). Yesterday's
+      dbest is not today's best; a kreeda.streak stamped any day but today is not a live
+      streak. drift's own HUD reads it exactly this way (siteStreak(), drift/index.html) —
+      a landing page claiming a streak the game itself denies is worse than one that says
+      nothing. That does mean a streak stamped YESTERDAY, which the player could still
+      save by playing tonight, shows as no streak. Displaying it would require this page
+      to decide a number is alive that every game treats as dead, and rule 1 means it
+      can't write the agreement down. The games own the streak; this page follows.
+
+   4. EVERY READ IS GUARDED AND EVERY VALUE IS GARBAGE UNTIL PARSED. localStorage throws
+      outright in Safari private mode and on some file:// origins, and any extension,
+      other tab or curious devtools session can leave anything at all under these keys.
+      Both degrade to "this game has no daily state" — never to a broken page, and never
+      to `undefined` rendered into the DOM.
+*/
+(function(){
+  var strip = document.getElementById('today');
+  var grid  = document.getElementById('grid');
+  if (!strip || !grid) return;
+
+  /* Local calendar day, matching dayKey() in /DAILY.md byte for byte. Local, not UTC,
+     because that is the day the games seeded their puzzle against — a landing page on a
+     different clock would call a finished daily unplayed. */
+  var today = (function(){
+    var d = new Date(), p = function(n){ return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  })();
+
+  function read(k){ try{ return localStorage.getItem(k) || ''; }catch(e){ return ''; } }
+
+  /* Parse a `YYYY-MM-DD|number` row. A row without a real date stamp ("{{{") is not a
+     daily row at all and is dropped whole. A row with a real stamp but an unusable
+     number ("2026-08-24|NaN") keeps its DAY — that game genuinely played that day — and
+     loses only the figure, so it reads as "done" with no score rather than "done ·
+     undefined". A stamp from the future is a real stamp on a day that is not today, so
+     it lands where every other other-day stamp lands: proof of a daily, not today's. */
+  function stamped(raw){
+    var i = raw.indexOf('|');
+    if (i < 0) return null;
+    var day = raw.slice(0, i);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+    var n = +raw.slice(i + 1);
+    return { day: day, n: (isFinite(n) && n >= 0 && n < 1e15) ? n : -1 };   // -1 = no usable figure
+  }
+  function num(n){ try{ return Math.round(n).toLocaleString(); }catch(e){ return String(Math.round(n)); } }
+
+  /* Constant markup, never anything from storage — the only route a stored value takes
+     into the document is textContent, via num(). The tick is the same path the trust
+     list uses, so a check mark means one thing everywhere on the page. */
+  var TICK  = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>';
+  var PLAY  = '<svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg>';
+  var FLAME = '<svg viewBox="0 0 14 16" fill="currentColor" aria-hidden="true"><path d="M7.7 0c.5 2.8-1.6 4-3.1 5.7-.5-.8-.6-1.7-.6-1.7C2.3 5.5 1 7.4 1 9.5 1 13 3.7 16 7 16s6-3 6-6.5C13 5.9 10.4 3.4 7.7 0zM7 14c-1.5 0-2.6-1.2-2.6-2.7 0-1 .4-1.8 1.4-2.9.2.9.7 1.4.7 1.4 1-1.2 1.5-2 1.4-3.3.9 1.2 1.7 2.4 1.7 3.5C9.6 12.5 8.5 14 7 14z"/></svg>';
+
+  function el(tag, cls, text){
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  /* The slug set comes from the cards actually in this document, never from the keys.
+     That is what makes a junk key ("evil.dbest") unable to introduce a row, and it means
+     every name and href rendered below is one this page already vouches for — no lookup
+     table to drift out of sync with the grid. */
+  var doneToday = read('kreeda.daily.' + today).split(',');
+  var dailies = [];
+  [].forEach.call(grid.querySelectorAll('.card'), function(card){
+    var slug = card.getAttribute('data-game'), h = card.querySelector('h2');
+    if (!slug || !h) return;
+    var best = stamped(read(slug + '.dbest'));
+    var run  = stamped(read(slug + '.streak'));
+    var listed = doneToday.indexOf(slug) >= 0;
+    if (!best && !run && !listed) return;                 // no daily here: invent no state
+    var done = listed || (best && best.day === today);
+    dailies.push({
+      slug: slug,
+      name: h.textContent,
+      href: card.getAttribute('href'),
+      done: !!done,
+      /* Only today's row can supply today's figure. A dbest stamped any other day is
+         worth zero here, so the pill shows the tick and no number. */
+      score: (best && best.day === today) ? best.n : -1,
+      card: card
+    });
+  });
+
+  if (!dailies.length) return;   // first visit: the page stays precisely as it was
+
+  /* ---- per-card state. A game with a daily says where it stands; one without stays
+     untouched, which is why this loop runs over `dailies` and not over every card. */
+  dailies.forEach(function(d){
+    var pill = el('span', 'dstat' + (d.done ? ' done' : ''));
+    if (d.done) pill.innerHTML = TICK;
+    /* "Daily" stays in the label even when there is a figure: this pill sits on the same
+       art as the endless-mode game, and a bare number there would read as an all-time
+       best — the exact conflation DAILY.md keeps the two keys separate to avoid. */
+    pill.appendChild(el('span', null,
+      d.done ? (d.score >= 0 ? 'Daily ' + num(d.score) : 'Daily done') : 'Daily ready'));
+    /* Appended last so a screen reader hears the game and its pitch before its daily
+       state; the absolute positioning puts it over the art regardless of DOM order. */
+    d.card.appendChild(pill);
+  });
+
+  /* ---- the strip. Unplayed first — what is LEFT to do is the entire point of it —
+     with card order preserved inside each group, so the featured game stays first
+     among equals rather than the order shuffling day to day. */
+  var todo = dailies.filter(function(d){ return !d.done; });
+  var did  = dailies.filter(function(d){ return d.done; });
+
+  var s = stamped(read('kreeda.streak'));
+  var streak = (s && s.day === today && s.n > 0) ? s.n : 0;   // rule 3; garbage figures land on -1 and fail this
+
+  var head = el('div', 'today-head');
+  if (streak) {
+    var flame = el('span', 'streak');
+    flame.innerHTML = FLAME;
+    flame.appendChild(el('span', null, streak + '-day streak'));
+    head.appendChild(flame);
+  }
+  head.appendChild(el('h2', null, todo.length ? 'Today’s dailies' : 'Today’s dailies — all done'));
+  head.appendChild(el('span', 'today-count',
+    !todo.length      ? 'New set at midnight'
+    : !did.length     ? (todo.length === 1 ? '1 waiting' : todo.length + ' waiting')
+                      : did.length + ' of ' + dailies.length + ' done'));
+
+  var row = el('div', 'today-row');
+  todo.concat(did).forEach(function(d, i){
+    var a = el('a', 'dpill' + (d.done ? ' done' : (i === 0 ? ' next' : '')));
+    a.href = d.href;
+    if (d.done) { var t = el('span', 'tick'); t.innerHTML = TICK; a.appendChild(t); }
+    a.appendChild(el('span', null, d.name));
+    if (d.done && d.score >= 0) a.appendChild(el('span', 'num', num(d.score)));
+    if (!d.done) { var g = el('span', 'go'); g.innerHTML = PLAY; a.appendChild(g); }
+    a.addEventListener('click', function(){
+      if (window.bgTrack) bgTrack('daily_click', {
+        game_id: d.slug, state: d.done ? 'done' : 'todo', position: i + 1
+      });
+    });
+    row.appendChild(a);
+  });
+
+  strip.appendChild(head);
+  strip.appendChild(row);
+  strip.hidden = false;
+
+  /* Whether the loop is worth the pixels is an empirical question, and this is the only
+     place it can be answered: how many visits arrive already holding a streak, and how
+     many of them convert on the strip rather than the grid. */
+  if (window.bgTrack) bgTrack('daily_strip_view', {
+    streak: streak, todo: todo.length, total: dailies.length
+  });
+})();
+</script>
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -818,8 +1055,7 @@
       {"@type":"ListItem","position":8,"item":{"@type":"VideoGame","name":"Fairway Four","url":"https://kreeda.games/fairway-four/","genre":"Sports","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
       {"@type":"ListItem","position":9,"item":{"@type":"VideoGame","name":"Deadpoint","url":"https://kreeda.games/deadpoint/","genre":"Action","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
       {"@type":"ListItem","position":10,"item":{"@type":"VideoGame","name":"Ennead","url":"https://kreeda.games/ennead/","genre":"Strategy","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
-      {"@type":"ListItem","position":11,"item":{"@type":"VideoGame","name":"Daśānana","url":"https://kreeda.games/dasanana/","genre":"Action","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
-      {"@type":"ListItem","position":12,"item":{"@type":"VideoGame","name":"Drift MP","url":"https://kreeda.games/drift-mp/","genre":"Racing","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","playMode":"MultiPlayer","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}}
+      {"@type":"ListItem","position":11,"item":{"@type":"VideoGame","name":"Daśānana","url":"https://kreeda.games/dasanana/","genre":"Action","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}}
     ]
   }
 }

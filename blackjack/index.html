@@ -102,6 +102,8 @@
             flex: none;
         }
         .balance #bal-amount { color: var(--gold); }
+        /* best-bankroll readout — small enough to sit inside the same pill without competing with the live number */
+        .balance .best-inline { font-size: 0.68rem; font-weight: 600; color: rgba(234,251,238,0.6); margin-left: 6px; white-space: nowrap; }
 
         /* ---------- Table ---------- */
         .table-wrap {
@@ -422,7 +424,7 @@
             <span class="pip-mark">♠</span>
             <h1>Blackjack</h1>
         </div>
-        <div class="balance"><span class="chip-icon"></span>$<span id="bal-amount">1000</span></div>
+        <div class="balance"><span class="chip-icon"></span>$<span id="bal-amount">1000</span><span class="best-inline" id="best-inline"></span></div>
     </header>
 
     <div class="table-wrap">
@@ -463,6 +465,42 @@
     <footer>Single deck • Dealer stands on 17 • Blackjack pays 3:2</footer>
 
     <script>
+        /* ---- Kreeda persistence — see /DAILY.md. Copied, not imported: this file stays standalone. ---- */
+        const SLUG = 'blackjack';
+        const LS = { get: k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } },
+                     set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+        const STAKE = 1000; // fresh-stake amount handed out when the bankroll can't cover even the $5 chip
+
+        // settings payload is "<bankroll>|<lastBetChip>" — plain ints, pipe-delimited per the site's contract.
+        // Both fields are read back as attacker-grade garbage: NaN, negatives, and an unknown chip value
+        // all have to fall back to sane defaults instead of leaking into game state.
+        function loadSave() {
+            const raw = LS.get(SLUG + '.settings');
+            if (!raw) return { bal: STAKE, bet: 25 };   // no save yet — +'' coerces to 0, which would otherwise read as a real $0 bankroll
+            const parts = raw.split('|');
+            let bal = Math.round(+parts[0]);
+            if (!Number.isFinite(bal) || bal < 0 || bal > 1e9) bal = STAKE;
+            let bet = Math.round(+parts[1]);
+            if (![5, 25, 100].includes(bet)) bet = 25;
+            return { bal, bet };
+        }
+        function loadBest() {
+            const v = Math.round(+LS.get(SLUG + '.best'));
+            return (Number.isFinite(v) && v >= 0 && v <= 1e9) ? v : 0;
+        }
+        // called from updateBalance() so every place the bankroll changes also checkpoints it —
+        // deal, hit/bust, and every round's payout all funnel through that one function.
+        function persistState() {
+            LS.set(SLUG + '.settings', Math.round(balance) + '|' + currentBet);
+            if (balance > best) {
+                best = balance;
+                LS.set(SLUG + '.best', best);
+            }
+            const el = document.getElementById('best-inline');
+            if (el) el.textContent = best > 0 ? ('· best $' + best) : '';
+        }
+
         const suits = ['♥', '♦', '♣', '♠'];
         const ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 
@@ -481,8 +519,10 @@
 
         let deck = [];
         let playerHand = [], dealerHand = [];
-        let balance = 1000;
-        let currentBet = 25;
+        const saved = loadSave();
+        let balance = saved.bal;
+        let currentBet = saved.bet;
+        let best = loadBest();
         let gameOver = true;
 
         function createDeck() {
@@ -592,6 +632,7 @@
 
         function updateBalance() {
             document.getElementById('bal-amount').textContent = balance;
+            persistState();
         }
 
         let msgTimer;
@@ -623,6 +664,14 @@
 
         function dealInitial() {
             if (!gameOver) return;
+            // a $0 table is a dead end, not a difficulty spike — restock and let the message land
+            // before the next click actually deals, rather than flashing it for one frame.
+            if (balance < 5) {
+                balance = STAKE;
+                updateBalance();
+                showMessage('Fresh stake — $' + STAKE, '#f4d35e');
+                return;
+            }
             if (balance < currentBet) { showMessage('Not enough chips!', '#ff6b6b'); return; }
 
             hideMessage();
@@ -734,6 +783,7 @@
                 document.getElementById('bet-amount').textContent = currentBet;
                 document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
                 chip.classList.add('active');
+                persistState();
             });
         });
 
@@ -746,6 +796,10 @@
         });
 
         setControls(false);
+        // reflect the restored bet in the chip row before the first paint, so the UI never shows
+        // the HTML's hardcoded $25 default for a frame if a different chip was saved
+        document.getElementById('bet-amount').textContent = currentBet;
+        document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', parseInt(c.dataset.value) === currentBet));
         updateBalance();
         showMessage('Place your bet', '#f4d35e');
 

@@ -187,7 +187,8 @@
 
   <div id="screen-mode" class="screen hidden">
     <h1 class="title" style="font-size:28px;">CHOOSE MODE</h1>
-    <div class="mode-row">
+    <p class="subtitle" id="modeStats"></p>
+    <div class="mode-row" id="modeButtonsRow">
       <button class="btn" data-mode="tournament">TOURNAMENT</button>
       <button class="btn secondary" data-mode="quick">QUICK MATCH</button>
     </div>
@@ -1404,6 +1405,70 @@ function renderMatch(match){
   }
 }
 
+/* ---- Kreeda persistence — see /DAILY.md. Copied, not imported: this file stays standalone. ---- */
+const SLUG = 'last-16';
+const LS = { get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+             set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+const FINISH_NAMES = ['Round of 16','Quarter-Finals','Semi-Finals','Runner-up','Champion'];
+
+// last-16.best = furthest tournament finish ever reached: -1 none yet, 0..3 = knocked out in that
+// round (R16/QF/SF/FINAL), 4 = won the whole thing. Monotonic — a bad run afterward can't erase it.
+// -1 is the "never played" sentinel rather than 0, because 0 is itself a real finish (round-of-16
+// exit) — collapsing the two would hide a legitimate result behind "no finishes yet".
+function loadBestFinish(){
+  const raw = LS.get(SLUG+'.best');
+  const v = raw==='' ? -1 : Math.round(+raw);
+  return (Number.isFinite(v) && v>=-1 && v<=4) ? v : -1;
+}
+let bestFinish = loadBestFinish();
+function saveBestFinish(finishIdx){
+  if(finishIdx>bestFinish){ bestFinish=finishIdx; LS.set(SLUG+'.best', String(bestFinish)); return true; }
+  return false;
+}
+
+// last-16.settings = "<lastNation>|<lastPlayerIdx>|<tournamentResumeJSON-or-empty>". The bracket
+// is genuinely structured data (pairs of nations per round), so — same precedent as drift/'s
+// dghost — it rides as a JSON tail after the flat pipe-delimited prefix instead of being flattened.
+function loadSettings(){
+  const parts = LS.get(SLUG+'.settings').split('|');
+  let lastNation = parts[0];
+  if(!NATIONS[lastNation]) lastNation='';
+  let lastPlayerIdx = Math.round(+parts[1]);
+  if(!Number.isFinite(lastPlayerIdx) || lastPlayerIdx<0 || (lastNation && lastPlayerIdx>=NATIONS[lastNation].players.length)) lastPlayerIdx=0;
+  let resume=null;
+  const tail = parts.slice(2).join('|');
+  if(tail){
+    try{
+      const j = JSON.parse(tail);
+      // every field is load-bearing for resume: a stale/hand-edited bracket that doesn't shrink
+      // by half each round, or names an unknown nation, is discarded rather than half-trusted
+      if(j && typeof j.round==='number' && j.round>=0 && j.round<=3 &&
+         Array.isArray(j.bracket) && j.bracket.length===(8>>j.round) &&
+         j.bracket.every(pair=>Array.isArray(pair) && pair.length===2 && NATIONS[pair[0]] && NATIONS[pair[1]]) &&
+         typeof j.humanKey==='string' && NATIONS[j.humanKey] &&
+         j.bracket.some(pair=>pair.includes(j.humanKey))){
+        resume = j;
+      }
+    }catch(e){ resume=null; }
+  }
+  return { lastNation, lastPlayerIdx, resume };
+}
+const Settings = loadSettings();
+function persistSettings(){
+  const tail = Settings.resume ? JSON.stringify(Settings.resume) : '';
+  LS.set(SLUG+'.settings', Settings.lastNation+'|'+Settings.lastPlayerIdx+'|'+tail);
+}
+function saveLastPick(nationKey, playerIdx){
+  Settings.lastNation=nationKey; Settings.lastPlayerIdx=playerIdx; persistSettings();
+}
+function saveTournamentResume(t){
+  Settings.resume = { round:t.round, bracket:t.bracket, humanKey:t.humanKey };
+  persistSettings();
+}
+function clearTournamentResume(){
+  Settings.resume = null; persistSettings();
+}
+
 /* ============================================================ SCREEN / APP STATE ============================================================ */
 const screens = ['title','mode','nation','player','match','result','champion'];
 function showScreen(name){
@@ -1425,7 +1490,40 @@ function startApp(){
 document.getElementById('screen-title').addEventListener('click',()=>{ AudioEngine.init(); goModeSelect(); });
 window.addEventListener('keydown',()=>{ if(!document.getElementById('screen-title').classList.contains('hidden')){ AudioEngine.init(); goModeSelect(); } });
 
-function goModeSelect(){ showScreen('mode'); }
+function goModeSelect(){ renderModeScreen(); showScreen('mode'); }
+// paints best finish / last pick, and (re)creates the RESUME button when a saved bracket exists —
+// this is the whole reason the resume payload gets written mid-tournament: a save nobody sees is dead weight
+function renderModeScreen(){
+  try{
+    const statsEl=document.getElementById('modeStats');
+    statsEl.textContent = bestFinish>=0 ? ('Best finish: '+FINISH_NAMES[bestFinish]) : 'No tournament finishes yet';
+    if(Settings.lastNation) statsEl.textContent += '  ·  Last played: '+NATIONS[Settings.lastNation].name;
+
+    const row=document.getElementById('modeButtonsRow');
+    let resumeBtn=document.getElementById('resumeTournamentBtn');
+    if(Settings.resume){
+      const r=Settings.resume;
+      const roundLabel=['Round of 16','Quarter-Finals','Semi-Finals','Final'][r.round]||'Round of 16';
+      if(!resumeBtn){
+        resumeBtn=document.createElement('button');
+        resumeBtn.id='resumeTournamentBtn'; resumeBtn.className='btn';
+        resumeBtn.addEventListener('click',()=>{
+          const rr=Settings.resume;
+          if(!rr) return;
+          App.mode='tournament';
+          App.tournament={ round:rr.round, roundNames:['R16','QF','SF','FINAL'], bracket:rr.bracket.map(m=>m.slice()), humanKey:rr.humanKey, results:[], eliminated:false };
+          App.humanNationKey=rr.humanKey;
+          App.pickStage='human';
+          startTournamentRound();
+        });
+        row.insertBefore(resumeBtn, row.firstChild);
+      }
+      resumeBtn.textContent = 'RESUME · '+roundLabel+' · '+NATIONS[r.humanKey].code;
+    } else if(resumeBtn){
+      resumeBtn.remove();
+    }
+  }catch(e){}
+}
 document.querySelectorAll('#screen-mode .btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     App.mode = btn.getAttribute('data-mode');
@@ -1505,6 +1603,7 @@ function populatePlayerGrid(){
 
 function startTournamentRound(){
   const t = App.tournament;
+  saveTournamentResume(t);   // checkpoint at the start of every round, including R16 — a bracket is "mid-run" from the first pick on
   const roundName = t.roundNames[t.round];
   const fixture = t.bracket.find(m=>m.includes(t.humanKey));
   const oppKey = fixture[0]===t.humanKey?fixture[1]:fixture[0];
@@ -1516,6 +1615,7 @@ function startTournamentRound(){
 function beginMatchFromSelection(){
   const humanKey = App.humanNationKey;
   const oppKey = App.quickOpponentKey;
+  saveLastPick(humanKey, App.humanPlayerIdx);
   const teamA = makeTeam(humanKey,'left');
   const teamB = makeTeam(oppKey,'right');
   const starIdx = App.humanPlayerIdx;
@@ -1587,6 +1687,8 @@ function onMatchEnded(match){
     const t = App.tournament;
     if(!humanWon){
       AudioEngine.miss();
+      if(saveBestFinish(t.round)) document.getElementById('resultStats').innerHTML += '<br><span style="color:#ffd93d;font-weight:800;">New best finish!</span>';
+      clearTournamentResume();
       const roundLabel = ['Round of 16','Quarter-Finals','Semi-Finals','Final'][t.round] || 'Round of 16';
       const btn = document.createElement('button'); btn.className='btn'; btn.textContent='MAIN MENU';
       btn.addEventListener('click',()=>{ resetToTitle(); });
@@ -1610,6 +1712,8 @@ function onMatchEnded(match){
     AudioEngine.roundUp();
     if(t.round>=3){
       // won the final
+      saveBestFinish(4);
+      clearTournamentResume();
       const btn = document.createElement('button'); btn.className='btn'; btn.textContent='CLAIM TROPHY';
       btn.addEventListener('click',()=>{ showChampion(); });
       btnWrap.appendChild(btn);

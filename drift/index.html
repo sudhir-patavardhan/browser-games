@@ -449,6 +449,7 @@ function newGame(forceSeed){
     steer:0, steerPos:0, gas:0, brake:0, wheelSteer:0, wheelPtr:null, wheelStartX:0, wheelBase:0,
     score:0, mult:1, driftTime:0, grace:0, dist:0, onGrass:false, slip:0, speed:430,
     stall:0, chainScore:0, bestChain:0, driftTotal:0,
+    chainLog:[], chainCount:0,   // the share grid's raw material: one entry per LANDED chain (>240, the payout floor below), capped at push time so a monster run can't grow this unbounded — chainCount keeps counting past the cap so the share text can still say how many there really were
     skid:[], smoke:[], grassTufts:makeTufts(seed),
     batt:1, kw:0, hitT:0, cc:0, padCand:null, battWarn:0,  // the cabin: charge, power, last impact, cruise set-speed, low-pack alarm stage
     pullIn:null, pullOut:null, parked:null,    // heading for a rest area / seeing itself out / sat at the charger
@@ -603,6 +604,9 @@ function step(dt){
         if(tn==='CLEAN'||g.chainScore>=1000) awardBadge('clean');
         if(g.chainScore>=5000) awardBadge('sick');
         if(g.chainScore>=20000) awardBadge('legend');
+        // logged for the share grid, chronological order — a strike-traffic void (below) never reaches here,
+        // so the grid only ever shows chains that actually paid out, same as the tier popup just fired
+        g.chainCount++; if(g.chainLog.length<CHAIN_CAP) g.chainLog.push(g.chainScore);
       }
       g.bestChain=Math.max(g.bestChain,g.chainScore);
       g.chainScore=0; g.mult=1; g.driftTime=0; }
@@ -691,10 +695,13 @@ function gameOver(reason){
   game.bestChain=Math.max(game.bestChain,game.chainScore);   // a chain you died holding still counts on the report
   const sc=Math.round(game.score);
   game.lastScore=sc;   // remembered for the share button, which fires well after this scope is gone
+  game.lastDaily=dailyMode;   // ditto — the mode of the run just finished, not whatever the next Again/Drive click sets
   // two ledgers: the endless best, and today's — a daily run only ever settles against today's
   let isBest;
-  if(dailyMode){ isBest=sc>loadDailyBest(); if(isBest){ saveDailyBest(sc); saveGhost(game.rec,sc); } dbCache=loadDailyBest(); }
+  if(dailyMode){ isBest=sc>loadDailyBest(); if(isBest){ saveDailyBest(sc); saveGhost(game.rec,sc); } dbCache=loadDailyBest();
+    siteDailyDone(); }   // mirrors today's road into the site-wide ledger the landing page reads — see siteDailyDone()
   else { isBest=sc>best; if(isBest){ best=sc; try{ localStorage.setItem('drift.best',best); }catch(e){} } }
+  game.lastIsBest=isBest;
   checkRunBadges(game,isBest);   // the shelf remembers what the score forgets
   /* How the run actually went — the same numbers the report card shows the player, plus the one thing the
      card can't: WHY it ended. `reason` is the interesting field; if the population is mostly SPUN OUT the
@@ -744,6 +751,44 @@ function gameOver(reason){
    The ladder is steep on purpose: CLEAN is a good corner, LEGENDARY is a story you tell someone. */
 const CHAIN_TIERS=[[20000,'LEGENDARY'],[10000,'OUTRAGEOUS'],[5000,'SICK'],[2500,'SLICK'],[1000,'CLEAN']];
 function chainTier(v){ for(const t of CHAIN_TIERS) if(v>=t[0]) return t[1]; return ''; }
+/* ---- share grid — see /DAILY.md "Sharing a result". Drift isn't a puzzle with a solution to leak, so the
+   rule "never leak the answer" is free; what the grid encodes instead is the SHAPE of the run, and the
+   natural vocabulary is already sitting right above: CHAIN_TIERS. One square per chain that actually
+   landed (chainLog, pushed only at the >240 payout in step() — a chain a head-on voided never reaches that
+   line, so it never reaches this one either), coloured by the same ladder the HUD names out loud, plus one
+   more shade underneath CLEAN for a landed-but-small chain so nothing in the log goes unrepresented.
+   CHAIN_CAP bounds the grid itself (paste 200 squares and Wordle's format stops working) — chainLog is
+   already capped at push time so this is just picking how much of it to print, chronologically, oldest
+   first, same order the run happened in. */
+const CHAIN_COLS=6, CHAIN_ROWS=5, CHAIN_CAP=CHAIN_COLS*CHAIN_ROWS;
+function chainSquare(v){
+  return v>=20000?'🟨' : v>=10000?'🟧' : v>=5000?'🟪' : v>=2500?'🟦' : v>=1000?'🟩' : '⬜'; }
+function shareGrid(log){
+  const shown=log.slice(0,CHAIN_CAP), rows=[];
+  for(let i=0;i<shown.length;i+=CHAIN_COLS) rows.push(shown.slice(i,i+CHAIN_COLS).map(chainSquare).join(''));
+  return rows.join('\n');
+}
+const SHARE_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function shareDate(){ const d=new Date(); return d.getDate()+' '+SHARE_MON[d.getMonth()]; }
+/* reads kreeda.streak the same day-stamped way loadDailyBest() reads drift.dbest above — a stamp from any
+   other day is worth zero, never displayed, per DAILY.md's "worth zero, not stale-but-usable" rule */
+function siteStreak(){ let s=''; try{ s=localStorage.getItem('kreeda.streak')||''; }catch(e){}
+  const i=s.indexOf('|'); return (i<0 || s.slice(0,i)!==dayKey()) ? 0 : (+s.slice(i+1)||0); }
+/* the two flavours DAILY.md asks for: a DAILY result is the same road everyone else got today, so it's
+   worth comparing — the date says "this is today's". An ENDLESS result is only ever a personal best with
+   no shared reference, so the date would imply a comparison that doesn't exist; "Endless" replaces it and
+   "new best" replaces the streak's bragging role when this run actually beat the old one. */
+function buildShareText(){
+  const g=game||{}, sc=(typeof g.lastScore==='number')?g.lastScore:0;
+  const daily=!!g.lastDaily, km=((g.dist||0)/10000).toFixed(1);
+  const log=g.chainLog||[], count=g.chainCount||0, streak=siteStreak();
+  const head='Kreeda · Drift · '+(daily?shareDate():'Endless');
+  let stat=sc.toLocaleString()+' · '+km+' km';
+  if(!daily && g.lastIsBest) stat+=' · new best';
+  if(count>CHAIN_CAP) stat+=' · '+count+' chains';   // the cap ate some squares — say how many, don't just cut them
+  if(streak>=2) stat+=' · streak '+streak+' 🔥';
+  return [head, shareGrid(log), stat].filter(Boolean).join('\n');   // URL is kreedaShare's job, not this one's
+}
 function wavePop(msg){ const el=document.getElementById('wavePop'); if(!el) return;
   el.textContent=msg; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
 // the low-pack alarm, with the one fact that matters bolted on: how far to somewhere you can charge
@@ -2675,6 +2720,30 @@ function bumpStreak(){
   if(count>=7) awardBadge('reg7');
   return count;
 }
+/* ---- site-wide daily contract — see /DAILY.md. Additive mirror only: every drift.* key above (dbest,
+   dghost, drift.streak via bumpStreak()) keeps reading and writing exactly as it did before this block
+   existed, so nobody's saved streak or ghost moves or resets. This just also tells the landing page "drift
+   happened today" in the one shared place it looks.
+   Deliberately a SEPARATE call from bumpStreak() above, not a shared one, because the two streaks mean
+   different things: drift.streak has always paid out at daily START ("showing up is the feat"), but
+   kreeda.streak is defined site-wide as days the player FINISHED a daily — so it has to fire from
+   gameOver(), on dailyMode only, once the run has actually settled. Safe to call every daily gameOver()
+   regardless of reason or isBest: both writes below are same-day idempotent (a second call same day is a
+   no-op), so a died-immediately run and a personal best both count once, and only once. */
+function siteBumpStreak(key){
+  let s=''; try{ s=localStorage.getItem(key)||''; }catch(e){}
+  const i=s.indexOf('|'), lastK=i<0?'':s.slice(0,i), n=i<0?0:(+s.slice(i+1)||0);
+  const today=dayKey();
+  const count = lastK===today ? (n||1) : (lastK===prevDayKey(today) ? n+1 : 1);
+  try{ localStorage.setItem(key, today+'|'+count); }catch(e){}
+  return count;
+}
+function siteDailyDone(){
+  const today=dayKey(), k='kreeda.daily.'+today;
+  let had=[]; try{ had=(localStorage.getItem(k)||'').split(',').filter(Boolean); }catch(e){}
+  if(had.indexOf('drift')<0){ try{ localStorage.setItem(k, had.concat('drift').join(',')); }catch(e){} }
+  return siteBumpStreak('kreeda.streak');
+}
 const Z_MAX=9, Z_HIT=55, Z_H=92;                    // population cap, bumper-strike radius, body height (world px)
 /* THE HORDE TRAVELS IN PACKS. It used to walk in single file: one shambler laid every 45-90 points of road,
    reaped 4 points behind you, none existing past 70 points ahead — a 74-point window over a 67.5-point mean,
@@ -4219,12 +4288,13 @@ document.getElementById('startBtn').onclick=()=>startGame(false);
 document.getElementById('dailyBtn').onclick=e=>{ e.stopPropagation(); startGame(true); };
 document.getElementById('againBtn').onclick=()=>startGame(dailyMode);   // Again replays the mode you died in
 document.getElementById('shareBtn').onclick=function(){ try{
-  const sc=(game&&typeof game.lastScore==='number')?game.lastScore:0;
-  kreedaShare('I scored '+sc.toLocaleString()+' in Drift 🏎️ — beat me:',
-    'https://kreeda.games/drift/?ref=share', document.getElementById('shareBtn'));
+  kreedaShare(buildShareText(), 'kreeda.games/drift/', document.getElementById('shareBtn'));
 }catch(e){} };
+/* the block grid is multi-line by construction (header / grid rows / stat line), so the URL joins with a
+   newline of its own rather than the old single-sentence space — it has to land on its own last line for
+   DAILY.md's format ("Last line is the game's URL") and to stay pasteable as one clean block anywhere. */
 function kreedaShare(text, url, btn){ try{
-  var full = text + ' ' + url;
+  var full = text + '\n' + url;
   if (navigator.share) {
     navigator.share({ text: full }).catch(function(){});
   } else if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -4279,6 +4349,7 @@ window.__drift={
   shelf:{ owned:()=>badgesOwned.slice(),
     streak:()=>{ let s=''; try{ s=localStorage.getItem('drift.streak')||''; }catch(e){} return s; },
     wipe:()=>{ badgesOwned=[]; try{ localStorage.removeItem('drift.badges'); localStorage.removeItem('drift.streak'); }catch(e){} renderShelf(); } },
+  share:{ text:buildShareText, siteStreak, chainLog:()=>game?game.chainLog.slice():[] },   // probe access to the block grid, so a test can read the string kreedaShare would actually send
   billboards:{ every:BB_EVERY, at:bbIndex, side:bbSide, off:bbOff,
     defaults:()=>DEFAULT_ADS.length, remote:()=>REMOTE_ADS.length, reload:loadRemoteAds },
   pause(){ togglePause(); },
