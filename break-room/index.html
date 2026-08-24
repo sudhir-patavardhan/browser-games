@@ -1012,7 +1012,7 @@ function endGameUI(winner){
   let statsLine = game.rules.loseReason ? `(${game.rules.loseReason})` : '';
   // echo the persisted record right where the result just landed — a saved best nobody sees might as well not exist
   if(game.mode==='practice' && winner===game.humanPlayer){
-    statsLine += (statsLine?' — ':'') + `${game.shotCount} shots` + (game.shotCount===bestShots ? ' — new best!' : ` (best: ${bestShots})`);
+    statsLine += (statsLine?' — ':'') + `${game.shotCount} shot${game.shotCount===1?'':'s'}` + (game.shotCount===bestShots ? ' — new best!' : ` (best: ${bestShots})`);
   } else if(game.mode==='ai'){
     const r = aiRecord[game.difficulty];
     statsLine += (statsLine?' — ':'') + `vs ${game.difficulty}: ${r.w}W – ${r.l}L`;

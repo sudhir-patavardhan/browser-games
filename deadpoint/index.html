@@ -333,6 +333,7 @@ function newClimb(route){
   const h=route.holds;
   // stand on first two jugs
   const LH=h[0], RH=h[1];
+  markHold(LH,1); markHold(RH,1);   // you start holding these, so the log opens on them, not on two blanks
   game={
     route, mode:'climb',
     /* the creep dice. On a daily they come off the day's seed so nothing in a run reaches for

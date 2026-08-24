@@ -859,6 +859,181 @@
 })();
 </script>
 
+<script>
+/* ========================= the daily loop, surfaced =========================
+   Every game here ships its own date-seeded daily and records it under the keys in
+   /DAILY.md. Nothing on this page ever read them, so the one screen every visit starts
+   on was the one screen that never mentioned the reason to come back tomorrow.
+
+   This block is the reader. Four rules it lives by, in order of importance:
+
+   1. IT NEVER WRITES. kreeda.streak, kreeda.daily.* and <slug>.dbest belong to the
+      games; this page only reports them. Even a "harmless" normalisation of a malformed
+      value from here would forge a streak the player never earned or flatten one they
+      did, and the game that owns the key would have no way to tell.
+
+   2. IT HAS NO LIST OF WHICH GAMES HAVE A DAILY. Games are growing dailies right now and
+      a list in this file would be wrong within the week — and wrong in the worst
+      direction, promising a daily that isn't there. The storage IS the evidence: a game
+      that has ever written <slug>.dbest or <slug>.streak has a daily, whatever date is
+      on it; one that never has, doesn't, and gets no badge invented for it. A game that
+      grows a daily next month lights up here the first time somebody finishes it,
+      with no edit to this file.
+
+   3. A STAMP FROM ANOTHER DAY IS WORTH ZERO, not stale-but-usable (/DAILY.md). Yesterday's
+      dbest is not today's best; a kreeda.streak stamped any day but today is not a live
+      streak. drift's own HUD reads it exactly this way (siteStreak(), drift/index.html) —
+      a landing page claiming a streak the game itself denies is worse than one that says
+      nothing. That does mean a streak stamped YESTERDAY, which the player could still
+      save by playing tonight, shows as no streak. Displaying it would require this page
+      to decide a number is alive that every game treats as dead, and rule 1 means it
+      can't write the agreement down. The games own the streak; this page follows.
+
+   4. EVERY READ IS GUARDED AND EVERY VALUE IS GARBAGE UNTIL PARSED. localStorage throws
+      outright in Safari private mode and on some file:// origins, and any extension,
+      other tab or curious devtools session can leave anything at all under these keys.
+      Both degrade to "this game has no daily state" — never to a broken page, and never
+      to `undefined` rendered into the DOM.
+*/
+(function(){
+  var strip = document.getElementById('today');
+  var grid  = document.getElementById('grid');
+  if (!strip || !grid) return;
+
+  /* Local calendar day, matching dayKey() in /DAILY.md byte for byte. Local, not UTC,
+     because that is the day the games seeded their puzzle against — a landing page on a
+     different clock would call a finished daily unplayed. */
+  var today = (function(){
+    var d = new Date(), p = function(n){ return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  })();
+
+  function read(k){ try{ return localStorage.getItem(k) || ''; }catch(e){ return ''; } }
+
+  /* Parse a `YYYY-MM-DD|number` row. A row without a real date stamp ("{{{") is not a
+     daily row at all and is dropped whole. A row with a real stamp but an unusable
+     number ("2026-08-24|NaN") keeps its DAY — that game genuinely played that day — and
+     loses only the figure, so it reads as "done" with no score rather than "done ·
+     undefined". A stamp from the future is a real stamp on a day that is not today, so
+     it lands where every other other-day stamp lands: proof of a daily, not today's. */
+  function stamped(raw){
+    var i = raw.indexOf('|');
+    if (i < 0) return null;
+    var day = raw.slice(0, i);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+    var n = +raw.slice(i + 1);
+    return { day: day, n: (isFinite(n) && n >= 0 && n < 1e15) ? n : -1 };   // -1 = no usable figure
+  }
+  function num(n){ try{ return Math.round(n).toLocaleString(); }catch(e){ return String(Math.round(n)); } }
+
+  /* Constant markup, never anything from storage — the only route a stored value takes
+     into the document is textContent, via num(). The tick is the same path the trust
+     list uses, so a check mark means one thing everywhere on the page. */
+  var TICK  = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>';
+  var PLAY  = '<svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg>';
+  var FLAME = '<svg viewBox="0 0 14 16" fill="currentColor" aria-hidden="true"><path d="M7.7 0c.5 2.8-1.6 4-3.1 5.7-.5-.8-.6-1.7-.6-1.7C2.3 5.5 1 7.4 1 9.5 1 13 3.7 16 7 16s6-3 6-6.5C13 5.9 10.4 3.4 7.7 0zM7 14c-1.5 0-2.6-1.2-2.6-2.7 0-1 .4-1.8 1.4-2.9.2.9.7 1.4.7 1.4 1-1.2 1.5-2 1.4-3.3.9 1.2 1.7 2.4 1.7 3.5C9.6 12.5 8.5 14 7 14z"/></svg>';
+
+  function el(tag, cls, text){
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  /* The slug set comes from the cards actually in this document, never from the keys.
+     That is what makes a junk key ("evil.dbest") unable to introduce a row, and it means
+     every name and href rendered below is one this page already vouches for — no lookup
+     table to drift out of sync with the grid. */
+  var doneToday = read('kreeda.daily.' + today).split(',');
+  var dailies = [];
+  [].forEach.call(grid.querySelectorAll('.card'), function(card){
+    var slug = card.getAttribute('data-game'), h = card.querySelector('h2');
+    if (!slug || !h) return;
+    var best = stamped(read(slug + '.dbest'));
+    var run  = stamped(read(slug + '.streak'));
+    var listed = doneToday.indexOf(slug) >= 0;
+    if (!best && !run && !listed) return;                 // no daily here: invent no state
+    var done = listed || (best && best.day === today);
+    dailies.push({
+      slug: slug,
+      name: h.textContent,
+      href: card.getAttribute('href'),
+      done: !!done,
+      /* Only today's row can supply today's figure. A dbest stamped any other day is
+         worth zero here, so the pill shows the tick and no number. */
+      score: (best && best.day === today) ? best.n : -1,
+      card: card
+    });
+  });
+
+  if (!dailies.length) return;   // first visit: the page stays precisely as it was
+
+  /* ---- per-card state. A game with a daily says where it stands; one without stays
+     untouched, which is why this loop runs over `dailies` and not over every card. */
+  dailies.forEach(function(d){
+    var pill = el('span', 'dstat' + (d.done ? ' done' : ''));
+    if (d.done) pill.innerHTML = TICK;
+    /* "Daily" stays in the label even when there is a figure: this pill sits on the same
+       art as the endless-mode game, and a bare number there would read as an all-time
+       best — the exact conflation DAILY.md keeps the two keys separate to avoid. */
+    pill.appendChild(el('span', null,
+      d.done ? (d.score >= 0 ? 'Daily ' + num(d.score) : 'Daily done') : 'Daily ready'));
+    /* Appended last so a screen reader hears the game and its pitch before its daily
+       state; the absolute positioning puts it over the art regardless of DOM order. */
+    d.card.appendChild(pill);
+  });
+
+  /* ---- the strip. Unplayed first — what is LEFT to do is the entire point of it —
+     with card order preserved inside each group, so the featured game stays first
+     among equals rather than the order shuffling day to day. */
+  var todo = dailies.filter(function(d){ return !d.done; });
+  var did  = dailies.filter(function(d){ return d.done; });
+
+  var s = stamped(read('kreeda.streak'));
+  var streak = (s && s.day === today && s.n > 0) ? s.n : 0;   // rule 3; garbage figures land on -1 and fail this
+
+  var head = el('div', 'today-head');
+  if (streak) {
+    var flame = el('span', 'streak');
+    flame.innerHTML = FLAME;
+    flame.appendChild(el('span', null, streak + '-day streak'));
+    head.appendChild(flame);
+  }
+  head.appendChild(el('h2', null, todo.length ? 'Today’s dailies' : 'Today’s dailies — all done'));
+  head.appendChild(el('span', 'today-count',
+    !todo.length      ? 'New set at midnight'
+    : !did.length     ? (todo.length === 1 ? '1 waiting' : todo.length + ' waiting')
+                      : did.length + ' of ' + dailies.length + ' done'));
+
+  var row = el('div', 'today-row');
+  todo.concat(did).forEach(function(d, i){
+    var a = el('a', 'dpill' + (d.done ? ' done' : (i === 0 ? ' next' : '')));
+    a.href = d.href;
+    if (d.done) { var t = el('span', 'tick'); t.innerHTML = TICK; a.appendChild(t); }
+    a.appendChild(el('span', null, d.name));
+    if (d.done && d.score >= 0) a.appendChild(el('span', 'num', num(d.score)));
+    if (!d.done) { var g = el('span', 'go'); g.innerHTML = PLAY; a.appendChild(g); }
+    a.addEventListener('click', function(){
+      if (window.bgTrack) bgTrack('daily_click', {
+        game_id: d.slug, state: d.done ? 'done' : 'todo', position: i + 1
+      });
+    });
+    row.appendChild(a);
+  });
+
+  strip.appendChild(head);
+  strip.appendChild(row);
+  strip.hidden = false;
+
+  /* Whether the loop is worth the pixels is an empirical question, and this is the only
+     place it can be answered: how many visits arrive already holding a streak, and how
+     many of them convert on the strip rather than the grid. */
+  if (window.bgTrack) bgTrack('daily_strip_view', {
+    streak: streak, todo: todo.length, total: dailies.length
+  });
+})();
+</script>
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",

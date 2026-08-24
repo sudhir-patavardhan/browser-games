@@ -887,11 +887,13 @@ function setupInput(game){
       const score = btn.dataset.score || game.score || 0;
       const url = 'https://kreeda.games/chroma-blocks/';
       if(btn.dataset.mode === 'daily'){
+        /* the grid's last line is the bare host — schemeless, per the contract, because chat clients
+           linkify it anyway and a visible https:// costs a line of width the squares want. */
         const lines = +btn.dataset.lines || 0, streak = +btn.dataset.streak || 0;
         const text = 'Kreeda · Chroma Blocks · ' + shareDate() + '\n'
           + btn.dataset.grid + '\n'
           + lines + ' lines · ' + score + ' pts' + (streak >= 2 ? ' · streak ' + streak + ' 🔥' : '') + '\n'
-          + url;
+          + 'kreeda.games/chroma-blocks/';
         kreedaShare(text, '', btn);
       } else {
         kreedaShare('I scored ' + score + ' in Chroma Blocks 🧩 — beat me:', url + '?ref=share', btn);
