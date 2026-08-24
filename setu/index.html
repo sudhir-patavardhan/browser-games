@@ -1718,7 +1718,7 @@ function everyCellHasAFamousAnswer(cands){
    data edit which accidentally narrows the roster can never produce a day with no
    puzzle at all. Every one of them is checked against the live data by the audit
    (?audit=365), which fails loudly if any has stopped being solvable. */
-const FALLBACK = FALLBACK_GRIDS;
+const FALLBACK = [ /* @FALLBACK */ ];
 
 function generate(seedKey, rngOverride){
   const rng = rngOverride || mulberry32(daySeed(seedKey));
@@ -1741,6 +1741,7 @@ function generate(seedKey, rngOverride){
     g.heaviest=heaviestMatching(g.cands);
     return g;
   }
+  if(!FALLBACK.length){ console.error('SETU: no shipped fallback grids'); return null; }
   const f = FALLBACK[ daySeed(seedKey) % FALLBACK.length ];
   const g = buildGrid(f[0].map(id=>CRIT_BY_ID[id]), f[1].map(id=>CRIT_BY_ID[id]));
   g.attempt=200; g.fallback=true;
@@ -2328,3 +2329,172 @@ function toast(el,msg){
   const orig=el.textContent; el.textContent=msg;
   clearTimeout(el._t); el._t=setTimeout(function(){ el.textContent=orig; },1500);
 }
+
+/* ================================================================================
+   MODAL, BRIDGE STRIP, ARCHIVE, SETTINGS
+   ================================================================================ */
+const modal=$('modal');
+function showModal(title, html){
+  $('modalTitle').innerHTML=title; $('modalBody').innerHTML=html;
+  scrim.classList.add('on'); modal.classList.add('on');
+  $('modalClose').focus();
+}
+function closeModal(){ modal.classList.remove('on'); if(!sheet.classList.contains('on')) scrim.classList.remove('on'); }
+$('modalClose').addEventListener('click',closeModal);
+
+function showBeing(e){
+  showModal('<span lang="sa-Latn">'+esc(e.iast)+'</span>'+(e.dev?' <span class="dev" lang="sa">'+esc(e.dev)+'</span>':''),
+    '<p>'+esc(e.gloss)+'</p><p class="small">'+esc(e.ref)+(e.src==='V-utt'?' · Uttara Kāṇḍa only':'')+'</p>'
+    +'<p class="small">Weight '+e.weight+'.</p>');
+}
+
+const bridgeCv=$('bridge'), bctx=bridgeCv.getContext('2d');
+let bridgeAnim=0;
+function drawBridge(){
+  const w=bridgeCv.width, h=bridgeCv.height;
+  const css=getComputedStyle(document.documentElement);
+  bctx.clearRect(0,0,w,h);
+  const g=bctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0, css.getPropertyValue('--sea').trim()||'#12586c');
+  g.addColorStop(1, css.getPropertyValue('--sea-deep').trim()||'#0b3a4a');
+  bctx.fillStyle=g; bctx.fillRect(0,0,w,h);
+  bctx.strokeStyle='rgba(255,255,255,.14)'; bctx.lineWidth=2;
+  for(let y=28;y<h;y+=22){
+    bctx.beginPath();
+    for(let x=0;x<=w;x+=14) bctx.lineTo(x, y+Math.sin((x/70)+(y/9))*2.2);
+    bctx.stroke();
+  }
+  const stoneC=css.getPropertyValue('--stone-set').trim()||'#ffe2a8';
+  const dim=css.getPropertyValue('--foam').trim()||'rgba(255,255,255,.14)';
+  for(let c=0;c<9;c++){
+    const x=w*(c+0.5)/9, y=h*0.55;
+    const laid=G.placed[c]>=0;
+    const shown = bridgeAnim===0 ? laid : (laid && c<bridgeAnim);
+    bctx.beginPath(); bctx.ellipse(x,y,w/26,h/5.2,0,0,Math.PI*2);
+    bctx.fillStyle = shown ? stoneC : dim; bctx.fill();
+    if(shown){ bctx.strokeStyle='rgba(178,122,32,.65)'; bctx.lineWidth=2; bctx.stroke(); }
+  }
+}
+function animateBridge(){
+  /* prefers-reduced-motion: no walk across the strait, just the finished causeway. */
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){ bridgeAnim=0; drawBridge(); return; }
+  bridgeAnim=0;
+  const step=function(){
+    bridgeAnim++; drawBridge();
+    if(bridgeAnim<=9) setTimeout(step,120); else { bridgeAnim=0; drawBridge(); }
+  };
+  step();
+}
+
+function openArchive(){
+  const today=dayKey();
+  let h='<p class="small">Every past grid is a pure function of its date, so the archive is simply a date. Archive grids write nothing and carry no streak.</p>'
+   +'<p><input id="archDate" type="date" max="'+today+'" min="2026-01-01" value="'+VIEW_KEY+'" '
+   +'style="font:inherit;font-size:16px;padding:10px;border-radius:10px;border:1.5px solid var(--panel-rule);background:var(--stone);color:var(--ink);"></p>'
+   +'<div class="btnrow" style="justify-content:flex-start"><button class="btn" id="archGo">Open that day</button>'
+   +'<button class="btn sec" id="archToday">Today</button></div>';
+  showModal('Archive', h);
+  $('archGo').addEventListener('click',function(){ const v=$('archDate').value; if(v) location.search='?date='+v; });
+  $('archToday').addEventListener('click',function(){ location.search=''; });
+}
+
+function openSettings(){
+  const row=function(id,label,on){ return '<div class="setrow"><span>'+label+'</span>'
+    +'<div class="seg"><button data-t="'+id+'" aria-pressed="'+(on?'true':'false')+'">'+(on?'On':'Off')+'</button></div></div>'; };
+  let h=row('snd','Sound',SET.snd)+row('drone','Ambient drone',SET.drone)
+       +row('dev','Devanāgarī',SET.dev)
+       +'<div class="setrow"><span>Typeahead<br><span class="small">Off is “Recall” — no suggestions at all, and the share line says so.</span></span>'
+       +'<div class="seg"><button data-t="type" aria-pressed="'+(SET.type?'true':'false')+'">'+(SET.type?'On':'Off')+'</button></div></div>'
+       +'<div class="setrow"><span>Theme</span><div class="seg">'
+       +['auto','light','dark'].map(function(t){ return '<button data-theme="'+t+'" aria-pressed="'+(SET.theme===t?'true':'false')+'">'+t+'</button>'; }).join('')
+       +'</div></div>';
+  showModal('Settings', h);
+  $('modalBody').querySelectorAll('[data-t]').forEach(function(b){
+    b.addEventListener('click',function(){
+      const k=b.dataset.t; SET[k]=SET[k]?0:1; saveSettings(SET);
+      b.setAttribute('aria-pressed', SET[k]?'true':'false'); b.textContent=SET[k]?'On':'Off';
+      if(k==='snd'){ AudioEngine.init(); AudioEngine.setMuted(!SET.snd); }
+      if(k==='drone'){ AudioEngine.init(); SET.drone?AudioEngine.startDrone():AudioEngine.stopDrone(); }
+      if(k==='dev'){ applyDev(); renderAll(); }
+      if(k==='type'){ taList.innerHTML=''; }
+    });
+  });
+  $('modalBody').querySelectorAll('[data-theme]').forEach(function(b){
+    b.addEventListener('click',function(){
+      SET.theme=b.dataset.theme; saveSettings(SET); applyTheme();
+      $('modalBody').querySelectorAll('[data-theme]').forEach(function(o){ o.setAttribute('aria-pressed', o.dataset.theme===SET.theme?'true':'false'); });
+      drawBridge();
+    });
+  });
+}
+$('setBtn').addEventListener('click',openSettings);
+$('howBtn').addEventListener('click',function(){
+  showModal('How Setu works',
+    '<p>Three criteria run down the left and three across the top. Each of the nine stones wants the name of a being from the Rāmāyaṇa who satisfies <b>both</b> — its row’s and its column’s.</p>'
+   +'<p><b>Each being may be used once.</b> Without that rule Hanumān fills four cells and the puzzle is a shrug.</p>'
+   +'<p><b>Nine guesses.</b> A perfect grid is one where you were never wrong. But only a <i>wrong</i> answer costs a guess: a name Setu doesn’t know, a name too close to two others to call, and a being you have already laid are all free.</p>'
+   +'<p>Type the name any way you like — <span lang="sa-Latn">Hanumān</span>, Hanuman, <span class="dev" lang="sa">हनुमान्</span>, Anjaneya, Māruti. Epithets and patronymics count; they are names, not spellings.</p>'
+   +'<p>Weight is 6 minus how well known a being is, summed over the stones you lay. It is an editorial number, not a crowd measurement — the reveal panel says more.</p>'
+   +'<p class="small">One grid a day, the same grid for everybody, generated from the date alone. No server, no account, nothing leaves your device.</p>');
+});
+
+/* ================================================================================
+   §4.6  AUDIT — dev only, not linked from anywhere.
+   ?date=YYYY-MM-DD renders that day. ?audit=N dumps N days to the console.
+   Run it before any data change ships; it is the only way to actually KNOW that
+   difficulty is even, as opposed to intending that it be.
+   ================================================================================ */
+function audit(days){
+  const out={days:days, fallbacks:[], min:99, max:0, sum:0, unsolvable:[], noFamous:[],
+             critUse:{}, weights:[], perWeek:{}};
+  let k=dayKey(), mins=[];
+  for(let d=0; d<days; d++){
+    const g=generate(k);
+    let mn=99,mx=0,sm=0;
+    for(let c=0;c<9;c++){ const n=g.counts[c]; if(n<mn)mn=n; if(n>mx)mx=n; sm+=n; }
+    mins.push(mn);
+    if(g.fallback) out.fallbacks.push(k);
+    if(mn<3) out.unsolvable.push(k+' minCell='+mn);
+    if(!perfectMatching(g.cands)) out.unsolvable.push(k+' NO PERFECT MATCHING');
+    if(!everyCellHasAFamousAnswer(g.cands)) out.noFamous.push(k);
+    out.min=Math.min(out.min,mn); out.max=Math.max(out.max,mx); out.sum+=sm;
+    out.weights.push(g.heaviest);
+    g.rows.concat(g.cols).forEach(function(c){ out.critUse[c.id]=(out.critUse[c.id]||0)+1; });
+    const a=k.split('-'), t=new Date(+a[0],+a[1]-1,+a[2]); t.setDate(t.getDate()+1); k=dayKey(t);
+  }
+  out.meanCells=(out.sum/(days*9)).toFixed(2);
+  out.minCellAcrossDays=Math.min.apply(null,mins);
+  out.meanHeaviest=(out.weights.reduce(function(a,b){return a+b;},0)/days).toFixed(1);
+  const never=CRITERIA.filter(function(c){ return !out.critUse[c.id]; }).map(function(c){ return c.id; });
+  const hot=CRITERIA.filter(function(c){ return (out.critUse[c.id]||0)/(days*6) > 0.05; }).map(function(c){ return c.id+':'+((out.critUse[c.id]/(days*6))*100).toFixed(1)+'%'; });
+  out.neverUsed=never; out.over5pct=hot;
+  console.log('SETU AUDIT', out);
+  return out;
+}
+window.setuAudit=audit;
+window.setuNorm=norm;
+window.setuResolve=resolveName;
+window.setuGenerate=generate;
+window.setuSelfTest=SELFTEST;
+window.setuBeings=BEINGS;
+window.setuState=function(){ return G; };
+
+/* ================================================================================
+   BOOT
+   ================================================================================ */
+newGame();
+renderAll();
+if(MODE==='daily' && G.done) renderReveal(siteStreak());
+if(SET.drone){ /* off by default: a puzzle you sit and think over should not hum at you */
+  document.addEventListener('pointerdown',function once(){ AudioEngine.init(); AudioEngine.startDrone();
+    document.removeEventListener('pointerdown',once); }, {once:true});
+}
+$('tagline').textContent = MODE==='practice' ? 'Practice grid — writes nothing to the daily.'
+  : (MODE==='archive' ? 'Archive grid — no streak, no record kept.' : 'Nine stones make a bridge.');
+if(params.get('audit')) setTimeout(function(){ audit(Math.max(1,Math.min(3650,parseInt(params.get('audit'),10)||365))); },0);
+
+})();
+</script>
+<script src="../analytics.js"></script>
+</body>
+</html>
