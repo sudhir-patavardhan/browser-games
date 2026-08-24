@@ -1299,10 +1299,8 @@ function endDaily(){
   const streak = dailyDone();          // exactly once, here, and from nowhere else in this file
   if (cleared){ Snd.jingle(); confettiBurst(); } else Snd.fanfare();
 
-  $('winTitle').textContent = cleared ? 'Board cleared! \u{1F3AF}' : 'Time called';
-  $('winSub').textContent = cleared
-    ? 'All ten in ' + game.strikes + (game.strikes === 1 ? ' strike' : ' strikes')
-    : score + ' of 10 · ' + game.dailyForm;
+  $('winTitle').textContent = cleared ? 'Board cleared! \u{1F3AF}' : 'Out of strikes';
+  $('winSub').textContent = 'Today’s board · ' + game.dailyForm;
   $('winTally').hidden = true;
   $('dailyResult').hidden = false;
   $('dailyGrid').textContent = game.dailyMarks.map(m => MARK[m]).join('');
