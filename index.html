@@ -196,6 +196,76 @@
 
   .empty{ display:none; color:var(--ink-dim); padding:28px 2px; font-size:15px; }
 
+  /* ---- today strip --------------------------------------------------------- */
+  /* The daily loop, surfaced. Everything in here is written by script from what the
+     GAMES recorded (see /DAILY.md) — there is nothing a server could know, so the
+     element ships empty and hidden and is unhidden only when there is something true
+     to say. A first-time visitor with empty storage is the majority of traffic and
+     must see the page exactly as it looked before this existed: no scaffolding, no
+     "streak 0", no dangling header. Hence no display: on .today — the UA sheet's
+     [hidden]{display:none} is left free to do its job, unlike .card below it. */
+  .today{
+    margin:18px 0 0;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px 12px 13px;
+  }
+  .today-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 2px 10px; }
+  .today-head h2{ margin:0; font-size:15px; font-weight:800; letter-spacing:-.1px; }
+  .today-count{ margin-left:auto; font-size:12px; color:#7f7f92; }
+  .streak{
+    display:inline-flex; align-items:center; gap:5px; flex:none;
+    font-size:13px; font-weight:800; letter-spacing:-.1px;
+    color:var(--accent); background:rgba(92,255,110,.10);
+    border:1px solid rgba(92,255,110,.30); border-radius:999px; padding:4px 11px 4px 9px;
+  }
+  .streak svg{ width:12px; height:14px; flex:none; }
+
+  /* Same scroll idiom as the filter chips, for the same reason: at 360px a third
+     pill does not fit, and wrapping them would push the card grid off the fold —
+     which is the one thing this strip must never do to the page it sits on. */
+  .today-row{
+    display:flex; gap:8px; overflow-x:auto; scrollbar-width:none;
+    margin:0 -12px -13px; padding:0 12px 13px;
+    -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity;
+  }
+  .today-row::-webkit-scrollbar{ display:none; }
+  .dpill{
+    flex:none; scroll-snap-align:start;
+    display:inline-flex; align-items:center; gap:7px; white-space:nowrap;
+    font-size:13.5px; font-weight:700; color:var(--ink);
+    background:var(--surface-2); border:1px solid var(--line); border-radius:999px;
+    padding:0 15px; height:38px;
+    transition:color .15s, background .15s, border-color .15s, transform .15s;
+  }
+  .dpill svg{ width:11px; height:11px; flex:none; display:block; }
+  .dpill .tick{ display:inline-flex; color:var(--accent); }
+  .dpill .num{ color:#7f7f92; font-weight:700; font-variant-numeric:tabular-nums; }
+  .dpill:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  @media (hover:hover){ .dpill:hover{ border-color:var(--line-strong); transform:translateY(-1px); } }
+  /* The single most valuable pixel on the page: the next daily not yet played today.
+     Filled accent, same treatment as the featured card's Play button, because it is
+     the same kind of thing — the one action the page is asking for. */
+  .dpill.next{ background:var(--accent); color:#08110a; border-color:var(--accent); font-weight:800; }
+  .dpill.next .num{ color:rgba(8,17,10,.6); }
+  @media (hover:hover){ .dpill.next:hover{ background:#7dff8b; border-color:#7dff8b; } }
+  .dpill.done{ color:var(--ink-dim); }
+
+  /* Per-card daily state — a corner pill floated over the art, mirroring .badge on
+     the opposite side so the featured card can carry both without them colliding.
+     Offsets track each card's own padding (10px / 12px) so the pill sits a uniform
+     10px inside the thumbnail either way. */
+  .dstat{
+    position:absolute; top:20px; right:20px; z-index:2;
+    display:inline-flex; align-items:center; gap:5px; white-space:nowrap;
+    font-size:11px; font-weight:800; letter-spacing:.3px;
+    color:var(--ink); background:rgba(7,7,13,.82);
+    border:1px solid var(--line-strong); border-radius:999px; padding:4px 9px;
+    box-shadow:0 2px 10px rgba(0,0,0,.35);
+  }
+  .dstat svg{ width:10px; height:10px; flex:none; display:block; }
+  .dstat.done{ color:var(--accent); border-color:rgba(92,255,110,.45); }
+  .card.featured .dstat{ top:22px; right:22px; }
+
   /* ---- footer -------------------------------------------------------------- */
   footer{
     margin-top:46px; padding-top:22px; border-top:1px solid var(--line);
@@ -236,6 +306,13 @@
       <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>Loads in a second</li>
     </ul>
   </header>
+
+  <!-- Returning players' first stop: today's dailies and the streak riding on them.
+       Deliberately empty in the markup — see the "daily loop, surfaced" script at the
+       bottom of this file for why nothing here can be pre-rendered, and the .today
+       rules in the stylesheet for why an empty-storage visit shows nothing at all.
+       Sits above #sentinel so the sticky filter strip keeps pinning exactly as before. -->
+  <section class="today" id="today" hidden aria-label="Today&rsquo;s dailies"></section>
 
   <span id="sentinel" aria-hidden="true"></span>
   <nav class="filters" id="filters" aria-label="Filter games by kind">
