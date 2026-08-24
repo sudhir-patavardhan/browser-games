@@ -24,7 +24,10 @@ Open [`index.html`](index.html) at the repo root for the [Kreeda](https://kreeda
 | [Ennead](ennead/index.html) | Configurable tic-tac-toe with two modes sharing one engine. **Classic:** any board `N×N` from 3×3 up to 9×9 with a selectable win length `k` (3×3 noughts-and-crosses through gomoku). **Ultimate:** a nested `9×9` of nine sub-boards where winning a sub-board claims a meta-cell and every move sends your opponent to a specific sub-board — with an active-board spotlight and a sub-board-claim animation. Local 2-player or a three-level AI (Hard 3×3 plays perfectly), undo, light/dark themes, keyboard control, and `localStorage` resume. | [kreeda.games/ennead](https://kreeda.games/ennead/) |
 | [Daśānana](dasanana/index.html) | A Rāmāyaṇa astra-duel: Rāvaṇa invokes divine missiles and you must answer with the true counter (water quenches fire, light dispels darkness…) before both loose. Restore tejas by rhythm-chanting authentic Āditya-Hṛdayam ślokas (Devanāgarī + IAST), survive the Śakti spear and his Brahmāstra, and unlock your own Brahmāstra for the final head. Story mode (Khara → Indrajit → Rāvaṇa) and three duel difficulties, with procedural tanpura drones, chant bells, and conch. | [kreeda.games/dasanana](https://kreeda.games/dasanana/) |
 
-All eleven are also playable offline straight from the file system — clone the repo and open any `<game>/index.html` directly, no server required.
+| [Setu](setu/index.html) | A daily nine-cell grid from the Rāmāyaṇa. Each row and column carries a criterion — a kāṇḍa, a lineage, a class of being, a deed — and every cell wants a being who satisfies both. Names are matched however you spell them: IAST with full diacritics, Devanāgarī, or the regional name you actually grew up saying, so **Hanumān**, `हनुमान्`, Anjaneya and Maruti are all the same answer. The day's grid is generated from the date and is guaranteed solvable — not merely non-empty, but with a real assignment that uses each being once. However you finish, the reveal panel shows every valid answer for every cell with a gloss and a sarga-level citation, so a grid you failed is still a grid you learned something from. | [kreeda.games/setu](https://kreeda.games/setu/) |
+| [Maidan](maidan/index.html) | The same nine cells, played on cricket — countries, formats, eras and career milestones. Every criterion is a **monotone fact**: an event that happened or a threshold crossed, never a ranking or a form table, so the grid can fall out of date but it cannot become wrong. Ships a visible `DATA_AS_OF` date and no image files at all — factual statistics are free to use, crests and kit are not. | [kreeda.games/maidan](https://kreeda.games/maidan/) |
+
+All thirteen are also playable offline straight from the file system — clone the repo and open any `<game>/index.html` directly, no server required.
 
 ## Running a game
 
@@ -39,10 +42,11 @@ No server required — just open the file directly, or serve the repo root with 
 
 ## The daily loop
 
-Six games — [Drift](drift/index.html), [Chroma Blocks](chroma-blocks/index.html), [Carrom](carrom/index.html),
-[Deadpoint](deadpoint/index.html), [Fairway Four](fairway-four/index.html) and, next,
-[Setu](RAMAYANA_GRID.md) — carry a **daily** alongside their normal mode: today's road, today's bag,
-today's board, today's problem, today's round.
+Five games — [Drift](drift/index.html), [Chroma Blocks](chroma-blocks/index.html), [Carrom](carrom/index.html),
+[Deadpoint](deadpoint/index.html) and [Fairway Four](fairway-four/index.html) — carry a **daily** alongside
+their normal mode: today's road, today's bag, today's board, today's problem, today's round.
+[Setu](setu/index.html) and [Maidan](maidan/index.html) are daily all the way down: one grid a day and
+nothing else, the way the format wants to be played.
 
 The whole thing turns on one property. The day's challenge is drawn from `mulberry32(daySeed(dayKey()))`,
 a pure function of the calendar date, so **every player in the world gets the identical puzzle and no
@@ -73,7 +77,7 @@ from one place, not because they import from one.
 
 ## Offline
 
-[`sw.js`](sw.js) is a cache-first service worker that precaches the landing page and all eleven games, so
+[`sw.js`](sw.js) is a cache-first service worker that precaches the landing page and all thirteen games, so
 a hosted copy keeps working with the network gone and the install promised by
 [`manifest.webmanifest`](manifest.webmanifest) is a real one.
 
@@ -196,8 +200,11 @@ happens the same way — a spec for the next feature or fix, not a diff — with
 and what ships. The `DRIFT_FEATURES.md` file inside [`drift/`](drift/) is a living example of that
 spec-then-Claude-Code loop for the most involved game here.
 
-[`RAMAYANA_GRID.md`](RAMAYANA_GRID.md) and [`CRICKET_GRID.md`](CRICKET_GRID.md) are the same loop caught
-one stage earlier: written specs for two daily grid puzzles — **Setu**, nine stones of the causeway to
-Laṅkā, and **Maidan** — that have not been built yet. Both flag the facts they are not certain of rather
-than asserting them, and Setu's §6 sets out what the game will not do with material that is living
-scripture to hundreds of millions of people.
+[`RAMAYANA_GRID.md`](RAMAYANA_GRID.md) and [`CRICKET_GRID.md`](CRICKET_GRID.md) are the specs
+[Setu](setu/index.html) and [Maidan](maidan/index.html) were built from, and they are worth reading
+before changing either game. They are where the reasoning lives: why validation folds diacritics by NFD
+decomposition instead of a substitution table, why a solvable grid needs a perfect matching and not
+merely non-empty cells, why rarity scoring is impossible without a server and what replaced it. Setu's
+§6 sets out what that game will not do with material that is living scripture to hundreds of millions of
+people, and both specs flag the facts they were not certain of rather than asserting them — those flags
+are still open and are the first thing to check before trusting a cell.
