@@ -1,0 +1,49 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  html,body{margin:0;padding:0;width:1080px;height:1920px;overflow:hidden}
+  body{
+    background:
+      radial-gradient(1200px 800px at 50% 18%, #1c2b4a 0%, #0b1120 60%, #060a14 100%);
+    font-family:-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    color:#f2f6ff; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .road{position:absolute; left:0; right:0; bottom:0; height:560px; overflow:hidden}
+  .tarmac{position:absolute; left:50%; bottom:-60px; width:1400px; height:620px;
+    transform:translateX(-50%) perspective(700px) rotateX(58deg);
+    background:#232830; border-radius:18px}
+  .mid{position:absolute; left:50%; bottom:-60px; width:26px; height:620px;
+    transform:translateX(-50%) perspective(700px) rotateX(58deg);
+    background:repeating-linear-gradient(to top,#ffd24a 0 90px,transparent 90px 180px)}
+  .fade{position:absolute; left:0; right:0; top:0; height:340px;
+    background:linear-gradient(180deg,#060a14 0%,rgba(6,10,20,0) 100%)}
+  .wrap{position:relative; z-index:2; text-align:center; margin-top:-360px}
+  .title{
+    font-size:230px; font-weight:900; letter-spacing:0.04em; line-height:1;
+    background:linear-gradient(180deg,#ffd24a 10%,#ff5a2f 90%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 30px 80px rgba(255,90,47,.25);
+  }
+  .tag{font-size:54px; font-weight:800; letter-spacing:.2em; color:#9fb4d8; margin-top:28px; white-space:nowrap}
+  .tag b{color:#fff}
+  .cta{margin-top:120px; display:inline-block; background:#ffd24a; color:#20150a;
+    font-size:74px; font-weight:900; letter-spacing:.03em; padding:38px 84px; border-radius:26px;
+    box-shadow:0 24px 70px rgba(255,210,74,.35)}
+  .sub{margin-top:46px; font-size:52px; font-weight:700; color:#c8d6ee}
+  .url{margin-top:150px; font-size:96px; font-weight:900; letter-spacing:.02em; color:#fff}
+  .url span{color:#ffd24a}
+  .free{margin-top:26px; font-size:44px; font-weight:700; color:#8fa4c8; letter-spacing:.14em}
+</style>
+<div class="road">
+  <div class="tarmac"></div>
+  <div class="mid"></div>
+  <div class="fade"></div>
+</div>
+<div class="wrap">
+  <div class="title">DRIFT</div>
+  <div class="tag">SLIDE · CHAIN · <b>SEND IT</b></div>
+  <div class="cta">PLAY FREE NOW</div>
+  <div class="sub">no install · no login · right in your browser</div>
+  <div class="url"><span>kreeda</span>.games</div>
+  <div class="free">+ 10 MORE FREE GAMES</div>
+</div>
