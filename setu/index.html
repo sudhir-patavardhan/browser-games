@@ -6,7 +6,7 @@
 <title>Setu — Kreeda</title>
 <meta name="description" content="A daily Rāmāyaṇa grid — nine cells, nine names, one bridge. Three criteria down, three across, and every stone you lay is a being from the epic who satisfies both.">
 <link rel="canonical" href="https://kreeda.games/setu/">
-<meta name="theme-color" content="#12586c">
+<meta name="theme-color" content="#6ec6ff">
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kreeda">
@@ -44,7 +44,10 @@
     --amber:#ff8a1e;    --gold:#ffb62e;
     --panel:rgba(255,250,238,.94);
     --panel-rule:rgba(178,122,32,.55);
-    --head-ink:#f4efe2;               /* criterion headers sit on the sea, not on a stone */
+    /* Two inks for the two grounds the page has: the pale dawn sky at the top and
+       the deep water at the foot. One near-white for both washed the masthead out
+       to about 1.6:1 against #6ec6ff, which is unreadable. */
+    --sky-ink:#0e2f3d;   --deep-ink:#eaf3f6;
     --shadow:rgba(12,40,52,.22);
     --radius:16px;
   }
@@ -56,7 +59,7 @@
       --ink:#f6ecd6;      --ink-dim:#c3ac82;
       --panel:rgba(24,32,36,.95);
       --panel-rule:rgba(214,168,80,.35);
-      --head-ink:#e8dcc2;
+      --sky-ink:#eadfc6;   --deep-ink:#e2eef2;
       --shadow:rgba(0,0,0,.45);
     }
   }
@@ -67,7 +70,7 @@
     --ink:#f6ecd6;      --ink-dim:#c3ac82;
     --panel:rgba(24,32,36,.95);
     --panel-rule:rgba(214,168,80,.35);
-    --head-ink:#e8dcc2;
+    --sky-ink:#eadfc6;   --deep-ink:#e2eef2;
     --shadow:rgba(0,0,0,.45);
   }
 
@@ -101,9 +104,9 @@
   .top{ display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }
   .top .id{ flex:1 1 auto; min-width:0; }
   h1{ margin:0; font-size:clamp(26px,7.5vw,38px); font-weight:900; letter-spacing:1px;
-      color:var(--head-ink); line-height:1; text-shadow:0 2px 8px rgba(0,20,30,.35); }
+      color:var(--sky-ink); line-height:1; }
   h1 .sanskrit{ font-size:.52em; font-weight:700; opacity:.85; margin-left:8px; letter-spacing:0; }
-  .tagline{ margin:5px 0 0; font-size:12.5px; color:var(--head-ink); opacity:.86; }
+  .tagline{ margin:5px 0 0; font-size:12.5px; color:var(--sky-ink); opacity:.9; }
   .topbtns{ display:flex; gap:6px; flex:0 0 auto; }
   .iconBtn{
     width:38px; height:38px; min-width:38px; border-radius:11px; cursor:pointer;
@@ -136,7 +139,7 @@
      becoming grid items themselves, so the 4×4 track layout is unaffected. */
   .board > [role="row"]{ display:contents; }
   .corner{ display:flex; align-items:center; justify-content:center; }
-  .corner svg{ width:100%; height:auto; max-height:56px; opacity:.9; }
+  .corner svg{ width:100%; max-width:88px; height:auto; opacity:.95; }
   .hdr{
     background:var(--panel); border:1.5px solid var(--panel-rule); border-radius:12px;
     color:var(--ink); font:inherit; font-size:11px; font-weight:800; line-height:1.22;
@@ -261,8 +264,8 @@
     background:var(--stone); border:1.5px solid var(--panel-rule); color:var(--ink); cursor:pointer; }
   .seg button[aria-pressed="true"]{ background:var(--amber); color:#3a2208; border-color:var(--amber); }
 
-  .foot{ text-align:center; margin:18px 0 0; font-size:12px; color:var(--head-ink); opacity:.8; }
-  .foot a{ color:var(--head-ink); }
+  .foot{ text-align:center; margin:18px 0 0; font-size:12.5px; color:var(--deep-ink); opacity:.85; }
+  .foot a{ color:var(--deep-ink); }
 
   @media (prefers-reduced-motion: reduce){
     *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
@@ -291,7 +294,7 @@
 
   <div class="btnrow" id="actions"></div>
 
-  <div id="revealHost" aria-live="polite"></div>
+  <div id="revealHost"></div>
 
   <p class="foot">
     <a href="../">← Kreeda</a> · a daily grid of the Vālmīki Rāmāyaṇa
@@ -1366,12 +1369,13 @@ const CRITERIA = [
 
  /* Vibhīṣaṇa's side is 'turned'; he belongs to "stood with Rāma" and to nothing
     else, so the three side criteria stay mutually exclusive and the axis rule
-    below still means what it says. */
- { id:'s-rama', family:'side', single:true, tier:'core', label:'Stood with Rāma', short:'With Rāma', dev:'',
+    below still means what it says. The label is "party", not "fought for", because
+    Kausalyā and Śabarī are of Rāma's party and neither of them is at Laṅkā. */
+ { id:'s-rama', family:'side', single:true, tier:'core', label:'Of Rāma’s party', short:'Rāma’s party', dev:'',
    test:e=>e.side==='rama'||e.side==='turned' },
- { id:'s-lanka', family:'side', single:true, tier:'core', label:'Stood with Laṅkā', short:'With Laṅkā', dev:'',
+ { id:'s-lanka', family:'side', single:true, tier:'core', label:'Of Rāvaṇa’s Laṅkā', short:'Rāvaṇa’s Laṅkā', dev:'',
    test:e=>e.side==='lanka' },
- { id:'s-none', family:'side', single:true, tier:'wide', label:'Took neither side in the war', short:'Neither side', dev:'',
+ { id:'s-none', family:'side', single:true, tier:'wide', label:'Of neither party', short:'Neither party', dev:'',
    test:e=>e.side==='none' },
 
  { id:'l-iksvaku', family:'line', single:true, tier:'core', label:'Of the Ikṣvāku line', short:'Ikṣvāku line', dev:'',
@@ -1391,7 +1395,7 @@ const CRITERIA = [
    test:e=>e.deeds.indexOf('ocean')>=0 },
  { id:'d-war', family:'deed', single:false, tier:'core', label:'Bore arms at Laṅkā', short:'Bore arms', dev:'',
    test:e=>e.deeds.indexOf('lanka-war')>=0 },
- { id:'d-ruled', family:'deed', single:false, tier:'core', label:'Ruled a kingdom in the narrative', short:'Ruled', dev:'',
+ { id:'d-ruled', family:'deed', single:false, tier:'core', label:'Ruled or governed a realm', short:'Ruled', dev:'',
    test:e=>e.deeds.indexOf('ruled')>=0 },
  { id:'d-ascetic', family:'deed', single:false, tier:'core', label:'Lived as an ascetic', short:'An ascetic', dev:'',
    test:e=>e.deeds.indexOf('ascetic')>=0 },
@@ -1407,8 +1411,11 @@ const CRITERIA = [
    test:e=>e.deeds.indexOf('disguise')>=0 },
  { id:'d-astra', family:'deed', single:false, tier:'wide', label:'Wielded a named astra', short:'Wielded astra', dev:'',
    test:e=>e.deeds.indexOf('astra')>=0 },
- { id:'d-duta', family:'deed', single:false, tier:'wide', label:'Carried word between the two camps', short:'Carried word', dev:'',
-   test:e=>e.deeds.indexOf('duta')>=0 },
+ /* "Carried word between the two camps" is a true and interesting predicate with
+    five attested holders in this roster, and exhaustive enumeration says it can sit
+    in only 3 of the 42,000-odd solvable grids — so it would be a criterion a player
+    never actually meets. The `duta` tag stays on the entities that earned it; the
+    criterion is dropped until the roster is wide enough to carry it. */
  { id:'d-boon', family:'deed', single:false, tier:'deep', label:'Received a boon', short:'Had a boon', dev:'',
    test:e=>e.deeds.indexOf('boon')>=0 },
  { id:'d-curse', family:'deed', single:false, tier:'deep', label:'Bore a curse', short:'Bore a curse', dev:'',
@@ -1498,7 +1505,12 @@ function devToAscii(s){
   return out+pend;
 }
 
-function norm(s){
+/* keepFinalA exists for ONE caller: the typeahead. Step 11 turns a two-letter query
+   like "sa" into "s", which is below the two-character floor, so a player typing the
+   first two letters of Sampāti would see nothing at all. Prefix search compares
+   query and candidate with the schwa left on, so "ram" still prefixes "rama"; the
+   KEYS map and every resolution still use the full eleven steps. */
+function norm(s, keepFinalA){
   if(!s) return '';
   if(/[\u0900-\u097F]/.test(s)) s = devToAscii(s);
   /* Decompose, then drop every combining mark. This ONE LINE folds the whole of IAST:
@@ -1522,7 +1534,7 @@ function norm(s){
          .replace(/(ji)$/, '');
   } while (s !== prev && s.length > 2);
   s = s.replace(/(.)\1+/g, '$1');
-  s = s.replace(/a$/, '');
+  if(!keepFinalA) s = s.replace(/a$/, '');
   return s;
 }
 
@@ -1705,6 +1717,19 @@ function buildGrid(rows, cols){
   return {rows:rows, cols:cols, cellBits:cellBits, cands:cands, counts:counts};
 }
 
+/* The hot path of the generator: an attempt is rejected on cell counts far more
+   often than it survives (about 1.5% of core shapes and 0.3% of full-pool shapes
+   pass every filter), so counting must not allocate. These two do the AND and the
+   popcount inline and hand back a number. */
+function countAnd(a,b){ let n=0; for(let w=0;w<WORDS;w++) n+=popcount32(a[w]&b[w]); return n; }
+function countAnd3(a,b,c){ let n=0; for(let w=0;w<WORDS;w++) n+=popcount32(a[w]&b[w]&c[w]); return n; }
+
+/* Every cell must contain at least one answer a reader of the epic would actually
+   produce. No cell is ever solvable only by a specialist, and this check does more
+   for perceived fairness than anything else in §4.5. */
+const FAMOUS_BITS=(function(){ const b=newBits();
+  for(let i=0;i<N;i++) if(BEINGS[i].fame>=3) b[i>>5]|=(1<<(i&31)); return b; })();
+
 function everyCellHasAFamousAnswer(cands){
   for(let c=0;c<9;c++){
     let ok=false;
@@ -1718,30 +1743,73 @@ function everyCellHasAFamousAnswer(cands){
    data edit which accidentally narrows the roster can never produce a day with no
    puzzle at all. Every one of them is checked against the live data by the audit
    (?audit=365), which fails loudly if any has stopped being solvable. */
-const FALLBACK = [ /* @FALLBACK */ ];
+const FALLBACK = [
+ [['c-manusa','c-rsi','d-mithila'],['s-rama','s-none','d-ascetic']],  /* 95 cells, min 3, heaviest 40 */
+ [['c-raksasa','d-counsel','d-astra'],['s-lanka','d-ocean','d-war']],  /* 87 cells, min 3, heaviest 34 */
+ [['k-ara','k-kis','l-pulastya'],['k-sun','k-yud','d-ruled']],  /* 56 cells, min 3, heaviest 32 */
+ [['k-bala','c-manusa','d-mithila'],['k-ayo','l-iksvaku','l-videha']],  /* 84 cells, min 5, heaviest 37 */
+ [['c-vanara','d-ocean','d-search'],['p-deva','d-war','d-counsel']],  /* 86 cells, min 3, heaviest 38 */
+ [['k-ara','c-raksasa','l-pulastya'],['k-sun','k-yud','d-form']],  /* 70 cells, min 3, heaviest 35 */
+ [['k-ayo','d-ascetic','d-met'],['c-rsi','s-rama','s-none']],  /* 86 cells, min 5, heaviest 40 */
+ [['k-bala','k-yud','d-mithila'],['l-iksvaku','d-ruled','d-astra']],  /* 68 cells, min 3, heaviest 32 */
+ [['k-kis','c-vanara','d-ocean'],['k-sun','p-deva','d-search']],  /* 87 cells, min 4, heaviest 39 */
+ [['c-raksasa','l-pulastya','d-war'],['s-lanka','d-ruled','d-form']],  /* 88 cells, min 3, heaviest 33 */
+ [['c-rsi','d-ascetic','d-counsel'],['s-rama','s-none','d-met']],  /* 73 cells, min 3, heaviest 37 */
+ [['k-bala','c-manusa','s-none'],['k-ara','l-iksvaku','l-videha']],  /* 68 cells, min 4, heaviest 39 */
+ [['k-kis','c-vanara','d-search'],['k-sun','k-yud','p-deva']],  /* 85 cells, min 4, heaviest 39 */
+ [['c-raksasa','s-lanka','d-ocean'],['d-war','d-form','d-astra']],  /* 90 cells, min 3, heaviest 35 */
+ [['k-ayo','c-manusa','d-met'],['k-ara','s-rama','d-ascetic']],  /* 60 cells, min 3, heaviest 34 */
+ [['k-bala','c-rsi','d-ruled'],['k-ayo','d-counsel','d-mithila']],  /* 59 cells, min 3, heaviest 38 */
+ [['c-raksasa','s-lanka','d-war'],['l-pulastya','d-form','d-astra']],  /* 62 cells, min 3, heaviest 33 */
+ [['k-kis','c-vanara','s-rama'],['p-deva','d-counsel','d-search']],  /* 87 cells, min 3, heaviest 39 */
+ [['c-manusa','s-none','d-mithila'],['l-iksvaku','l-videha','d-ascetic']],  /* 76 cells, min 3, heaviest 39 */
+ [['k-bala','k-ayo','d-met'],['k-ara','k-yud','c-rsi']],  /* 58 cells, min 3, heaviest 33 */
+ [['k-kis','d-ocean','d-search'],['k-sun','c-vanara','p-deva']],  /* 89 cells, min 4, heaviest 36 */
+ [['k-ara','k-yud','l-pulastya'],['s-lanka','d-form','d-astra']],  /* 66 cells, min 3, heaviest 32 */
+ [['k-bala','s-none','d-mithila'],['l-iksvaku','l-videha','d-ruled']],  /* 83 cells, min 5, heaviest 38 */
+ [['c-rsi','d-ruled','d-met'],['s-rama','d-ascetic','d-counsel']],  /* 59 cells, min 3, heaviest 36 */
+ [['k-kis','c-raksasa','d-astra'],['k-sun','d-ocean','d-war']],  /* 84 cells, min 3, heaviest 33 */
+ [['c-vanara','d-war','d-search'],['p-deva','d-ocean','d-counsel']],  /* 88 cells, min 3, heaviest 40 */
+ [['k-ara','k-sun','l-pulastya'],['c-raksasa','s-lanka','d-form']],  /* 61 cells, min 3, heaviest 39 */
+ [['k-ayo','c-manusa','d-mithila'],['k-yud','l-iksvaku','d-ascetic']],  /* 64 cells, min 3, heaviest 34 */
+ [['k-ayo','k-kis','l-iksvaku'],['c-manusa','s-none','d-ruled']],  /* 76 cells, min 3, heaviest 42 */
+ [['c-vanara','c-rsi','d-met'],['s-rama','s-none','d-counsel']],  /* 66 cells, min 3, heaviest 38 */
+];
+
+/* §4.3 asks for 200 attempts. Measured against this roster that is far too few:
+   exhaustive enumeration (see setuDiag) says only 1.45% of Monday's core shapes and
+   0.33% of Wednesday's pass every filter, so 200 draws would fall back on roughly
+   half of all Wednesdays — and the fallback is meant to be the thing that never
+   happens. ATTEMPTS is therefore 8,000 — four times the worst draw observed over a 400-day
+   run, which puts a fallback out of reach while costing well under a millisecond,
+   because a rejected attempt now allocates nothing. */
+const ATTEMPTS=8000;
 
 function generate(seedKey, rngOverride){
   const rng = rngOverride || mulberry32(daySeed(seedKey));
   const ramp = tierPool(weekdayOf(seedKey));
   const pool = CRITERIA.filter(c=>ramp.tiers.indexOf(c.tier)>=0);
-  for(let attempt=0; attempt<200; attempt++){
+  for(let attempt=0; attempt<ATTEMPTS; attempt++){
     const rows = drawDistinct(rng, pool, 3, null);          if(!rows) continue;
     const cols = drawDistinct(rng, pool, 3, rows);           if(!cols) continue;
     let deep=0; for(let i=0;i<3;i++){ if(rows[i].tier==='deep') deep++; if(cols[i].tier==='deep') deep++; }
     if(deep>ramp.maxDeep) continue;
-    if(!axisRuleOK(rows,cols)) continue;
-    const g = buildGrid(rows,cols);
-    let min=99, sum=0;
-    for(let c=0;c<9;c++){ if(g.counts[c]<min) min=g.counts[c]; sum+=g.counts[c]; }
-    if(min<3) continue;                                       // §4.4(a) — three is the floor
+    if(!axisRuleOK(rows,cols)) continue;                      // §2.2 — reject the SHAPE before counting
+    let min=99, sum=0, famousOK=true;
+    for(let i=0;i<3 && famousOK;i++) for(let j=0;j<3;j++){
+      const n=countAnd(rows[i].bits, cols[j].bits);
+      if(n<min) min=n; sum+=n;
+      if(n<3){ famousOK=false; break; }                       // §4.4(a) — three is the floor
+      if(countAnd3(rows[i].bits, cols[j].bits, FAMOUS_BITS)===0){ famousOK=false; break; }
+    }
+    if(!famousOK || min<3) continue;
     if(sum<40 || sum>110) continue;                           // breadth band
-    if(!everyCellHasAFamousAnswer(g.cands)) continue;         // no cell solvable only by a specialist
+    const g = buildGrid(rows,cols);
     if(!perfectMatching(g.cands)) continue;                   // §4.4(b) — the one that gets skipped
     g.attempt=attempt; g.fallback=false;
     g.heaviest=heaviestMatching(g.cands);
     return g;
   }
-  if(!FALLBACK.length){ console.error('SETU: no shipped fallback grids'); return null; }
   const f = FALLBACK[ daySeed(seedKey) % FALLBACK.length ];
   const g = buildGrid(f[0].map(id=>CRIT_BY_ID[id]), f[1].map(id=>CRIT_BY_ID[id]));
   g.attempt=200; g.fallback=true;
@@ -1961,20 +2029,25 @@ function resolveName(raw){
    FILTERED BY WHAT IS VALID FOR THE OPEN CELL. Filtering it would hand over the
    answer; it looks like a kindness and it is a spoiler. If anybody ever writes
    roster.filter(validForCell) in here, the game is broken. */
+const TYPE_KEYS=BEINGS.map(function(e){
+  const a=[norm(e.iast,true)];
+  (e.alt||[]).forEach(function(x){ const k=norm(x,true); if(k.length>1 && a.indexOf(k)<0) a.push(k); });
+  return a;
+});
 function suggest(raw){
-  const k=norm(raw);
+  const k=norm(raw,true);
   if(k.length<2) return [];
   const pre=[], sub=[], fuz=[];
   for(let i=0;i<N;i++){
-    const key=norm(BEINGS[i].iast);
-    if(key.indexOf(k)===0) pre.push(i);
-    else if(key.indexOf(k)>=0) sub.push(i);
-    else {
-      let hit=false;
-      const alts=BEINGS[i].alt||[];
-      for(let a=0;a<alts.length && !hit;a++){ const ak=norm(alts[a]); if(ak.indexOf(k)===0||ak.indexOf(k)>=0) hit=true; }
-      if(hit) sub.push(i); else if(dlev(k,key,1)<=1) fuz.push(i);
+    const keys=TYPE_KEYS[i], key=keys[0];
+    let best=2;                                   // 0 = prefix, 1 = substring, 2 = neither
+    for(let x=0;x<keys.length && best>0;x++){
+      const at=keys[x].indexOf(k);
+      if(at===0) best=0; else if(at>0) best=Math.min(best,1);
     }
+    if(best===0) pre.push(i);
+    else if(best===1) sub.push(i);
+    else if(dlev(k,key,1)<=1) fuz.push(i);
   }
   const byFame=function(a,b){ return BEINGS[b].fame-BEINGS[a].fame || a-b; };
   pre.sort(byFame); sub.sort(byFame); fuz.sort(byFame);
@@ -1991,7 +2064,7 @@ let focusCell=0;
 function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 function say(msg){ sayEl.textContent=''; setTimeout(function(){ sayEl.textContent=msg; },30); }
 
-function critHTML(c, isRow){
+function critHTML(c){
   return '<span lang="sa-Latn">'+esc(c.short)+'</span>'
        + (c.dev ? '<span class="d dev" lang="sa">'+esc(c.dev)+'</span>' : '');
 }
@@ -2015,12 +2088,12 @@ function renderBoard(){
     for(let j=0;j<3;j++){
       const c=i*3+j, e=G.placed[c]>=0?BEINGS[G.placed[c]]:null;
       h+='<button role="gridcell" class="stone'+(e?' set':'')+'" data-cell="'+c+'" aria-colindex="'+(j+2)+'"'
-       + ' tabindex="'+(c===focusCell?0:-1)+'" aria-label="'+esc(cellLabel(c))+'"'+(G.done&&!e?' disabled':'')+'>';
+       + ' tabindex="'+(c===focusCell?0:-1)+'" aria-label="'+esc(cellLabel(c))+'"'+(G.done&&!e?' aria-disabled="true"':'')+'>';
       if(e){
         h+='<span class="nm" lang="sa-Latn">'+esc(e.iast)+'</span>';
         if(e.dev) h+='<span class="nd dev" lang="sa">'+esc(e.dev)+'</span>';
         h+='<span class="wt">weight '+e.weight+'</span>';
-      } else if(SET.type!==undefined && SHOW_FIT){
+      } else if(SHOW_FIT){
         h+='<span class="hint" aria-hidden="true">'+G.counts[c]+' fit</span>';
       }
       h+='</button>';
@@ -2044,13 +2117,13 @@ const SHOW_FIT=true;   /* §10.5's count hint, always on: free, unlimited, leaks
                           and visible to a screen reader as part of the cell label. */
 
 function cornerSVG(){
-  /* nine stones stepping across a strait — geometry only. §6: no figure stands for
-     any character, here or anywhere else in this file. */
-  return '<svg viewBox="0 0 90 56" aria-hidden="true">'
-    +'<rect x="0" y="30" width="90" height="26" fill="rgba(18,88,108,.35)"/>'
+  /* Nine stones stepping across a strait, three of them lit. Geometry only: §6
+     forbids any rendered figure standing for any character, and that includes the
+     decoration in the corner of the grid. */
+  return '<svg viewBox="0 0 88 34" aria-hidden="true">'
     +'<g fill="var(--gold)">'
     +[0,1,2,3,4,5,6,7,8].map(function(i){
-        return '<circle cx="'+(6+i*9.6)+'" cy="'+(34-Math.sin(i/2)*4)+'" r="'+(i<3?3.2:2.4)+'" opacity="'+(i<3?1:0.45)+'"/>';
+        return '<circle cx="'+(6+i*9.5)+'" cy="'+(20-Math.sin(i/2.4)*7)+'" r="'+(i<3?3.4:2.6)+'" opacity="'+(i<3?1:0.4)+'"/>';
       }).join('')
     +'</g></svg>';
 }
@@ -2112,7 +2185,13 @@ const sheet=$('sheet'), scrim=$('scrim'), input=$('guessInput'),
 let lastFocused=null;
 
 function openSheet(c){
-  if(G.done && G.placed[c]<0) { showModal('The grid is closed', '<p>This grid has ended. Open the reveal below for every valid answer.</p>'); return; }
+  if(G.done && G.placed[c]<0){
+    /* The grid has ended, so this stone is no longer a question — it is a pointer at
+       the answers it wanted. Jump to its section of the reveal rather than scolding. */
+    const sec=document.getElementById('rev'+c);
+    if(sec) sec.scrollIntoView({behavior:'smooth', block:'start'});
+    return;
+  }
   if(G.placed[c]>=0){ showBeing(BEINGS[G.placed[c]]); return; }
   sheetCell=c; lastFocused=document.activeElement;
   const r=G.rows[Math.floor(c/3)], k=G.cols[c%3];
@@ -2202,7 +2281,10 @@ function submitEntity(idx){
   const okR=hasBit(r.bits,idx), okC=hasBit(k.bits,idx);
   if(okR && okC){
     G.placed[c]=idx; AudioEngine.stone();
-    saveState(); closeSheet(); renderAll();
+    saveState(); closeSheet(); focusCell=c; renderAll();
+    /* renderAll replaced the button closeSheet had just focused, so put focus back on
+       the stone that was laid rather than letting it fall to <body>. */
+    const el=board.querySelector('[data-cell="'+c+'"]'); if(el) el.focus();
     say(e.iast+' laid, weight '+e.weight+'. '+laidCount()+' of 9.');
     if(laidCount()===9) endGrid(true);
     return;
@@ -2212,12 +2294,13 @@ function submitEntity(idx){
      the being THEY named, never about one they didn't. */
   G.guesses++; G.wrong[c]++; AudioEngine.wrong();
   if(guessesLeft()===1) AudioEngine.lastGuess();
-  const line='<span lang="sa-Latn"><b>'+esc(e.iast)+'</b></span> — '
-    + esc(r.label)+' '+(okR?'✓':'✗')+' — but '+esc(k.label)+' '+(okC?'✓':'✗')+'.';
-  msgEl.innerHTML='<span class="no">Not this cell.</span><br>'+line;
-  say(e.iast+' is wrong for this cell. '+guessesLeft()+' guesses left.');
+  const mark=function(ok,lab){ return '<br>'+(ok?'✓':'✗')+' '+esc(lab); };
+  msgEl.innerHTML='<span class="no">Not this cell.</span> <span lang="sa-Latn"><b>'+esc(e.iast)+'</b></span>'
+    + mark(okR,r.label) + mark(okC,k.label);
+  say(e.iast+': '+(okR?'yes':'no')+' to '+r.label+'; '+(okC?'yes':'no')+' to '+k.label
+      +'. '+guessesLeft()+' guess'+(guessesLeft()===1?'':'es')+' left.');
   saveState(); renderStatus();
-  input.value=''; taList.innerHTML='';
+  input.value=''; taList.innerHTML=''; input.focus();
   if(guessesLeft()<=0){ closeSheet(); endGrid(false); }
 }
 
@@ -2238,7 +2321,10 @@ function endGrid(perfect){
   }
   if(perfect){ AudioEngine.conch(); animateBridge(); }
   renderReveal(streak);
-  setTimeout(function(){ const h=$('revealHost'); if(h.firstChild) h.firstChild.scrollIntoView({behavior:'smooth',block:'start'}); },120);
+  /* On 9/9 the nine stones settle into a causeway over about 1.1s. Scrolling to the
+     reveal before that finishes would mean nobody ever sees the bridge they built. */
+  setTimeout(function(){ const h=$('revealHost'); if(h.firstChild) h.firstChild.scrollIntoView({behavior:'smooth',block:'start'}); },
+             perfect?1800:150);
 }
 
 function renderReveal(streak){
@@ -2254,7 +2340,7 @@ function renderReveal(streak){
 
   for(let c=0;c<9;c++){
     const r=G.rows[Math.floor(c/3)], k=G.cols[c%3];
-    h+='<h3>'+esc(r.label)+' <span style="opacity:.6">×</span> '+esc(k.label)+'</h3>';
+    h+='<h3 id="rev'+c+'" tabindex="-1">'+esc(r.label)+' <span style="opacity:.6">×</span> '+esc(k.label)+'</h3>';
     const list=G.cands[c].slice().sort(function(a,b){ return BEINGS[b].fame-BEINGS[a].fame || a-b; });
     h+='<ul class="ans">';
     for(let x=0;x<list.length;x++){
@@ -2401,8 +2487,11 @@ function openArchive(){
 function openSettings(){
   const row=function(id,label,on){ return '<div class="setrow"><span>'+label+'</span>'
     +'<div class="seg"><button data-t="'+id+'" aria-pressed="'+(on?'true':'false')+'">'+(on?'On':'Off')+'</button></div></div>'; };
+  /* If the font detection turned Devanāgarī off, say so — otherwise the toggle reads
+     "On" while nothing appears, and the player concludes the game is broken. */
+  const devOff = SET.dev && document.documentElement.dataset.dev==='off';
   let h=row('snd','Sound',SET.snd)+row('drone','Ambient drone',SET.drone)
-       +row('dev','Devanāgarī',SET.dev)
+       +row('dev','Devanāgarī'+(devOff?'<br><span class="small">This device has no Devanāgarī font, so the second line is hidden. IAST alone is complete.</span>':''),SET.dev)
        +'<div class="setrow"><span>Typeahead<br><span class="small">Off is “Recall” — no suggestions at all, and the share line says so.</span></span>'
        +'<div class="seg"><button data-t="type" aria-pressed="'+(SET.type?'true':'false')+'">'+(SET.type?'On':'Off')+'</button></div></div>'
        +'<div class="setrow"><span>Theme</span><div class="seg">'
@@ -2465,19 +2554,85 @@ function audit(days){
   out.meanCells=(out.sum/(days*9)).toFixed(2);
   out.minCellAcrossDays=Math.min.apply(null,mins);
   out.meanHeaviest=(out.weights.reduce(function(a,b){return a+b;},0)/days).toFixed(1);
+  /* The shipped fallbacks are insurance, and insurance that has quietly expired is
+     worse than none — so the audit re-checks every one of them against the live data. */
+  out.badFallbacks=[];
+  for(let i=0;i<FALLBACK.length;i++){
+    const f=FALLBACK[i];
+    const g=buildGrid(f[0].map(function(id){return CRIT_BY_ID[id];}), f[1].map(function(id){return CRIT_BY_ID[id];}));
+    let mn=99; for(let c=0;c<9;c++) mn=Math.min(mn,g.counts[c]);
+    if(mn<3 || !everyCellHasAFamousAnswer(g.cands) || !perfectMatching(g.cands))
+      out.badFallbacks.push(i+': '+f[0].join('/')+' x '+f[1].join('/')+' minCell='+mn);
+  }
+  if(out.badFallbacks.length) console.error('SETU FALLBACK NO LONGER SOLVABLE: '+out.badFallbacks.join(' | '));
   const never=CRITERIA.filter(function(c){ return !out.critUse[c.id]; }).map(function(c){ return c.id; });
   const hot=CRITERIA.filter(function(c){ return (out.critUse[c.id]||0)/(days*6) > 0.05; }).map(function(c){ return c.id+':'+((out.critUse[c.id]/(days*6))*100).toFixed(1)+'%'; });
   out.neverUsed=never; out.over5pct=hot;
   console.log('SETU AUDIT', out);
   return out;
 }
-window.setuAudit=audit;
+/* dev-only diagnostic: exhaustively counts how many row/col shapes survive each
+   filter for a given tier pool. Not linked from anywhere; it exists so that "the
+   generator falls back too often" is a measurable statement, not a feeling. */
+function diagPool(tiers,maxDeep){
+  const pool=CRITERIA.filter(function(c){ return tiers.indexOf(c.tier)>=0; });
+  const stats={pool:pool.length, shapes:0, axis:0, min3:0, band:0, famous:0, match:0, bandLo:0, bandHi:0};
+  const tri=[];
+  for(let a=0;a<pool.length;a++) for(let b2=a+1;b2<pool.length;b2++) for(let c=b2+1;c<pool.length;c++) tri.push([pool[a],pool[b2],pool[c]]);
+  for(let i=0;i<tri.length;i++) for(let j=0;j<tri.length;j++){
+    const rows=tri[i], cols=tri[j];
+    if(rows.some(function(r){ return cols.indexOf(r)>=0; })) continue;
+    let deep=0; rows.concat(cols).forEach(function(c){ if(c.tier==='deep') deep++; });
+    if(deep>maxDeep) continue;
+    stats.shapes++;
+    if(!axisRuleOK(rows,cols)) continue;
+    stats.axis++;
+    const g=buildGrid(rows,cols);
+    let mn=99,sm=0; for(let c=0;c<9;c++){ if(g.counts[c]<mn)mn=g.counts[c]; sm+=g.counts[c]; }
+    if(mn<3) continue; stats.min3++;
+    if(sm<40){ stats.bandLo++; continue; }
+    if(sm>110){ stats.bandHi++; continue; }
+    stats.band++;
+    if(!everyCellHasAFamousAnswer(g.cands)) continue; stats.famous++;
+    if(!perfectMatching(g.cands)) continue; stats.match++;
+  }
+  return stats;
+}
+window.setuDiag=function(){
+  return { mon:diagPool(['core'],0), wed:diagPool(['core','wide'],0),
+           fri:diagPool(['core','wide','deep'],1), sun:diagPool(['core','wide','deep'],9) };
+};
+window.setuCriteria=CRITERIA;
+window.setuTry=function(rows,cols){
+  if(!axisRuleOK(rows,cols)) return null;
+  let min=99,sum=0;
+  for(let i=0;i<3;i++) for(let j=0;j<3;j++){
+    const n=countAnd(rows[i].bits,cols[j].bits);
+    if(n<3) return null;
+    if(countAnd3(rows[i].bits,cols[j].bits,FAMOUS_BITS)===0) return null;
+    if(n<min) min=n; sum+=n;
+  }
+  if(sum<40||sum>110) return null;
+  const g=buildGrid(rows,cols);
+  if(!perfectMatching(g.cands)) return null;
+  return {min:min,sum:sum,heaviest:heaviestMatching(g.cands)};
+};
+/* Dev surface. Nothing in the game reads any of it; it exists so that "the generator
+   never falls back", "no two beings share a key" and "the typeahead is not filtered
+   to the open cell" are statements a harness can check against the shipped file
+   rather than against a copy of the data that has drifted from it. */
+window.setuPerfect=perfectMatching;
+window.setuAudit=audit;                        // ?audit=365 calls this itself
 window.setuNorm=norm;
 window.setuResolve=resolveName;
 window.setuGenerate=generate;
 window.setuSelfTest=SELFTEST;
 window.setuBeings=BEINGS;
 window.setuState=function(){ return G; };
+window.setuShareText=shareText;
+window.setuSuggest=suggest;
+window.setuEnd=endGrid;
+window.setuRender=renderAll;
 
 /* ================================================================================
    BOOT

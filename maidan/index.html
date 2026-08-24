@@ -38,6 +38,7 @@
   --dusk-hi:#2c3f5e; --dusk-lo:#e8925a;      --lamp:#fff3c8;
   --ink:#20180c;     --ink-dim:#5d4e35;      --rule:rgba(60,44,20,.45);
   --panel:#f6f1e4;   --panel-2:#efe6d2;      --shade:rgba(32,24,12,.55);
+  --hdbg:#4a3a1e;    --cellbg:#c9a86a;
   --ok:#2f6b34;      --no:#9a3b21;
 }
 /* The default "system" theme stamps nothing on <html>, so prefers-color-scheme is the only signal.
@@ -48,6 +49,7 @@
     --dusk-hi:#101a28; --dusk-lo:#6b4630;    --lamp:#efe0a8;
     --ink:#efe8d6;    --ink-dim:#a89a7c;     --rule:rgba(216,210,194,.30);
     --panel:#241f14;  --panel-2:#2e2718;     --shade:rgba(0,0,0,.66);
+    --hdbg:#14100a;   --cellbg:#3a3222;
     --ok:#8ec98a;     --no:#e8907a;
   }
 }
@@ -56,6 +58,7 @@
   --dusk-hi:#101a28; --dusk-lo:#6b4630;    --lamp:#efe0a8;
   --ink:#efe8d6;    --ink-dim:#a89a7c;     --rule:rgba(216,210,194,.30);
   --panel:#241f14;  --panel-2:#2e2718;     --shade:rgba(0,0,0,.66);
+  --hdbg:#14100a;   --cellbg:#3a3222;
   --ok:#8ec98a;     --no:#e8907a;
 }
 
@@ -85,8 +88,8 @@ h1{ font-size:26px; font-weight:900; letter-spacing:.5px; margin:0; color:var(--
     text-shadow:0 2px 0 rgba(0,0,0,.28); }
 h1 small{ display:block; font-size:11px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase;
     color:var(--crease); opacity:.72; margin-top:2px; text-shadow:none; }
-.datechip{ margin-left:auto; font-size:12px; font-weight:800; color:var(--crease); opacity:.85;
-    border:1px solid var(--rule); border-radius:999px; padding:4px 10px; background:rgba(0,0,0,.14); }
+.datechip{ margin-left:auto; font-size:12px; font-weight:800; color:var(--crease);
+    border:1px solid var(--rule); border-radius:999px; padding:4px 10px; background:var(--hdbg); }
 .datechip.arch{ color:var(--lamp); border-color:var(--lamp); }
 
 .scorebar{ display:flex; gap:8px; align-items:stretch; margin:0 0 10px; }
@@ -109,7 +112,7 @@ h1 small{ display:block; font-size:11px; font-weight:700; letter-spacing:2.4px; 
 .corner{ display:flex; align-items:center; justify-content:center; }
 .corner svg{ width:100%; height:100%; opacity:.85; }
 .hd{
-  background:rgba(0,0,0,.20); border:1px solid var(--rule); border-radius:10px;
+  background:var(--hdbg); border:1px solid var(--rule); border-radius:10px;
   display:flex; align-items:center; justify-content:center; text-align:center;
   font-size:11px; line-height:1.15; font-weight:800; letter-spacing:.2px;
   color:var(--crease); padding:4px 3px; cursor:pointer; overflow:hidden;
@@ -117,15 +120,15 @@ h1 small{ display:block; font-size:11px; font-weight:700; letter-spacing:2.4px; 
 }
 .hd:focus-visible{ outline:3px solid var(--lamp); outline-offset:2px; }
 .cell{
-  position:relative; background:var(--ground-dark);
+  position:relative; background:var(--cellbg);
   border:1px solid var(--rule); border-radius:10px;
   display:flex; align-items:center; justify-content:center; text-align:center;
   padding:6px 4px; cursor:pointer; min-width:0; overflow:hidden;
-  font-size:12px; font-weight:700; color:var(--crease);
+  font-size:12px; font-weight:700; color:var(--ink);
   transition:background .18s ease, transform .12s ease;
 }
 .cell:focus-visible{ outline:3px solid var(--lamp); outline-offset:2px; }
-.cell .plus{ font-size:22px; font-weight:400; opacity:.42; }
+.cell .plus{ font-size:22px; font-weight:400; color:var(--ink-dim); }
 /* A filled cell is a name chalked on the crease-white panel. The corner notch is the point: state is
    never colour-only, so a red/green-blind player still reads "laid" from the geometry. */
 .cell.on{ background:var(--crease); color:#20180c; cursor:default; }
@@ -136,9 +139,10 @@ h1 small{ display:block; font-size:11px; font-weight:700; letter-spacing:2.4px; 
 }
 .cell .nm{ font-size:12px; font-weight:800; line-height:1.15; overflow-wrap:anywhere; }
 .cell .wt{ position:absolute; left:4px; bottom:3px; font-size:9px; font-weight:800; color:#5d4e35; }
+.cell.on .nm{ color:#20180c; }
 .cell .hint{
   position:absolute; right:3px; bottom:1px; font-size:11px; font-weight:800; line-height:1;
-  color:var(--crease); opacity:.55; padding:4px 5px; border:0; background:none; cursor:pointer;
+  color:var(--ink-dim); padding:4px 5px; border:0; background:none; cursor:pointer;
 }
 .cell.on .hint{ display:none; }
 @media (prefers-reduced-motion:no-preference){
@@ -147,7 +151,7 @@ h1 small{ display:block; font-size:11px; font-weight:700; letter-spacing:2.4px; 
 }
 
 .msg{ min-height:34px; margin:10px auto 0; max-width:min(94vw,480px); font-size:13px; font-weight:700;
-  line-height:1.35; text-align:center; color:var(--crease); }
+  line-height:1.35; text-align:center; color:var(--ink); }
 .msg .yes{ color:var(--ok); } .msg .nope{ color:var(--no); }
 
 .tools{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:12px 0 6px; }
@@ -160,9 +164,11 @@ button.btn:focus-visible{ outline:3px solid var(--lamp); outline-offset:2px; }
 button.btn.primary{ background:var(--square); color:#fff; border-color:rgba(0,0,0,.25); }
 button.btn[aria-pressed="true"]{ background:var(--lamp); color:#20180c; }
 
+/* --ink rather than --ink-dim: this sits over the pale end of the ground gradient, where the dim
+   token only reaches about 3.6:1 and small text needs 4.5. */
 footer.foot{ margin:18px auto 0; max-width:min(94vw,480px); font-size:11px; line-height:1.6;
-  color:var(--crease); opacity:.82; text-align:center; }
-footer.foot a{ color:var(--lamp); }
+  color:var(--ink); text-align:center; }
+footer.foot a{ color:var(--ink); }
 
 /* the staleness guard. Persistent, dismissible, and deliberately not styled as an error — the dataset
    being old is a fact about the game, not a fault of the player's. */
@@ -436,6 +442,12 @@ function norm(s){
   return s;
 }
 
+/* A LIGHTER fold, for the typeahead only. norm() is built for resolution and is deliberately lossy:
+   it drops a trailing 'a' and collapses doubled letters, so norm('sa') is 's' and a two-character
+   prefix disappears. Prefix matching needs the letters as typed, minus case and diacritics — and
+   nothing here ever touches validation, so its looseness cannot let a wrong answer through. */
+function soft(s){ return (s||'').normalize('NFD').replace(/[\u0300-\u036F]/g,'').toLowerCase().replace(/[^a-z]/g,''); }
+
 /* Damerau–Levenshtein, bounded. At ~2,000 keys a full scan is a fraction of a millisecond and an
    index would be more code and one more thing to get wrong. */
 function dl(a,b,cap){
@@ -604,10 +616,10 @@ const PLAYERS=[
  roles:['off','spin'],marks:['test300w','test100m','test5wi','hattrick','wcfinal','wcwin','t20wcfinal'],domestic:[],fame:4,
  gloss:'Off-spinner whose 32 wickets beat Australia in 2001, including the first Test hat-trick by an Indian.',
  alt:['Bhajji','Harbhajan Singh Plaha','H Singh','Turbanator']},
-{id:'zaheer-khan',name:'Zaheer Khan',nations:['ind'],debut:2000,last:2014,formats:['test','odi','t20i'],
- roles:['pace','lpace'],marks:['test5wi','wcfinal','wcwin'],domestic:['county'],fame:4,
+{id:'zaheer-khan',name:'Zaheer Khan',sur:'Zaheer',nations:['ind'],debut:2000,last:2014,formats:['test','odi','t20i'],
+ roles:['pace','lpace'],marks:['test300w','test5wi','wcfinal','wcwin'],domestic:['county'],fame:4,
  gloss:'Left-arm quick who mastered reverse swing; joint leading wicket-taker of the 2011 World Cup.',
- alt:['Zak','Z Khan','Zaheer']},
+ alt:['Zak','Z Khan','Zaheer Khan jr']},
 {id:'yuvraj-singh',name:'Yuvraj Singh',sur:'Yuvraj',nations:['ind'],debut:2000,last:2017,formats:['test','odi','t20i'],
  roles:['lhb','lspin','spin'],marks:['wcfinal','wcwin','t20wcfinal'],domestic:[],fame:5,
  gloss:'Player of the 2011 World Cup; hit six sixes in an over off Stuart Broad at the 2007 World T20.',
@@ -620,7 +632,7 @@ const PLAYERS=[
  roles:['captain'],marks:['test200','odi10k','test100m','wcfinal','wcwin','t20wcfinal'],domestic:[],fame:5,
  gloss:'Delhi batter and long-time India captain; reached 10,000 one-day international runs faster than anyone before him.',
  alt:['V Kohli','Virat','King Kohli','Cheeku','विराट कोहली']},
-{id:'rohit-sharma',name:'Rohit Sharma',sur:'Rohit',nations:['ind'],debut:2007,last:0,formats:['test','odi','t20i'],
+{id:'rohit-sharma',name:'Rohit Sharma',nations:['ind'],debut:2007,last:0,formats:['test','odi','t20i'],
  roles:['opener','captain'],marks:['odi200','odi10k','test200','wcfinal','t20wcfinal'],domestic:[],fame:5,
  gloss:'The only man with three double centuries in one-day internationals, the highest of them 264 against Sri Lanka in 2014.',
  alt:['Rohit','RG Sharma','Hitman','रोहित शर्मा']},
@@ -648,10 +660,10 @@ const PLAYERS=[
  roles:[],marks:['test200','test100m'],domestic:['county'],fame:4,
  gloss:'Saurashtra number three who batted time; three Test double centuries and long county seasons in England.',
  alt:['CA Pujara','Chintu','Chesteshwar Pujara','Puji']},
-{id:'ishant-sharma',name:'Ishant Sharma',sur:'Ishant',nations:['ind'],debut:2007,last:2021,formats:['test','odi','t20i'],
- roles:['pace'],marks:['test100m','test5wi'],domestic:['county'],fame:3,
- gloss:'Tall Delhi seamer; 105 Tests, and 7 for 74 at Lord’s in 2014.',
- alt:['I Sharma','Ishaant Sharma']},
+{id:'ishant-sharma',name:'Ishant Sharma',nations:['ind'],debut:2007,last:2021,formats:['test','odi','t20i'],
+ roles:['pace'],marks:['test300w','test100m','test5wi'],domestic:['county'],fame:3,
+ gloss:'Tall Delhi seamer; 105 Tests, 311 wickets, and 7 for 74 at Lord’s in 2014.',
+ alt:['I Sharma','Ishant','Ishaant Sharma']},
 {id:'gill-s',name:'Shubman Gill',nations:['ind'],debut:2019,last:0,formats:['test','odi','t20i'],
  roles:['opener','captain'],marks:['odi200','test200','wcfinal'],domestic:[],fame:4,
  gloss:'Punjab batter; 208 against New Zealand in 2023 and 269 at Edgbaston in 2025.',
@@ -692,10 +704,10 @@ const PLAYERS=[
  roles:['opener','lhb'],marks:['wwcfinal'],domestic:[],fame:4,
  gloss:'Left-handed opener; played in the 2017 final and in the winning side of 2025.',
  alt:['S Mandhana','Smriti']},
-{id:'deepti-sharma',name:'Deepti Sharma',sur:'Deepti',nations:['ind'],debut:2014,last:0,formats:['test','odi','t20i'],
+{id:'deepti-sharma',name:'Deepti Sharma',nations:['ind'],debut:2014,last:0,formats:['test','odi','t20i'],
  roles:['off','spin'],marks:['wwcfinal'],domestic:[],fame:3,
  gloss:'Off-spinning all-rounder; took 5 for 39 in the 2025 Women’s World Cup final.',
- alt:['D Sharma','Dipti Sharma']},
+ alt:['D Sharma','Deepti','Dipti Sharma']},
 {id:'shafali-verma',name:'Shafali Verma',sur:'Shafali',nations:['ind'],debut:2019,last:0,formats:['test','odi','t20i'],
  roles:['opener'],marks:['wwcfinal'],domestic:[],fame:3,
  gloss:'Haryana opener; top-scored with 87 and took two wickets in the 2025 Women’s World Cup final.',
@@ -847,11 +859,11 @@ const PLAYERS=[
  gloss:'Victorian middle-order batter and occasional off-spinner; the younger of the Hussey brothers.',
  alt:['DJ Hussey','David John Hussey','Huss']},
 {id:'johnson-m',name:'Mitchell Johnson',nations:['aus'],debut:2005,last:2015,formats:['test','odi','t20i'],
- roles:['lpace','pace'],marks:['test5wi','wcfinal','wcwin'],domestic:[],fame:4,
- gloss:'Left-arm fast bowler; 37 wickets in the 2013-14 Ashes and a World Cup winner in 2015.',
+ roles:['lpace','pace'],marks:['test300w','test5wi','wcfinal','wcwin'],domestic:[],fame:4,
+ gloss:'Left-arm fast bowler; 313 Test wickets, 37 of them in the 2013-14 Ashes and a World Cup winner in 2015.',
  alt:['MG Johnson','Mitch Johnson','Mitchell Guy Johnson']},
 {id:'starc-m',name:'Mitchell Starc',nations:['aus'],debut:2010,last:0,formats:['test','odi','t20i'],
- roles:['lpace','pace'],marks:['test5wi','wcfinal','wcwin'],domestic:['county'],fame:4,
+ roles:['lpace','pace'],marks:['test300w','test5wi','wcfinal','wcwin'],domestic:['county'],fame:4,
  gloss:'Left-arm fast bowler; player of the tournament at the 2015 World Cup and a winner again in 2023.',
  alt:['MA Starc','Mitch Starc','Mitchell Aaron Starc']},
 {id:'smith-steve',name:'Steve Smith',nations:['aus'],debut:2010,last:0,formats:['test','odi','t20i'],
@@ -1129,10 +1141,10 @@ const PLAYERS=[
  roles:['opener','captain'],marks:[],domestic:['county'],fame:2,
  gloss:'Glamorgan and Pakistan opener who once hit 147 before lunch for the county against the Australians.',
  alt:['Majid','MJ Khan','Majid Jahangir Khan']},
-{id:'zaheer-abbas',name:'Zaheer Abbas',sur:'Zaheer Abbas',nations:['pak'],debut:1969,last:1985,formats:['test','odi'],
+{id:'zaheer-abbas',name:'Zaheer Abbas',sur:'Zaheer',nations:['pak'],debut:1969,last:1985,formats:['test','odi'],
  roles:['captain'],marks:['test200'],domestic:['county'],fame:3,
  gloss:'Gloucestershire and Pakistan batter called the Asian Bradman; 274 against England at Edgbaston in 1971.',
- alt:['Zaheer','Z Abbas','Asian Bradman']},
+ alt:['Z Abbas','Asian Bradman']},
 {id:'imran-khan',name:'Imran Khan',nations:['pak'],debut:1971,last:1992,formats:['test','odi'],
  roles:['pace','captain'],marks:['test300w','test5wi','wcfinal','wcwin'],domestic:['county'],fame:5,
  gloss:'Fast-bowling all-rounder who captained Pakistan to the 1992 World Cup at 39.',
@@ -1190,7 +1202,7 @@ const PLAYERS=[
  roles:['captain'],marks:['test200'],domestic:[],fame:4,
  gloss:'Made 1,788 Test runs in the calendar year 2006, including 223 against England at Lord’s.',
  alt:['Yousuf Youhana','M Yousuf','Mohammed Yousuf','Yousaf']},
-{id:'shahid-afridi',name:'Shahid Afridi',sur:'Shahid Afridi',nations:['pak'],debut:1996,last:2018,formats:['test','odi','t20i'],
+{id:'shahid-afridi',name:'Shahid Afridi',sur:'Afridi',nations:['pak'],debut:1996,last:2018,formats:['test','odi','t20i'],
  roles:['leg','spin','captain'],marks:['odi300w','test5wi','wcfinal','t20wcfinal'],domestic:[],fame:5,
  gloss:'Hit a 37-ball one-day century in his second match, at seventeen; took 395 one-day wickets with leg-spin.',
  alt:['Afridi','Boom Boom','S Afridi','Sahibzada Mohammad Shahid Khan Afridi','Boom Boom Afridi']},
@@ -1214,10 +1226,10 @@ const PLAYERS=[
  roles:['keeper','captain'],marks:['t20wcfinal'],domestic:['county'],fame:4,
  gloss:'Wicketkeeper-batter from Peshawar; opened with Babar Azam through Pakistan’s run to the 2022 World T20 final.',
  alt:['M Rizwan','Mohammed Rizwan','Rizzy']},
-{id:'shaheen-afridi',name:'Shaheen Shah Afridi',sur:'Shaheen',nations:['pak'],debut:2018,last:0,formats:['test','odi','t20i'],
+{id:'shaheen-afridi',name:'Shaheen Shah Afridi',sur:'Afridi',nations:['pak'],debut:2018,last:0,formats:['test','odi','t20i'],
  roles:['lpace','pace'],marks:['test5wi','t20wcfinal'],domestic:[],fame:4,
  gloss:'Left-arm fast bowler; opened the bowling in the 2022 World T20 final and left it injured.',
- alt:['Shaheen Afridi','SS Afridi','Shahin Afridi','Shaheen Shah']},
+ alt:['Shaheen Afridi','Shahin Afridi','Shaheen','Shaheen Shah']},
 {id:'sana-mir',name:'Sana Mir',nations:['pak'],debut:2005,last:2019,formats:['odi','t20i'],
  roles:['off','spin','captain'],marks:[],domestic:[],fame:3,
  gloss:'Captained Pakistan’s women for a decade and took 151 one-day wickets with off-spin.',
@@ -1474,7 +1486,7 @@ const PLAYERS=[
  gloss:'Captained New Zealand in the 2019 World Cup final and to the first World Test Championship.',
  alt:['KS Williamson','Kane Stuart Williamson','Kane','Willy']},
 {id:'boult-t',name:'Trent Boult',nations:['nz'],debut:2011,last:0,formats:['test','odi','t20i'],
- roles:['lpace','pace'],marks:['test5wi','wcfinal'],domestic:[],fame:4,
+ roles:['lpace','pace'],marks:['test300w','test5wi','wcfinal'],domestic:[],fame:4,
  gloss:'Left-arm swing bowler; joint leading wicket-taker of the 2015 World Cup and a finalist again in 2019.',
  alt:['TA Boult','Trent Alexander Boult']},
 {id:'southee-t',name:'Tim Southee',nations:['nz'],debut:2008,last:2024,formats:['test','odi','t20i'],
@@ -1558,7 +1570,7 @@ const PLAYERS=[
  roles:['lspin','spin'],marks:['test300w','test5wi','t20wcfinal'],domestic:['county'],fame:4,
  gloss:'Left-arm spinner who took 433 Test wickets, most of them after his 33rd birthday.',
  alt:['HMRKB Herath','Rangana','Herath Mudiyanselage Rangana Keerthi Bandara Herath']},
-{id:'mendis-ajantha',name:'Ajantha Mendis',sur:'Ajantha Mendis',nations:['sl'],debut:2008,last:2015,formats:['test','odi','t20i'],
+{id:'mendis-ajantha',name:'Ajantha Mendis',sur:'Mendis',nations:['sl'],debut:2008,last:2015,formats:['test','odi','t20i'],
  roles:['off','spin'],marks:['t20wcfinal'],domestic:[],fame:3,
  gloss:'Mystery spinner of the carrom ball; 26 wickets in his first three Tests.',
  alt:['BAW Mendis','Ajantha','Balapuwaduge Ajantha Winslow Mendis']},
@@ -1597,7 +1609,7 @@ const PLAYERS=[
  gloss:'Left-arm spinner who took a hat-trick on one-day debut in 2014 and 8 for 39 in a Test the same year.',
  alt:['T Islam','Taijul','Tayjul Islam']},
 {id:'mustafizur-rahman',name:'Mustafizur Rahman',sur:'Mustafizur',nations:['ban'],debut:2015,last:0,formats:['test','odi','t20i'],
- roles:['lpace','pace'],marks:[],domestic:['county'],fame:3,
+ roles:['lpace','pace'],marks:[],domestic:[],fame:3,
  gloss:'Left-arm seamer of the cutter; took 13 wickets in his first two one-day internationals, against India.',
  alt:['M Rahman','Mustafizur','The Fizz','Mustafiz']},
 {id:'ashraful-m',name:'Mohammad Ashraful',sur:'Ashraful',nations:['ban'],debut:2001,last:2013,formats:['test','odi','t20i'],
@@ -1649,7 +1661,7 @@ const PLAYERS=[
  gloss:'Captained Ireland for more than a decade, including their first Test match, against Pakistan in 2018.',
  alt:['WTS Porterfield','William Thomas Stuart Porterfield','Will Porterfield']},
 {id:'obrien-k',name:'Kevin O’Brien',sur:'O’Brien',nations:['ire'],debut:2006,last:2021,formats:['test','odi','t20i'],
- roles:['pace'],marks:[],domestic:['county'],fame:3,
+ roles:['pace'],marks:[],domestic:[],fame:3,
  gloss:'Made a 50-ball century against England at the 2011 World Cup, and Ireland’s first Test century in 2018.',
  alt:['KJ O’Brien','Kevin OBrien','Kevin O Brien','Kevin Joseph O’Brien']},
 {id:'stirling-p',name:'Paul Stirling',nations:['ire'],debut:2008,last:0,formats:['test','odi','t20i'],
@@ -1665,11 +1677,11 @@ const PLAYERS=[
  gloss:'Leg-spinner from Nangarhar; took a T20 international hat-trick against Ireland in 2019 and captains Afghanistan.',
  alt:['R Khan','Rashid Khan Arman','Rashid']},
 {id:'mohammad-nabi',name:'Mohammad Nabi',sur:'Nabi',nations:['afg'],debut:2009,last:0,formats:['test','odi','t20i'],
- roles:['off','spin','captain'],marks:[],domestic:['county'],fame:4,
+ roles:['off','spin','captain'],marks:[],domestic:[],fame:4,
  gloss:'Off-spinning all-rounder who captained Afghanistan into their first World Cup and their first Test.',
  alt:['M Nabi','Mohammed Nabi','Nabi','Mohammad Nabi Eisakhil']},
 {id:'mujeeb-ur-rahman',name:'Mujeeb Ur Rahman',sur:'Mujeeb',nations:['afg'],debut:2017,last:0,formats:['odi','t20i'],
- roles:['off','spin'],marks:[],domestic:['county'],fame:3,
+ roles:['off','spin'],marks:[],domestic:[],fame:3,
  gloss:'Mystery off-spinner who took a one-day five-for at seventeen, the youngest to do so.',
  alt:['Mujeeb','Mujeeb ur Rahman','Mujeeb Zadran','Mujeebur Rahman']},
 {id:'ibrahim-zadran',name:'Ibrahim Zadran',sur:'Ibrahim',nations:['afg'],debut:2019,last:0,formats:['test','odi','t20i'],
@@ -1677,3 +1689,897 @@ const PLAYERS=[
  gloss:'Opener who made Afghanistan’s first World Cup century, against Australia in 2023.',
  alt:['I Zadran','Ibrahim Zadran jr']}
 ];
+
+/* ============================================================================================
+   THE CRITERION CATALOGUE
+   ============================================================================================
+   Six families. Every criterion is a predicate over a player, and every predicate is a TAG LOOKUP —
+   never a computation, never a judgement call at runtime. `test` runs exactly once per criterion at
+   boot to build the bitsets, and is never called during play.
+
+   `single` marks a family whose underlying tag is single-valued. Only `era` is: a player debuted in
+   exactly one decade. Two single-valued criteria facing each other across the grid guarantee an
+   empty cell, so the generator rejects that SHAPE before it counts a single candidate (§2.2). They
+   may sit together on the same axis — rows never intersect rows.
+
+   Nation looks single-valued and is not: Wessels played for Australia and South Africa, and Morgan,
+   Joyce and Rankin each for Ireland and England. Most nation pairs are of course empty, and the
+   popcount check throws those out for free without needing a special rule. Do not add one.
+
+   THE ONE RULE FOR ADDING A CRITERION: it must be phrasable in the past tense with no implicit
+   "as of today". "Took 300 Test wickets" is monotone and legal; "is the leading wicket-taker" flips
+   whenever somebody has a good week, and a criterion that flips turns the whole game into a liar.
+   ============================================================================================ */
+function hasTag(list,v){ return list.indexOf(v)>=0; }
+const CRITERIA=[
+ /* --- nation (multi-valued) --- */
+ {id:'n-ind',family:'nation',single:false,tier:'core',label:'Played for India',short:'India',
+  test:p=>hasTag(p.nations,'ind')},
+ {id:'n-aus',family:'nation',single:false,tier:'core',label:'Played for Australia',short:'Australia',
+  test:p=>hasTag(p.nations,'aus')},
+ {id:'n-eng',family:'nation',single:false,tier:'core',label:'Played for England',short:'England',
+  test:p=>hasTag(p.nations,'eng')},
+ {id:'n-pak',family:'nation',single:false,tier:'core',label:'Played for Pakistan',short:'Pakistan',
+  test:p=>hasTag(p.nations,'pak')},
+ {id:'n-sa',family:'nation',single:false,tier:'core',label:'Played for South Africa',short:'South Africa',
+  test:p=>hasTag(p.nations,'sa')},
+ {id:'n-wi',family:'nation',single:false,tier:'core',label:'Played for the West Indies',short:'West Indies',
+  test:p=>hasTag(p.nations,'wi')},
+ {id:'n-nz',family:'nation',single:false,tier:'wide',label:'Played for New Zealand',short:'New Zealand',
+  test:p=>hasTag(p.nations,'nz')},
+ {id:'n-sl',family:'nation',single:false,tier:'wide',label:'Played for Sri Lanka',short:'Sri Lanka',
+  test:p=>hasTag(p.nations,'sl')},
+ {id:'n-ban',family:'nation',single:false,tier:'deep',label:'Played for Bangladesh',short:'Bangladesh',
+  test:p=>hasTag(p.nations,'ban')},
+ {id:'n-zim',family:'nation',single:false,tier:'deep',label:'Played for Zimbabwe',short:'Zimbabwe',
+  test:p=>hasTag(p.nations,'zim')},
+ {id:'n-ire',family:'nation',single:false,tier:'deep',label:'Played for Ireland',short:'Ireland',
+  test:p=>hasTag(p.nations,'ire')},
+ {id:'n-afg',family:'nation',single:false,tier:'deep',label:'Played for Afghanistan',short:'Afghanistan',
+  test:p=>hasTag(p.nations,'afg')},
+
+ /* --- era (SINGLE-valued, derived from debut) --- */
+ {id:'e-pre70',family:'era',single:true,tier:'deep',label:'Debuted before 1970',short:'Before 1970',
+  test:p=>p.debut<1970},
+ {id:'e-70s',family:'era',single:true,tier:'wide',label:'Debuted in the 1970s',short:'1970s',
+  test:p=>p.debut>=1970&&p.debut<1980},
+ {id:'e-80s',family:'era',single:true,tier:'wide',label:'Debuted in the 1980s',short:'1980s',
+  test:p=>p.debut>=1980&&p.debut<1990},
+ {id:'e-90s',family:'era',single:true,tier:'core',label:'Debuted in the 1990s',short:'1990s',
+  test:p=>p.debut>=1990&&p.debut<2000},
+ {id:'e-00s',family:'era',single:true,tier:'core',label:'Debuted in the 2000s',short:'2000s',
+  test:p=>p.debut>=2000&&p.debut<2010},
+ {id:'e-10s',family:'era',single:true,tier:'core',label:'Debuted in the 2010s',short:'2010s',
+  test:p=>p.debut>=2010&&p.debut<2020},
+ {id:'e-20s',family:'era',single:true,tier:'deep',label:'Debuted in the 2020s',short:'2020s',
+  test:p=>p.debut>=2020},
+
+ /* --- format (multi-valued) --- */
+ {id:'f-test',family:'format',single:false,tier:'core',label:'Played Test cricket',short:'Tests',
+  test:p=>hasTag(p.formats,'test')},
+ {id:'f-odi',family:'format',single:false,tier:'core',label:'Played One Day Internationals',short:'ODIs',
+  test:p=>hasTag(p.formats,'odi')},
+ {id:'f-t20i',family:'format',single:false,tier:'core',label:'Played T20 internationals',short:'T20Is',
+  test:p=>hasTag(p.formats,'t20i')},
+
+ /* --- role (multi-valued) --- */
+ {id:'r-keeper',family:'role',single:false,tier:'core',label:'Kept wicket for their country',short:'Wicketkeeper',
+  test:p=>hasTag(p.roles,'keeper')},
+ {id:'r-captain',family:'role',single:false,tier:'core',label:'Captained their country',short:'Captain',
+  test:p=>hasTag(p.roles,'captain')},
+ {id:'r-lhb',family:'role',single:false,tier:'core',label:'Batted left-handed',short:'Left-hand bat',
+  test:p=>hasTag(p.roles,'lhb')},
+ {id:'r-opener',family:'role',single:false,tier:'core',label:'Opened the batting',short:'Opener',
+  test:p=>hasTag(p.roles,'opener')},
+ {id:'r-pace',family:'role',single:false,tier:'core',label:'Bowled fast or fast-medium',short:'Pace bowler',
+  test:p=>hasTag(p.roles,'pace')},
+ {id:'r-spin',family:'role',single:false,tier:'core',label:'Bowled spin',short:'Spinner',
+  test:p=>hasTag(p.roles,'spin')},
+ {id:'r-leg',family:'role',single:false,tier:'wide',label:'Bowled leg spin',short:'Leg spin',
+  test:p=>hasTag(p.roles,'leg')},
+ {id:'r-off',family:'role',single:false,tier:'wide',label:'Bowled off spin',short:'Off spin',
+  test:p=>hasTag(p.roles,'off')},
+ {id:'r-lspin',family:'role',single:false,tier:'wide',label:'Bowled left-arm spin',short:'Left-arm spin',
+  test:p=>hasTag(p.roles,'lspin')},
+ {id:'r-lpace',family:'role',single:false,tier:'wide',label:'Bowled left-arm pace',short:'Left-arm pace',
+  test:p=>hasTag(p.roles,'lpace')},
+
+ /* --- mark: events that happened and thresholds that have been crossed. Nothing else. --- */
+ {id:'m-test200',family:'mark',single:false,tier:'core',label:'Scored a double century in a Test match',short:'Test 200',
+  test:p=>hasTag(p.marks,'test200')},
+ {id:'m-test300',family:'mark',single:false,tier:'deep',label:'Scored a triple century in a Test match',short:'Test 300',
+  test:p=>hasTag(p.marks,'test300')},
+ {id:'m-odi200',family:'mark',single:false,tier:'deep',label:'Scored a double century in a One Day International',short:'ODI 200',
+  test:p=>hasTag(p.marks,'odi200')},
+ {id:'m-test5wi',family:'mark',single:false,tier:'core',label:'Took five wickets in a Test innings',short:'Test five-for',
+  test:p=>hasTag(p.marks,'test5wi')},
+ {id:'m-test300w',family:'mark',single:false,tier:'wide',label:'Took 300 wickets in Test cricket',short:'300 Test wickets',
+  test:p=>hasTag(p.marks,'test300w')},
+ {id:'m-odi300w',family:'mark',single:false,tier:'deep',label:'Took 300 wickets in One Day Internationals',short:'300 ODI wickets',
+  test:p=>hasTag(p.marks,'odi300w')},
+ {id:'m-test10k',family:'mark',single:false,tier:'wide',label:'Scored 10,000 runs in Test cricket',short:'10,000 Test runs',
+  test:p=>hasTag(p.marks,'test10k')},
+ {id:'m-odi10k',family:'mark',single:false,tier:'wide',label:'Scored 10,000 runs in One Day Internationals',short:'10,000 ODI runs',
+  test:p=>hasTag(p.marks,'odi10k')},
+ {id:'m-test100m',family:'mark',single:false,tier:'core',label:'Played 100 Test matches',short:'100 Tests',
+  test:p=>hasTag(p.marks,'test100m')},
+ {id:'m-hattrick',family:'mark',single:false,tier:'wide',label:'Took a hat-trick in international cricket',short:'Hat-trick',
+  test:p=>hasTag(p.marks,'hattrick')},
+ {id:'m-wcfinal',family:'mark',single:false,tier:'core',label:'Played in a men’s Cricket World Cup final',short:'Men’s WC final',
+  test:p=>hasTag(p.marks,'wcfinal')},
+ {id:'m-wcwin',family:'mark',single:false,tier:'wide',label:'Played in a winning men’s Cricket World Cup final',short:'Men’s WC winner',
+  test:p=>hasTag(p.marks,'wcwin')},
+ {id:'m-t20wcfinal',family:'mark',single:false,tier:'wide',label:'Played in a men’s T20 World Cup final',short:'Men’s T20 WC final',
+  test:p=>hasTag(p.marks,'t20wcfinal')},
+ /* All-women by construction, so the label says so — ambiguity here reads as carelessness and is. */
+ {id:'m-wwcfinal',family:'mark',single:false,tier:'wide',label:'Played in a Women’s Cricket World Cup final',short:'Women’s WC final',
+  test:p=>hasTag(p.marks,'wwcfinal')},
+ {id:'m-debut100',family:'mark',single:false,tier:'wide',label:'Scored a century on Test debut',short:'Century on debut',
+  test:p=>hasTag(p.marks,'debut100')},
+
+ /* --- domestic: coarse and geographic. Franchise T20 teams are out of the axes entirely (§4.3) —
+        they are live trademarks, and nine franchise names across a grid header stops looking like a
+        factual reference and starts looking like an unlicensed product. The County Championship is a
+        long-established, descriptive, geographic competition, and men's-only by name. --- */
+ {id:'d-county',family:'domestic',single:false,tier:'wide',
+  label:'Played in the County Championship in England',short:'County Championship',
+  test:p=>hasTag(p.domestic,'county')}
+];
+
+/* Weekday ramp (RAMAYANA_GRID.md §4.5). Monday should feel like an invitation; Sunday should feel
+   like the reason you learned the names. Keyed off the local weekday of the dayKey, which is the same
+   everywhere for a given dayKey, so it stays a pure function of the date. */
+function tierPool(key){
+  const a=key.split('-'), wd=new Date(+a[0],+a[1]-1,+a[2]).getDay();   // 0=Sun
+  if(wd===1||wd===2) return {tiers:['core'],maxDeep:0};
+  if(wd===3||wd===4) return {tiers:['core','wide'],maxDeep:0};
+  if(wd===0)         return {tiers:['core','wide','deep'],maxDeep:6};
+  return {tiers:['core','wide','deep'],maxDeep:1};                      // Fri, Sat
+}
+
+/* ============================================================================================
+   BITSETS, LOOKUP AND THE BOOT SELF-TESTS
+   ============================================================================================ */
+const N=PLAYERS.length, W=Math.ceil(N/32);
+PLAYERS.forEach((p,i)=>{ p.index=i; if(!p.sur){ const t=p.name.trim().split(/\s+/); p.sur=t[t.length-1]; } });
+
+/* One Uint32Array per criterion. A cell's candidate count is then W ANDs and a popcount, which is
+   why the generator can afford to reject grids aggressively — solvability checking is essentially
+   free, and that is the whole reason a 3x3 daily fits in a static file with no server. */
+const BITS=CRITERIA.map(c=>{
+  const b=new Uint32Array(W);
+  for(let i=0;i<N;i++) if(c.test(PLAYERS[i])) b[i>>5]|=(1<<(i&31));
+  return b;
+});
+function popcount(x){ x=x-((x>>>1)&0x55555555); x=(x&0x33333333)+((x>>>2)&0x33333333);
+  x=(x+(x>>>4))&0x0f0f0f0f; return (x*0x01010101)>>>24; }
+function andBits(a,b){ const o=new Uint32Array(W); for(let w=0;w<W;w++) o[w]=a[w]&b[w]; return o; }
+function countBits(b){ let n=0; for(let w=0;w<W;w++) n+=popcount(b[w]); return n; }
+function bitMembers(b){ const o=[]; for(let w=0;w<W;w++){ let x=b[w]; while(x){ const t=x&-x;
+  o.push((w<<5)+popcount(t-1)); x^=t; } } return o; }   // ascending index order — stable, not a Set
+function testBit(b,i){ return (b[i>>5]>>>(i&31))&1; }
+
+/* KEYS: every canonical name, every alias, and every UNAMBIGUOUS bare surname, through norm().
+   Bare surnames must resolve because that is how cricket is spoken — but only where the roster has
+   exactly one owner. Where two players share one, the surname is deliberately left OUT of KEYS so
+   that typing it falls through to the disambiguation prompt in resolve(). Waugh must ask, never guess. */
+const KEYS=new Map(), SURNAMES=new Map();
+function addKey(k,i){
+  if(!k||k.length<2) return;
+  if(KEYS.has(k) && KEYS.get(k)!==i) COLLISIONS.push(k+' → '+PLAYERS[KEYS.get(k)].name+' / '+PLAYERS[i].name);
+  else KEYS.set(k,i);
+}
+const COLLISIONS=[];
+(function buildKeys(){
+  for(let i=0;i<N;i++){
+    const p=PLAYERS[i];
+    addKey(norm(p.name),i);
+    for(const a of (p.alt||[])) addKey(norm(a),i);
+  }
+  // surnames second, so a surname can never displace somebody else's full name
+  for(let i=0;i<N;i++){
+    const k=norm(PLAYERS[i].sur);
+    if(!k||k.length<2) continue;
+    if(!SURNAMES.has(k)) SURNAMES.set(k,[]);
+    SURNAMES.get(k).push(i);
+  }
+  SURNAMES.forEach((owners,k)=>{ if(owners.length===1 && !KEYS.has(k)) KEYS.set(k,owners[0]); });
+})();
+/* The collision assertion. A collision means norm() has folded two distinct cricketers together,
+   which silently makes one of them unanswerable — the exact class of failure the normaliser's
+   conservatism exists to prevent. Costs nothing, catches everything. */
+if(COLLISIONS.length) console.error('[maidan] alias collisions:', COLLISIONS);
+(function selfTest(){
+  const bad=[];
+  for(let i=0;i<N;i++) if(KEYS.get(norm(PLAYERS[i].name))!==i) bad.push(PLAYERS[i].name);
+  if(bad.length) console.error('[maidan] canonical names that do not round-trip:', bad);
+  const ids=new Set(); PLAYERS.forEach(p=>{ if(ids.has(p.id)) console.error('[maidan] duplicate id',p.id); ids.add(p.id); });
+})();
+const KEYLIST=[...KEYS.keys()];   // fixed order, built once; never iterated during daily setup
+
+/* ============================================================================================
+   SOLVABILITY — two separate requirements, and the second is the one implementations get wrong
+   ============================================================================================
+   (a) every cell has at least THREE valid answers. A one-answer cell is a trivia question wearing a
+       puzzle's clothes, and it is also the cell most likely to be wrong — one data error away from
+       unanswerable, with no redundancy to absorb the mistake.
+   (b) a system of distinct representatives must EXIST. Because each cricketer may be used once,
+       per-cell non-emptiness does not imply the grid is solvable: three cells whose only candidates
+       are the same three players, plus a fourth needing one of them, is an unsolvable grid in which
+       every cell individually looks fine. So: a perfect bipartite matching of size 9, by Kuhn's
+       augmenting paths. Do not skip it and do not assume min(n) >= 3 implies it. It does not. */
+function perfectMatching(cands){
+  const matchP=new Int32Array(N).fill(-1);           // player -> cell
+  const seen=new Uint8Array(N);
+  function tryCell(c){
+    for(const p of cands[c]){
+      if(seen[p]) continue;
+      seen[p]=1;
+      if(matchP[p]<0 || tryCell(matchP[p])){ matchP[p]=c; return true; }
+    }
+    return false;
+  }
+  for(let c=0;c<9;c++){ seen.fill(0); if(!tryCell(c)) return false; }
+  return true;
+}
+
+/* Maximum-weight perfect matching over 9 cells and a bounded candidate pool, by the standard
+   O(n^2 m) Hungarian with potentials. Restricting each cell to its twelve rarest candidates can only
+   UNDERSTATE the optimum, never overstate it, so the "heaviest possible" figure shown to the player
+   is always actually achievable. */
+function heaviestMatching(cands){
+  const idx=new Map(), cols=[];
+  for(let c=0;c<9;c++){
+    const sorted=cands[c].slice().sort((a,b)=>{
+      const d=PLAYERS[a].fame-PLAYERS[b].fame; return d!==0?d:a-b;   // total comparator: tie-break on index
+    }).slice(0,12);
+    for(const p of sorted) if(!idx.has(p)){ idx.set(p,cols.length); cols.push(p); }
+  }
+  const m=cols.length; if(m<9) return 0;
+  const INF=1e9, cost=[];
+  for(let c=0;c<9;c++){
+    const row=new Array(m).fill(INF);
+    for(const p of cands[c]){ const j=idx.get(p); if(j!==undefined) row[j]=-(6-PLAYERS[p].fame); }
+    cost.push(row);
+  }
+  const u=new Array(10).fill(0), v=new Array(m+1).fill(0), pcol=new Array(m+1).fill(0), way=new Array(m+1).fill(0);
+  for(let i=1;i<=9;i++){
+    pcol[0]=i; let j0=0;
+    const minv=new Array(m+1).fill(INF), used=new Array(m+1).fill(false);
+    do{
+      used[j0]=true; const i0=pcol[j0]; let delta=INF, j1=0;
+      for(let j=1;j<=m;j++) if(!used[j]){
+        const cur=cost[i0-1][j-1]-u[i0]-v[j];
+        if(cur<minv[j]){ minv[j]=cur; way[j]=j0; }
+        if(minv[j]<delta){ delta=minv[j]; j1=j; }
+      }
+      if(delta>=INF/2) return 0;
+      for(let j=0;j<=m;j++){ if(used[j]){ u[pcol[j]]+=delta; v[j]-=delta; } else minv[j]-=delta; }
+      j0=j1;
+    } while(pcol[j0]!==0);
+    do{ const j1=way[j0]; pcol[j0]=pcol[j1]; j0=j1; } while(j0);
+  }
+  let total=0;
+  for(let j=1;j<=m;j++) if(pcol[j]) total += -cost[pcol[j]-1][j-1];
+  return total;
+}
+
+/* ============================================================================================
+   GENERATING THE DAY'S GRID
+   ============================================================================================
+   EVERYTHING below draws from ONE mulberry32(daySeed(dayKey())) stream, in a fixed order. A stray
+   Math.random() here desynchronises players worldwide and there is no way to detect it from inside
+   the game. The criterion catalogue and the player table are ARRAYS with a fixed order; nothing in
+   daily setup ever iterates a Set, a Map or Object.keys(). */
+const FALLBACK=[
+  {rows:['n-ind','n-aus','n-eng'],cols:['f-test','f-odi','r-captain']},
+  {rows:['e-90s','e-00s','e-10s'],cols:['n-ind','f-test','r-captain']},
+  {rows:['n-ind','n-pak','n-sl'], cols:['f-test','r-captain','r-pace']},
+  {rows:['n-eng','n-aus','n-wi'], cols:['f-test','r-captain','m-test100m']},
+  {rows:['f-test','f-odi','r-captain'],cols:['n-ind','n-eng','n-aus']},
+  {rows:['n-ind','n-aus','n-eng'],cols:['e-90s','e-00s','e-10s']}
+];
+function critIndex(id){ for(let i=0;i<CRITERIA.length;i++) if(CRITERIA[i].id===id) return i; return -1; }
+
+function axisRuleOK(rows,cols){
+  // Two criteria drawn from the same SINGLE-VALUED family must never sit on opposite axes: one cell
+  // would be empty by construction. Same axis is fine — rows never intersect rows.
+  for(const r of rows) for(const c of cols){
+    const R=CRITERIA[r], C=CRITERIA[c];
+    if(R.single && C.single && R.family===C.family) return false;
+  }
+  return true;
+}
+function buildCells(rows,cols){
+  const cells=[];
+  for(let i=0;i<3;i++) for(let j=0;j<3;j++) cells.push(andBits(BITS[rows[i]],BITS[cols[j]]));
+  return cells;
+}
+function gradeGrid(rows,cols){
+  if(!axisRuleOK(rows,cols)) return null;
+  const cells=buildCells(rows,cols), counts=cells.map(countBits);
+  if(Math.min.apply(null,counts)<3) return null;
+  const sum=counts.reduce((a,b)=>a+b,0);
+  if(sum<45||sum>240) return null;                       // breadth band: neither collapsed nor a blur
+  const cands=cells.map(bitMembers);
+  // Every cell must contain at least one answer with fame >= 3. No cell is ever solvable only by a
+  // specialist, and this does more for perceived fairness than anything else in the generator.
+  for(const list of cands) if(!list.some(i=>PLAYERS[i].fame>=3)) return null;
+  if(!perfectMatching(cands)) return null;
+  return {rows,cols,cells,counts,cands,sum};
+}
+function makeGrid(key){
+  const rng=mulberry32(daySeed(key));
+  const ramp=tierPool(key);
+  const pool=[];
+  for(let i=0;i<CRITERIA.length;i++) if(ramp.tiers.indexOf(CRITERIA[i].tier)>=0) pool.push(i);
+  const draw=(exclude)=>{
+    // rejection sampling against the pool, in fixed index order. Never shuffles a Set.
+    for(let guard=0;guard<400;guard++){
+      const c=pool[Math.floor(rng()*pool.length)];
+      if(exclude.indexOf(c)<0) return c;
+    }
+    return -1;
+  };
+  for(let attempt=0;attempt<200;attempt++){
+    const picked=[];
+    let ok=true;
+    for(let k=0;k<6;k++){ const c=draw(picked); if(c<0){ ok=false; break; } picked.push(c); }
+    if(!ok) continue;
+    const rows=picked.slice(0,3), cols=picked.slice(3,6);
+    let deep=0; for(const c of picked) if(CRITERIA[c].tier==='deep') deep++;
+    if(deep>ramp.maxDeep) continue;
+    const g=gradeGrid(rows,cols);
+    if(g){ g.fallback=false; g.attempt=attempt; return g; }
+  }
+  /* The fallbacks exist so a data edit that accidentally narrows the roster can never produce a day
+     with no puzzle. If the 200-day audit ever reports one being used, that is a bug to fix in the
+     data — not a shrug. */
+  const fb=FALLBACK[daySeed(key)%FALLBACK.length];
+  const g=gradeGrid(fb.rows.map(critIndex),fb.cols.map(critIndex));
+  if(g){ g.fallback=true; return g; }
+  const g2={rows:fb.rows.map(critIndex),cols:fb.cols.map(critIndex)};
+  g2.cells=buildCells(g2.rows,g2.cols); g2.counts=g2.cells.map(countBits);
+  g2.cands=g2.cells.map(bitMembers); g2.sum=g2.counts.reduce((a,b)=>a+b,0); g2.fallback=true;
+  return g2;
+}
+
+/* ============================================================================================
+   STATE AND STORAGE
+   ============================================================================================
+   Flat pipe-delimited strings per /DAILY.md, every read and write in try/catch — localStorage throws
+   outright in Safari private mode and on some file:// origins, and a game that cannot save must
+   still play. Corrupt values fall back to defaults; nothing here is allowed to break boot. */
+const params=new URLSearchParams(location.search);
+const ARCHIVE=/^\d{4}-\d{2}-\d{2}$/.test(params.get('date')||'') ? params.get('date') : '';
+const KEY=ARCHIVE||dayKey();
+const LIVE=!ARCHIVE;                                    // archive days write nothing and share no streak
+
+const S={ cells:new Array(9).fill(-1), guesses:0, done:false, dirty:new Array(9).fill(0), open:-1 };
+let GRID=null, settings={snd:1,type:1,theme:'auto'};
+
+function loadSettings(){
+  try{
+    const raw=LS.get(SLUG+'.settings');
+    raw.split(';').forEach(kv=>{ const i=kv.indexOf('='); if(i<0) return;
+      const k=kv.slice(0,i), v=kv.slice(i+1);
+      if(k==='snd') settings.snd = v==='1'?1:0;
+      else if(k==='type') settings.type = v==='1'?1:0;
+      else if(k==='theme'&&['auto','light','dark'].indexOf(v)>=0) settings.theme=v; });
+  }catch(e){}                                            // any garbage at all: keep the defaults
+}
+function saveSettings(){ LS.set(SLUG+'.settings','snd='+settings.snd+';type='+settings.type+';theme='+settings.theme); }
+function loadState(){
+  if(!LIVE) return;
+  try{
+    const raw=LS.get(SLUG+'.state'); if(!raw) return;
+    const a=raw.split('|');
+    if(a[0]!==KEY) return;                               // a day-stamped value from another day is worth zero
+    const ids=(a[1]||'').split(',');
+    for(let i=0;i<9;i++){
+      const id=ids[i]; if(!id) continue;
+      const j=PLAYERS.findIndex(p=>p.id===id);
+      if(j>=0 && GRID && testBit(GRID.cells[i],j)) S.cells[i]=j;   // ignore anything the grid disagrees with
+    }
+    S.guesses=Math.max(0,Math.min(9,+a[2]||0));
+    S.done=a[3]==='1';
+    const d=a[4]||''; for(let i=0;i<9;i++) S.dirty[i] = d.charAt(i)==='1'?1:0;
+  }catch(e){ S.cells=new Array(9).fill(-1); S.guesses=0; S.done=false; S.dirty=new Array(9).fill(0); }
+}
+function saveState(){
+  if(!LIVE) return;
+  const ids=S.cells.map(i=>i<0?'':PLAYERS[i].id).join(',');
+  LS.set(SLUG+'.state', KEY+'|'+ids+'|'+S.guesses+'|'+(S.done?1:0)+'|'+S.dirty.join(''));
+}
+function filled(){ let n=0; for(const c of S.cells) if(c>=0) n++; return n; }
+function weight(){ let w=0; for(const c of S.cells) if(c>=0) w+=6-PLAYERS[c].fame; return w; }
+
+/* ============================================================================================
+   AUDIO — WebAudio oscillators only, no files, because the game must work off a disk
+   ============================================================================================ */
+let AC=null;
+function ac(){ try{ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
+  if(AC.state==='suspended') AC.resume(); return AC; }catch(e){ return null; } }
+function knock(){                                        // bat on ball: a noise burst over a low sine
+  if(!settings.snd) return; const c=ac(); if(!c) return;
+  const t=c.currentTime, len=0.09, buf=c.createBuffer(1,Math.ceil(c.sampleRate*len),c.sampleRate);
+  const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length);
+  const src=c.createBufferSource(); src.buffer=buf;
+  const bp=c.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1750; bp.Q.value=2.2;
+  const g=c.createGain(); g.gain.setValueAtTime(0.22,t); g.gain.exponentialRampToValueAtTime(0.001,t+len);
+  src.connect(bp).connect(g).connect(c.destination); src.start(t); src.stop(t+len);
+  const o=c.createOscillator(), og=c.createGain(); o.type='sine'; o.frequency.value=126;
+  og.gain.setValueAtTime(0.18,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.13);
+  o.connect(og).connect(c.destination); o.start(t); o.stop(t+0.14);
+}
+function flat(){                                         // wrong: one damped tone. No buzzer.
+  if(!settings.snd) return; const c=ac(); if(!c) return;
+  const t=c.currentTime, o=c.createOscillator(), g=c.createGain();
+  o.type='triangle'; o.frequency.setValueAtTime(150,t); o.frequency.linearRampToValueAtTime(112,t+0.18);
+  g.gain.setValueAtTime(0.14,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+  o.connect(g).connect(c.destination); o.start(t); o.stop(t+0.21);
+}
+function crowd(){                                        // 9/9: a swell of filtered noise, ~1.1s. No samples.
+  if(!settings.snd) return; const c=ac(); if(!c) return;
+  const t=c.currentTime, len=1.1, buf=c.createBuffer(1,Math.ceil(c.sampleRate*len),c.sampleRate);
+  const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1);
+  const src=c.createBufferSource(); src.buffer=buf;
+  const lp=c.createBiquadFilter(); lp.type='lowpass';
+  lp.frequency.setValueAtTime(400,t); lp.frequency.linearRampToValueAtTime(1500,t+0.45);
+  lp.frequency.linearRampToValueAtTime(500,t+len);
+  const g=c.createGain(); g.gain.setValueAtTime(0.001,t);
+  g.gain.linearRampToValueAtTime(0.16,t+0.4); g.gain.linearRampToValueAtTime(0.001,t+len);
+  src.connect(lp).connect(g).connect(c.destination); src.start(t); src.stop(t+len);
+}
+
+/* ============================================================================================
+   RENDER
+   ============================================================================================ */
+const $=id=>document.getElementById(id);
+function critOf(i,isRow){ return CRITERIA[isRow?GRID.rows[i]:GRID.cols[i]]; }
+function cellLabel(k){
+  const r=critOf(Math.floor(k/3),true), c=critOf(k%3,false);
+  const who=S.cells[k]>=0 ? 'Filled with '+PLAYERS[S.cells[k]].name+'.' : 'Empty.';
+  return 'Row: '+r.label+'. Column: '+c.label+'. '+who;
+}
+function buildGrid(){
+  const g=$('grid'); g.innerHTML='';
+  const corner=document.createElement('div'); corner.className='corner'; corner.setAttribute('role','presentation');
+  /* The one piece of ornament in the game: a hand-drawn set of stumps and a crease. It depicts no
+     crest, no flag and no person, which is exactly why it is drawn rather than shipped as a file. */
+  corner.innerHTML='<svg viewBox="0 0 60 60" aria-hidden="true">'+
+    '<line x1="10" y1="46" x2="50" y2="46" stroke="var(--crease)" stroke-width="2.5" stroke-linecap="round"/>'+
+    '<line x1="24" y1="18" x2="24" y2="46" stroke="var(--lamp)" stroke-width="2.5" stroke-linecap="round"/>'+
+    '<line x1="30" y1="18" x2="30" y2="46" stroke="var(--lamp)" stroke-width="2.5" stroke-linecap="round"/>'+
+    '<line x1="36" y1="18" x2="36" y2="46" stroke="var(--lamp)" stroke-width="2.5" stroke-linecap="round"/>'+
+    '<line x1="21" y1="16" x2="33" y2="16" stroke="var(--crease)" stroke-width="2" stroke-linecap="round"/>'+
+    '<line x1="27" y1="16" x2="39" y2="16" stroke="var(--crease)" stroke-width="2" stroke-linecap="round"/></svg>';
+  g.appendChild(corner);
+  for(let j=0;j<3;j++){
+    const h=document.createElement('div'); h.className='hd'; h.textContent=critOf(j,false).short;
+    h.tabIndex=0; h.setAttribute('role','columnheader'); h.title=critOf(j,false).label;
+    h.addEventListener('click',()=>say(critOf(j,false).label));
+    h.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); say(critOf(j,false).label); } });
+    g.appendChild(h);
+  }
+  for(let i=0;i<3;i++){
+    const h=document.createElement('div'); h.className='hd'; h.textContent=critOf(i,true).short;
+    h.tabIndex=0; h.setAttribute('role','rowheader'); h.title=critOf(i,true).label;
+    h.addEventListener('click',()=>say(critOf(i,true).label));
+    h.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); say(critOf(i,true).label); } });
+    g.appendChild(h);
+    for(let j=0;j<3;j++){
+      const k=i*3+j;
+      const cell=document.createElement('div');
+      cell.className='cell'; cell.id='cell'+k; cell.tabIndex=0;
+      cell.setAttribute('role','gridcell');
+      cell.setAttribute('aria-rowindex',String(i+1)); cell.setAttribute('aria-colindex',String(j+1));
+      cell.addEventListener('click',e=>{ if(e.target.classList.contains('hint')) return; openCell(k); });
+      cell.addEventListener('keydown',e=>onCellKey(e,k));
+      g.appendChild(cell);
+    }
+  }
+  paint();
+}
+function onCellKey(e,k){
+  const i=Math.floor(k/3), j=k%3;
+  let t=-1;
+  if(e.key==='ArrowRight') t=i*3+((j+1)%3);
+  else if(e.key==='ArrowLeft') t=i*3+((j+2)%3);
+  else if(e.key==='ArrowDown') t=((i+1)%3)*3+j;
+  else if(e.key==='ArrowUp') t=((i+2)%3)*3+j;
+  else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openCell(k); return; }
+  if(t>=0){ e.preventDefault(); const el=$('cell'+t); if(el) el.focus(); }
+}
+function paint(){
+  for(let k=0;k<9;k++){
+    const el=$('cell'+k); if(!el) continue;
+    const p=S.cells[k]>=0?PLAYERS[S.cells[k]]:null;
+    el.classList.toggle('on',!!p);
+    el.setAttribute('aria-label',cellLabel(k));
+    if(p) el.innerHTML='<span class="nm"></span><span class="wt">'+(6-p.fame)+'</span>';
+    else  el.innerHTML='<span class="plus">+</span><button class="hint" type="button" aria-label="How many cricketers fit this cell">&#9432;</button>';
+    if(p) el.querySelector('.nm').textContent=p.name;
+    else el.querySelector('.hint').addEventListener('click',e=>{
+      e.stopPropagation();
+      say(GRID.counts[k]+' cricketer'+(GRID.counts[k]===1?'':'s')+' in the roster fit that cell.');
+    });
+  }
+  $('sCells').textContent=filled()+'/9';
+  $('sGuess').textContent=String(9-S.guesses);
+  $('sWeight').textContent=String(weight());
+  $('bReveal').hidden=!S.done;
+}
+function say(t,cls){ const m=$('msg'); m.innerHTML=''; const s=document.createElement('span');
+  if(cls) s.className=cls; s.textContent=t; m.appendChild(s); }
+
+/* ============================================================================================
+   THE SHEET, THE TYPEAHEAD AND RESOLUTION
+   ============================================================================================ */
+function openCell(k){
+  if(S.done || S.cells[k]>=0) return;
+  S.open=k;
+  $('critRow').textContent=critOf(Math.floor(k/3),true).label;
+  $('critCol').textContent=critOf(k%3,false).label;
+  $('sheetMeta').textContent=(9-S.guesses)+' guess'+(9-S.guesses===1?'':'es')+' left · '+
+    GRID.counts[k]+' cricketers fit this cell';
+  $('guess').value=''; $('sheetMsg').textContent=''; $('disamb').hidden=true; $('ta').innerHTML='';
+  $('sheet').hidden=false; $('scrim').classList.add('show');
+  requestAnimationFrame(()=>{ $('sheet').classList.add('show'); $('guess').focus(); });
+}
+function closeSheet(){
+  S.open=-1;
+  $('sheet').classList.remove('show'); $('scrim').classList.remove('show');
+  setTimeout(()=>{ if(S.open<0) $('sheet').hidden=true; },220);
+}
+
+/* THE TRAP IN THE TYPEAHEAD, stated where an editor will see it:
+   the suggestion list is drawn from the ENTIRE roster and is NEVER filtered by what is valid for the
+   open cell. Filtering it would hand over the answer. It looks like a kindness and it is a spoiler.
+   If anybody ever writes PLAYERS.filter(validForCell) in here, the game is broken. */
+function typeahead(){
+  const box=$('ta'); box.innerHTML='';
+  if(!settings.type) return;
+  const q=soft($('guess').value);
+  if(q.length<2) return;
+  const pre=[], sub=[], seen=new Set();
+  for(let i=0;i<N;i++){
+    const p=PLAYERS[i], k=soft(p.name), sk=soft(p.sur);
+    if(sk.indexOf(q)===0||k.indexOf(q)===0) pre.push(i);
+    else if((p.alt||[]).some(a=>soft(a).indexOf(q)===0)) pre.push(i);
+    else if(k.indexOf(q)>=0||sk.indexOf(q)>=0) sub.push(i);
+  }
+  const out=pre.concat(sub).filter(i=>{ if(seen.has(i)) return false; seen.add(i); return true; }).slice(0,6);
+  for(const i of out){
+    const li=document.createElement('li'), b=document.createElement('button');
+    b.type='button';
+    b.appendChild(document.createTextNode(PLAYERS[i].name));
+    const sm=document.createElement('small');
+    sm.textContent=PLAYERS[i].nations.map(n=>NATION_NAME[n]).join(' / ')+' · debut '+PLAYERS[i].debut;
+    b.appendChild(sm);
+    b.addEventListener('click',()=>{ $('guess').value=PLAYERS[i].name; box.innerHTML=''; commit(i); });
+    li.appendChild(b); box.appendChild(li);
+  }
+}
+const NATION_NAME={ind:'India',aus:'Australia',eng:'England',pak:'Pakistan',sa:'South Africa',
+  wi:'West Indies',nz:'New Zealand',sl:'Sri Lanka',ban:'Bangladesh',zim:'Zimbabwe',ire:'Ireland',afg:'Afghanistan'};
+
+/* Resolution. Returns {kind:'hit'|'none'|'ambiguous', index?, options?}.
+   Two candidates within the fuzzy threshold must NEVER resolve silently: `Waugh` is Steve or Mark and
+   picking one for the player would be worse than any other failure mode in the game. */
+function resolve(text){
+  const k=norm(text);
+  if(k.length<2) return {kind:'none',tooShort:true};
+  if(KEYS.has(k)) return {kind:'hit',index:KEYS.get(k)};
+  // a bare surname that two or more cricketers in the roster share: ask, never guess
+  if(SURNAMES.has(k) && SURNAMES.get(k).length>1) return {kind:'ambiguous',options:SURNAMES.get(k).slice(0,6)};
+  const cap=fuzzCap(k), hits=[];
+  for(const key of KEYLIST){
+    if(Math.abs(key.length-k.length)>cap) continue;
+    if(dl(k,key,cap)<=cap){ const i=KEYS.get(key); if(hits.indexOf(i)<0) hits.push(i); }
+  }
+  if(hits.length===1) return {kind:'hit',index:hits[0]};
+  if(hits.length>1) return {kind:'ambiguous',options:hits.slice(0,6)};
+  return {kind:'none'};
+}
+
+/* Five outcomes, and ONLY ONE of them costs a guess. A typo, an unknown name and a repeat are the
+   three things a sincere player does most often; charging for any of them turns a puzzle into a
+   punishment, and it is the single most common way this genre gets ruined. */
+function submit(){
+  if(S.open<0) return;
+  const raw=$('guess').value.trim();
+  const r=resolve(raw);
+  $('disamb').hidden=true;
+  if(r.kind==='none'){
+    if(r.tooShort) return;                              // mid-typo: ignore silently, cost nothing
+    sheetMsg('Maidan doesn’t know that name. The roster is '+N+' international cricketers, '+
+             'men’s and women’s, frozen at '+DATA_AS_OF_HUMAN+'. No guess spent.');
+    return;
+  }
+  if(r.kind==='ambiguous'){ showDisamb(r.options); return; }
+  commit(r.index);
+}
+function showDisamb(options){
+  const d=$('disamb'); d.innerHTML='';
+  const p=document.createElement('p'); p.style.margin='0';
+  p.textContent='Which one? (This costs no guess.)'; d.appendChild(p);
+  const row=document.createElement('div'); row.className='row';
+  for(const i of options){
+    const b=document.createElement('button'); b.type='button'; b.textContent=PLAYERS[i].name;
+    b.addEventListener('click',()=>{ d.hidden=true; commit(i); });
+    row.appendChild(b);
+  }
+  d.appendChild(row); d.hidden=false;
+  sheetMsg('');
+}
+function sheetMsg(t,cls){ const m=$('sheetMsg'); m.innerHTML='';
+  const s=document.createElement('span'); if(cls) s.className=cls; s.textContent=t; m.appendChild(s); }
+
+function commit(i){
+  const k=S.open; if(k<0) return;
+  const p=PLAYERS[i];
+  const already=S.cells.indexOf(i);
+  if(already>=0){
+    sheetMsg(p.name+' is already placed — row '+(Math.floor(already/3)+1)+', column '+(already%3+1)+
+             '. Each cricketer can only be used once. No guess spent.');
+    return;
+  }
+  const r=critOf(Math.floor(k/3),true), c=critOf(k%3,false);
+  const rOK=r.test(p), cOK=c.test(p);
+  if(rOK&&cOK){
+    S.cells[k]=i; $('guess').value='';
+    knock();
+    closeSheet(); paint();
+    const el=$('cell'+k); if(el){ el.classList.add('lay'); setTimeout(()=>el.classList.remove('lay'),380); }
+    say(p.name+' — '+r.label+' ✓ · '+c.label+' ✓','yes');
+    saveState();
+    if(filled()===9) endGrid(true);
+    return;
+  }
+  /* Outcome (d) says WHICH HALF failed. It teaches, it makes a wrong guess feel like it bought
+     something, and it cannot reveal an answer: it tells the player facts about the cricketer THEY
+     named, not about any cricketer they didn't. */
+  S.guesses++; S.dirty[k]=1; flat();
+  const line=p.name+' — '+r.label+' '+(rOK?'✓':'✗')+' · '+c.label+' '+(cOK?'✓':'✗');
+  sheetMsg(line,'nope'); say(line,'nope');
+  paint(); saveState();
+  if(S.guesses>=9){ closeSheet(); endGrid(false); }
+}
+
+/* ============================================================================================
+   THE END OF A GRID, THE REVEAL PANEL AND SHARING
+   ============================================================================================ */
+let siteStreak=0, heaviest=0;
+function endGrid(perfect){
+  if(S.done) return;
+  S.done=true; saveState(); paint();
+  if(perfect) crowd();
+  if(LIVE){
+    /* dailyDone() is called when the grid ENDS, either way — 9/9 or out of guesses. A streak that
+       required a perfect grid would break for everybody in the first week and then mean nothing.
+       Showing up is the feat the streak pays for. */
+    const w=weight();
+    if(w>loadToday(SLUG+'.dbest')) saveToday(SLUG+'.dbest',w);
+    siteStreak=dailyDone();
+    $('sStreak').textContent=String(siteStreak);
+  }
+  track('grid_end',{filled:filled(),guesses:S.guesses,weight:weight(),heaviest:heaviest,
+                    mode:LIVE?'daily':'archive',typeahead:settings.type});
+  say(perfect ? 'Nine of nine. The ground is full.'
+             : filled()+' of nine filled. Every answer is below.');
+  setTimeout(showReveal, perfect?900:400);
+}
+function esc(t){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+function showReveal(){
+  const R=$('revInner');
+  const parts=[];
+  parts.push('<h2 id="revTitle">'+filled()+' of nine</h2>');
+  parts.push('<p><b>Weight '+weight()+'</b> of a possible '+heaviest+' · '+S.guesses+
+             ' of nine guesses spent'+(settings.type?'':' · recall')+'.</p>');
+  parts.push('<textarea class="sharebox" id="shareTxt" rows="7" readonly></textarea>');
+  parts.push('<div class="tools"><button class="btn primary" type="button" id="bCopy">Copy result</button>'+
+             '<button class="btn" type="button" id="bClose">Back to the grid</button></div>');
+  parts.push('<p class="note">Every cricketer in the roster who fits each cell, with their career '+
+             'span — first to last Test, one-day or T20 international. An open dash means they were '+
+             'still playing at the freeze date. Yours is highlighted.</p>');
+  for(let k=0;k<9;k++){
+    const r=critOf(Math.floor(k/3),true), c=critOf(k%3,false);
+    parts.push('<h3>'+esc(r.label)+' &nbsp;×&nbsp; '+esc(c.label)+
+               ' <span style="font-weight:600;opacity:.7">('+GRID.counts[k]+')</span></h3>');
+    const list=GRID.cands[k].slice().sort((a,b)=>{
+      const d=PLAYERS[b].fame-PLAYERS[a].fame; return d!==0?d:a-b;   // total comparator, tie-break on index
+    });
+    parts.push('<ul class="ans">');
+    for(const i of list){
+      const p=PLAYERS[i], mine=S.cells[k]===i;
+      parts.push('<li'+(mine?' class="mine"':'')+'><b>'+esc(p.name)+'</b> · '+
+        esc(p.nations.map(n=>NATION_NAME[n]).join(' / '))+' · '+p.debut+'–'+(p.last||'')+
+        ' <span class="w">weight '+(6-p.fame)+'</span>'+
+        '<span class="g">'+esc(p.gloss)+'</span></li>');
+    }
+    parts.push('</ul>');
+  }
+  parts.push('<h3>About this dataset</h3>');
+  parts.push('<p class="note"><b>Facts current to '+DATA_AS_OF_HUMAN+'.</b> Every criterion in Maidan '+
+    'is a monotone fact — an event that happened, or a threshold that has been crossed. Never a '+
+    'ranking, never "most" or "leading" or "best", because those flip whenever somebody has a good '+
+    'week. That choice means this dataset can never become <i>wrong</i>; it can only become '+
+    '<i>incomplete</i>. If a correct answer of yours was rejected, that is the reason, and it is a '+
+    'gap rather than an error. Debut year means first Test, one-day or T20 international appearance, '+
+    'applied uniformly.</p>');
+  parts.push('<p class="note"><b>Weight is not rarity scoring.</b> Immaculate Grid’s rarity is a '+
+    '<i>social</i> measurement — it tells you how few of the other players thought of your answer, '+
+    'and knowing that requires a server counting everybody. Maidan has no server and never phones '+
+    'home. Its Weight is an <i>editorial</i> measurement: a number assigned to each cricketer when '+
+    'the dataset was written, reflecting roughly how well known they are. It is the same on day one '+
+    'as on day one thousand, and it works on a plane. It can never surprise you by revealing that '+
+    'everybody else also thought of Jayasuriya.</p>');
+  parts.push('<p class="note">Statistics are facts and facts are not copyrightable. Maidan ships '+
+    '<b>zero image files</b>: no team logos, no crests, no kit designs, no player photographs. '+
+    'Franchise T20 teams are deliberately absent from the axes — international teams, formats and '+
+    'long-established domestic competitions only. Compiled by hand from multiple public references, '+
+    'never copied from any single commercial table.</p>');
+  parts.push('<p class="note">Something wrong here? Corrections are welcome — this is a hand-built '+
+    'table and it will have gaps. <a href="../">kreeda.games</a></p>');
+  R.innerHTML=parts.join('');
+  $('shareTxt').value=shareText();
+  $('bCopy').addEventListener('click',doCopy);
+  $('bClose').addEventListener('click',()=>{ $('reveal').classList.remove('show'); $('reveal').hidden=true; });
+  $('reveal').hidden=false; $('reveal').classList.add('show'); $('reveal').scrollTop=0;
+  $('revTitle').setAttribute('tabindex','-1'); $('revTitle').focus();
+}
+
+/* The share grid encodes, per cell, exactly two bits: solved or not, and cleanly or not. It encodes
+   nothing about WHICH cricketer was named. The criteria are not secret — every player worldwide sees
+   the identical six the moment they open the page — so revealing which cells somebody found tells a
+   reader nothing they could not already see.
+   THEREFORE: Weight is never encoded per cell. A per-cell weight glyph would leak — telling a reader
+   that your answer to a three-answer cell was a weight-5 name narrows their search to one player.
+   Weight appears only as a single total on the score line, where it is not attributable to any cell.
+   This is the one way this format could be broken and it is exactly the kind of thing that looks
+   like a nice idea in review. It isn't. */
+function shareText(){
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const a=KEY.split('-'), head='Kreeda · Maidan · '+(+a[2])+' '+MON[+a[1]-1];
+  let rows='';
+  for(let i=0;i<3;i++){
+    for(let j=0;j<3;j++){
+      const k=i*3+j;
+      rows += S.cells[k]<0 ? '⬜' : (S.dirty[k] ? '🟨' : '🟧');
+    }
+    rows+='\n';
+  }
+  let score=filled()+'/9 · weight '+weight();
+  if(!settings.type) score+=' · recall';
+  if(LIVE && siteStreak>=2) score+=' · streak '+siteStreak+' 🔥';
+  if(!LIVE) score+=' · archive';
+  return head+'\n'+rows+score+'\nkreeda.games/maidan/';
+}
+function doCopy(){
+  const t=shareText(), b=$('bCopy');
+  const ok=()=>{ b.textContent='Copied'; setTimeout(()=>b.textContent='Copy result',1400); };
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok,fallback); }
+    else fallback();
+  }catch(e){ fallback(); }
+  function fallback(){
+    const ta=$('shareTxt'); ta.focus(); ta.select();
+    try{ document.execCommand('copy'); ok(); }catch(e){ b.textContent='Select and copy'; }
+  }
+}
+
+/* The one call into analytics.js, and deliberately the dumbest possible wrapper: if that file was
+   blocked, never loaded, or is doing nothing because we are on file://, this is a no-op and the game
+   cannot tell. Nothing in here is load-bearing. */
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+
+/* ============================================================================================
+   BOOT
+   ============================================================================================ */
+function applyTheme(){
+  const el=document.documentElement;
+  if(settings.theme==='auto') el.removeAttribute('data-theme'); else el.setAttribute('data-theme',settings.theme);
+  $('bTheme').textContent='Theme: '+settings.theme;
+}
+function staleCheck(){
+  try{
+    const a=DATA_AS_OF.split('-'), frozen=new Date(+a[0],+a[1]-1,+a[2]);
+    const days=Math.floor((Date.now()-frozen.getTime())/86400000);
+    if(days>STALE_AFTER_DAYS && LS.get(SLUG+'.stalex')!=='1'){
+      $('staleTxt').textContent='This dataset is from '+DATA_AS_OF_HUMAN+' and hasn’t been refreshed. '+
+        'Careers and milestones since then are missing — a correct answer may be rejected for that reason.';
+      $('stale').classList.add('show');
+    }
+  }catch(e){}
+}
+function boot(){
+  loadSettings(); applyTheme();
+  GRID=makeGrid(KEY);
+  heaviest=heaviestMatching(GRID.cands);
+  loadState();
+  buildGrid();
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const a=KEY.split('-');
+  $('datechip').textContent=(ARCHIVE?'Archive · ':'')+(+a[2])+' '+MON[+a[1]-1]+' '+a[0];
+  if(ARCHIVE) $('datechip').classList.add('arch');
+  $('asof').textContent='Facts current to '+DATA_AS_OF_HUMAN+'. '+N+' cricketers in the roster.';
+  siteStreak=LIVE ? (LS.get('kreeda.streak').split('|')[0]===dayKey() ? (+LS.get('kreeda.streak').split('|')[1]||0) : 0) : 0;
+  $('sStreak').textContent=String(siteStreak);
+  $('bSound').setAttribute('aria-pressed',settings.snd?'true':'false');
+  $('bSound').textContent='Sound '+(settings.snd?'on':'off');
+  $('bType').setAttribute('aria-pressed',settings.type?'true':'false');
+  $('bType').textContent='Typeahead '+(settings.type?'on':'off');
+  staleCheck();
+  if(S.done){ say(filled()+' of nine filled today. Tap “See every answer”.'); }
+  else if(filled()>0) say('Picking up where you left off.');
+  else say('Tap a square. Name a cricketer who fits both its row and its column.');
+  paint();
+
+  $('guess').addEventListener('input',typeahead);
+  $('guess').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
+  $('bSubmit').addEventListener('click',submit);
+  $('bCancel').addEventListener('click',closeSheet);
+  $('scrim').addEventListener('click',closeSheet);
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(!$('reveal').hidden){
+      $('reveal').classList.remove('show'); $('reveal').hidden=true; } else closeSheet(); } });
+  $('bReveal').addEventListener('click',showReveal);
+  $('staleX').addEventListener('click',()=>{ $('stale').classList.remove('show'); LS.set(SLUG+'.stalex','1'); });
+  $('bSound').addEventListener('click',()=>{ settings.snd=settings.snd?0:1; saveSettings();
+    $('bSound').setAttribute('aria-pressed',settings.snd?'true':'false');
+    $('bSound').textContent='Sound '+(settings.snd?'on':'off'); if(settings.snd) knock(); });
+  $('bType').addEventListener('click',()=>{ settings.type=settings.type?0:1; saveSettings();
+    $('bType').setAttribute('aria-pressed',settings.type?'true':'false');
+    $('bType').textContent='Typeahead '+(settings.type?'on':'off'); typeahead(); });
+  $('bTheme').addEventListener('click',()=>{ settings.theme = settings.theme==='auto'?'light':
+    (settings.theme==='light'?'dark':'auto'); saveSettings(); applyTheme(); });
+  $('bHow').addEventListener('click',()=>say('Nine cells, nine guesses. Each cricketer can be used '+
+    'only once. Unknown names, ambiguous names and repeats are free — only a real cricketer who does '+
+    'not fit costs a guess. Weight rewards the less obvious answer.'));
+  /* Keep the sheet above the on-screen keyboard. visualViewport is the only honest source for this;
+     100vh lies on iOS the moment the keyboard opens. */
+  if(window.visualViewport){
+    const fit=()=>{ const vv=window.visualViewport;
+      const lift=Math.max(0, window.innerHeight-(vv.height+vv.offsetTop));
+      $('sheet').style.setProperty('bottom', (window.innerWidth<560? lift+'px' : ''));
+    };
+    window.visualViewport.addEventListener('resize',fit);
+    window.visualViewport.addEventListener('scroll',fit);
+  }
+  track('grid_start',{mode:LIVE?'daily':'archive',fallback:GRID.fallback?1:0,heaviest:heaviest});
+}
+
+/* ============================================================================================
+   AUDIT — dev only, not linked from anywhere. ?audit=N generates the next N days and reports.
+   Run it before any data change ships: it is the only way to actually KNOW difficulty is even, as
+   opposed to intending that it be.
+   ============================================================================================ */
+function audit(n){
+  const out={days:n,fallbacks:[],minCell:1e9,maxCell:0,sumMin:1e9,sumMax:0,noMatch:[],lowCell:[],
+             critUse:{},worst:null};
+  let k=dayKey(), totalMin=0;
+  for(let d=0;d<n;d++){
+    const g=makeGrid(k);
+    if(g.fallback) out.fallbacks.push(k);
+    const mn=Math.min.apply(null,g.counts), mx=Math.max.apply(null,g.counts);
+    if(mn<out.minCell){ out.minCell=mn; out.worst=k; }
+    if(mx>out.maxCell) out.maxCell=mx;
+    out.sumMin=Math.min(out.sumMin,g.sum); out.sumMax=Math.max(out.sumMax,g.sum);
+    totalMin+=mn;
+    if(mn<3) out.lowCell.push(k+':'+mn);
+    if(!perfectMatching(g.cands)) out.noMatch.push(k);
+    for(const c of g.rows.concat(g.cols)){ const id=CRITERIA[c].id; out.critUse[id]=(out.critUse[id]||0)+1; }
+    const a=k.split('-'), t=new Date(+a[0],+a[1]-1,+a[2]); t.setDate(t.getDate()+1); k=dayKey(t);
+  }
+  out.meanMin=+(totalMin/n).toFixed(2);
+  out.ok = out.fallbacks.length===0 && out.lowCell.length===0 && out.noMatch.length===0;
+  console.log('[maidan audit]', JSON.stringify(out));
+  window.__audit=out;
+  return out;
+}
+try{ boot(); }catch(e){ console.error('[maidan] boot failed',e); }
+if(params.get('audit')) audit(Math.max(1,Math.min(2000,+params.get('audit')||365)));
+</script>
+<script src="../analytics.js"></script>
+</body>
+</html>
