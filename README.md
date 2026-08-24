@@ -37,6 +37,58 @@ open browser-games/chroma-blocks/index.html
 
 No server required — just open the file directly, or serve the repo root with any static file server (e.g. for GitHub Pages).
 
+## The daily loop
+
+Six games — [Drift](drift/index.html), [Chroma Blocks](chroma-blocks/index.html), [Carrom](carrom/index.html),
+[Deadpoint](deadpoint/index.html), [Fairway Four](fairway-four/index.html) and, next,
+[Setu](RAMAYANA_GRID.md) — carry a **daily** alongside their normal mode: today's road, today's bag,
+today's board, today's problem, today's round.
+
+The whole thing turns on one property. The day's challenge is drawn from `mulberry32(daySeed(dayKey()))`,
+a pure function of the calendar date, so **every player in the world gets the identical puzzle and no
+server is involved in agreeing on it**. That is the only reason a repeat-visit loop is possible at all on
+a static site with no backend, and it is why the constraint in [`DAILY.md`](DAILY.md) — every value that
+shapes a daily comes from that one stream, in a fixed order — is not a style rule. A stray `Math.random()`
+in daily setup silently desynchronises players and cannot be detected from inside the game.
+
+Finishing any daily bumps a **site-wide streak** that the landing page reads. Games write it; the landing
+page only ever reports it. Each game keeps its daily and its free-play bests in separate ledgers, because
+a challenge you can learn must never inflate the number earned in open play.
+
+Results share as a **spoiler-free block grid** rather than a sentence — the shape of the run, never the
+answer:
+
+```
+Kreeda · Deadpoint · 24 Aug
+🟩🟩🟩🟩🟨
+🟩🟩🟨🟨🟩
+🟩🟩🟩🟩
+V3 · flash · streak 4 🔥
+```
+
+[`DAILY.md`](DAILY.md) is the contract: the storage keys, the helpers, the streak rules and the share
+format. There is no shared runtime module and there must not be one — a game has to keep working opened
+straight off the disk — so each game **copies** those helpers inline. They agree because they were copied
+from one place, not because they import from one.
+
+## Offline
+
+[`sw.js`](sw.js) is a cache-first service worker that precaches the landing page and all eleven games, so
+a hosted copy keeps working with the network gone and the install promised by
+[`manifest.webmanifest`](manifest.webmanifest) is a real one.
+
+Correctness here is **cache versioning**, not revalidation: nothing in a deploy changes in place, the whole
+tree is replaced at once. Bump `CACHE` in `sw.js` and `activate` wipes every cache that isn't the current
+name. Forget to bump it and players stay on the old build indefinitely with no way to know why — that is
+the one failure mode the file cannot afford, and the reason it is written the way it is.
+
+Two things it deliberately does not do: it never caches cross-origin requests (analytics, and Fairway
+Four's Three.js off a CDN — this worker has no version story for someone else's asset), and it does
+nothing at all on `file://`, where registration throws and where opening a game off the disk is the point.
+
+It registers from the landing page only, so a visitor who deep-links straight into a game is not covered
+until they visit the hub.
+
 ## Analytics
 
 Every page loads [`analytics.js`](analytics.js) from the repo root — one file, one GA4 measurement ID, so
@@ -88,3 +140,9 @@ single-file implementation: markup, styles, game loop, physics, procedural WebAu
 happens the same way — a spec for the next feature or fix, not a diff — with a human steering scope, taste,
 and what ships. The `DRIFT_FEATURES.md` file inside [`drift/`](drift/) is a living example of that
 spec-then-Claude-Code loop for the most involved game here.
+
+[`RAMAYANA_GRID.md`](RAMAYANA_GRID.md) and [`CRICKET_GRID.md`](CRICKET_GRID.md) are the same loop caught
+one stage earlier: written specs for two daily grid puzzles — **Setu**, nine stones of the causeway to
+Laṅkā, and **Maidan** — that have not been built yet. Both flag the facts they are not certain of rather
+than asserting them, and Setu's §6 sets out what the game will not do with material that is living
+scripture to hundreds of millions of people.
