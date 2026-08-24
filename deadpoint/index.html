@@ -58,6 +58,8 @@
   .keys{ font-size:11.5px; color:#9a9284; line-height:1.7; text-align:left; margin-top:8px;
     background:rgba(0,0,0,.25); border-radius:10px; padding:10px 12px; }
   .keys b{ color:#ffcf8f; }
+  .dmeta{ font-size:11px; letter-spacing:.5px; color:#9a9284; margin-top:7px; min-height:13px; }
+  .dmeta b{ color:#ffcf8f; }
   .toast{ position:fixed; left:50%; top:16%; transform:translateX(-50%); z-index:8; pointer-events:none;
     background:rgba(15,12,20,.72); border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:9px 16px;
     font-weight:700; font-size:14px; opacity:0; transition:opacity .2s; }
@@ -80,7 +82,9 @@
     <h1>DEADPOINT</h1>
     <div class="sub">THE COMMIT · THE PUMP · THE SEND</div>
     <p class="lead">Read the wall. Reach a hold, time the latch, then trust it with your weight while the pump clock burns. Stick the dyno. Top out.</p>
-    <button class="btn" id="playBtn">Climb</button>
+    <button class="btn" id="dailyBtn">Today’s Problem</button>
+    <div class="dmeta" id="dailyMeta"></div>
+    <button class="btn alt" id="playBtn">Choose a route</button>
     <button class="btn alt" id="howBtn">How to play</button>
     <div class="keys" id="howKeys" style="display:none">
       <b>Click a hold</b> to reach it with the nearest free hand.<br>
@@ -123,6 +127,71 @@ const now=()=>performance.now();
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 const TAU=Math.PI*2;
 
+/* ---- Kreeda daily contract — see /DAILY.md. Copied, not imported: the game stays one file. ----
+   mulberry32 is already above (same function, same constants as the contract's) so it is not duplicated
+   here; everything else is verbatim. The daily is TODAY'S PROBLEM: one wall, one grade, generated from
+   the calendar date, so every climber in the world is on the same rock with no server involved. The six
+   fixed routes stay exactly as they were and keep their own all-time best — a problem you can rehearse
+   all day must never inflate the number earned on a wall you met cold. */
+const SLUG='deadpoint';
+function dayKey(d){ d=d||new Date(); const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function prevDayKey(k){ const a=k.split('-'), t=new Date(+a[0],+a[1]-1,+a[2]);
+  t.setDate(t.getDate()-1); return dayKey(t); }
+function daySeed(k){ let h=5381; for(let i=0;i<k.length;i++) h=(h*33 ^ k.charCodeAt(i))|0; return h>>>0; }
+
+/* localStorage throws outright in Safari private mode and on some file:// origins. A game that cannot
+   save must still play, so every read returns '' and every write is a no-op rather than an exception. */
+const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+
+/* a day-stamped value: yesterday's daily best is worth ZERO, not stale-but-usable — it was set on a
+   different wall, so showing it as "today's best" would be a lie. Stale rows are ignored, not deleted. */
+function loadToday(key){ const s=LS.get(key), i=s.indexOf('|');
+  return (i<0 || s.slice(0,i)!==dayKey()) ? 0 : (+s.slice(i+1)||0); }
+function saveToday(key,v){ LS.set(key, dayKey()+'|'+Math.round(v)); }
+/* NaN-proof: a corrupt row parses to 0 and reads as "no best yet" instead of poisoning the compare. */
+function loadBest(){ return +LS.get(SLUG+'.best')||0; }
+function saveBest(v){ LS.set(SLUG+'.best', String(Math.round(v))); }
+
+/* consecutive-days counter. Same day = no change; yesterday = +1; older = reset to 1. */
+function bumpStreak(key){
+  const s=LS.get(key), i=s.indexOf('|'), last=i<0?'':s.slice(0,i), n=i<0?0:(+s.slice(i+1)||0);
+  const today=dayKey(), count = last===today ? (n||1) : (last===prevDayKey(today) ? n+1 : 1);
+  LS.set(key, today+'|'+count); return count;
+}
+function siteStreak(){ const s=LS.get('kreeda.streak'), i=s.indexOf('|');
+  return (i<0 || s.slice(0,i)!==dayKey()) ? 0 : (+s.slice(i+1)||0); }
+
+/* called ONCE when a daily run completes — that is, on a TOP OUT. A whipper is not a completed daily:
+   falling resets the attempt and you are still on the problem, so the streak has not been earned yet.
+   Never called for the six fixed routes, which have no shared challenge to have shown up for. */
+function dailyDone(){
+  const today=dayKey(), k='kreeda.daily.'+today;
+  const had=LS.get(k).split(',').filter(Boolean);
+  if(!had.includes(SLUG)) LS.set(k, had.concat(SLUG).join(','));
+  bumpStreak(SLUG+'.streak');
+  return bumpStreak('kreeda.streak');
+}
+
+/* THE SHARE GRID reads as a climbing log: one square per hold on the route, bottom to top, marking how
+   that hold went. It leaks nothing — not where the holds are, not what type they are, not the line
+   through them — so a reader learns how hard your day was and still has to read the wall themselves.
+   The worst outcome sticks: a hold you eventually stuck after falling off it twice stays red. */
+const MARK_SQ=['⬜','🟩','🟨','🟥'];   // 0 never touched · 1 latched clean · 2 sketchy or peeled · 3 fell here
+const GRID_W=5;
+let holdMarks=null;                   // id -> rank, spanning every attempt on the current problem
+function markHold(hold, rank){ try{ if(!holdMarks||!hold) return;
+  const id=hold.id; if((holdMarks[id]||0) < rank) holdMarks[id]=rank; }catch(e){} }
+function shareGrid(route){
+  let out='';
+  route.holds.forEach((h,i)=>{ out+=MARK_SQ[(holdMarks&&holdMarks[h.id])||0];
+    if((i+1)%GRID_W===0 && i<route.holds.length-1) out+='\n'; });
+  return out;
+}
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function shareDate(){ const d=new Date(); return d.getDate()+' '+MONTHS[d.getMonth()]; }
+
 /* ============================== hold types ============================== */
 const HOLD={
   jug:      { drain:1.0, latch:0.02, dyno:0.0,  color:'#8fd18a', label:'Jug',   rest:true },
@@ -147,8 +216,12 @@ const GRADES=[
 const NAMES=['Sunkissed Arete','First Light','Chalk & Sand','The Golden Rung','Warm Rock','Crux of Dawn'];
 const WALL_W=560, MARGIN=70;
 
-function genRoute(gi){
-  const G=GRADES[gi], rng=mulberry32(G.seed);
+/* seed defaults to the grade's fixed seed, which is what keeps the six named routes byte-identical for
+   everyone forever. Pass a seed and you get a different wall at the same grade — that, and only that, is
+   how the daily is built. Every draw below already comes from `rng`; there is no Math.random in here and
+   nothing may add one, or two players would climb different walls and neither could tell. */
+function genRoute(gi, seed){
+  const G=GRADES[gi], rng=mulberry32(seed===undefined?G.seed:seed);
   const rand=(a,b)=>a+rng()*(b-a);
   const H=G.height;
   const holds=[], feet=[];
@@ -210,6 +283,24 @@ function genRoute(gi){
 }
 const ROUTES=GRADES.map((_,i)=>genRoute(i));
 
+/* TODAY'S PROBLEM. One stream, three draws, in this order — grade, wall, name — and the order is the
+   contract. Insert a draw above an existing one and every player who already climbed today gets a
+   different problem from everyone who opens the page after the change; nothing in the game can detect
+   that. Grade varies day to day because a week of V2s is a week of the same Tuesday.
+   `slip` is a fourth stream for the in-run creep dice (see the pump loop) so the wall itself never
+   shifts when the physics rolls, exactly as the road and the horde keep separate dice in Drift. */
+const DAILY_NAMES=['Morning Session','Cold Rock','The Daily Grind','Chalk Line','First Ascent',
+                   'Dawn Patrol','Sandbagged','Today’s Tick','Fresh Beta','Warm-Up Trap'];
+function dailyRoute(){
+  const seed=daySeed(dayKey()), rng=mulberry32(seed);
+  const gi=Math.floor(rng()*GRADES.length);                 // draw 1 — today's grade, V0 through V5
+  const wall=(rng()*4294967296)>>>0;                        // draw 2 — today's wall at that grade
+  const nm=DAILY_NAMES[Math.floor(rng()*DAILY_NAMES.length)];// draw 3 — what the locals call it
+  const r=genRoute(gi, wall);
+  r.name=nm; r.daily=true; r.slip=seed^0x51c7;
+  return r;
+}
+
 /* ============================== audio ============================== */
 const Audio_={
   ctx:null, on:true,
@@ -244,6 +335,9 @@ function newClimb(route){
   const LH=h[0], RH=h[1];
   game={
     route, mode:'climb',
+    /* the creep dice. On a daily they come off the day's seed so nothing in a run reaches for
+       Math.random; on the fixed routes they stay live, which is how they have always been. */
+    rng: route.slip!==undefined ? mulberry32(route.slip) : Math.random,
     time:0, attempts:1, falls:0, chalkLeft:route.chalk, chalkUsed:false, restUsed:false, cleanDyno:true,
     slowmo:1, camY: LH.y-200, camX: WALL_W/2, zoom:1,
     hands:{
@@ -366,7 +460,7 @@ function updatePhysics(dt){
       if(hd.pump>=100){ loseHand(k); toast('Pumped out!'); }
       else {
         const slipRate=(hd.creep*0.025 + (hd.pump/100)*0.035)*(1-chalkB);
-        if(Math.random() < slipRate*dt){ loseHand(k); toast('Slipped!'); }
+        if(g.rng() < slipRate*dt){ loseHand(k); toast('Slipped!'); }
       }
     } else {
       hd.pump=clamp(hd.pump - dt*14, 0, 100);   // recover when off
@@ -386,6 +480,7 @@ function updatePhysics(dt){
 function loseHand(k){
   const g=game; const hd=g.hands[k];
   if(!hd.gripped) return;
+  markHold(hd.hold,2);   // a hold that peeled you off is not a hold you stuck, whatever happens next
   hd.gripped=false; hd.hold=null; hd.pump=Math.min(hd.pump,60); hd.creep=0;
   Audio_.latchSlip();
   spawnPuff(hd.x,hd.y,'#d9cfc0');
@@ -491,6 +586,7 @@ function resolveLatch(q){
   if(eff>0.5){ finishLatch(L.hand, L.hold, eff, L.dyno); }        // solid / half
   else {
     // slip — hand fails to stick
+    markHold(L.hold,2);
     Audio_.latchSlip(); spawnPuff(L.hold.x,L.hold.y,'#d9cfc0');
     g.cleanDyno=false;
     const hd=g.hands[L.hand];
@@ -508,8 +604,8 @@ function finishLatch(hand, hold, eff, dyno){
   hd.gripped=true; hd.hold=hold; hd.x=hold.x; hd.y=hold.y; hd.reachingOut=false;
   hd.creep=0; hd.hold_prev=null;
   hd.pump=clamp(hd.pump - (eff>0.85?6:0), 0, 100);    // solid latch relaxes a touch
-  if(eff<0.75){ hd.pump=clamp(hd.pump+14,0,100); toast('Half latch'); }   // sketchy
-  else { Audio_.latchSolid(); }
+  if(eff<0.75){ hd.pump=clamp(hd.pump+14,0,100); toast('Half latch'); markHold(hold,2); }   // sketchy
+  else { Audio_.latchSolid(); markHold(hold,1); }
   spawnPuff(hold.x,hold.y,'#efe7d8');
   g.latch=null;
   g.lastHold=hold;
@@ -552,6 +648,9 @@ function updateDyno(dt){
 /* ============================== fall / topout ============================== */
 function startFall(){
   const g=game; if(g.mode!=='climb') return;
+  /* the hold that owns the whipper: whatever you were committing to, or failing that the last one you
+     had. Marked before the state is torn down, because none of it survives the next line. */
+  markHold(g.latch?g.latch.hold : (g.reaching?g.reaching.hold : g.lastHold), 3);
   g.mode='fall'; g.fallV=40; g.falls++; g.cleanDyno=false;
   g.hands.L.gripped=g.hands.R.gripped=false;
   g.reaching=null; g.latch=null; g.slowmoTarget=1;
@@ -840,17 +939,45 @@ function showResults(){
   const base=(g.route.gi+1)*100;
   let score=Math.round(base*mult*(g.cleanDyno?1.2:1)*(g.chalkUsed?1:1.15)*(g.restUsed?1:1.1) - g.time*2);
   score=Math.max(score,10);
-  document.getElementById('resTitle').textContent='Sent '+g.route.grade+'!';
+  /* Two ledgers that never touch. A daily send settles against today's row only; the six fixed routes
+     against the all-time number. Cross-crediting would make the one wall you can rehearse until dark the
+     fastest way to a big all-time score, which is exactly what the split exists to prevent. */
+  const daily=g.route.daily===true;
+  let isBest, streak=0;
+  if(daily){
+    isBest = score>loadToday(SLUG+'.dbest');
+    if(isBest) saveToday(SLUG+'.dbest', score);
+    streak = dailyDone();   // a top-out is the completed daily; falls along the way were just attempts
+  } else {
+    isBest = score>loadBest();
+    if(isBest) saveBest(score);
+  }
+  document.getElementById('resTitle').textContent=(daily?'Sent today’s ':'Sent ')+g.route.grade+'!';
   document.getElementById('resStyle').textContent=style + (g.cleanDyno?' · CLEAN DYNO':'') + (g.chalkUsed?'':' · NO-CHALK');
   document.getElementById('resStats').innerHTML=
     `<div class="stat"><span>Route</span><b>${g.route.name}</b></div>`+
     `<div class="stat"><span>Attempts</span><b>${g.attempts}</b></div>`+
     `<div class="stat"><span>Falls</span><b>${g.falls}</b></div>`+
     `<div class="stat"><span>Time</span><b>${g.time.toFixed(1)}s</b></div>`+
-    `<div class="stat"><span>Score</span><b>${score}</b></div>`;
+    `<div class="stat"><span>Score</span><b>${score}</b></div>`+
+    (daily
+      ? `<div class="stat"><span>Today’s best</span><b>${loadToday(SLUG+'.dbest')}</b></div>`+
+        (streak>=2?`<div class="stat"><span>Streak</span><b>${streak} 🔥</b></div>`:'')
+      : `<div class="stat"><span>Best</span><b>${loadBest()}</b></div>`)+
+    (isBest?`<div class="stat"><span>&nbsp;</span><b style="color:#8fd18a">NEW ${daily?'DAILY ':''}BEST</b></div>`:'');
   try{
+    /* frozen here: the share button fires long after this scope is gone, and by then Climb again may
+       already have wiped the marks off the wall. */
     const sb=document.getElementById('shareBtn');
-    if(sb){ sb.dataset.grade=g.route.grade; sb.dataset.flash=(style==='FLASH')?'1':'0'; }
+    if(sb){
+      sb.dataset.mode=daily?'daily':'route';
+      sb.dataset.grade=g.route.grade;
+      sb.dataset.flash=(style==='FLASH')?'1':'0';
+      sb.dataset.grid=daily?shareGrid(g.route):'';
+      sb.dataset.falls=String(g.falls);
+      sb.dataset.attempts=String(g.attempts);
+      sb.dataset.streak=String(streak||siteStreak());
+    }
   }catch(e){}
   show('resultPanel');
 }
@@ -952,31 +1079,66 @@ function buildRouteList(){
     d.innerHTML=`<div class="g">${r.grade}</div><div class="n">${r.name}</div><div class="b" style="color:#8f877a">${r.holds.length} holds</div>`;
     d.onclick=()=>startRoute(i); el.appendChild(d); });
 }
-function startRoute(i){ hideAll(); newClimb(ROUTES[i]); game.mode='climb'; Audio_.init(); }
+/* holdMarks is reset HERE and not in newClimb, because newClimb also runs after every whipper: the log
+   has to span the whole session on one problem, or a route you fell off six times would read as clean. */
+function startRoute(i){ hideAll(); holdMarks={}; newClimb(ROUTES[i]); game.mode='climb'; Audio_.init(); }
+function startDaily(){ hideAll(); holdMarks={}; newClimb(dailyRoute()); game.mode='climb'; Audio_.init(); }
 
+/* Read fresh every time the card is shown, never cached at boot: a tab left open overnight would
+   otherwise keep advertising yesterday's best against a wall that no longer exists. */
+function renderDailyMeta(){
+  try{
+    const el=document.getElementById('dailyMeta'); if(!el) return;
+    const db=loadToday(SLUG+'.dbest'), st=siteStreak(), b=loadBest();
+    const bits=[];
+    bits.push(db?'Today’s best <b>'+db+'</b>':'Not climbed today');
+    if(st>=2) bits.push('streak <b>'+st+' 🔥</b>');
+    if(b) bits.push('routes best <b>'+b+'</b>');
+    el.innerHTML=bits.join(' · ');
+  }catch(e){}
+}
+
+document.getElementById('dailyBtn').onclick=()=>startDaily();
 document.getElementById('playBtn').onclick=()=>{ buildRouteList(); show('routePanel'); };
 document.getElementById('howBtn').onclick=()=>{ const k=document.getElementById('howKeys'); k.style.display=k.style.display==='none'?'block':'none'; };
-document.getElementById('backBtn').onclick=()=>show('titlePanel');
-document.getElementById('againBtn').onclick=()=>{ hideAll(); newClimb(game.route); game.mode='climb'; };
+document.getElementById('backBtn').onclick=()=>{ renderDailyMeta(); show('titlePanel'); };
+/* Climb again is a fresh session on the same problem — a daily replay rebuilds the wall from the date
+   rather than reusing the object, so a tab open across midnight silently rolls onto the new day's wall
+   instead of letting you keep grinding a problem that is no longer the one being shared. */
+document.getElementById('againBtn').onclick=()=>{ hideAll(); holdMarks={};
+  newClimb(game.route.daily?dailyRoute():game.route); game.mode='climb'; };
 document.getElementById('menuBtn').onclick=()=>{ buildRouteList(); show('routePanel'); };
 try{
   const shareBtnEl=document.getElementById('shareBtn');
   if(shareBtnEl){
+    /* The fixed routes share a sentence; the daily shares the log. A grid only means anything to someone
+       who climbed the same wall, so it is not offered for a route nobody else is on today. */
     shareBtnEl.addEventListener('click',function(){
       try{
         const grade=shareBtnEl.dataset.grade||(game.route&&game.route.grade)||'';
         const isFlash=shareBtnEl.dataset.flash==='1';
-        const verb=isFlash?'flashed':'sent';
-        const text='I '+verb+' '+grade+' in Deadpoint 🧗 — beat me:';
-        const url='https://kreeda.games/deadpoint/?ref=share';
-        kreedaShare(text,url,shareBtnEl);
+        if(shareBtnEl.dataset.mode==='daily'){
+          const falls=+shareBtnEl.dataset.falls||0, st=+shareBtnEl.dataset.streak||0;
+          const line=grade+' · '+(isFlash?'flash':(falls===0?'clean send':falls+(falls===1?' fall':' falls')));
+          const text='Kreeda · Deadpoint · '+shareDate()+'\n'
+            +shareBtnEl.dataset.grid+'\n'
+            +line+(st>=2?' · streak '+st+' 🔥':'')+'\n'
+            +'kreeda.games/deadpoint/';
+          kreedaShare(text,'',shareBtnEl);
+        } else {
+          const verb=isFlash?'flashed':'sent';
+          kreedaShare('I '+verb+' '+grade+' in Deadpoint 🧗 — beat me:',
+            'https://kreeda.games/deadpoint/?ref=share', shareBtnEl);
+        }
       }catch(e){}
     });
   }
 }catch(e){}
 function kreedaShare(text,url,btn){
   try{
-    const full=text+' '+url;
+    /* the block grid already carries its own last line, so an empty url must not leave a trailing space —
+       some clients strip a trailing blank and some don't, and the paste should look the same either way. */
+    const full=url?(text+' '+url):text;
     if(navigator.share){
       navigator.share({text:full}).catch(function(){});
     } else if(navigator.clipboard && navigator.clipboard.writeText){
@@ -1003,6 +1165,7 @@ function kreedaToast(anchorEl,msg){
 
 /* ============================== boot ============================== */
 cv=document.getElementById('c'); ctx=cv.getContext('2d'); resize();
+renderDailyMeta();
 window.addEventListener('resize',resize);
 cv.addEventListener('pointerdown',e=>onPointer(e.clientX,e.clientY));
 window.addEventListener('keydown',keydown);
@@ -1013,6 +1176,16 @@ if(!ctx.roundRect){ CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,
 window.__deadpoint={
   get game(){ return game; }, ROUTES, HOLD,
   start(i){ startRoute(i||0); },
+  startDaily: function(){ return startDaily(); },
+  /* the determinism check needs today's wall as a value, without playing it */
+  daily:{ key:dayKey, seed:daySeed, route:dailyRoute,
+          best:()=>loadToday(SLUG+'.dbest'), routesBest:loadBest, streak:siteStreak,
+          /* a stable fingerprint of the problem: grade, then every hold's position and type */
+          print(){ const r=dailyRoute();
+            return r.grade+'|'+r.name+'|'+r.holds.map(h=>h.x.toFixed(3)+','+h.y.toFixed(3)+','+h.type
+              +','+h.quality.toFixed(4)+(h.dyno?',d':'')).join(';'); } },
+  get marks(){ return holdMarks; },
+  grid(){ return game?shareGrid(game.route):''; },
   reach(holdId, hand){ const h=game.route.holds.find(x=>x.id===holdId); return h?tryReach(h,hand):false; },
   latchNow(){ latchPress(); },
   step(n,dt){ for(let i=0;i<(n||1);i++){ update(dt||1/120); restTick(dt||1/120); } },

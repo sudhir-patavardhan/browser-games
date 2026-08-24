@@ -814,7 +814,12 @@ function setupInput(game){
   window.addEventListener('keydown', (e)=>{
     if(e.repeat) return;
     AudioEngine.init();
-    if(game.state === 'start'){ game.start(); return; }
+    /* any-key-to-start is endless, but not when the key is being used to press a mode button: keydown
+       lands before click, so without this Enter on TODAY'S BAG would boot endless and then daily. */
+    if(game.state === 'start'){
+      if(e.target && e.target.classList && e.target.classList.contains('modeBtn')) return;
+      game.start(false); return;
+    }
     const action = KEY_ACTIONS[e.key];
     if(!action) return;
     e.preventDefault();

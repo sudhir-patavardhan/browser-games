@@ -160,11 +160,52 @@
   #winTitle{ margin:0 0 2px; font-size:clamp(26px,6vw,38px); font-weight:900; letter-spacing:1px; color:#ffe9b8; }
   #winSub{ opacity:.65; font-size:14px; margin:4px 0 0; }
   #pauseMenu .panel h2, #winScreen .panel h2{ margin:0 0 16px; font-size:22px; letter-spacing:2px; }
+
+  /* ---- daily ---- */
+  #btnDaily{
+    border-color: rgba(255,214,120,0.55);
+    background: linear-gradient(180deg, rgba(255,214,120,0.16), rgba(255,214,120,0.05));
+    box-shadow: inset 0 0 14px rgba(255,196,90,0.10);
+  }
+  #dailyLine{
+    margin:6px 0 0; font-size:11.5px; letter-spacing:.7px; opacity:.62; min-height:14px;
+  }
+  #bestLine{ margin:14px 0 0; font-size:11.5px; letter-spacing:.7px; opacity:.45; min-height:14px; }
+  /* the daily's own HUD row, in the same pill idiom as the two player rows it replaces */
+  #dailyBar{
+    display:flex; align-items:center; gap:10px;
+    background: rgba(255,214,120,0.07);
+    border:1px solid rgba(255,214,120,0.28);
+    border-radius:14px; padding:7px 14px;
+    min-width:260px; max-width:480px; width:92%;
+  }
+  #dailyBar[hidden]{ display:none; }
+  #dailyDate{ font-weight:800; font-size:11.5px; letter-spacing:1.4px; color:#ffe1a6; white-space:nowrap; }
+  #strikeDots{ display:flex; gap:4px; margin-left:auto; align-items:center; }
+  .sdot{
+    width:11px; height:11px; border-radius:3px;
+    background: rgba(255,255,255,0.08); box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+  }
+  .sdot.p{ background:#5bbd6a; box-shadow:0 0 6px rgba(91,189,106,.5); }
+  .sdot.m{ background:rgba(255,255,255,0.30); }
+  .sdot.f{ background:#c9483a; box-shadow:0 0 6px rgba(201,72,58,.5); }
+  #dailyLeft{ font-size:11.5px; opacity:.65; white-space:nowrap; }
+  #dailyResult[hidden]{ display:none; }
+  #winTally[hidden]{ display:none; }
+  #dailyGrid{
+    font-size:clamp(20px,5.5vw,28px); letter-spacing:3px; line-height:1.1; margin:16px 0 8px;
+  }
+  #dailyStat{ margin:0 0 18px; font-size:13px; opacity:.7; letter-spacing:.5px; }
 </style>
 </head>
 <body>
 <div id="app">
   <div class="hud" id="hudTop">
+    <div id="dailyBar" hidden>
+      <span id="dailyDate">TODAY</span>
+      <span id="strikeDots"></span>
+      <span id="dailyLeft">10 left</span>
+    </div>
     <div class="player" id="pl1">
       <span class="swatch b"></span>
       <span class="pname" id="name1">Black</span>
@@ -201,6 +242,9 @@
       </div>
     </div>
     <button class="btn" id="btnPass">Pass &amp; Play</button>
+    <button class="btn" id="btnDaily">Today&rsquo;s Board</button>
+    <p id="dailyLine"></p>
+    <p id="bestLine"></p>
     <p class="backlink"><a href="../index.html">&larr; All games</a></p>
   </div>
 </div>
@@ -219,9 +263,13 @@
   <div class="panel">
     <h2 id="winTitle">White wins!</h2>
     <p id="winSub"></p>
-    <div class="tally">
+    <div class="tally" id="winTally">
       <div><b id="tally0">0</b>White</div>
       <div><b id="tally1">0</b>Black</div>
+    </div>
+    <div id="dailyResult" hidden>
+      <div id="dailyGrid"></div>
+      <p id="dailyStat"></p>
     </div>
     <button class="btn primary" id="btnRematch">Rematch</button>
     <button class="btn" id="btnShare">Share</button>
@@ -282,6 +330,49 @@ const dist = (ax,ay,bx,by) => Math.hypot(bx-ax, by-ay);
 const lerp = (a,b,t) => a + (b-a)*t;
 const gauss = () => (Math.random()+Math.random()+Math.random()-1.5)/1.5; // ~[-1,1]
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+/* ---- Kreeda daily contract — see /DAILY.md. Copied, not imported: the game stays one file. ---- */
+const SLUG='carrom';
+function dayKey(d){ d=d||new Date(); const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function prevDayKey(k){ const a=k.split('-'), t=new Date(+a[0],+a[1]-1,+a[2]);
+  t.setDate(t.getDate()-1); return dayKey(t); }
+function daySeed(k){ let h=5381; for(let i=0;i<k.length;i++) h=(h*33 ^ k.charCodeAt(i))|0; return h>>>0; }
+
+const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+
+/* a day-stamped value: returns 0 unless the stamp is today */
+function loadToday(key){ const s=LS.get(key), i=s.indexOf('|');
+  return (i<0 || s.slice(0,i)!==dayKey()) ? 0 : (+s.slice(i+1)||0); }
+function saveToday(key,v){ LS.set(key, dayKey()+'|'+Math.round(v)); }
+
+/* consecutive-days counter against one key. Same day = no change; yesterday = +1; older = reset to 1. */
+function bumpStreak(key){
+  const s=LS.get(key), i=s.indexOf('|'), last=i<0?'':s.slice(0,i), n=i<0?0:(+s.slice(i+1)||0);
+  const today=dayKey(), count = last===today ? (n||1) : (last===prevDayKey(today) ? n+1 : 1);
+  LS.set(key, today+'|'+count); return count;
+}
+
+/* call once when a DAILY run is completed — not on every game over, not in endless mode */
+function dailyDone(){
+  const today=dayKey(), k='kreeda.daily.'+today;
+  const had=LS.get(k).split(',').filter(Boolean);
+  if(!had.includes(SLUG)) LS.set(k, had.concat(SLUG).join(','));
+  bumpStreak(SLUG+'.streak');
+  return bumpStreak('kreeda.streak');            // site-wide, and the number worth showing
+}
+/* the streak as it stands for DISPLAY. bumpStreak owns the writing; this only reads. A stamp of
+   yesterday still shows its count — the chain isn't broken until the day it was owed has passed —
+   but anything older is a chain the player already lost, and showing it would be a lie. */
+function streakOf(key){
+  const s=LS.get(key), i=s.indexOf('|'); if(i<0) return 0;
+  const stamp=s.slice(0,i), n=+s.slice(i+1)||0, today=dayKey();
+  return (stamp===today || stamp===prevDayKey(today)) ? n : 0;
+}
+/* a plain integer key (all-time best). Corrupt or missing reads as 0 rather than NaN, which would
+   silently lose every future record to `score > NaN` being false. */
+function loadInt(key){ const n=+LS.get(key); return (isFinite(n) && n>0) ? Math.round(n) : 0; }
 
 /* ---------------- audio (WebAudio synth, no files) ---------------- */
 const Snd = {
@@ -374,6 +465,120 @@ function rack(){
     bodies.push(makeBody(i % 2 ? 'b' : 'w', C + Math.cos(a2)*d2 + jit(), C + Math.sin(a2)*d2 + jit()));
   }
 }
+/* =============================== TODAY'S BOARD ===============================
+   A trick-shot layout instead of a match: nine carrommen and the red queen, arranged by the calendar
+   date, eight strikes to take as many of them off as you can. Solo — the AI never touches this board.
+
+   WHY "most pocketed in eight strikes" and not "fewest strikes to clear":
+   - `<slug>.dbest` is a bigger-is-better integer everywhere in this repo, with 0 meaning "not played
+     today" (see DAILY.md's loadToday). A fewest-strikes score inverts that, so 0 would mean both
+     "perfect" and "never played" and every `score > best` in the codebase would read backwards.
+   - It always terminates. A clear-the-board rule lets a bad day run for forty strikes, and a daily
+     that can't end is a daily nobody finishes.
+   - It reuses the HUD that is already here: the nine tray slots ARE the nine carrommen, the queen chip
+     IS the queen. Nothing new had to be invented to show the score.
+   Beating a full clear is still expressible — the share grid is one square per strike ACTUALLY TAKEN,
+   so clearing in five leaves a five-square grid next to somebody's eight. That is the brag, and it
+   costs no second number.
+
+   Every coordinate below comes from one mulberry32(daySeed(dayKey())) stream drawn in a fixed order.
+   Nothing here may call Math.random: two players seeing different boards is invisible from inside the
+   game — no error, no symptom, just a shared result that quietly means nothing. */
+const DAILY_STRIKES = 8;
+const DAILY_LANE = SR + PR + 12;      // the striker's baseline lane: no piece may sit in it or behind it
+const DAILY_MARGIN = PR + 14;
+
+/* Off the rails, out of the pockets, and clear of the striker's lane. A piece stranded between the
+   baseline and the near rail can only be reached off a cushion — legal carrom, but a puzzle-killer
+   inside an eight-strike budget, so the whole near band is out of bounds for the layout. */
+function dailyBlocked(x, y){
+  if (x < S0 + DAILY_MARGIN || x > S1 - DAILY_MARGIN) return true;
+  if (y < S0 + DAILY_MARGIN || y > baselineY(0) - DAILY_LANE) return true;
+  return POCKETS.some(p => dist(x, y, p.x, p.y) < CONFIG.POCKET_R + PR + 10);
+}
+/* Nudge an ideal spot to the nearest legal one by a fixed spiral. Deliberately consumes NO randomness:
+   when a formation overlaps itself, every player's board has to fall apart in exactly the same way. */
+function dailyPlace(acc, x, y){
+  for (let rad = 0; rad < 500; rad += 10){
+    const steps = rad === 0 ? 1 : Math.max(12, Math.round(rad/3));
+    for (let s = 0; s < steps; s++){
+      const a = (s/steps)*TAU + rad*0.19;
+      const px = x + Math.cos(a)*rad, py = y + Math.sin(a)*rad;
+      if (dailyBlocked(px, py)) continue;
+      if (acc.some(b => dist(px, py, b.x, b.y) < PR*2 + 3)) continue;
+      return { x: px, y: py };
+    }
+  }
+  return { x: clamp(x, S0+DAILY_MARGIN, S1-DAILY_MARGIN),
+           y: clamp(y, S0+DAILY_MARGIN, baselineY(0)-DAILY_LANE) };
+}
+/* Five formations, so a week of dailies doesn't feel like one board with the pieces shuffled. Each
+   returns ten ideal points, queen first — she gets first pick of the spot the formation was designed
+   around, and the men fill in around whatever is left. */
+const DAILY_FORMS = [
+  ['Ring', rng => {                                  // a wheel with the queen at the hub
+    const rr = 175 + rng()*105, ph = rng()*TAU, cy = 400 + (rng()-0.5)*70;
+    const pts = [{ t:'q', x:C, y:cy }];
+    for (let i = 0; i < 9; i++){
+      const a = ph + i*TAU/9;
+      pts.push({ t:'w', x: C + Math.cos(a)*rr, y: cy + Math.sin(a)*rr*0.86 });
+    }
+    return pts;
+  }],
+  ['Wall', rng => {                                  // a rank to break, with the queen hiding behind it
+    const wy = 300 + rng()*160, half = 250 + rng()*130, tilt = (rng()-0.5)*0.34;
+    const qx = C + (rng()-0.5)*180, qy = wy - 90 - rng()*70;
+    const pts = [{ t:'q', x:qx, y:qy }];
+    for (let i = 0; i < 9; i++){
+      const t = (i/8 - 0.5) * 2 * half;
+      pts.push({ t:'w', x: C + t*Math.cos(tilt), y: wy + t*Math.sin(tilt) });
+    }
+    return pts;
+  }],
+  ['Corners', rng => {                               // three guarded knots; the queen sits inside one
+    const anchors = [
+      { x: PC + 70 + (rng()-0.5)*60, y: PC + 80 + (rng()-0.5)*50 },
+      { x: B - PC - 70 + (rng()-0.5)*60, y: PC + 80 + (rng()-0.5)*50 },
+      { x: C + (rng()-0.5)*120, y: 520 + (rng()-0.5)*90 },
+    ];
+    const qi = Math.floor(rng()*3), pr = 44 + rng()*18, ph = rng()*TAU;
+    const pts = [{ t:'q', x: anchors[qi].x, y: anchors[qi].y }];
+    for (let k = 0; k < 9; k++){
+      const A = anchors[k % 3], a = ph + Math.floor(k/3)*TAU/3 + (k%3)*0.4;
+      pts.push({ t:'w', x: A.x + Math.cos(a)*pr, y: A.y + Math.sin(a)*pr });
+    }
+    return pts;
+  }],
+  ['Scatter', rng => {                               // open board — the day the queen is just far away
+    const pts = [];
+    for (let k = 0; k < 10; k++)
+      pts.push({ t: k === 0 ? 'q' : 'w',
+                 x: S0 + 90 + rng()*(S1 - S0 - 180),
+                 y: 150 + rng()*560 });
+    return pts;
+  }],
+  ['Wedge', rng => {                                 // an arrowhead pointed at the player, queen at the tip
+    const apex = 190 + rng()*130, spread = 0.55 + rng()*0.5, step = 62 + rng()*22;
+    const pts = [{ t:'q', x:C, y:apex }];
+    for (let k = 0; k < 9; k++){
+      const side = k % 2 ? 1 : -1, n = Math.floor(k/2) + 1;
+      pts.push({ t:'w', x: C + side*n*step*Math.sin(spread), y: apex + n*step*Math.cos(spread) });
+    }
+    return pts;
+  }],
+];
+function dailyRack(){
+  const rng = mulberry32(daySeed(dayKey()));
+  const form = DAILY_FORMS[Math.floor(rng()*DAILY_FORMS.length)];   // first draw picks the shape
+  bodies = [];
+  const acc = [];
+  for (const p of form[1](rng)){
+    const s = dailyPlace(acc, p.x, p.y);
+    acc.push(s);
+    bodies.push(makeBody(p.t, s.x, s.y));
+  }
+  return form[0];
+}
 function onBoard(type){ return bodies.filter(b => b.type === type); }
 function removeBody(b){ const i = bodies.indexOf(b); if (i >= 0) bodies.splice(i, 1); }
 function freeSpotNear(x, y, r){
@@ -412,6 +617,9 @@ const game = {
   winner: null,
   paused: false,
   demoTimer: 1.2,
+  strikes: 0,           // daily only: strikes taken so far
+  dailyMarks: [],       // daily only: 'p' | 'm' | 'f' per strike — the share grid, built as you play
+  dailyForm: null,      // daily only: today's formation name, for the HUD
 };
 
 /* ---------------- physics ---------------- */
@@ -926,6 +1134,41 @@ function updateHUD(){
       game.state !== 'MENU' && game.state !== 'GAMEOVER' && game.cur === i);
   }
 }
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+/* Squares only, and only three of them: how the strike went, never where anything was. A grid that
+   let a reader rebuild today's layout would spoil the one thing the day has to sell. */
+const MARK = { p:'\u{1F7E9}', m:'⬜', f:'\u{1F7E5}' };
+function updateDailyBar(){
+  if (game.mode !== 'daily') return;
+  const d = new Date();
+  $('dailyDate').textContent = (game.dailyForm || 'TODAY').toUpperCase()
+    + ' · ' + d.getDate() + ' ' + MONTHS[d.getMonth()].toUpperCase();
+  $('dailyLeft').textContent = bodies.filter(b => b.type !== 's').length + ' left';
+  const dots = $('strikeDots');
+  dots.innerHTML = '';
+  for (let i = 0; i < DAILY_STRIKES; i++){
+    const s = document.createElement('span');
+    s.className = 'sdot' + (i < game.dailyMarks.length ? ' ' + game.dailyMarks[i] : '');
+    dots.appendChild(s);
+  }
+}
+/* the start card's own memory: what today already stands at, and what a return tomorrow is worth */
+function refreshMenuStats(){
+  const dbest = loadToday(SLUG + '.dbest'), streak = streakOf('kreeda.streak');
+  const bits = [];
+  if (dbest) bits.push('Today’s best ' + dbest + '/10');
+  if (streak >= 2) bits.push('streak ' + streak + ' \u{1F525}');
+  $('dailyLine').textContent = bits.join(' · ');
+  const best = loadInt(SLUG + '.best');
+  $('bestLine').textContent = best ? 'Best board score ' + best : '';
+}
+function dailyShareText(){
+  const d = new Date(), streak = streakOf('kreeda.streak');
+  return 'Kreeda · Carrom · ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + '\n'
+    + game.dailyMarks.map(m => MARK[m]).join('') + '\n'
+    + dailyScore() + '/10 · ' + game.strikes + (game.strikes === 1 ? ' strike' : ' strikes')
+    + (streak >= 2 ? ' · streak ' + streak + ' \u{1F525}' : '') + '\n';
+}
 
 /* ---------------- game flow ---------------- */
 function strikerFitsAt(x, y, ignore){
@@ -953,6 +1196,10 @@ function removeStriker(){
 }
 function turnLabel(){
   const p = game.players[game.cur];
+  if (game.mode === 'daily'){
+    const n = DAILY_STRIKES - game.strikes;
+    return n + (n === 1 ? ' strike left' : ' strikes left');
+  }
   if (game.mode === 'cpu') return game.cur === 0 ? 'Your turn' : 'Computer thinking…';
   return p.label + "'s turn";
 }
@@ -999,7 +1246,75 @@ function queenBonus(p){
   p.count = Math.min(9, p.count + missing);
   return take.length + missing;
 }
+function dailyScore(){ const p = game.players[0]; return p.count + (p.queen ? 1 : 0); }
+/* The solo resolve. It is a separate path on purpose: the match rules it deliberately does NOT run are
+   the turn hand-over (there is nobody to hand to), the opponent-colour credit (every man on this board
+   is yours) and the queen's +3 bonus, which would sweep three more men off a ten-piece board and gut
+   the puzzle in one strike. What it does keep is the queen cover rule — sink one of yours before she
+   counts, or she goes back to the centre — because that rule IS carrom. */
+function resolveDailyShot(){
+  removeStriker();
+  const p = game.players[0];
+  const shot = game.shot; game.shot = null;
+  game.strikes++;
+  let sunk = 0, msg = '';
+
+  for (const t of shot.pocketed){ if (t !== 'q'){ p.count++; sunk++; } }
+  if (shot.pocketed.includes('q')){
+    if (p.count > 0){ p.queen = true; sunk++; msg = 'QUEEN!'; Snd.fanfare(); }
+    else { respawnPiece('q'); msg = 'Queen returned — sink one of yours first'; }
+  }
+
+  let mark = sunk > 0 ? 'p' : 'm';
+  if (shot.striker){
+    mark = 'f';                                  // a foul is a foul even if the strike also pocketed
+    if (p.count > 0){ p.count--; respawnPiece(p.color); msg = 'Foul! Striker pocketed — piece returned'; }
+    else msg = 'Foul! Striker pocketed';
+    Snd.sad();
+  }
+  game.dailyMarks.push(mark);
+
+  updateHUD(); updateDailyBar();
+  if (msg) toast(msg, 1500);
+  else if (sunk > 1) toast(sunk + ' in one!', 1300);
+
+  const left = bodies.filter(b => b.type !== 's').length;
+  if (left === 0 || game.strikes >= DAILY_STRIKES){
+    game.timer = msg ? 1.1 : 0.6;
+    game.state = 'DAILY_END_WAIT';
+    return;
+  }
+  game.timer = msg ? 0.9 : 0.25;
+  game._nextExtra = false;
+  game.state = 'RESOLVING_WAIT';
+}
+function endDaily(){
+  game.state = 'GAMEOVER';
+  removeStriker();
+  updateHUD();
+  const score = dailyScore(), cleared = score >= 10;
+  if (score > loadToday(SLUG + '.dbest')) saveToday(SLUG + '.dbest', score);
+  const streak = dailyDone();          // exactly once, here, and from nowhere else in this file
+  if (cleared){ Snd.jingle(); confettiBurst(); } else Snd.fanfare();
+
+  $('winTitle').textContent = cleared ? 'Board cleared! \u{1F3AF}' : 'Time called';
+  $('winSub').textContent = cleared
+    ? 'All ten in ' + game.strikes + (game.strikes === 1 ? ' strike' : ' strikes')
+    : score + ' of 10 · ' + game.dailyForm;
+  $('winTally').hidden = true;
+  $('dailyResult').hidden = false;
+  $('dailyGrid').textContent = game.dailyMarks.map(m => MARK[m]).join('');
+  $('dailyStat').textContent = score + '/10 in ' + game.strikes
+    + (game.strikes === 1 ? ' strike' : ' strikes')
+    + (streak >= 2 ? ' · streak ' + streak + ' \u{1F525}' : '');
+  $('btnRematch').textContent = 'Play again';
+  const sb = $('btnShare');
+  sb.style.display = '';
+  sb.dataset.daily = '1';
+  setTimeout(()=> $('winScreen').classList.remove('hidden'), 900);
+}
 function resolveShot(){
+  if (game.mode === 'daily') return resolveDailyShot();
   removeStriker();
   const p = game.players[game.cur];
   const o = game.players[1 - game.cur];
@@ -1078,9 +1393,21 @@ function endGame(winner){
   $('winSub').textContent = qOwner ? `Queen claimed by ${qOwner.label}` : 'Queen unclaimed';
   $('tally0').textContent = game.players[0].count;
   $('tally1').textContent = game.players[1].count;
+  $('winTally').hidden = false;
+  $('dailyResult').hidden = true;
+  $('btnRematch').textContent = 'Rematch';
   if (youWon) { Snd.jingle(); confettiBurst(); } else Snd.sad();
+  /* THE ALL-TIME NUMBER is carrom's own: the winner scores the carrommen the loser still has on the
+     board, plus 3 for the queen. Every carrom club in India keeps that score, so it needs no explaining.
+     Only a Vs Computer win records it — pass-and-play has two owners and no single record to keep — and
+     the daily never touches it, because a board you can practise all day must not inflate a match. */
+  if (game.mode === 'cpu' && youWon){
+    const s = (9 - game.players[1].count) + (game.players[0].queen ? 3 : 0);
+    if (s > loadInt(SLUG + '.best')) LS.set(SLUG + '.best', String(s));
+  }
   try{
     const shareBtn = $('btnShare');
+    delete shareBtn.dataset.daily;
     if (game.mode === 'cpu'){
       if (youWon){
         shareBtn.style.display = '';
@@ -1385,7 +1712,9 @@ document.addEventListener('pointerdown', () => Snd.ensure(), { once: true });
 /* ---------------- share ---------------- */
 function kreedaShare(text, url, btn){
   try{
-    var full = text + ' ' + url;
+    // a block grid is already newline-terminated, so the URL goes on its own last line rather than
+    // getting a stray leading space; a one-line brag still gets the old "text url" shape exactly.
+    var full = !url ? text : (text.slice(-1) === '\n' ? text + url : text + ' ' + url);
     if (navigator.share) {
       navigator.share({ text: full }).catch(function(){});
     } else if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1412,14 +1741,20 @@ function kreedaToast(anchorEl, msg){
 
 /* ---------------- menus / buttons ---------------- */
 function newGame(mode, diff){
+  const daily = mode === 'daily';
   game.mode = mode;
   game.diff = diff || game.diff;
-  game.players[0].label = mode === 'cpu' ? 'You' : 'Player 1';
+  game.players[0].label = daily ? 'You' : (mode === 'cpu' ? 'You' : 'Player 1');
   game.players[1].label = mode === 'cpu' ? 'Computer' : 'Player 2';
   for (const p of game.players){ p.count = 0; p.owed = 0; p.queen = false; }
   game.cur = 0; game.winner = null; game.aim = null; game.ai = null;
+  game.strikes = 0; game.dailyMarks = []; game.dailyForm = null;
   fx.length = 0;
-  rack();
+  if (daily) game.dailyForm = dailyRack(); else rack();
+  // the daily has one player, so the opponent's row becomes the strike counter instead
+  $('pl1').style.display = daily ? 'none' : '';
+  $('dailyBar').hidden = !daily;
+  updateDailyBar();
   $('startScreen').classList.add('hidden');
   $('winScreen').classList.add('hidden');
   $('pauseMenu').classList.add('hidden');
@@ -1434,6 +1769,9 @@ function toMenu(){
   fx.length = 0;
   rack();
   game.demoTimer = 1.0;
+  $('pl1').style.display = '';
+  $('dailyBar').hidden = true;
+  refreshMenuStats();
   $('startScreen').classList.remove('hidden');
   $('winScreen').classList.add('hidden');
   $('pauseMenu').classList.add('hidden');
@@ -1443,7 +1781,7 @@ function toMenu(){
 }
 $('btnCpu').addEventListener('click', () => { Snd.ensure(); Snd.click(); $('diffRow').classList.add('show'); });
 document.querySelectorAll('#diffRow [data-diff]').forEach(b =>
-  b.addEventListener('click', () => { Snd.ensure(); Snd.click(); newGame('cpu', b.dataset.diff); }));
+  b.addEventListener('click', () => { Snd.ensure(); Snd.click(); newGame('cpu', b.dataset.diff); saveSettings(); }));
 $('btnPass').addEventListener('click', () => { Snd.ensure(); Snd.click(); newGame('2p'); });
 $('menuBtn').addEventListener('click', () => {
   if (game.state === 'MENU' || game.state === 'GAMEOVER') return;
@@ -1456,9 +1794,11 @@ $('btnRestart').addEventListener('click', () => { Snd.click(); newGame(game.mode
 $('btnMainMenu').addEventListener('click', () => { Snd.click(); toMenu(); });
 $('btnWinMenu').addEventListener('click', () => { Snd.click(); toMenu(); });
 $('btnRematch').addEventListener('click', () => { Snd.click(); newGame(game.mode, game.diff); });
+$('btnDaily').addEventListener('click', () => { Snd.ensure(); Snd.click(); newGame('daily'); });
 $('btnShare').addEventListener('click', function(){
   try{
     Snd.click();
+    if (this.dataset.daily){ kreedaShare(dailyShareText(), 'kreeda.games/carrom/', this); return; }
     const text = this.dataset.shareText || `I played Carrom \u{1F3AF}:`;
     const url = 'https://kreeda.games/carrom/?ref=share';
     kreedaShare(text, url, this);
@@ -1468,7 +1808,17 @@ $('btnSound').addEventListener('click', function(){
   Snd.muted = !Snd.muted;
   this.textContent = 'Sound: ' + (Snd.muted ? 'Off' : 'On');
   if (!Snd.muted){ Snd.ensure(); Snd.click(); }
+  saveSettings();
 });
+/* Settings are pipe-delimited and re-validated on read, not trusted: a half-written or hand-edited
+   value must land the player on the defaults, never on `game.diff = "<script>"` or a silent mute. */
+function loadSettings(){
+  const a = LS.get(SLUG + '.settings').split('|');
+  if (a[0] === 'off') Snd.muted = true;
+  if (CONFIG.AI[a[1]]) game.diff = a[1];
+  $('btnSound').textContent = 'Sound: ' + (Snd.muted ? 'Off' : 'On');
+}
+function saveSettings(){ LS.set(SLUG + '.settings', (Snd.muted ? 'off' : 'on') + '|' + game.diff); }
 
 /* ---------------- menu demo (attract mode) ---------------- */
 function stepDemo(dt){
@@ -1521,6 +1871,9 @@ function frame(now){
     } else if (game.state === 'RESOLVING_WAIT'){
       game.timer -= dt;
       if (game.timer <= 0) beginTurn(game._nextExtra);
+    } else if (game.state === 'DAILY_END_WAIT'){
+      game.timer -= dt;
+      if (game.timer <= 0) endDaily();
     } else if (game.state === 'AITURN'){
       stepAI(dt);
     }
@@ -1532,6 +1885,8 @@ function frame(now){
 /* ---------------- boot ---------------- */
 buildTrays();
 rack();
+loadSettings();          // storage may throw or hold junk; both land on the defaults, never on a crash
+refreshMenuStats();
 updateHUD();
 resize();
 requestAnimationFrame(frame);
@@ -1562,6 +1917,20 @@ window.__carrom = {
   },
   skipWait(){
     if (game.state === 'RESOLVING_WAIT'){ game.timer = 0; beginTurn(game._nextExtra); }
+    if (game.state === 'DAILY_END_WAIT'){ game.timer = 0; endDaily(); }
+  },
+  daily: {
+    key: dayKey, seed: daySeed, strikes: DAILY_STRIKES,
+    start(){ newGame('daily'); },
+    // the board as laid, rounded so a float that differs in the last bit can't fake a mismatch
+    layout(){ return bodies.filter(b => b.type !== 's')
+      .map(b => b.type + ':' + b.x.toFixed(3) + ',' + b.y.toFixed(3)).join(' '); },
+    form(){ return game.dailyForm; },
+    marks(){ return game.dailyMarks.join(''); },
+    score: dailyScore,
+    share: dailyShareText,
+    streak(){ return streakOf('kreeda.streak'); },
+    best(){ return loadToday(SLUG + '.dbest'); },
   },
 };
 </script>
