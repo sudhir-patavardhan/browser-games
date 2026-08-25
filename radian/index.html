@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Radian — Kreeda</title>
+<meta name="description" content="A daily trigonometry grid. Three criteria down, three across, nine cells, nine guesses — name an angle on the unit circle for every square, in degrees or radians.">
+<link rel="canonical" href="https://kreeda.games/radian/">
+<meta name="theme-color" content="#16202c">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/radian/">
+<meta property="og:title" content="Radian — Kreeda">
+<meta property="og:description" content="A daily trigonometry grid. Three criteria down, three across, nine cells, nine guesses — name an angle on the unit circle for every square, in degrees or radians.">
+<meta property="og:image" content="https://kreeda.games/assets/radian-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Radian — Kreeda">
+<meta name="twitter:description" content="A daily trigonometry grid. Three criteria down, three across, nine cells, nine guesses — name an angle on the unit circle for every square, in degrees or radians.">
+<meta name="twitter:image" content="https://kreeda.games/assets/radian-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Radian","description":"A daily trigonometry grid. Three criteria down, three across, nine cells, nine guesses — name an angle on the unit circle for every square, in degrees or radians.","url":"https://kreeda.games/radian/","image":"https://kreeda.games/assets/radian-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"educationalUse":"Practice","learningResourceType":"Game","teaches":"Trigonometry: the unit circle, quadrants, reference angles, exact values, and radian measure"}
+</script>
+<style>
+/* ============================ tokens ============================
+   Chalk on a slate board, over graph paper. Every colour lives here once. Light is the base; the two
+   dark blocks below only REDEFINE these same names, so no rule downstream needs to know which theme
+   it is painting in. Every text-on-background pair below was measured at >= 4.5:1 in both themes. */
+:root{
+  --page-hi:#cfdce8;  --page-lo:#f5f1e8;
+  --panel:#f7f4ec;    --panel-2:#ece7db;   --cellbg:#e9e2d4;
+  --ink:#16202c;      --ink-dim:#4a5561;   --rule:rgba(22,32,44,.34);
+  --hdbg:#1e3448;     --chalk:#eef4f8;     --lamp:#c8761a;
+  --accent:#0e6a6d;   --accent-ink:#ffffff;
+  --ok:#1f6b34;       --no:#9a3320;
+  --shade:rgba(12,20,28,.55);
+  --wire:rgba(22,32,44,.22);       /* the circle and axes in the diagrams */
+  --mark:#0e6a6d;                  /* a valid angle on a diagram */
+  --mine:#c8761a;                  /* the angle the player named */
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page-hi:#0b1119; --page-lo:#16202c;
+    --panel:#18222e;   --panel-2:#202c3a;  --cellbg:#1f2b38;
+    --ink:#e9eff5;     --ink-dim:#9fb0c0;  --rule:rgba(233,239,245,.30);
+    --hdbg:#0d1620;    --chalk:#dbe7f0;    --lamp:#f0a94c;
+    --accent:#1f6f72;  --accent-ink:#eefcfc;
+    --ok:#7fd48c;      --no:#f0907a;
+    --shade:rgba(0,0,0,.68);
+    --wire:rgba(233,239,245,.26);
+    --mark:#5fd1d4;    --mine:#f0a94c;
+  }
+}
+:root[data-theme="dark"]{
+  --page-hi:#0b1119; --page-lo:#16202c;
+  --panel:#18222e;   --panel-2:#202c3a;  --cellbg:#1f2b38;
+  --ink:#e9eff5;     --ink-dim:#9fb0c0;  --rule:rgba(233,239,245,.30);
+  --hdbg:#0d1620;    --chalk:#dbe7f0;    --lamp:#f0a94c;
+  --accent:#1f6f72;  --accent-ink:#eefcfc;
+  --ok:#7fd48c;      --no:#f0907a;
+  --shade:rgba(0,0,0,.68);
+  --wire:rgba(233,239,245,.26);
+  --mark:#5fd1d4;    --mine:#f0a94c;
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  /* An explicit background is mandatory: a transparent body borrows whatever the host paints behind
+     the page. The faint grid is graph paper, drawn in gradients so the file ships no image. */
+  background:
+    repeating-linear-gradient(0deg, var(--rule) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(90deg, var(--rule) 0 1px, transparent 1px 28px),
+    linear-gradient(180deg, var(--page-hi) 0%, var(--page-lo) 46%);
+  /* an explicit background-COLOUR under the gradients: the shorthand above would otherwise leave it
+     transparent, and a transparent body borrows whatever the host paints behind the page */
+  background-color:var(--page-lo);
+  background-attachment:fixed;
+  background-blend-mode:soft-light, soft-light, normal;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  min-height:100vh;
+  /* Not the fix for wide content — every wide child scrolls in its own box. Belt and braces only. */
+  overflow-x:hidden;
+  -webkit-text-size-adjust:100%;
+}
+.math{ font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif; }
+.wrap{ max-width:560px; margin:0 auto; padding: max(10px, env(safe-area-inset-top)) 12px
+        calc(24px + env(safe-area-inset-bottom)); }
+
+/* ============================ chrome ============================ */
+header.top{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:6px 0 10px; }
+h1{ font-size:26px; font-weight:900; letter-spacing:.5px; margin:0; color:var(--ink); }
+h1 small{ display:block; font-size:11px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase;
+    color:var(--ink-dim); margin-top:2px; }
+.datechip{ margin-left:auto; font-size:12px; font-weight:800; color:var(--chalk);
+    border:1px solid var(--rule); border-radius:999px; padding:4px 10px; background:var(--hdbg); }
+.datechip.arch{ color:var(--lamp); border-color:var(--lamp); }
+
+.scorebar{ display:flex; gap:8px; align-items:stretch; margin:0 0 10px; }
+.stat{ flex:1; background:var(--panel); border:1px solid var(--rule); border-radius:12px;
+  padding:7px 9px; min-width:0; }
+.stat b{ display:block; font-size:19px; font-weight:900; line-height:1.1; }
+.stat span{ display:block; font-size:10px; font-weight:700; letter-spacing:.7px; text-transform:uppercase;
+  color:var(--ink-dim); margin-top:1px; }
+
+/* ============================ the grid ============================
+   4x4: a corner, three column headers, three row headers, nine cells. aspect-ratio keeps it square so
+   the headers never reflow the cells when a longer criterion lands tomorrow. */
+.gridwrap{ overflow-x:auto; }                 /* the one place a narrow phone may pan, not the page */
+#grid{
+  display:grid; grid-template-columns:76px repeat(3,1fr); grid-template-rows:58px repeat(3,1fr);
+  gap:5px; width:min(94vw,420px); margin:0 auto; aspect-ratio:1;
+}
+@media (min-width:560px){ #grid{ width:min(94vw,480px); grid-template-columns:98px repeat(3,1fr);
+  grid-template-rows:66px repeat(3,1fr); } }
+.corner{ display:flex; align-items:center; justify-content:center; }
+.corner svg{ width:100%; height:100%; opacity:.9; }
+.hd{
+  background:var(--hdbg); border:1px solid var(--rule); border-radius:10px;
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  font-size:11px; line-height:1.15; font-weight:800; letter-spacing:.2px;
+  color:var(--chalk); padding:4px 3px; cursor:pointer; overflow:hidden;
+  min-width:0; hyphens:auto; overflow-wrap:anywhere;
+}
+.hd:focus-visible{ outline:3px solid var(--lamp); outline-offset:2px; }
+.cell{
+  position:relative; background:var(--cellbg);
+  border:1px solid var(--rule); border-radius:10px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+  padding:6px 4px; cursor:pointer; min-width:0; overflow:hidden;
+  font-size:12px; font-weight:700; color:var(--ink);
+  transition:background .18s ease, transform .12s ease;
+}
+.cell:focus-visible{ outline:3px solid var(--lamp); outline-offset:2px; }
+.cell .plus{ font-size:22px; font-weight:400; color:var(--ink-dim); }
+/* A filled cell is a chalked answer on the panel. The corner notch is the point: state is never
+   colour-only, so a colour-blind player still reads "filled" from the geometry. */
+.cell.on{ background:var(--panel); cursor:default; }
+.cell.on::after{
+  content:''; position:absolute; top:0; right:0; width:0; height:0;
+  border-top:14px solid var(--accent); border-left:14px solid transparent;
+  border-top-right-radius:9px;
+}
+.cell .dg{ font-size:17px; font-weight:900; line-height:1.1; }
+.cell .rd{ font-size:13px; font-weight:700; line-height:1.2; color:var(--ink-dim); margin-top:2px; }
+.cell .wt{ position:absolute; left:5px; bottom:3px; font-size:9px; font-weight:800; color:var(--ink-dim); }
+.cell .hint{
+  position:absolute; right:3px; bottom:1px; font-size:11px; font-weight:800; line-height:1;
+  color:var(--ink-dim); padding:4px 5px; border:0; background:none; cursor:pointer;
+}
+.cell.on .hint{ display:none; }
+@media (prefers-reduced-motion:no-preference){
+  .cell.lay{ animation:lay .34s ease; }
+  @keyframes lay{ 0%{ transform:scale(.9); } 60%{ transform:scale(1.05); } 100%{ transform:scale(1); } }
+}
+
+.msg{ min-height:34px; margin:10px auto 0; max-width:min(94vw,480px); font-size:13px; font-weight:700;
+  line-height:1.35; text-align:center; color:var(--ink); }
+.msg .yes{ color:var(--ok); } .msg .nope{ color:var(--no); }
+
+.tools{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:12px 0 6px; }
+button.btn{
+  font:inherit; font-size:13px; font-weight:800; letter-spacing:.2px;
+  background:var(--panel); color:var(--ink); border:1px solid var(--rule);
+  border-radius:11px; padding:10px 14px; min-height:44px; cursor:pointer;
+}
+button.btn:focus-visible{ outline:3px solid var(--lamp); outline-offset:2px; }
+button.btn.primary{ background:var(--accent); color:var(--accent-ink); border-color:var(--rule); }
+button.btn[aria-pressed="true"]{ background:var(--hdbg); color:var(--chalk); }
+
+footer.foot{ margin:18px auto 0; max-width:min(94vw,480px); font-size:11px; line-height:1.6;
+  color:var(--ink); text-align:center; }
+footer.foot a{ color:var(--ink); }
+
+/* ============================ bottom sheet ============================
+   A text field inside a 100px cell loses a fight with the mobile keyboard every time, so the input
+   lives in a sheet pinned to the bottom and re-anchored off visualViewport when the keyboard opens. */
+.scrim{ position:fixed; inset:0; background:var(--shade); opacity:0; pointer-events:none;
+  transition:opacity .18s ease; z-index:40; }
+.scrim.show{ opacity:1; pointer-events:auto; }
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:50;
+  background:var(--panel); border-top:1px solid var(--rule);
+  border-radius:18px 18px 0 0; padding:14px 14px calc(14px + env(safe-area-inset-bottom));
+  transform:translateY(110%); transition:transform .22s ease;
+  max-height:88vh; overflow-y:auto;
+}
+.sheet.show{ transform:translateY(0); }
+@media (min-width:560px){
+  .sheet{ left:50%; right:auto; bottom:auto; top:50%; width:min(94vw,460px);
+    transform:translate(-50%,-40%) scale(.96); opacity:0; border-radius:18px; border:1px solid var(--rule); }
+  .sheet.show{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+}
+@media (prefers-reduced-motion:reduce){ .sheet,.scrim{ transition:none; } }
+.sheet h2{ font-size:13px; margin:0 0 8px; font-weight:800; letter-spacing:.3px; color:var(--ink-dim);
+  text-transform:uppercase; }
+.crit{ font-size:15px; font-weight:800; line-height:1.35; margin:0 0 2px; }
+.crit em{ font-style:normal; color:var(--ink-dim); font-size:12px; font-weight:800; letter-spacing:1px;
+  text-transform:uppercase; display:inline-block; min-width:52px; }
+.sheetmeta{ font-size:12px; color:var(--ink-dim); font-weight:700; margin:9px 0 6px; }
+.sheet input[type=text]{
+  width:100%; font-size:16px; font-weight:700;   /* 16px or iOS zooms the page on focus */
+  font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  padding:12px; border-radius:11px; border:1px solid var(--rule);
+  background:var(--panel-2); color:var(--ink); min-height:48px;
+}
+.sheet input[type=text]:focus{ outline:3px solid var(--lamp); outline-offset:1px; }
+.units{ display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 0; }
+.units button{ font:inherit; font-size:14px; font-weight:800; padding:8px 11px; min-height:40px;
+  border-radius:9px; border:1px solid var(--rule); background:var(--panel-2); color:var(--ink);
+  cursor:pointer; font-family:"Iowan Old Style",Palatino,Georgia,serif; }
+.ta{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:5px; }
+.ta li button{ width:100%; text-align:left; font:inherit; font-size:15px; font-weight:700;
+  padding:10px 12px; min-height:44px; border-radius:10px; border:1px solid var(--rule);
+  background:var(--panel-2); color:var(--ink); cursor:pointer;
+  font-family:"Iowan Old Style",Palatino,Georgia,serif; }
+.ta li button small{ display:block; font-size:11px; font-weight:600; color:var(--ink-dim);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+.sheetmsg{ min-height:20px; font-size:13px; font-weight:700; margin-top:9px; line-height:1.4; }
+.sheetbtns{ display:flex; gap:8px; margin-top:11px; }
+.sheetbtns .btn{ flex:1; }
+
+/* ============================ reveal ============================ */
+.reveal{ position:fixed; inset:0; z-index:60; background:var(--panel); overflow-y:auto;
+  display:none; padding: max(14px, env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom)); }
+.reveal.show{ display:block; }
+.reveal .inner{ max-width:620px; margin:0 auto; }
+.reveal h2{ font-size:22px; margin:2px 0 4px; font-weight:900; }
+.reveal h3{ font-size:13px; margin:20px 0 6px; font-weight:900; line-height:1.35;
+  padding-bottom:5px; border-bottom:1px solid var(--rule); }
+.reveal p{ font-size:13px; line-height:1.55; margin:8px 0; }
+.reveal .note{ font-size:12px; color:var(--ink-dim); line-height:1.55; }
+.cellhead{ display:flex; gap:10px; align-items:flex-start; margin:6px 0 2px; }
+.cellhead svg{ flex:0 0 auto; width:96px; height:96px; }
+.cellhead .cellwho{ font-size:12px; line-height:1.5; color:var(--ink-dim); }
+.ans{ list-style:none; margin:0; padding:0; }
+.ans li{ font-size:12.5px; line-height:1.5; padding:5px 0; border-bottom:1px dashed var(--rule); }
+.ans li b{ font-size:14px; font-family:"Iowan Old Style",Palatino,Georgia,serif; }
+.ans li.mine{ background:var(--panel-2); border-radius:8px; padding-left:7px; padding-right:7px;
+  box-shadow:inset 3px 0 0 var(--mine); }
+.ans li .v{ display:block; color:var(--ink-dim); font-family:"Iowan Old Style",Palatino,Georgia,serif;
+  font-size:13px; }
+.ans li .w{ font-weight:800; color:var(--accent); }
+.circlebox{ text-align:center; margin:10px 0 4px; overflow-x:auto; }
+.circlebox svg{ width:min(100%,340px); height:auto; }
+.sharebox{ width:100%; font-size:13px; line-height:1.5; font-family:ui-monospace,SFMono-Regular,
+  Menlo,Consolas,monospace; padding:10px; border-radius:11px; border:1px solid var(--rule);
+  background:var(--panel-2); color:var(--ink); resize:none; }
+.sr{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0);
+  white-space:nowrap; border:0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>Radian<small>Kreeda · Daily</small></h1>
+    <span class="datechip" id="datechip"></span>
+  </header>
+
+  <div class="scorebar">
+    <div class="stat"><b id="sCells">0/9</b><span>Filled</span></div>
+    <div class="stat"><b id="sGuess">9</b><span>Guesses left</span></div>
+    <div class="stat"><b id="sWeight">0</b><span>Weight</span></div>
+    <div class="stat"><b id="sStreak">0</b><span>Streak</span></div>
+  </div>
+
+  <div class="gridwrap">
+    <div id="grid" role="grid" aria-label="Today's trigonometry grid, three criteria down and three across"></div>
+  </div>
+
+  <p class="msg" id="msg" role="status" aria-live="polite"></p>
+
+  <div class="tools">
+    <button class="btn" type="button" id="bHow">How to play</button>
+    <button class="btn" type="button" id="bSound" aria-pressed="true">Sound on</button>
+    <button class="btn" type="button" id="bType" aria-pressed="true">Typeahead on</button>
+    <button class="btn" type="button" id="bTheme">Theme: auto</button>
+    <button class="btn primary" type="button" id="bReveal" hidden>See every answer</button>
+  </div>
+
+  <footer class="foot">
+    <span id="asof"></span><br>
+    Every value here is computed from the angle, not remembered — no dataset to go stale.
+    <a href="../">Kreeda</a>
+  </footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <h2 id="sheetTitle">Name an angle</h2>
+  <p class="crit"><em>Row</em> <span id="critRow"></span></p>
+  <p class="crit"><em>Column</em> <span id="critCol"></span></p>
+  <p class="sheetmeta" id="sheetMeta"></p>
+  <label class="sr" for="guess">Type an angle in degrees or radians. A bare number is read as degrees.</label>
+  <input type="text" id="guess" autocapitalize="off" autocorrect="off" autocomplete="off"
+         spellcheck="false" inputmode="text" enterkeyhint="go" placeholder="e.g. 210 (degrees) or 7pi/6">
+  <div class="units" id="units" aria-label="Insert a symbol">
+    <button type="button" data-ins="°">°</button>
+    <button type="button" data-ins="π">π</button>
+    <button type="button" data-ins="/">/</button>
+  </div>
+  <ul class="ta" id="ta"></ul>
+  <p class="sheetmsg" id="sheetMsg" role="status" aria-live="polite"></p>
+  <div class="sheetbtns">
+    <button class="btn" type="button" id="bCancel">Cancel</button>
+    <button class="btn primary" type="button" id="bSubmit">Submit</button>
+  </div>
+</section>
+
+<section class="reveal" id="reveal" role="dialog" aria-modal="true" aria-labelledby="revTitle" hidden>
+  <div class="inner" id="revInner"></div>
+</section>
+<script>
+'use strict';
+/* ============================================================================================
+   RADIAN — a daily trigonometry grid.  One file, no build, no network, no images. Opens off a disk.
+
+   The mechanic (a 3x3 where every cell wants something satisfying both its row and its column) came
+   from Setu and Maidan, and RAMAYANA_GRID.md is still the authority on the algorithms. What is new
+   here, and what the whole design turns on:
+
+     TRIGONOMETRY HAS NO ROSTER. Chemistry has elements and cricket has players; trigonometry is
+     procedural. So the roster is CONSTRUCTED: the 72 angles at 5-degree steps around the unit
+     circle. The obvious roster — the 24 classic exact-value angles, the multiples of 15 — is too
+     small: intersecting two criteria over 24 angles routinely leaves one or two candidates, well
+     under the floor of three. 72 gives real density while the exact-value angles remain a subset
+     you can still write criteria about, and every one of the 72 is a legitimate angle a student can
+     reason about from its quadrant and its reference angle.
+
+     AND NOTHING HERE IS REMEMBERED. Every attribute of every angle is DERIVED, at boot, from
+     integer degree arithmetic — no table of facts to get wrong, nothing to go stale, no freeze
+     date. selfTest() below then re-derives all of it from Math.sin / Math.cos / Math.tan and
+     console.errors on any disagreement. A grid that claims sin 210 is positive is worse than no
+     grid, and this is how that is prevented rather than merely intended.
+   ============================================================================================ */
+
+/* ---- Kreeda daily contract — see /DAILY.md. Copied, not imported: the game stays one file. ---- */
+const SLUG='radian';
+function dayKey(d){ d=d||new Date(); const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function prevDayKey(k){ const a=k.split('-'), t=new Date(+a[0],+a[1]-1,+a[2]);
+  t.setDate(t.getDate()-1); return dayKey(t); }
+function daySeed(k){ let h=5381; for(let i=0;i<k.length;i++) h=(h*33 ^ k.charCodeAt(i))|0; return h>>>0; }
+function mulberry32(a){ return function(){ a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a);
+  t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+
+const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+
+/* a day-stamped value: returns 0 unless the stamp is today */
+function loadToday(key){ const s=LS.get(key), i=s.indexOf('|');
+  return (i<0 || s.slice(0,i)!==dayKey()) ? 0 : (+s.slice(i+1)||0); }
+function saveToday(key,v){ LS.set(key, dayKey()+'|'+Math.round(v)); }
+
+/* consecutive-days counter against one key. Same day = no change; yesterday = +1; older = reset to 1. */
+function bumpStreak(key){
+  const s=LS.get(key), i=s.indexOf('|'), last=i<0?'':s.slice(0,i), n=i<0?0:(+s.slice(i+1)||0);
+  const today=dayKey(), count = last===today ? (n||1) : (last===prevDayKey(today) ? n+1 : 1);
+  LS.set(key, today+'|'+count); return count;
+}
+
+/* call once when a DAILY run is completed — not on every game over, not in practice mode */
+function dailyDone(){
+  const today=dayKey(), k='kreeda.daily.'+today;
+  const had=LS.get(k).split(',').filter(Boolean);
+  if(!had.includes(SLUG)) LS.set(k, had.concat(SLUG).join(','));
+  bumpStreak(SLUG+'.streak');
+  return bumpStreak('kreeda.streak');            // site-wide, and the number worth showing
+}
+
+/* ============================================================================================
+   THE ROSTER — 72 angles, 5 degrees apart, every attribute derived from integer arithmetic
+   ============================================================================================
+   Integer degrees are the source of truth for every attribute, deliberately. Deriving the quadrant
+   or the sign of the tangent from a floating-point Math.tan would be both slower and less certain:
+   tan 90 is 1.6e16 rather than an error, and cos 90 is 6.1e-17 rather than zero. Integers have no
+   such edges. selfTest() then checks the integer derivation AGAINST the floating-point one, which
+   is a real check precisely because the two are computed by different means. */
+const STEP=5;
+function gcdi(a,b){ while(b){ const t=a%b; a=b; b=t; } return a; }
+function refOf(d){ const m=d%180; return m<=90 ? m : 180-m; }     /* angle to the nearer x-axis */
+
+const ANGLES=[];
+for(let d=0; d<360; d+=STEP){
+  const g=gcdi(d,180)||1;
+  ANGLES.push({
+    id:'d'+d, deg:d,
+    ref: refOf(d),
+    /* quadrant 1..4, or 0 for the four quadrantal angles, which are in no quadrant at all */
+    quad: (d%90===0) ? 0 : (d<90?1:(d<180?2:(d<270?3:4))),
+    ss:  (d===0||d===180) ? 0 : (d<180 ? 1 : -1),                       // sign of sin
+    sc:  (d===90||d===270) ? 0 : ((d<90||d>270) ? 1 : -1),              // sign of cos
+    st:  (d===90||d===270) ? null : ((d===0||d===180) ? 0 :
+         (((d<180)?1:-1) * ((d<90||d>270)?1:-1))),                      // sign of tan; null = undefined
+    pnum: d===0 ? 0 : d/g,                                              // radians = pnum/pden * pi
+    pden: d===0 ? 1 : 180/g,
+    fame: 0
+  });
+}
+const N=ANGLES.length;
+
+/* Fame 1..5 — how readily a student can produce the angle at all. It drives Weight (= 6 - fame),
+   which is the game's substitute for Immaculate Grid's crowd-sourced rarity; see the reveal panel,
+   which says plainly what it is and is not. 235 degrees is a harder thing to think of than 240, and
+   Weight is the only place the game says so. */
+for(const a of ANGLES){
+  const d=a.deg, nice=(d%30===0)||(d%45===0);
+  a.fame = ([0,30,45,60,90,180,270].indexOf(d)>=0) ? 5
+         : nice ? 4 : (d%15===0) ? 3 : (d%10===0) ? 2 : 1;
+}
+
+/* ---- radian display. Every 5-degree angle is a rational multiple of pi, which is the whole
+        reason 5 degrees was chosen as the step: no angle in the roster is unwritable. ---- */
+function radStr(d){
+  if(d===0) return '0';
+  const g=gcdi(d,180), p=d/g, q=180/g;
+  const top = p===1 ? 'π' : p+'π';
+  return q===1 ? top : top+'/'+q;
+}
+function degStr(d){ return d+'°'; }
+
+/* ---- exact values, indexed by REFERENCE angle, then signed. The seven reference angles a
+        multiple of 15 can have are the whole table; everything else is shown to four decimals.
+        selfTest() checks every entry against Math.sin / Math.cos / Math.tan. ---- */
+const EXACT={
+  0 :{s:'0',            c:'1',            t:'0'},
+  15:{s:'(√6−√2)/4', c:'(√6+√2)/4', t:'2−√3'},
+  30:{s:'1/2',          c:'√3/2',    t:'√3/3'},
+  45:{s:'√2/2',    c:'√2/2',    t:'1'},
+  60:{s:'√3/2',    c:'1/2',          t:'√3'},
+  75:{s:'(√6+√2)/4', c:'(√6−√2)/4', t:'2+√3'},
+  90:{s:'1',            c:'0',            t:null}
+};
+function signed(sign,str){ return sign===0 ? '0' : (sign<0 ? '−'+str : str); }
+function hasExact(a){ return a.deg%15===0; }
+/* the three values of an angle, as display strings */
+function valuesOf(a){
+  const r=a.deg*Math.PI/180;
+  if(hasExact(a)){
+    const E=EXACT[a.ref];
+    return { s:signed(a.ss,E.s), c:signed(a.sc,E.c),
+             t: a.st===null ? 'undefined' : signed(a.st,E.t), exact:true };
+  }
+  const f=x=>{ const v=x.toFixed(4); return (v[0]==='-') ? '−'+v.slice(1) : v; };
+  return { s:'≈ '+f(Math.sin(r)), c:'≈ '+f(Math.cos(r)),
+           t: a.st===null ? 'undefined' : '≈ '+f(Math.tan(r)), exact:false };
+}
+
+/* ============================================================================================
+   READING WHAT THE PLAYER TYPED
+   ============================================================================================
+   The rule, stated once and repeated in the interface: A BARE NUMBER IS DEGREES. It is what a
+   student types, the input placeholder says so, and the alternative (guessing from magnitude)
+   would be exactly the silent two-way resolution that RAMAYANA_GRID.md section 3.4 forbids.
+
+   Degrees and radians must land on the SAME entity — 30 and pi/6 are one answer, not two — and
+   distinct angles must NEVER be conflated. 30, 150 and 330 are three different entities and a
+   tolerance loose enough to merge any two of them would be the worst bug available in this game.
+   The tolerance below is 0.5 degrees against a 5-degree spacing: a fifth of the way to the nearest
+   neighbour, so no input can ever reach two of them.
+
+   Coterminal input is accepted on purpose. -pi/6 and 390 both name the angle whose terminal side is
+   the terminal side of 330 and 30 respectively; they have identical trigonometric values, so
+   refusing them would be teaching something false. The interface says which angle it landed on. */
+const RXNUM='-?(?:\\d+\\.?\\d*|\\.\\d+)';
+const RE_NUM=new RegExp('^'+RXNUM+'$');
+const RE_FRAC=new RegExp('^('+RXNUM+')/('+RXNUM+')$');
+function readNum(s){
+  if(RE_NUM.test(s)) return parseFloat(s);
+  const m=s.match(RE_FRAC);
+  if(m){ const b=parseFloat(m[2]); if(b===0) return NaN; return parseFloat(m[1])/b; }
+  return NaN;
+}
+/* Returns exactly one of:
+     {ok:true,  deg, coterm}            an angle in the roster
+     {ok:false, why:'empty'}            nothing typed yet — silent, costs nothing
+     {ok:false, why:'offgrid', deg}     a real angle, but not one of the 72
+     {ok:false, why:'unparsed'}         could not read it at all
+   It never returns two candidates, because it never has two. */
+function parseAngle(raw){
+  if(raw==null) return {ok:false,why:'empty'};
+  let s=String(raw).trim();
+  if(!s) return {ok:false,why:'empty'};
+  s=s.toLowerCase().replace(/º/g,'°');   // masculine ordinal: NFKC would turn it into 'o'
+  s=s.normalize('NFKC').toLowerCase();             // folds the astral math pi and U+213C onto U+03C0
+  s=s.replace(/[πϖ]/g,'pi')
+     .replace(/[÷⁄∕]/g,'/')
+     .replace(/[−–—‐‑]/g,'-')
+     .replace(/[×⋅·]/g,'*');
+  let unit=null;
+  if(/(degrees|degree|degs|deg|°)/.test(s)){
+    unit='deg'; s=s.replace(/(degrees|degree|degs|deg|°)/g,''); }
+  if(/(radians|radian|rads|rad)/.test(s)){
+    if(unit) return {ok:false,why:'unparsed'};     // "30 deg rad" is not a thing; do not guess
+    unit='rad'; s=s.replace(/(radians|radian|rads|rad)/g,''); }
+  s=s.replace(/[\s*]/g,'').replace(/^\+/,'');
+  if(!s) return {ok:false,why:'empty'};
+  let deg;
+  const pi=s.indexOf('pi');
+  if(pi>=0){
+    if(s.indexOf('pi',pi+2)>=0) return {ok:false,why:'unparsed'};
+    const L=s.slice(0,pi).replace(/[()]/g,''), R=s.slice(pi+2).replace(/[()]/g,'');
+    let rad;
+    if(L.charAt(L.length-1)==='/'){                       // "180/pi", "6/pi"
+      if(R!=='') return {ok:false,why:'unparsed'};
+      const a=readNum(L.slice(0,-1)); if(!isFinite(a)) return {ok:false,why:'unparsed'};
+      rad=a/Math.PI;
+    } else {
+      let coef;
+      if(L===''||L==='+') coef=1; else if(L==='-') coef=-1;
+      else { coef=readNum(L); if(!isFinite(coef)) return {ok:false,why:'unparsed'}; }
+      let den=1;
+      if(R!==''){
+        if(R.charAt(0)!=='/') return {ok:false,why:'unparsed'};
+        den=readNum(R.slice(1)); if(!isFinite(den)||den===0) return {ok:false,why:'unparsed'};
+      }
+      rad=coef/den*Math.PI;
+    }
+    deg=rad*180/Math.PI;
+  } else {
+    const v=readNum(s);
+    if(!isFinite(v)) return {ok:false,why:'unparsed'};
+    deg = (unit==='rad') ? v*180/Math.PI : v;             // <- the bare-number rule
+  }
+  if(!isFinite(deg)) return {ok:false,why:'unparsed'};
+  const coterm = (deg<0 || deg>=360);
+  let d=deg%360; if(d<0) d+=360;
+  const snap=Math.round(d/5)*5, near=(snap===360)?0:snap;
+  const gap=Math.min(Math.abs(d-snap), Math.abs(d-(snap-360)), Math.abs(d-(snap+360)));
+  if(gap<=0.5) return {ok:true,deg:near,coterm:coterm};
+  return {ok:false,why:'offgrid',deg:+d.toFixed(2)};
+}
+const BY_DEG=new Map();                       // built once at boot; never iterated in daily setup
+for(let i=0;i<N;i++) BY_DEG.set(ANGLES[i].deg,i);
+
+/* ============================================================================================
+   THE CRITERION CATALOGUE
+   ============================================================================================
+   Thirty criteria in eight families. Every one is a predicate over an angle's DERIVED integer
+   attributes — never a floating-point comparison, never a judgement call at runtime. `t` runs
+   exactly once per criterion at boot to build the bitsets and is never called during play.
+
+   `excl` marks a family whose criteria must never sit on OPPOSITE axes. In this game that is nearly
+   every family, and the reason is arithmetic rather than taxonomy: "sin θ > 0" facing "sin θ < 0"
+   is an empty cell by construction, and so is "cos θ > ½" facing "cos θ < −½". Same axis is always
+   fine — rows never intersect rows. Nested pairs inside one family (a multiple of 30° is a multiple
+   of 15°) are barred by the same rule even though they would not be empty; being conservative here
+   costs a few candidate grids and buys a rule an editor cannot get wrong.
+
+   THE ONE RULE FOR ADDING A CRITERION: it must cover a decent slice of the 72. Two criteria at a
+   quarter of the circle each leave about four candidates; two at a twelfth leave well under the
+   floor of three. The counts are printed by ?audit and the narrow ones are all tier `deep`, where
+   they meet only the broad criteria and only at the weekend. */
+const CRITERIA=[
+ /* --- quadrant. The four quadrantal angles (0, 90, 180, 270) are in NO quadrant, which is the
+        correct statement and also the one students most often get wrong. --- */
+ {id:'q1',fam:'quad',excl:1,tier:'core',short:'Quadrant I',
+  label:'Terminal side in quadrant I (0° < θ < 90°)',t:a=>a.quad===1},
+ {id:'q2',fam:'quad',excl:1,tier:'core',short:'Quadrant II',
+  label:'Terminal side in quadrant II (90° < θ < 180°)',t:a=>a.quad===2},
+ {id:'q3',fam:'quad',excl:1,tier:'core',short:'Quadrant III',
+  label:'Terminal side in quadrant III (180° < θ < 270°)',t:a=>a.quad===3},
+ {id:'q4',fam:'quad',excl:1,tier:'core',short:'Quadrant IV',
+  label:'Terminal side in quadrant IV (270° < θ < 360°)',t:a=>a.quad===4},
+
+ /* --- sine: sign first, then the ½ bands. |sin θ| < ½ is exactly "reference angle under 30". --- */
+ {id:'sp', fam:'sin',excl:1,tier:'core',short:'sin θ > 0',label:'sin θ is positive',t:a=>a.ss>0},
+ {id:'sn', fam:'sin',excl:1,tier:'core',short:'sin θ < 0',label:'sin θ is negative',t:a=>a.ss<0},
+ {id:'shp',fam:'sin',excl:1,tier:'wide',short:'sin θ > ½',label:'sin θ is greater than ½',
+  t:a=>a.ss>0&&a.ref>30},
+ {id:'shn',fam:'sin',excl:1,tier:'wide',short:'sin θ < −½',label:'sin θ is less than −½',
+  t:a=>a.ss<0&&a.ref>30},
+ {id:'ssm',fam:'sin',excl:1,tier:'deep',short:'|sin θ| < ½',label:'|sin θ| is less than ½',
+  t:a=>a.ref<30},
+
+ /* --- cosine, the same shape. |cos θ| < ½ is "reference angle over 60". --- */
+ {id:'cp', fam:'cos',excl:1,tier:'core',short:'cos θ > 0',label:'cos θ is positive',t:a=>a.sc>0},
+ {id:'cn', fam:'cos',excl:1,tier:'core',short:'cos θ < 0',label:'cos θ is negative',t:a=>a.sc<0},
+ {id:'chp',fam:'cos',excl:1,tier:'wide',short:'cos θ > ½',label:'cos θ is greater than ½',
+  t:a=>a.sc>0&&a.ref<60},
+ {id:'chn',fam:'cos',excl:1,tier:'wide',short:'cos θ < −½',label:'cos θ is less than −½',
+  t:a=>a.sc<0&&a.ref<60},
+ {id:'csm',fam:'cos',excl:1,tier:'deep',short:'|cos θ| < ½',label:'|cos θ| is less than ½',
+  t:a=>a.ref>60},
+
+ /* --- tangent. Undefined at 90 and 270, so `st` is null there and every one of these is false —
+        which is right: an undefined tangent is neither positive nor negative nor between 0 and 1.
+        The band criteria read off the reference angle: |tan θ| > 1 exactly when it exceeds 45. --- */
+ {id:'tp',  fam:'tan',excl:1,tier:'core',short:'tan θ > 0',label:'tan θ is positive',t:a=>a.st>0},
+ {id:'tn',  fam:'tan',excl:1,tier:'core',short:'tan θ < 0',label:'tan θ is negative',t:a=>a.st<0},
+ {id:'tg1', fam:'tan',excl:1,tier:'deep',short:'tan θ > 1',label:'tan θ is greater than 1',
+  t:a=>a.st>0&&a.ref>45},
+ {id:'tl1', fam:'tan',excl:1,tier:'deep',short:'tan θ < −1',label:'tan θ is less than −1',
+  t:a=>a.st<0&&a.ref>45},
+ {id:'t01', fam:'tan',excl:1,tier:'deep',short:'0 < tan θ < 1',label:'tan θ is between 0 and 1',
+  t:a=>a.st>0&&a.ref<45},
+ {id:'tm10',fam:'tan',excl:1,tier:'deep',short:'−1 < tan θ < 0',label:'tan θ is between −1 and 0',
+  t:a=>a.st<0&&a.ref<45},
+
+ /* --- reference angle. Under 45 means the terminal side leans toward the x-axis; over 45, toward
+        the y-axis. Equivalently |sin θ| against |cos θ|, which is the fact worth learning. --- */
+ {id:'rlt',fam:'ref',excl:1,tier:'core',short:'Ref. angle < 45°',
+  label:'Reference angle is less than 45°',t:a=>a.ref<45},
+ {id:'rgt',fam:'ref',excl:1,tier:'core',short:'Ref. angle > 45°',
+  label:'Reference angle is greater than 45°',t:a=>a.ref>45},
+ {id:'r345',fam:'ref',excl:1,tier:'deep',short:'Ref. 30°, 45° or 60°',
+  label:'Reference angle is 30°, 45° or 60°',t:a=>a.ref===30||a.ref===45||a.ref===60},
+
+ /* --- sin against cos. True on (45°, 225°) and false outside it, the two crossings being exactly
+        where the terminal side meets the line y = x. --- */
+ {id:'sgc',fam:'cmp',excl:1,tier:'wide',short:'sin θ > cos θ',label:'sin θ is greater than cos θ',
+  t:a=>a.deg>45&&a.deg<225},
+ {id:'slc',fam:'cmp',excl:1,tier:'wide',short:'sin θ < cos θ',label:'sin θ is less than cos θ',
+  t:a=>a.deg<45||a.deg>225},
+
+ /* --- sin + cos, which is √2·sin(θ + 45°) and therefore changes sign at 135° and 315°. --- */
+ {id:'spc',fam:'sum',excl:1,tier:'wide',short:'sin θ + cos θ > 0',label:'sin θ + cos θ is positive',
+  t:a=>a.deg<135||a.deg>315},
+ {id:'smc',fam:'sum',excl:1,tier:'wide',short:'sin θ + cos θ < 0',label:'sin θ + cos θ is negative',
+  t:a=>a.deg>135&&a.deg<315},
+
+ /* --- exactness. A multiple of 15° is exactly an angle whose sine and cosine can be written in
+        surds; the 15° and 75° reference angles need (√6 ± √2)/4, the rest are the familiar ones.
+        q ≤ 6 in lowest terms is exactly the sixteen angles of the standard unit-circle diagram. --- */
+ {id:'ex15',fam:'exact',excl:1,tier:'core',short:'Exact surd value',
+  label:'θ is a multiple of 15°, so sin θ and cos θ have exact surd values',t:a=>a.deg%15===0},
+ {id:'exq6',fam:'exact',excl:1,tier:'wide',short:'θ = pπ/q, q ≤ 6',
+  label:'In radians θ = pπ/q in lowest terms with q at most 6',t:a=>a.pden<=6},
+ {id:'ex30',fam:'exact',excl:1,tier:'deep',short:'Multiple of π/6',
+  label:'θ is a whole multiple of π/6 radians',t:a=>a.deg%30===0}
+];
+
+/* Weekday ramp (RAMAYANA_GRID.md §4.5). Monday is quadrants, signs, reference angles and the exact
+   angles — the syllabus. Sunday is the tangent bands and the narrow sets. Keyed off the local
+   weekday of the dayKey, which is identical everywhere for a given dayKey, so it stays a pure
+   function of the date. */
+function tierPool(key){
+  const a=key.split('-'), wd=new Date(+a[0],+a[1]-1,+a[2]).getDay();   // 0=Sun
+  if(wd===1||wd===2) return {tiers:['core'],maxDeep:0};
+  if(wd===3||wd===4) return {tiers:['core','wide'],maxDeep:0};
+  if(wd===0)         return {tiers:['core','wide','deep'],maxDeep:6};
+  return {tiers:['core','wide','deep'],maxDeep:1};                      // Fri, Sat
+}
+
+/* ============================================================================================
+   BITSETS AND THE BOOT SELF-TEST
+   ============================================================================================ */
+const W=Math.ceil(N/32);
+const BITS=CRITERIA.map(c=>{
+  const b=new Uint32Array(W);
+  for(let i=0;i<N;i++) if(c.t(ANGLES[i])) b[i>>5]|=(1<<(i&31));
+  return b;
+});
+function popcount(x){ x=x-((x>>>1)&0x55555555); x=(x&0x33333333)+((x>>>2)&0x33333333);
+  x=(x+(x>>>4))&0x0f0f0f0f; return (x*0x01010101)>>>24; }
+function andBits(a,b){ const o=new Uint32Array(W); for(let w=0;w<W;w++) o[w]=a[w]&b[w]; return o; }
+function countBits(b){ let n=0; for(let w=0;w<W;w++) n+=popcount(b[w]); return n; }
+function bitMembers(b){ const o=[]; for(let w=0;w<W;w++){ let x=b[w]; while(x){ const t=x&-x;
+  o.push((w<<5)+popcount(t-1)); x^=t; } } return o; }   // ascending index order — stable, not a Set
+function testBit(b,i){ return (b[i>>5]>>>(i&31))&1; }
+
+/* The self-test. Every attribute the game derives from integers is re-derived here from
+   Math.sin / Math.cos / Math.tan and compared. It costs a millisecond, it runs on every boot, and
+   it is the reason a claim like "sin 210° is positive" cannot survive an edit to this file. */
+function selfTest(){
+  const bad=[]; const E=1e-9;
+  for(const a of ANGLES){
+    const r=a.deg*Math.PI/180, s=Math.sin(r), c=Math.cos(r);
+    const S=Math.abs(s)<E?0:(s>0?1:-1), C=Math.abs(c)<E?0:(c>0?1:-1);
+    if(S!==a.ss) bad.push(a.deg+': sin sign');
+    if(C!==a.sc) bad.push(a.deg+': cos sign');
+    const T=(C===0)?null:(S===0?0:S*C);
+    if(T!==a.st) bad.push(a.deg+': tan sign');
+    if(Math.abs(Math.sin(a.ref*Math.PI/180)-Math.abs(s))>1e-12) bad.push(a.deg+': reference angle');
+    if(Math.abs(Math.cos(a.ref*Math.PI/180)-Math.abs(c))>1e-12) bad.push(a.deg+': reference angle');
+    if(Math.abs(a.pnum/a.pden*Math.PI-r)>1e-12) bad.push(a.deg+': radian fraction');
+    /* the exact-value table, checked value by value against the transcendental functions */
+    if(hasExact(a)){
+      const EX=EXACT[a.ref], num={ '0':0,'1':1,'1/2':.5,'√2/2':Math.SQRT1_2,
+        '√3/2':Math.sqrt(3)/2,'(√6−√2)/4':(Math.sqrt(6)-Math.sqrt(2))/4,
+        '(√6+√2)/4':(Math.sqrt(6)+Math.sqrt(2))/4,'√3/3':Math.sqrt(3)/3,
+        '√3':Math.sqrt(3),'2−√3':2-Math.sqrt(3),'2+√3':2+Math.sqrt(3) };
+      if(Math.abs(a.ss*num[EX.s]-s)>1e-12) bad.push(a.deg+': exact sin');
+      if(Math.abs(a.sc*num[EX.c]-c)>1e-12) bad.push(a.deg+': exact cos');
+      if(EX.t!==null && Math.abs(a.st*num[EX.t]-Math.tan(r))>1e-9) bad.push(a.deg+': exact tan');
+    }
+    /* and the round trip: the radian form the game prints must read back as the same angle */
+    const back=parseAngle(radStr(a.deg));
+    if(!back.ok||back.deg!==a.deg) bad.push(a.deg+': radian form does not round-trip');
+    const back2=parseAngle(String(a.deg));
+    if(!back2.ok||back2.deg!==a.deg) bad.push(a.deg+': degree form does not round-trip');
+  }
+  const ids=new Set();
+  for(const c of CRITERIA){ if(ids.has(c.id)) bad.push('duplicate criterion id '+c.id); ids.add(c.id); }
+  if(bad.length) console.error('[radian] SELF-TEST FAILED:', bad);
+  return bad;
+}
+const SELFTEST=selfTest();
+
+/* ============================================================================================
+   SOLVABILITY — two separate requirements, and the second is the one implementations get wrong
+   ============================================================================================
+   (a) every cell has at least THREE valid angles. Not one. A one-answer cell is a quiz question
+       wearing a puzzle's clothes, and with each angle usable once it is also the cell most likely
+       to strand the grid.
+   (b) a system of distinct representatives must EXIST. Because each angle may be used once,
+       per-cell non-emptiness does not imply the grid is solvable: three cells whose only candidates
+       are the same three angles, plus a fourth needing one of them, is an unsolvable grid in which
+       every cell individually looks fine. So: a perfect bipartite matching of size 9, by Kuhn's
+       augmenting paths. Do not skip it and do not assume min(n) >= 3 implies it. It does not. */
+function perfectMatching(cands){
+  const matchA=new Int32Array(N).fill(-1);           // angle -> cell
+  const seen=new Uint8Array(N);
+  function tryCell(c){
+    for(const p of cands[c]){
+      if(seen[p]) continue;
+      seen[p]=1;
+      if(matchA[p]<0 || tryCell(matchA[p])){ matchA[p]=c; return true; }
+    }
+    return false;
+  }
+  for(let c=0;c<9;c++){ seen.fill(0); if(!tryCell(c)) return false; }
+  return true;
+}
+
+/* Maximum-weight perfect matching over the 9 cells, by the standard O(n^2 m) Hungarian with
+   potentials. Restricting each cell to its twelve rarest candidates can only UNDERSTATE the
+   optimum, never overstate it, so the "heaviest possible" figure shown to the player is always
+   actually achievable. */
+function heaviestMatching(cands){
+  const idx=new Map(), cols=[];
+  for(let c=0;c<9;c++){
+    const sorted=cands[c].slice().sort((a,b)=>{
+      const d=ANGLES[a].fame-ANGLES[b].fame; return d!==0?d:a-b;   // total comparator: tie-break on index
+    }).slice(0,12);
+    for(const p of sorted) if(!idx.has(p)){ idx.set(p,cols.length); cols.push(p); }
+  }
+  const m=cols.length; if(m<9) return 0;
+  const INF=1e9, cost=[];
+  for(let c=0;c<9;c++){
+    const row=new Array(m).fill(INF);
+    for(const p of cands[c]){ const j=idx.get(p); if(j!==undefined) row[j]=-(6-ANGLES[p].fame); }
+    cost.push(row);
+  }
+  const u=new Array(10).fill(0), v=new Array(m+1).fill(0), pcol=new Array(m+1).fill(0), way=new Array(m+1).fill(0);
+  for(let i=1;i<=9;i++){
+    pcol[0]=i; let j0=0;
+    const minv=new Array(m+1).fill(INF), used=new Array(m+1).fill(false);
+    do{
+      used[j0]=true; const i0=pcol[j0]; let delta=INF, j1=0;
+      for(let j=1;j<=m;j++) if(!used[j]){
+        const cur=cost[i0-1][j-1]-u[i0]-v[j];
+        if(cur<minv[j]){ minv[j]=cur; way[j]=j0; }
+        if(minv[j]<delta){ delta=minv[j]; j1=j; }
+      }
+      if(delta>=INF/2) return 0;
+      for(let j=0;j<=m;j++){ if(used[j]){ u[pcol[j]]+=delta; v[j]-=delta; } else minv[j]-=delta; }
+      j0=j1;
+    } while(pcol[j0]!==0);
+    do{ const j1=way[j0]; pcol[j0]=pcol[j1]; j0=j1; } while(j0);
+  }
+  let total=0;
+  for(let j=1;j<=m;j++) if(pcol[j]) total += -cost[pcol[j]-1][j-1];
+  return total;
+}
+
+/* ============================================================================================
+   GENERATING THE DAY'S GRID
+   ============================================================================================
+   EVERYTHING below draws from ONE mulberry32(daySeed(dayKey())) stream, in a fixed order. A stray
+   Math.random() here desynchronises players worldwide and there is no way to detect it from inside
+   the game. The criterion catalogue and the angle table are ARRAYS with a fixed order; nothing in
+   daily setup ever iterates a Set, a Map or Object.keys(). */
+const FALLBACK=[
+  {rows:['q1','q2','q3'],   cols:['sp','cp','ex15']},
+  {rows:['sp','sn','ex15'], cols:['cp','cn','rlt']},
+  {rows:['rlt','rgt','ex15'],cols:['q1','q3','sp']},
+  {rows:['tp','tn','ex15'], cols:['sp','cp','rgt']},
+  {rows:['q2','q4','ex15'], cols:['sp','tn','rlt']},
+  {rows:['cp','cn','ex15'], cols:['tp','tn','rgt']}
+];
+function critIndex(id){ for(let i=0;i<CRITERIA.length;i++) if(CRITERIA[i].id===id) return i; return -1; }
+
+function axisRuleOK(rows,cols){
+  // Two criteria from the same `excl` family must never sit on opposite axes: the cell where they
+  // meet is empty (or merely redundant) by construction. Same axis is fine — rows never meet rows.
+  for(const r of rows) for(const c of cols){
+    const R=CRITERIA[r], C=CRITERIA[c];
+    if(R.excl && C.excl && R.fam===C.fam) return false;
+  }
+  return true;
+}
+function sameBits(a,b){ for(let w=0;w<W;w++) if(a[w]!==b[w]) return false; return true; }
+function buildCells(rows,cols){
+  const cells=[];
+  for(let i=0;i<3;i++) for(let j=0;j<3;j++) cells.push(andBits(BITS[rows[i]],BITS[cols[j]]));
+  return cells;
+}
+function gradeGrid(rows,cols){
+  if(!axisRuleOK(rows,cols)) return null;
+  /* Two criteria can be written differently and still select the same 72-bit set — "cos θ > 0" and
+     "sin θ is increasing here" would be one such pair. Identical sets anywhere in the six would make
+     a duplicated row or column, so they are rejected outright rather than reasoned about. */
+  const all=rows.concat(cols);
+  for(let i=0;i<6;i++) for(let j=i+1;j<6;j++) if(sameBits(BITS[all[i]],BITS[all[j]])) return null;
+  const cells=buildCells(rows,cols), counts=cells.map(countBits);
+  if(Math.min.apply(null,counts)<3) return null;                 // the floor. Never lower it.
+  const sum=counts.reduce((a,b)=>a+b,0);
+  if(sum<45||sum>200) return null;                               // neither collapsed nor a blur
+  const cands=cells.map(bitMembers);
+  /* Every cell must contain at least one angle a student has actually memorised — a multiple of 15,
+     i.e. fame >= 3. No cell is ever solvable only by someone willing to name 235°, and this does
+     more for perceived fairness than anything else in the generator. */
+  for(const list of cands) if(!list.some(i=>ANGLES[i].fame>=3)) return null;
+  if(!perfectMatching(cands)) return null;
+  return {rows,cols,cells,counts,cands,sum};
+}
+function makeGrid(key){
+  const rng=mulberry32(daySeed(key));
+  const ramp=tierPool(key);
+  const pool=[];
+  for(let i=0;i<CRITERIA.length;i++) if(ramp.tiers.indexOf(CRITERIA[i].tier)>=0) pool.push(i);
+  const draw=(exclude)=>{
+    for(let guard=0;guard<400;guard++){            // rejection sampling in fixed index order
+      const c=pool[Math.floor(rng()*pool.length)];
+      if(exclude.indexOf(c)<0) return c;
+    }
+    return -1;
+  };
+  for(let attempt=0;attempt<400;attempt++){
+    const picked=[]; let ok=true;
+    for(let k=0;k<6;k++){ const c=draw(picked); if(c<0){ ok=false; break; } picked.push(c); }
+    if(!ok) continue;
+    const rows=picked.slice(0,3), cols=picked.slice(3,6);
+    let deep=0; for(const c of picked) if(CRITERIA[c].tier==='deep') deep++;
+    if(deep>ramp.maxDeep) continue;
+    const g=gradeGrid(rows,cols);
+    if(g){ g.fallback=false; g.attempt=attempt; return g; }
+  }
+  /* The fallbacks exist so an edit that accidentally narrows the criterion pool can never produce a
+     day with no puzzle. The 730-day audit reports zero uses; if it ever reports one, that is a bug
+     to fix in the catalogue, not a shrug. */
+  const fb=FALLBACK[daySeed(key)%FALLBACK.length];
+  const g=gradeGrid(fb.rows.map(critIndex),fb.cols.map(critIndex));
+  if(g){ g.fallback=true; return g; }
+  const g2={rows:fb.rows.map(critIndex),cols:fb.cols.map(critIndex)};
+  g2.cells=buildCells(g2.rows,g2.cols); g2.counts=g2.cells.map(countBits);
+  g2.cands=g2.cells.map(bitMembers); g2.sum=g2.counts.reduce((a,b)=>a+b,0); g2.fallback=true;
+  return g2;
+}
+
+/* ============================================================================================
+   STATE AND STORAGE
+   ============================================================================================
+   Flat pipe-delimited strings per /DAILY.md, every read and every write in try/catch —
+   localStorage throws outright in Safari private mode and on some file:// origins, and a game that
+   cannot save must still play. Corrupt values fall back to defaults; nothing here may break boot. */
+const params=new URLSearchParams(location.search);
+const ARCHIVE=/^\d{4}-\d{2}-\d{2}$/.test(params.get('date')||'') ? params.get('date') : '';
+const KEY=ARCHIVE||dayKey();
+const LIVE=!ARCHIVE;                                 // archive days write nothing and share no streak
+
+const S={ cells:new Array(9).fill(-1), guesses:0, done:false, dirty:new Array(9).fill(0), open:-1 };
+let GRID=null, settings={snd:1,type:1,theme:'auto'};
+
+function loadSettings(){
+  try{
+    const raw=LS.get(SLUG+'.settings');
+    raw.split(';').forEach(kv=>{ const i=kv.indexOf('='); if(i<0) return;
+      const k=kv.slice(0,i), v=kv.slice(i+1);
+      /* Only a value we actually wrote is honoured. Anything else — a truncated write, a value
+         from a future version, somebody editing localStorage by hand — leaves the DEFAULT standing
+         rather than being coerced to 0, which would silently turn the sound off for that player. */
+      if(k==='snd'&&(v==='1'||v==='0')) settings.snd = +v;
+      else if(k==='type'&&(v==='1'||v==='0')) settings.type = +v;
+      else if(k==='theme'&&['auto','light','dark'].indexOf(v)>=0) settings.theme=v; });
+  }catch(e){}                                        // any garbage at all: keep the defaults
+}
+function saveSettings(){ LS.set(SLUG+'.settings','snd='+settings.snd+';type='+settings.type+';theme='+settings.theme); }
+function loadState(){
+  if(!LIVE) return;
+  try{
+    const raw=LS.get(SLUG+'.state'); if(!raw) return;
+    const a=raw.split('|');
+    if(a[0]!==KEY) return;                           // a day-stamped value from another day is worth zero
+    const ids=(a[1]||'').split(',');
+    for(let i=0;i<9;i++){
+      const id=ids[i]; if(!id) continue;
+      let j=-1; for(let k=0;k<N;k++) if(ANGLES[k].id===id){ j=k; break; }
+      if(j>=0 && GRID && testBit(GRID.cells[i],j)) S.cells[i]=j;   // ignore anything the grid disagrees with
+    }
+    S.guesses=Math.max(0,Math.min(9,+a[2]||0));
+    S.done=a[3]==='1';
+    const d=a[4]||''; for(let i=0;i<9;i++) S.dirty[i] = d.charAt(i)==='1'?1:0;
+  }catch(e){ S.cells=new Array(9).fill(-1); S.guesses=0; S.done=false; S.dirty=new Array(9).fill(0); }
+}
+function saveState(){
+  if(!LIVE) return;
+  const ids=S.cells.map(i=>i<0?'':ANGLES[i].id).join(',');
+  LS.set(SLUG+'.state', KEY+'|'+ids+'|'+S.guesses+'|'+(S.done?1:0)+'|'+S.dirty.join(''));
+}
+function filled(){ let n=0; for(const c of S.cells) if(c>=0) n++; return n; }
+function weight(){ let w=0; for(const c of S.cells) if(c>=0) w+=6-ANGLES[c].fame; return w; }
+
+/* ============================================================================================
+   AUDIO — WebAudio oscillators only, no files, because the game must work off a disk
+   ============================================================================================ */
+let AC=null;
+function ac(){ try{ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
+  if(AC.state==='suspended') AC.resume(); return AC; }catch(e){ return null; } }
+function chime(){                                    /* correct: a fifth, struck. ~150 ms. */
+  if(!settings.snd) return; const c=ac(); if(!c) return;
+  const t=c.currentTime;
+  [523.25,783.99].forEach((f,i)=>{
+    const o=c.createOscillator(), g=c.createGain();
+    o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t+i*0.05);
+    g.gain.exponentialRampToValueAtTime(0.13,t+i*0.05+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+i*0.05+0.16);
+    o.connect(g).connect(c.destination); o.start(t+i*0.05); o.stop(t+i*0.05+0.18);
+  });
+}
+function flat(){                                     /* wrong: one damped tone. No buzzer. */
+  if(!settings.snd) return; const c=ac(); if(!c) return;
+  const t=c.currentTime, o=c.createOscillator(), g=c.createGain();
+  o.type='triangle'; o.frequency.setValueAtTime(174,t); o.frequency.linearRampToValueAtTime(130,t+0.18);
+  g.gain.setValueAtTime(0.13,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+  o.connect(g).connect(c.destination); o.start(t); o.stop(t+0.21);
+}
+function full(){                                     /* 9/9: a rising arpeggio, once. No fanfare. */
+  if(!settings.snd) return; const c=ac(); if(!c) return;
+  const t=c.currentTime;
+  [392,523.25,659.25,783.99].forEach((f,i)=>{
+    const o=c.createOscillator(), g=c.createGain();
+    o.type='sine'; o.frequency.value=f;
+    const s=t+i*0.11;
+    g.gain.setValueAtTime(0.0001,s); g.gain.exponentialRampToValueAtTime(0.11,s+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,s+0.42);
+    o.connect(g).connect(c.destination); o.start(s); o.stop(s+0.45);
+  });
+}
+
+/* ============================================================================================
+   DIAGRAMS — inline SVG, no image files, both themes via currentColor and the CSS tokens
+   ============================================================================================
+   Screen y grows downward and the unit circle's does not, so every point is
+   (cx + R·cos θ, cy − R·sin θ). Getting that backwards would draw a mirror image of trigonometry,
+   which is exactly the sort of quiet falsehood this game exists not to tell. */
+function pt(cx,cy,R,deg){
+  const r=deg*Math.PI/180;
+  return [ (cx+R*Math.cos(r)).toFixed(2), (cy-R*Math.sin(r)).toFixed(2) ];
+}
+/* the reference diagram: the sixteen standard angles, degrees outside and radians inside */
+function bigCircle(){
+  const cx=170, cy=170, R=104, o=[];
+  o.push('<svg viewBox="0 0 340 340" role="img" aria-label="The unit circle with the sixteen standard angles marked in degrees and radians">');
+  o.push('<circle cx="'+cx+'" cy="'+cy+'" r="'+R+'" fill="none" stroke="var(--wire)" stroke-width="1.5"/>');
+  o.push('<line x1="'+(cx-R-16)+'" y1="'+cy+'" x2="'+(cx+R+16)+'" y2="'+cy+'" stroke="var(--wire)" stroke-width="1.5"/>');
+  o.push('<line x1="'+cx+'" y1="'+(cy-R-16)+'" x2="'+cx+'" y2="'+(cy+R+16)+'" stroke="var(--wire)" stroke-width="1.5"/>');
+  for(let d=0; d<360; d+=15){
+    if(d%30!==0 && d%45!==0) continue;               // the sixteen: multiples of 30 and of 45
+    /* the multiples of 45 sit only 15 degrees from their neighbours, so their radian labels are
+       pulled further in — at one radius the three of 2pi/3, 3pi/4 and 5pi/6 collide */
+    const inner = (d%45===0 && d%90!==0) ? R-54 : R-28;
+    const a=pt(cx,cy,R,d), lab=pt(cx,cy,R+26,d), rad=pt(cx,cy,inner,d);
+    o.push('<line x1="'+cx+'" y1="'+cy+'" x2="'+a[0]+'" y2="'+a[1]+'" stroke="var(--wire)" stroke-width="1"/>');
+    o.push('<circle cx="'+a[0]+'" cy="'+a[1]+'" r="3.2" fill="var(--mark)"/>');
+    o.push('<text x="'+lab[0]+'" y="'+lab[1]+'" font-size="12.5" font-weight="700" fill="var(--ink)" '+
+           'text-anchor="middle" dominant-baseline="central">'+d+'°</text>');
+    o.push('<text x="'+rad[0]+'" y="'+rad[1]+'" font-size="12" fill="var(--ink-dim)" '+
+           'text-anchor="middle" dominant-baseline="central">'+radStr(d)+'</text>');
+  }
+  o.push('</svg>');
+  return o.join('');
+}
+/* a cell's diagram: every valid angle as a spoke, the player's own answer picked out */
+function miniCircle(list,mineIdx){
+  const cx=48, cy=48, R=33, o=[];
+  o.push('<svg viewBox="0 0 96 96" role="img" aria-hidden="true" focusable="false">');
+  o.push('<circle cx="48" cy="48" r="33" fill="none" stroke="var(--wire)" stroke-width="1.2"/>');
+  o.push('<line x1="7" y1="48" x2="89" y2="48" stroke="var(--wire)" stroke-width="1"/>');
+  o.push('<line x1="48" y1="7" x2="48" y2="89" stroke="var(--wire)" stroke-width="1"/>');
+  for(const i of list){
+    const a=pt(cx,cy,R,ANGLES[i].deg), mine=(i===mineIdx);
+    o.push('<line x1="48" y1="48" x2="'+a[0]+'" y2="'+a[1]+'" stroke="'+(mine?'var(--mine)':'var(--mark)')+
+           '" stroke-width="'+(mine?2.2:1)+'" opacity="'+(mine?1:.62)+'"/>');
+    o.push('<circle cx="'+a[0]+'" cy="'+a[1]+'" r="'+(mine?3.4:2)+'" fill="'+(mine?'var(--mine)':'var(--mark)')+'"/>');
+  }
+  o.push('</svg>');
+  return o.join('');
+}
+
+/* ============================================================================================
+   RENDER
+   ============================================================================================ */
+const $=id=>document.getElementById(id);
+function critOf(i,isRow){ return CRITERIA[isRow?GRID.rows[i]:GRID.cols[i]]; }
+function cellLabel(k){
+  const r=critOf(Math.floor(k/3),true), c=critOf(k%3,false);
+  const a=S.cells[k]>=0?ANGLES[S.cells[k]]:null;
+  const who=a ? ('Filled with '+a.deg+' degrees, '+radStr(a.deg)+' radians.') : 'Empty.';
+  return 'Row: '+r.label+'. Column: '+c.label+'. '+who;
+}
+function buildGrid(){
+  const g=$('grid'); g.innerHTML='';
+  const corner=document.createElement('div'); corner.className='corner';
+  corner.setAttribute('role','presentation');
+  /* The one piece of ornament: a unit circle with a terminal ray and its arc. It depicts the
+     subject rather than a mascot, which is why it can be drawn rather than shipped as a file. */
+  corner.innerHTML='<svg viewBox="0 0 60 60" aria-hidden="true">'+
+    '<circle cx="26" cy="34" r="18" fill="none" stroke="var(--chalk)" stroke-width="1.6" opacity=".65"/>'+
+    '<line x1="4" y1="34" x2="52" y2="34" stroke="var(--chalk)" stroke-width="1.4" opacity=".5"/>'+
+    '<line x1="26" y1="12" x2="26" y2="56" stroke="var(--chalk)" stroke-width="1.4" opacity=".5"/>'+
+    '<line x1="26" y1="34" x2="41.6" y2="21.4" stroke="var(--lamp)" stroke-width="2.4" stroke-linecap="round"/>'+
+    '<path d="M36 34 A10 10 0 0 0 33.8 27.8" fill="none" stroke="var(--lamp)" stroke-width="1.6"/>'+
+    '<circle cx="41.6" cy="21.4" r="2.6" fill="var(--lamp)"/></svg>';
+  g.appendChild(corner);
+  for(let j=0;j<3;j++){
+    const h=document.createElement('div'); h.className='hd math'; h.textContent=critOf(j,false).short;
+    h.tabIndex=0; h.setAttribute('role','columnheader'); h.title=critOf(j,false).label;
+    h.addEventListener('click',()=>say(critOf(j,false).label));
+    h.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); say(critOf(j,false).label); } });
+    g.appendChild(h);
+  }
+  for(let i=0;i<3;i++){
+    const h=document.createElement('div'); h.className='hd math'; h.textContent=critOf(i,true).short;
+    h.tabIndex=0; h.setAttribute('role','rowheader'); h.title=critOf(i,true).label;
+    h.addEventListener('click',()=>say(critOf(i,true).label));
+    h.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); say(critOf(i,true).label); } });
+    g.appendChild(h);
+    for(let j=0;j<3;j++){
+      const k=i*3+j;
+      const cell=document.createElement('div');
+      cell.className='cell'; cell.id='cell'+k; cell.tabIndex=0;
+      cell.setAttribute('role','gridcell');
+      cell.setAttribute('aria-rowindex',String(i+1)); cell.setAttribute('aria-colindex',String(j+1));
+      cell.addEventListener('click',e=>{ if(e.target.classList.contains('hint')) return; openCell(k); });
+      cell.addEventListener('keydown',e=>onCellKey(e,k));
+      g.appendChild(cell);
+    }
+  }
+  paint();
+}
+function onCellKey(e,k){
+  const i=Math.floor(k/3), j=k%3;
+  let t=-1;
+  if(e.key==='ArrowRight') t=i*3+((j+1)%3);
+  else if(e.key==='ArrowLeft') t=i*3+((j+2)%3);
+  else if(e.key==='ArrowDown') t=((i+1)%3)*3+j;
+  else if(e.key==='ArrowUp') t=((i+2)%3)*3+j;
+  else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openCell(k); return; }
+  if(t>=0){ e.preventDefault(); const el=$('cell'+t); if(el) el.focus(); }
+}
+function paint(){
+  for(let k=0;k<9;k++){
+    const el=$('cell'+k); if(!el) continue;
+    const a=S.cells[k]>=0?ANGLES[S.cells[k]]:null;
+    el.classList.toggle('on',!!a);
+    el.setAttribute('aria-label',cellLabel(k));
+    el.innerHTML='';
+    if(a){
+      const d=document.createElement('span'); d.className='dg math'; d.textContent=degStr(a.deg);
+      const r=document.createElement('span'); r.className='rd math'; r.textContent=radStr(a.deg);
+      const w=document.createElement('span'); w.className='wt'; w.textContent=String(6-a.fame);
+      el.appendChild(d); el.appendChild(r); el.appendChild(w);
+    } else {
+      const p=document.createElement('span'); p.className='plus'; p.textContent='+';
+      const b=document.createElement('button'); b.className='hint'; b.type='button';
+      b.setAttribute('aria-label','How many angles fit this cell'); b.innerHTML='&#9432;';
+      b.addEventListener('click',e=>{ e.stopPropagation();
+        say(GRID.counts[k]+' of the 72 angles fit that cell.'); });
+      el.appendChild(p); el.appendChild(b);
+    }
+  }
+  $('sCells').textContent=filled()+'/9';
+  $('sGuess').textContent=String(9-S.guesses);
+  $('sWeight').textContent=String(weight());
+  $('bReveal').hidden=!S.done;
+}
+function say(t,cls){ const m=$('msg'); m.innerHTML=''; const s=document.createElement('span');
+  if(cls) s.className=cls; s.textContent=t; m.appendChild(s); }
+
+/* ============================================================================================
+   THE SHEET, THE TYPEAHEAD AND RESOLUTION
+   ============================================================================================ */
+function openCell(k){
+  if(S.done || S.cells[k]>=0) return;
+  S.open=k;
+  $('critRow').textContent=critOf(Math.floor(k/3),true).label;
+  $('critCol').textContent=critOf(k%3,false).label;
+  $('sheetMeta').textContent=(9-S.guesses)+' guess'+(9-S.guesses===1?'':'es')+' left · '+
+    GRID.counts[k]+' angles fit this cell · degrees or radians, a bare number is degrees';
+  $('guess').value=''; $('sheetMsg').textContent=''; $('ta').innerHTML='';
+  $('sheet').hidden=false; $('scrim').classList.add('show');
+  requestAnimationFrame(()=>{ $('sheet').classList.add('show'); $('guess').focus(); });
+}
+function closeSheet(){
+  S.open=-1;
+  $('sheet').classList.remove('show'); $('scrim').classList.remove('show');
+  setTimeout(()=>{ if(S.open<0) $('sheet').hidden=true; },220);
+}
+
+/* THE TRAP IN THE TYPEAHEAD, stated where an editor will see it:
+   the suggestion list is drawn from the WHOLE 72-angle roster and is NEVER filtered by what is
+   valid for the open cell. Filtering it would hand over the answer. It looks like a kindness and it
+   is a spoiler. If anybody ever writes GRID.cands[k] in here, the game is broken. */
+function typeahead(){
+  const box=$('ta'); box.innerHTML='';
+  if(!settings.type) return;
+  const raw=$('guess').value.trim();
+  if(raw.length<1) return;
+  const q=raw.toLowerCase().replace(/[πϖ]/g,'pi').replace(/[÷⁄∕]/g,'/').replace(/[\s*°]/g,'');
+  if(!q) return;
+  const pre=[], sub=[];
+  for(let i=0;i<N;i++){
+    const a=ANGLES[i];
+    const dk=String(a.deg);
+    const rk=radStr(a.deg).replace(/π/g,'pi');
+    if(dk.indexOf(q)===0 || rk.indexOf(q)===0) pre.push(i);
+    else if(dk.indexOf(q)>=0 || rk.indexOf(q)>=0) sub.push(i);
+  }
+  const out=pre.concat(sub).slice(0,6);
+  for(const i of out){
+    const a=ANGLES[i];
+    const li=document.createElement('li'), b=document.createElement('button');
+    b.type='button';
+    b.appendChild(document.createTextNode(degStr(a.deg)+'  ·  '+radStr(a.deg)));
+    const sm=document.createElement('small');
+    const v=valuesOf(a);
+    sm.textContent='sin '+v.s+' · cos '+v.c;
+    b.appendChild(sm);
+    b.addEventListener('click',()=>{ $('guess').value=String(a.deg)+'°'; box.innerHTML=''; commit(i,false); });
+    li.appendChild(b); box.appendChild(li);
+  }
+}
+
+/* Five outcomes, and ONLY ONE of them costs a guess. Unreadable input, an angle that is not on the
+   circle, and an angle already placed are the three things a sincere player does most often;
+   charging a guess for any of them turns a puzzle into a punishment. */
+function submit(){
+  if(S.open<0) return;
+  const raw=$('guess').value;
+  const r=parseAngle(raw);
+  if(!r.ok){
+    if(r.why==='empty') return;                              // mid-typing: silent, costs nothing
+    if(r.why==='offgrid'){
+      sheetMsg('Radian’s circle is the 72 angles at 5° steps, and '+r.deg+'° is not one of them. '+
+               'The nearest are '+(Math.floor(r.deg/5)*5)+'° and '+((Math.floor(r.deg/5)*5+5)%360)+
+               '°. No guess spent.');
+      return;
+    }
+    sheetMsg('Radian couldn’t read that. Degrees: 210, 210°, 210 deg. '+
+             'Radians: 7pi/6, 7π/6, -π/3, 3π/2. A bare number is degrees. No guess spent.');
+    return;
+  }
+  const i=BY_DEG.get(r.deg);
+  if(i===undefined){ sheetMsg('That angle is not in the roster. No guess spent.'); return; }
+  commit(i,r.coterm);
+}
+function sheetMsg(t,cls){ const m=$('sheetMsg'); m.innerHTML='';
+  const s=document.createElement('span'); if(cls) s.className=cls; s.textContent=t; m.appendChild(s); }
+
+function commit(i,coterm){
+  const k=S.open; if(k<0) return;
+  const a=ANGLES[i];
+  const name=degStr(a.deg)+' ('+radStr(a.deg)+')';
+  const note=coterm ? ' — coterminal with what you typed' : '';
+  const already=S.cells.indexOf(i);
+  if(already>=0){
+    sheetMsg(name+' is already placed — row '+(Math.floor(already/3)+1)+', column '+(already%3+1)+
+             '. Each angle can be used once. No guess spent.');
+    return;
+  }
+  const r=critOf(Math.floor(k/3),true), c=critOf(k%3,false);
+  const rOK=r.t(a), cOK=c.t(a);
+  if(rOK&&cOK){
+    S.cells[k]=i; $('guess').value='';
+    chime(); closeSheet(); paint();
+    const el=$('cell'+k); if(el){ el.classList.add('lay'); setTimeout(()=>el.classList.remove('lay'),380); }
+    const v=valuesOf(a);
+    say(name+note+' — '+r.label+' ✓ · '+c.label+' ✓  (sin '+v.s+', cos '+v.c+')','yes');
+    saveState();
+    if(filled()===9) endGrid(true);
+    return;
+  }
+  /* The wrong-answer line says WHICH HALF failed, and then states the angle's own values. It
+     teaches, it makes a wrong guess feel like it bought something, and it cannot reveal an answer:
+     it tells the player facts about the angle THEY named, not about any angle they didn't. */
+  S.guesses++; S.dirty[k]=1; flat();
+  const v=valuesOf(a);
+  const line=name+' — '+r.label+' '+(rOK?'✓':'✗')+' · '+c.label+' '+(cOK?'✓':'✗');
+  sheetMsg(line+'  ·  sin '+v.s+', cos '+v.c+', tan '+v.t,'nope');
+  say(line,'nope');
+  paint(); saveState();
+  if(S.guesses>=9){ closeSheet(); endGrid(false); }
+}
+
+/* ============================================================================================
+   THE END OF A GRID, THE REVEAL PANEL AND SHARING
+   ============================================================================================ */
+let siteStreak=0, heaviest=0;
+function endGrid(perfect){
+  if(S.done) return;
+  S.done=true; saveState(); paint();
+  if(perfect) full();
+  if(LIVE){
+    /* dailyDone() is called when the grid ENDS, either way — 9/9 or out of guesses. A streak that
+       required a perfect grid would break for everybody in the first week and then mean nothing.
+       Showing up is the feat the streak pays for. */
+    const w=weight();
+    if(w>loadToday(SLUG+'.dbest')) saveToday(SLUG+'.dbest',w);
+    siteStreak=dailyDone();
+    $('sStreak').textContent=String(siteStreak);
+  }
+  track('grid_end',{filled:filled(),guesses:S.guesses,weight:weight(),heaviest:heaviest,
+                    mode:LIVE?'daily':'archive',typeahead:settings.type});
+  say(perfect ? 'Nine of nine. The circle is closed.'
+             : filled()+' of nine filled. Every answer is below.');
+  setTimeout(showReveal, perfect?900:400);
+}
+function esc(t){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+
+/* THE REVEAL PANEL IS THE POINT. Every valid angle for every cell, in degrees AND radians, with its
+   exact value where one exists and four decimals where one does not — whether the player scored
+   nine or zero. A player who filled two cells needs this more, not less. */
+function showReveal(){
+  const R=$('revInner'), parts=[];
+  parts.push('<h2 id="revTitle">'+filled()+' of nine</h2>');
+  parts.push('<p><b>Weight '+weight()+'</b> of a possible '+heaviest+' · '+S.guesses+
+             ' of nine guesses spent'+(settings.type?'':' · recall')+'.</p>');
+  parts.push('<textarea class="sharebox" id="shareTxt" rows="7" readonly aria-label="Your result, ready to copy"></textarea>');
+  parts.push('<div class="tools"><button class="btn primary" type="button" id="bCopy">Copy result</button>'+
+             '<button class="btn" type="button" id="bClose">Back to the grid</button></div>');
+
+  parts.push('<h3>The unit circle</h3>');
+  parts.push('<div class="circlebox">'+bigCircle()+'</div>');
+  parts.push('<p class="note">The sixteen angles every course asks you to know cold, in degrees '+
+    'outside and radians inside. Radian’s roster is wider than this: all 72 angles at 5° steps, '+
+    'because a criterion has to leave at least three answers in every cell and the sixteen alone '+
+    'cannot do that. The other 56 are still ordinary angles — you reason about each one from its '+
+    'quadrant and its reference angle, which is the skill the grid is actually testing.</p>');
+
+  for(let k=0;k<9;k++){
+    const r=critOf(Math.floor(k/3),true), c=critOf(k%3,false);
+    parts.push('<h3>'+esc(r.label)+' &nbsp;×&nbsp; '+esc(c.label)+
+               ' <span style="font-weight:600;opacity:.75">('+GRID.counts[k]+')</span></h3>');
+    const list=GRID.cands[k];                        // already in ascending degree order
+    const mine=S.cells[k];
+    parts.push('<div class="cellhead">'+miniCircle(list,mine)+
+      '<span class="cellwho">'+(mine>=0
+        ? ('You named <b>'+degStr(ANGLES[mine].deg)+'</b> — weight '+(6-ANGLES[mine].fame)+'.')
+        : 'You left this one open.')+
+      '<br>'+GRID.counts[k]+' of the 72 angles satisfy both. Each spoke is one of them'+
+      (mine>=0?'; yours is the long one.':'.')+'</span></div>');
+    parts.push('<ul class="ans">');
+    for(const i of list){
+      const a=ANGLES[i], v=valuesOf(a), is=(mine===i);
+      parts.push('<li'+(is?' class="mine"':'')+'><b>'+degStr(a.deg)+'</b> &nbsp;·&nbsp; <b>'+radStr(a.deg)+
+        '</b> &nbsp;·&nbsp; <span class="w">weight '+(6-a.fame)+'</span>'+
+        '<span class="v">sin '+v.s+' &nbsp; cos '+v.c+' &nbsp; tan '+v.t+
+        (v.exact?'':' &nbsp;<span style="opacity:.75">(no surd form)</span>')+'</span></li>');
+    }
+    parts.push('</ul>');
+  }
+
+  parts.push('<h3>How Radian is built</h3>');
+  parts.push('<p class="note"><b>Nothing here is remembered; all of it is derived.</b> Every angle’s '+
+    'quadrant, signs, reference angle and radian form come from integer arithmetic on its degree '+
+    'measure, and at every boot the game re-derives all of it from <i>Math.sin</i>, <i>Math.cos</i> '+
+    'and <i>Math.tan</i> and complains to the console if the two ever disagree. The exact-value '+
+    'table is checked the same way. There is no dataset to go stale and no freeze date: '+
+    'sin 210° was −½ before this game existed and will be after.</p>');
+  parts.push('<p class="note"><b>The roster is the 72 angles at 5° steps, and that is a deliberate '+
+    'choice.</b> The 24 classic exact-value angles are too few — two criteria over 24 angles '+
+    'routinely leave one or two candidates, and a cell with one answer is a quiz question wearing a '+
+    'puzzle’s clothes. Every grid is checked before it ships to you: at least three valid angles in '+
+    'every cell, and a perfect matching across all nine, since each angle can be used only once.</p>');
+  parts.push('<p class="note"><b>A bare number is degrees</b>, because that is what a student types. '+
+    'Radians need a π: <i>7pi/6</i>, <i>7π/6</i>, <i>-π/3</i>, <i>3π/2</i>, or an explicit '+
+    '<i>rad</i>. Degrees and radians land on the same angle — 30 and π/6 are one answer, not two. '+
+    'Coterminal input is accepted and told to you: −π/6 is 330°, 390° is 30°.</p>');
+  parts.push('<p class="note"><b>Weight is not rarity scoring.</b> Immaculate Grid’s rarity is a '+
+    '<i>social</i> measurement — how few of the other players thought of your answer — and knowing '+
+    'that needs a server counting everybody. Radian has no server and never phones home. Its Weight '+
+    'is an <i>editorial</i> measurement: 5 for an angle nobody memorises, 1 for one everybody has. '+
+    'It is the same on day one as on day one thousand, and it works on a plane. It can never '+
+    'surprise you by revealing that everyone else also thought of 240°.</p>');
+  parts.push('<p class="note">Radian ships <b>zero image files</b>; every diagram on this page is '+
+    'inline SVG drawn from the same numbers the grid is built on. Something wrong here? '+
+    '<a href="../">kreeda.games</a></p>');
+
+  R.innerHTML=parts.join('');
+  $('shareTxt').value=shareText();
+  $('bCopy').addEventListener('click',doCopy);
+  $('bClose').addEventListener('click',closeReveal);
+  $('reveal').hidden=false; $('reveal').classList.add('show'); $('reveal').scrollTop=0;
+  $('revTitle').setAttribute('tabindex','-1'); $('revTitle').focus();
+}
+function closeReveal(){ $('reveal').classList.remove('show'); $('reveal').hidden=true;
+  const el=$('cell0'); if(el) el.focus(); }
+
+/* The share grid encodes, per cell, exactly two bits: solved or not, and cleanly or not. It encodes
+   nothing about WHICH angle was named. The criteria are not secret — every player worldwide sees
+   the identical six the moment they open the page — so revealing which cells somebody found tells a
+   reader nothing they could not already see.
+   THEREFORE: Weight is never encoded per cell. A per-cell weight glyph would leak — telling a reader
+   that your answer to a three-answer cell was a weight-5 angle narrows it to one angle. Weight
+   appears only as a single total on the score line, where it belongs to no cell. */
+function shareText(){
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const a=KEY.split('-'), head='Kreeda · Radian · '+(+a[2])+' '+MON[+a[1]-1];
+  let rows='';
+  for(let i=0;i<3;i++){
+    for(let j=0;j<3;j++){
+      const k=i*3+j;
+      rows += S.cells[k]<0 ? '⬜' : (S.dirty[k] ? '🟨' : '🟦');
+    }
+    rows+='\n';
+  }
+  let score=filled()+'/9 · weight '+weight();
+  if(!settings.type) score+=' · recall';
+  if(LIVE && siteStreak>=2) score+=' · streak '+siteStreak+' 🔥';
+  if(!LIVE) score+=' · archive';
+  return head+'\n'+rows+score+'\nkreeda.games/radian/';
+}
+function doCopy(){
+  const t=shareText(), b=$('bCopy');
+  const ok=()=>{ b.textContent='Copied'; setTimeout(()=>b.textContent='Copy result',1400); };
+  function fallback(){
+    const ta=$('shareTxt'); ta.focus(); ta.select();
+    try{ document.execCommand('copy'); ok(); }catch(e){ b.textContent='Select and copy'; }
+  }
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok,fallback);
+    else fallback();
+  }catch(e){ fallback(); }
+}
+
+/* The one call into analytics.js, and deliberately the dumbest possible wrapper: if that file was
+   blocked, never loaded, or is doing nothing because we are on file://, this is a no-op and the
+   game cannot tell. Nothing in here is load-bearing. */
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+
+/* ============================================================================================
+   BOOT
+   ============================================================================================ */
+function applyTheme(){
+  const el=document.documentElement;
+  if(settings.theme==='auto') el.removeAttribute('data-theme'); else el.setAttribute('data-theme',settings.theme);
+  $('bTheme').textContent='Theme: '+settings.theme;
+}
+function boot(){
+  loadSettings(); applyTheme();
+  GRID=makeGrid(KEY);
+  heaviest=heaviestMatching(GRID.cands);
+  loadState();
+  buildGrid();
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const a=KEY.split('-');
+  $('datechip').textContent=(ARCHIVE?'Archive · ':'')+(+a[2])+' '+MON[+a[1]-1]+' '+a[0];
+  if(ARCHIVE) $('datechip').classList.add('arch');
+  $('asof').textContent='The roster is the '+N+' angles at 5° steps around the unit circle.';
+  siteStreak=LIVE ? (LS.get('kreeda.streak').split('|')[0]===dayKey()
+                      ? (+LS.get('kreeda.streak').split('|')[1]||0) : 0) : 0;
+  $('sStreak').textContent=String(siteStreak);
+  $('bSound').setAttribute('aria-pressed',settings.snd?'true':'false');
+  $('bSound').textContent='Sound '+(settings.snd?'on':'off');
+  $('bType').setAttribute('aria-pressed',settings.type?'true':'false');
+  $('bType').textContent='Typeahead '+(settings.type?'on':'off');
+  if(S.done) say(filled()+' of nine filled today. Tap “See every answer”.');
+  else if(filled()>0) say('Picking up where you left off.');
+  else say('Tap a square. Name an angle that fits both its row and its column — degrees or radians.');
+  paint();
+
+  $('guess').addEventListener('input',typeahead);
+  $('guess').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
+  $('bSubmit').addEventListener('click',submit);
+  $('bCancel').addEventListener('click',closeSheet);
+  $('scrim').addEventListener('click',closeSheet);
+  $('units').addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    const inp=$('guess'), s=b.getAttribute('data-ins');
+    const st=inp.selectionStart==null?inp.value.length:inp.selectionStart;
+    const en=inp.selectionEnd==null?inp.value.length:inp.selectionEnd;
+    inp.value=inp.value.slice(0,st)+s+inp.value.slice(en);
+    inp.focus(); inp.setSelectionRange(st+s.length,st+s.length); typeahead();
+  });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){
+    if(!$('reveal').hidden) closeReveal(); else closeSheet(); } });
+  $('bReveal').addEventListener('click',showReveal);
+  $('bSound').addEventListener('click',()=>{ settings.snd=settings.snd?0:1; saveSettings();
+    $('bSound').setAttribute('aria-pressed',settings.snd?'true':'false');
+    $('bSound').textContent='Sound '+(settings.snd?'on':'off'); if(settings.snd) chime(); });
+  $('bType').addEventListener('click',()=>{ settings.type=settings.type?0:1; saveSettings();
+    $('bType').setAttribute('aria-pressed',settings.type?'true':'false');
+    $('bType').textContent='Typeahead '+(settings.type?'on':'off'); typeahead(); });
+  $('bTheme').addEventListener('click',()=>{ settings.theme = settings.theme==='auto'?'light':
+    (settings.theme==='light'?'dark':'auto'); saveSettings(); applyTheme(); });
+  $('bHow').addEventListener('click',()=>say('Nine cells, nine guesses. Name an angle that fits '+
+    'both criteria — 210 or 7pi/6, either reads the same. Each angle can be used only once. '+
+    'Unreadable input, an angle that is not on the circle, and a repeat are all free; only a real '+
+    'angle that does not fit costs a guess. Weight rewards the answer nobody memorised.'));
+  /* Keep the sheet above the on-screen keyboard. visualViewport is the only honest source for this;
+     100vh lies on iOS the moment the keyboard opens. */
+  if(window.visualViewport){
+    const fit=()=>{ const vv=window.visualViewport;
+      const lift=Math.max(0, window.innerHeight-(vv.height+vv.offsetTop));
+      $('sheet').style.setProperty('bottom', (window.innerWidth<560? lift+'px' : ''));
+    };
+    window.visualViewport.addEventListener('resize',fit);
+    window.visualViewport.addEventListener('scroll',fit);
+  }
+  track('grid_start',{mode:LIVE?'daily':'archive',fallback:GRID.fallback?1:0,heaviest:heaviest});
+}
+
+/* ============================================================================================
+   AUDIT — dev only, not linked from anywhere. ?audit=N generates the next N days and reports.
+   It re-checks each day independently of the bitset path: candidates recomputed by filtering the
+   angle table through the criteria directly, and the matching re-run by Hopcroft–Karp rather than
+   the Kuhn used in generation. Two implementations agreeing is worth more than one asserting.
+   ============================================================================================ */
+function auditCands(rows,cols){
+  const out=[];
+  for(let i=0;i<3;i++) for(let j=0;j<3;j++){
+    const R=CRITERIA[rows[i]], C=CRITERIA[cols[j]], list=[];
+    for(let k=0;k<N;k++) if(R.t(ANGLES[k])&&C.t(ANGLES[k])) list.push(k);
+    out.push(list);
+  }
+  return out;
+}
+function auditMatching(cands){                     // Hopcroft–Karp; returns the matching size
+  const INF=1e9, matchC=new Array(9).fill(-1), matchA=new Array(N).fill(-1);
+  let res=0;
+  for(;;){
+    const dist=new Array(9).fill(INF), q=[];
+    for(let c=0;c<9;c++) if(matchC[c]<0){ dist[c]=0; q.push(c); }
+    let found=false;
+    for(let h=0;h<q.length;h++){ const c=q[h];
+      for(const a of cands[c]){ const c2=matchA[a];
+        if(c2<0) found=true; else if(dist[c2]===INF){ dist[c2]=dist[c]+1; q.push(c2); } } }
+    if(!found) break;
+    const dfs=c=>{ for(const a of cands[c]){ const c2=matchA[a];
+        if(c2<0 || (dist[c2]===dist[c]+1 && dfs(c2))){ matchC[c]=a; matchA[a]=c; return true; } }
+      dist[c]=INF; return false; };
+    for(let c=0;c<9;c++) if(matchC[c]<0 && dfs(c)) res++;
+  }
+  return res;
+}
+function audit(n){
+  const out={days:n,selfTest:SELFTEST.length,fallbacks:[],minCell:1e9,worst:null,maxCell:0,
+             sumMin:1e9,sumMax:0,noMatch:[],lowCell:[],mismatch:[],critUse:{}};
+  let k=dayKey(), tot=0;
+  for(let d=0;d<n;d++){
+    const g=makeGrid(k);
+    if(g.fallback) out.fallbacks.push(k);
+    const ic=auditCands(g.rows,g.cols), icounts=ic.map(l=>l.length);
+    for(let i=0;i<9;i++) if(icounts[i]!==g.counts[i]) out.mismatch.push(k+':'+i);
+    const mn=Math.min.apply(null,icounts), mx=Math.max.apply(null,icounts);
+    if(mn<out.minCell){ out.minCell=mn; out.worst=k; }
+    if(mx>out.maxCell) out.maxCell=mx;
+    const sum=icounts.reduce((a,b)=>a+b,0);
+    out.sumMin=Math.min(out.sumMin,sum); out.sumMax=Math.max(out.sumMax,sum);
+    tot+=mn;
+    if(mn<3) out.lowCell.push(k+':'+mn);
+    if(auditMatching(ic)!==9) out.noMatch.push(k);
+    for(const c of g.rows.concat(g.cols)){ const id=CRITERIA[c].id; out.critUse[id]=(out.critUse[id]||0)+1; }
+    const a=k.split('-'), t=new Date(+a[0],+a[1]-1,+a[2]); t.setDate(t.getDate()+1); k=dayKey(t);
+  }
+  out.meanMin=+(tot/n).toFixed(2);
+  out.ok = out.fallbacks.length===0 && out.lowCell.length===0 && out.noMatch.length===0 &&
+           out.mismatch.length===0 && out.selfTest===0;
+  console.log('[radian audit]', JSON.stringify(out));
+  window.__audit=out;
+  return out;
+}
+try{ boot(); }catch(e){ console.error('[radian] boot failed',e); }
+if(params.get('audit')) audit(Math.max(1,Math.min(2000,+params.get('audit')||365)));
+</script>
+<script src="../analytics.js"></script>
+</body>
+</html>

@@ -27,7 +27,11 @@ Open [`index.html`](index.html) at the repo root for the [Kreeda](https://kreeda
 | [Setu](setu/index.html) | A daily nine-cell grid from the Rāmāyaṇa. Each row and column carries a criterion — a kāṇḍa, a lineage, a class of being, a deed — and every cell wants a being who satisfies both. Names are matched however you spell them: IAST with full diacritics, Devanāgarī, or the regional name you actually grew up saying, so **Hanumān**, `हनुमान्`, Anjaneya and Maruti are all the same answer. The day's grid is generated from the date and is guaranteed solvable — not merely non-empty, but with a real assignment that uses each being once. However you finish, the reveal panel shows every valid answer for every cell with a gloss and a sarga-level citation, so a grid you failed is still a grid you learned something from. | [kreeda.games/setu](https://kreeda.games/setu/) |
 | [Maidan](maidan/index.html) | The same nine cells, played on cricket — countries, formats, eras and career milestones. Every criterion is a **monotone fact**: an event that happened or a threshold crossed, never a ranking or a form table, so the grid can fall out of date but it cannot become wrong. Ships a visible `DATA_AS_OF` date and no image files at all — factual statistics are free to use, crests and kit are not. | [kreeda.games/maidan](https://kreeda.games/maidan/) |
 
-All thirteen are also playable offline straight from the file system — clone the repo and open any `<game>/index.html` directly, no server required.
+| [Valence](valence/index.html) | The grid as a chemistry revision aid. Nine cells, an element in each, and criteria drawn from the things a syllabus actually asks about — group and family, block, state at room temperature, whether the symbol comes from the English name or the Latin one. Answer with the name or the symbol, in any case. | [kreeda.games/valence](https://kreeda.games/valence/) |
+| [Quanta](quanta/index.html) | The same grid over physical quantities: vector or scalar, base unit or derived, which dimensions appear in it, which branch it belongs to. The reveal gives the SI unit for every answer, including the ones you missed. | [kreeda.games/quanta](https://kreeda.games/quanta/) |
+| [Radian](radian/index.html) | Trigonometry on the unit circle — quadrants, signs, reference angles and exact values. Answer in whichever notation you think in: `30`, `30°` and `π/6` are the same angle, and the reveal shows every answer in both. | [kreeda.games/radian](https://kreeda.games/radian/) |
+
+All sixteen are also playable offline straight from the file system — clone the repo and open any `<game>/index.html` directly, no server required.
 
 ## Running a game
 
@@ -45,7 +49,8 @@ No server required — just open the file directly, or serve the repo root with 
 Five games — [Drift](drift/index.html), [Chroma Blocks](chroma-blocks/index.html), [Carrom](carrom/index.html),
 [Deadpoint](deadpoint/index.html) and [Fairway Four](fairway-four/index.html) — carry a **daily** alongside
 their normal mode: today's road, today's bag, today's board, today's problem, today's round.
-[Setu](setu/index.html) and [Maidan](maidan/index.html) are daily all the way down: one grid a day and
+[Setu](setu/index.html), [Maidan](maidan/index.html), [Valence](valence/index.html),
+[Quanta](quanta/index.html) and [Radian](radian/index.html) are daily all the way down: one grid a day and
 nothing else, the way the format wants to be played.
 
 The whole thing turns on one property. The day's challenge is drawn from `mulberry32(daySeed(dayKey()))`,
@@ -77,7 +82,7 @@ from one place, not because they import from one.
 
 ## Offline
 
-[`sw.js`](sw.js) is a cache-first service worker that precaches the landing page and all thirteen games, so
+[`sw.js`](sw.js) is a cache-first service worker that precaches the landing page and all sixteen games, so
 a hosted copy keeps working with the network gone and the install promised by
 [`manifest.webmanifest`](manifest.webmanifest) is a real one.
 
