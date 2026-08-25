@@ -196,6 +196,36 @@ without network access the page won't render.
 
 Every other game is fully offline-complete in its single file.
 
+The zip contains only `index.html`, so the relative `../analytics.js` every page loads simply 404s there.
+That is deliberate and harmless — a missing `<script src>` does not throw, every call site is guarded, and
+an itch.io build reporting into this site's own GA property would poison those numbers anyway. Verified by
+serving an extracted zip on its own and driving it: no page errors, game fully playable.
+
+## Publishing the daily grids
+
+The five daily grids — [Setu](setu/index.html), [Maidan](maidan/index.html), [Valence](valence/index.html),
+[Quanta](quanta/index.html) and [Radian](radian/index.html) — are the ones worth listing in directories,
+because a daily is the only thing those directories index.
+
+They are submission-ready as they stand: complete `<title>`, meta description, canonical, OG/Twitter tags,
+`VideoGame` JSON-LD, a 1200×630 OG image in [`assets/`](assets/), and **no external network dependency at
+all**. Each is 81–176 KB, comfortably inside any portal's first-playable limit.
+
+Two kinds of destination, costing very different things:
+
+- **Daily-game directories** — [Dailydles](https://dailydles.com/submit), [Playlin](https://playlin.io/),
+  [Thinky Games](https://thinkygames.com/dailies/). These cost nothing architecturally: they link to
+  `kreeda.games/<game>/`, so there is no fork, no SDK, and no second copy to keep in sync. Dailydles states
+  its bar as free browser games with a daily puzzle and no account wall, which describes this repo exactly.
+  Read each destination's own terms before submitting; they are not reproduced here and they change.
+- **Game portals** — CrazyGames and Poki pay real money but require their SDK, which breaks the
+  single-file, dependency-free, offline-capable property the rest of this repo is built on. That is a
+  deliberate fork, not a submission: keep `kreeda.games` SDK-free and canonical, and instrument a copy.
+
+Where a destination allows it, submit the **canonical URL** rather than a re-hosted copy. The daily is the
+same puzzle for everyone on a given date, so a second copy on another domain fragments the shared answer
+instead of spreading it — which is the one property that makes a daily worth playing socially.
+
 ## How these are built
 
 Every game in this repo started as a written spec — a plain-English description of the feel, the rules,
