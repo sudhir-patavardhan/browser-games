@@ -1,0 +1,2004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quanta — Kreeda</title>
+<meta name="description" content="A daily physics grid. Three criteria down, three across, nine cells, nine guesses — name a physical quantity for every square. Vectors, SI units, dimensional formulae, and every answer revealed at the end.">
+<link rel="canonical" href="https://kreeda.games/quanta/">
+<meta name="theme-color" content="#1b1f4b">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/quanta/">
+<meta property="og:title" content="Quanta — Kreeda">
+<meta property="og:description" content="A daily physics grid. Three criteria down, three across, nine cells, nine guesses — name a physical quantity for every square.">
+<meta property="og:image" content="https://kreeda.games/assets/quanta-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Quanta — Kreeda">
+<meta name="twitter:description" content="A daily physics grid. Three criteria down, three across, nine cells, nine guesses — name a physical quantity for every square.">
+<meta name="twitter:image" content="https://kreeda.games/assets/quanta-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Quanta","description":"A daily physics grid. Three criteria down, three across, nine cells, nine guesses — name a physical quantity for every square before the guesses run out.","url":"https://kreeda.games/quanta/","image":"https://kreeda.games/assets/quanta-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+<style>
+/* ============================ tokens ============================
+   A spectrum on a dark bench: indigo night, a cyan emission line, a sodium-amber one. Every colour
+   lives here once. Light is the base; the two dark blocks below only REDEFINE these same names, so
+   no rule downstream ever needs to know which theme it is painting in. */
+:root{
+  --deep:#e9ecf7;   --deep-2:#dfe4f4;   --wash:#f6f8fe;
+  --line-hi:#1d4ed8; --line-lo:#0e7490;
+  --ink:#111634;    --ink-dim:#4a5170;  --rule:rgba(30,40,90,.32);
+  --panel:#ffffff;  --panel-2:#eef1fa;  --shade:rgba(12,16,40,.55);
+  --hdbg:#232a5c;   --hdink:#f2f5ff;    --cellbg:#dfe4f4;
+  --spark:#0b4fd6;  --glow:#7a3ecf;
+  --ok:#166534;     --no:#a32015;
+}
+/* The default "system" theme stamps nothing on <html>, so prefers-color-scheme is the only signal.
+   Guarded with :not([data-theme="light"]) so an explicit light choice still wins over the media query. */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --deep:#161b3d;  --deep-2:#0c0f26;  --wash:#0a0d20;
+    --line-hi:#5fd8ff; --line-lo:#ffc46b;
+    --ink:#e8ecff;   --ink-dim:#a3abd4; --rule:rgba(190,200,240,.30);
+    --panel:#1a2049; --panel-2:#232a5c; --shade:rgba(0,0,0,.68);
+    --hdbg:#0c0f26;  --hdink:#e8ecff;   --cellbg:#232a5c;
+    --spark:#7fdcff; --glow:#c39bff;
+    --ok:#7ee0a0;    --no:#ff9b86;
+  }
+}
+:root[data-theme="dark"]{
+  --deep:#161b3d;  --deep-2:#0c0f26;  --wash:#0a0d20;
+  --line-hi:#5fd8ff; --line-lo:#ffc46b;
+  --ink:#e8ecff;   --ink-dim:#a3abd4; --rule:rgba(190,200,240,.30);
+  --panel:#1a2049; --panel-2:#232a5c; --shade:rgba(0,0,0,.68);
+  --hdbg:#0c0f26;  --hdink:#e8ecff;   --cellbg:#232a5c;
+  --spark:#7fdcff; --glow:#c39bff;
+  --ok:#7ee0a0;    --no:#ff9b86;
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  /* An explicit background is mandatory: the host paints its own ground behind the page and a
+     transparent body would borrow the host's theme rather than ours. */
+  background:
+    radial-gradient(90% 45% at 50% -5%, var(--glow) 0%, transparent 60%),
+    linear-gradient(180deg, var(--wash) 0%, var(--deep-2) 30%, var(--deep) 100%);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  min-height:100vh;
+  /* overflow-x hidden is NOT the fix for wide content — every wide child scrolls in its own box.
+     This is only a belt-and-braces guard so a rounding error can never rock the whole page sideways. */
+  overflow-x:hidden;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{ max-width:560px; margin:0 auto; padding: max(10px, env(safe-area-inset-top)) 12px
+        calc(24px + env(safe-area-inset-bottom)); }
+
+/* ============================ chrome ============================ */
+header.top{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:6px 0 10px; }
+h1{ font-size:26px; font-weight:900; letter-spacing:.5px; margin:0; color:var(--ink); }
+h1 small{ display:block; font-size:11px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase;
+    color:var(--ink-dim); margin-top:2px; }
+.datechip{ margin-left:auto; font-size:12px; font-weight:800; color:var(--hdink);
+    border:1px solid var(--rule); border-radius:999px; padding:4px 10px; background:var(--hdbg); }
+.datechip.arch{ color:var(--line-hi); border-color:var(--line-hi); }
+
+.scorebar{ display:flex; gap:8px; align-items:stretch; margin:0 0 10px; }
+.stat{ flex:1; background:var(--panel); border:1px solid var(--rule); border-radius:12px;
+  padding:7px 9px; min-width:0; }
+.stat b{ display:block; font-size:19px; font-weight:900; line-height:1.1; }
+.stat span{ display:block; font-size:10px; font-weight:700; letter-spacing:.7px; text-transform:uppercase;
+  color:var(--ink-dim); margin-top:1px; }
+
+/* ============================ the grid ============================
+   4x4: a corner, three column headers, three row headers, nine cells. aspect-ratio keeps it square so
+   the headers never reflow the cells when a longer criterion lands tomorrow. */
+.gridwrap{ overflow-x:auto; }                 /* the one place a narrow phone may pan, not the page */
+#grid{
+  display:grid; grid-template-columns:80px repeat(3,1fr); grid-template-rows:62px repeat(3,1fr);
+  gap:5px; width:min(94vw,420px); margin:0 auto; aspect-ratio:1;
+}
+@media (min-width:560px){ #grid{ width:min(94vw,480px); grid-template-columns:100px repeat(3,1fr);
+  grid-template-rows:68px repeat(3,1fr); } }
+.corner{ display:flex; align-items:center; justify-content:center; }
+.corner svg{ width:100%; height:100%; opacity:.9; }
+.hd{
+  background:var(--hdbg); border:1px solid var(--rule); border-radius:10px;
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  font-size:10.5px; line-height:1.15; font-weight:800; letter-spacing:.2px;
+  color:var(--hdink); padding:4px 3px; cursor:pointer; overflow:hidden;
+  min-width:0; hyphens:auto; overflow-wrap:anywhere;
+}
+.hd:focus-visible{ outline:3px solid var(--spark); outline-offset:2px; }
+.cell{
+  position:relative; background:var(--cellbg);
+  border:1px solid var(--rule); border-radius:10px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+  padding:6px 4px; cursor:pointer; min-width:0; overflow:hidden;
+  font-size:12px; font-weight:700; color:var(--ink);
+  transition:background .18s ease, transform .12s ease;
+}
+.cell:focus-visible{ outline:3px solid var(--spark); outline-offset:2px; }
+.cell .plus{ font-size:22px; font-weight:400; color:var(--ink-dim); }
+/* A filled cell is a bright emission line on the panel. The corner notch is the point: state is never
+   colour-only, so a red/green-blind player still reads "placed" from the geometry. */
+.cell.on{ background:var(--panel); color:var(--ink); cursor:default; }
+.cell.on::after{
+  content:''; position:absolute; top:0; right:0; width:0; height:0;
+  border-top:14px solid var(--spark); border-left:14px solid transparent;
+  border-top-right-radius:9px;
+}
+.cell .nm{ font-size:11.5px; font-weight:800; line-height:1.15; overflow-wrap:anywhere; }
+.cell .un{ font-size:10px; font-weight:700; color:var(--ink-dim); margin-top:2px; }
+.cell .wt{ position:absolute; left:4px; bottom:3px; font-size:9px; font-weight:800; color:var(--ink-dim); }
+.cell .hint{
+  position:absolute; right:3px; bottom:1px; font-size:11px; font-weight:800; line-height:1;
+  color:var(--ink-dim); padding:4px 5px; border:0; background:none; cursor:pointer;
+}
+.cell.on .hint{ display:none; }
+@media (prefers-reduced-motion:no-preference){
+  .cell.lay{ animation:lay .34s ease; }
+  @keyframes lay{ 0%{ transform:scale(.9); } 60%{ transform:scale(1.04); } 100%{ transform:scale(1); } }
+}
+
+.msg{ min-height:34px; margin:10px auto 0; max-width:min(94vw,480px); font-size:13px; font-weight:700;
+  line-height:1.35; text-align:center; color:var(--ink); }
+.msg .yes{ color:var(--ok); } .msg .nope{ color:var(--no); }
+
+.tools{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:12px 0 6px; }
+button.btn{
+  font:inherit; font-size:13px; font-weight:800; letter-spacing:.2px;
+  background:var(--panel); color:var(--ink); border:1px solid var(--rule);
+  border-radius:11px; padding:10px 14px; min-height:44px; cursor:pointer;
+}
+button.btn:focus-visible{ outline:3px solid var(--spark); outline-offset:2px; }
+button.btn.primary{ background:var(--hdbg); color:var(--hdink); border-color:var(--rule); }
+button.btn[aria-pressed="true"]{ background:var(--panel-2); }
+
+footer.foot{ margin:18px auto 0; max-width:min(94vw,480px); font-size:11px; line-height:1.6;
+  color:var(--ink); text-align:center; }
+footer.foot a{ color:var(--ink); }
+
+/* the gaps notice. Persistent, dismissible, and deliberately not styled as an error — a dataset with
+   holes in it is a fact about the game, not a fault of the player's. */
+.stale{ background:var(--panel-2); border:1px solid var(--rule); border-radius:12px; padding:10px 12px;
+  font-size:12px; line-height:1.45; color:var(--ink); margin:0 0 10px; display:none; }
+.stale.show{ display:flex; gap:10px; align-items:flex-start; }
+.stale button{ margin-left:auto; flex:0 0 auto; font:inherit; font-size:16px; font-weight:800;
+  background:none; border:0; color:var(--ink-dim); cursor:pointer; padding:0 4px; min-height:32px; }
+
+/* ============================ bottom sheet ============================
+   A text field inside a 100px cell loses a fight with the mobile keyboard every time, so the input
+   lives in a sheet pinned to the bottom and re-anchored off visualViewport when the keyboard opens. */
+.scrim{ position:fixed; inset:0; background:var(--shade); opacity:0; pointer-events:none;
+  transition:opacity .18s ease; z-index:40; }
+.scrim.show{ opacity:1; pointer-events:auto; }
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:50;
+  background:var(--panel); border-top:1px solid var(--rule);
+  border-radius:18px 18px 0 0; padding:14px 14px calc(14px + env(safe-area-inset-bottom));
+  transform:translateY(110%); transition:transform .22s ease;
+  max-height:88vh; overflow-y:auto;
+}
+.sheet.show{ transform:translateY(0); }
+@media (min-width:560px){
+  .sheet{ left:50%; right:auto; bottom:auto; top:50%; width:min(94vw,460px);
+    transform:translate(-50%,-40%) scale(.96); opacity:0; border-radius:18px; border:1px solid var(--rule); }
+  .sheet.show{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+}
+@media (prefers-reduced-motion:reduce){
+  .sheet,.scrim{ transition:none; }
+}
+.sheet h2{ font-size:13px; margin:0 0 8px; font-weight:800; letter-spacing:.3px; color:var(--ink-dim);
+  text-transform:uppercase; }
+.crit{ font-size:15px; font-weight:800; line-height:1.35; margin:0 0 2px; }
+.crit em{ font-style:normal; color:var(--ink-dim); font-size:12px; font-weight:800; letter-spacing:1px;
+  text-transform:uppercase; display:inline-block; min-width:52px; }
+.sheetmeta{ font-size:12px; color:var(--ink-dim); font-weight:700; margin:9px 0 6px; }
+.sheet input[type=text]{
+  width:100%; font:inherit; font-size:16px; font-weight:700;  /* 16px or iOS zooms the page on focus */
+  padding:12px 12px; border-radius:11px; border:1px solid var(--rule);
+  background:var(--panel-2); color:var(--ink); min-height:48px;
+}
+.sheet input[type=text]:focus{ outline:3px solid var(--spark); outline-offset:1px; }
+.ta{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:5px; }
+.ta li button{ width:100%; text-align:left; font:inherit; font-size:14px; font-weight:700;
+  padding:10px 12px; min-height:44px; border-radius:10px; border:1px solid var(--rule);
+  background:var(--panel-2); color:var(--ink); cursor:pointer; }
+.ta li button small{ display:block; font-size:11px; font-weight:600; color:var(--ink-dim); }
+.chip{ display:inline-block; font-size:9px; font-weight:900; letter-spacing:.8px; text-transform:uppercase;
+  border:1px solid var(--rule); border-radius:999px; padding:1px 6px; margin-left:5px; color:var(--ink-dim);
+  vertical-align:1px; }
+.chip.const{ border-color:var(--spark); color:var(--spark); }
+.disamb{ margin:9px 0 0; font-size:13px; font-weight:700; }
+.disamb .row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.disamb .row button{ font:inherit; font-size:13px; font-weight:800; padding:9px 11px; min-height:44px;
+  border-radius:10px; border:1px solid var(--rule); background:var(--panel-2); color:var(--ink); cursor:pointer; }
+.sheetmsg{ min-height:20px; font-size:13px; font-weight:700; margin-top:9px; line-height:1.4; }
+.sheetbtns{ display:flex; gap:8px; margin-top:11px; }
+.sheetbtns .btn{ flex:1; }
+
+/* ============================ reveal ============================ */
+.reveal{ position:fixed; inset:0; z-index:60; background:var(--panel); overflow-y:auto;
+  display:none; padding: max(14px, env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom)); }
+.reveal.show{ display:block; }
+.reveal .inner{ max-width:620px; margin:0 auto; }
+.reveal h2{ font-size:22px; margin:2px 0 4px; font-weight:900; }
+.reveal h3{ font-size:13px; margin:20px 0 6px; font-weight:900; line-height:1.35;
+  padding-bottom:5px; border-bottom:1px solid var(--rule); }
+.reveal p{ font-size:13px; line-height:1.55; margin:8px 0; }
+.reveal .note{ font-size:12px; color:var(--ink-dim); line-height:1.55; }
+.ans{ list-style:none; margin:0; padding:0; }
+.ans li{ font-size:12.5px; line-height:1.45; padding:6px 0; border-bottom:1px dashed var(--rule); }
+.ans li b{ font-size:13px; }
+.ans li.mine{ background:var(--panel-2); border-radius:8px; padding-left:7px; padding-right:7px; }
+.ans li .g{ display:block; color:var(--ink-dim); }
+.ans li .u{ font-weight:800; color:var(--spark); white-space:nowrap; }
+.ans li .w{ font-weight:800; color:var(--ink-dim); }
+.sharebox{ width:100%; font:inherit; font-size:13px; line-height:1.5; font-family:ui-monospace,SFMono-Regular,
+  Menlo,Consolas,monospace; padding:10px; border-radius:11px; border:1px solid var(--rule);
+  background:var(--panel-2); color:var(--ink); resize:none; }
+.sr{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0);
+  white-space:nowrap; border:0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="stale" id="stale" role="status">
+    <span id="staleTxt"></span>
+    <button type="button" id="staleX" aria-label="Dismiss">&times;</button>
+  </div>
+
+  <header class="top">
+    <h1>Quanta<small>Kreeda · Daily</small></h1>
+    <span class="datechip" id="datechip"></span>
+  </header>
+
+  <div class="scorebar">
+    <div class="stat"><b id="sCells">0/9</b><span>Filled</span></div>
+    <div class="stat"><b id="sGuess">9</b><span>Guesses left</span></div>
+    <div class="stat"><b id="sWeight">0</b><span>Weight</span></div>
+    <div class="stat"><b id="sStreak">0</b><span>Streak</span></div>
+  </div>
+
+  <div class="gridwrap">
+    <div id="grid" role="grid" aria-label="Today's physics grid, three criteria down and three across"></div>
+  </div>
+
+  <p class="msg" id="msg" role="status" aria-live="polite"></p>
+
+  <div class="tools">
+    <button class="btn" type="button" id="bHow">How to play</button>
+    <button class="btn" type="button" id="bSound" aria-pressed="true">Sound on</button>
+    <button class="btn" type="button" id="bType" aria-pressed="true">Typeahead on</button>
+    <button class="btn" type="button" id="bTheme">Theme: auto</button>
+    <button class="btn primary" type="button" id="bReveal" hidden>See every answer</button>
+  </div>
+
+  <footer class="foot">
+    <span id="asof"></span><br>
+    Definitions, SI units and dimensional formulae, compiled by hand from public references.
+    No images, no logos — <a href="../">Kreeda</a>
+  </footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <h2 id="sheetTitle">Name a physical quantity</h2>
+  <p class="crit"><em>Row</em> <span id="critRow"></span></p>
+  <p class="crit"><em>Column</em> <span id="critCol"></span></p>
+  <p class="sheetmeta" id="sheetMeta"></p>
+  <label class="sr" for="guess">Type the name of a physical quantity</label>
+  <input type="text" id="guess" autocapitalize="none" autocorrect="off" autocomplete="off"
+         spellcheck="false" inputmode="text" enterkeyhint="go" placeholder="e.g. angular momentum">
+  <div class="disamb" id="disamb" hidden></div>
+  <ul class="ta" id="ta"></ul>
+  <p class="sheetmsg" id="sheetMsg" role="status" aria-live="polite"></p>
+  <div class="sheetbtns">
+    <button class="btn" type="button" id="bCancel">Cancel</button>
+    <button class="btn primary" type="button" id="bSubmit">Submit</button>
+  </div>
+</section>
+
+<section class="reveal" id="reveal" role="dialog" aria-modal="true" aria-labelledby="revTitle" hidden>
+  <div class="inner" id="revInner"></div>
+</section>
+
+<script>
+'use strict';
+/* ============================================================================================
+   QUANTA — a daily physics grid.  One file, no build, no network, no images.  Opens off a disk.
+
+   The whole game rests on one idea, borrowed from CRICKET_GRID.md §3.1 and worth restating here so
+   the next person to edit the data cannot miss it:
+
+     EVERY CRITERION IS A STABLE FACT — a definition, an SI classification, a dimensional formula.
+     Never a ranking, never "most" or "largest" or "most important".
+
+   Physics is unusually kind to this rule: whether momentum is a vector, whether the pascal honours
+   a person, and what the dimensional formula of magnetic flux is are not going to change. What CAN
+   go wrong is a tag that is simply WRONG, and that failure is worse than a missing one: a missing
+   tag only rejects a correct answer and says so, while a wrong tag also ACCEPTS an incorrect one and
+   the player cannot tell which failure they are looking at. Where a fact could not be confirmed the
+   tag was left OFF. See the reveal panel's data note.
+   ============================================================================================ */
+
+/* ---- Kreeda daily contract — see /DAILY.md. Copied, not imported: the game stays one file. ---- */
+const SLUG='quanta';
+function dayKey(d){ d=d||new Date(); const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function prevDayKey(k){ const a=k.split('-'), t=new Date(+a[0],+a[1]-1,+a[2]);
+  t.setDate(t.getDate()-1); return dayKey(t); }
+function daySeed(k){ let h=5381; for(let i=0;i<k.length;i++) h=(h*33 ^ k.charCodeAt(i))|0; return h>>>0; }
+function mulberry32(a){ return function(){ a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a);
+  t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+
+const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+
+/* a day-stamped value: returns 0 unless the stamp is today */
+function loadToday(key){ const s=LS.get(key), i=s.indexOf('|');
+  return (i<0 || s.slice(0,i)!==dayKey()) ? 0 : (+s.slice(i+1)||0); }
+function saveToday(key,v){ LS.set(key, dayKey()+'|'+Math.round(v)); }
+
+/* consecutive-days counter against one key. Same day = no change; yesterday = +1; older = reset to 1. */
+function bumpStreak(key){
+  const s=LS.get(key), i=s.indexOf('|'), last=i<0?'':s.slice(0,i), n=i<0?0:(+s.slice(i+1)||0);
+  const today=dayKey(), count = last===today ? (n||1) : (last===prevDayKey(today) ? n+1 : 1);
+  LS.set(key, today+'|'+count); return count;
+}
+
+/* call once when a DAILY run is completed — not on every game over, not in practice mode */
+function dailyDone(){
+  const today=dayKey(), k='kreeda.daily.'+today;
+  const had=LS.get(k).split(',').filter(Boolean);
+  if(!had.includes(SLUG)) LS.set(k, had.concat(SLUG).join(','));
+  bumpStreak(SLUG+'.streak');
+  return bumpStreak('kreeda.streak');            // site-wide, and the number worth showing
+}
+
+/* ============================ name normalisation ============================
+   RAMAYANA_GRID.md §3.1's architecture decision, unchanged: the runtime normaliser is deliberately
+   small and conservative, and ambiguity is absorbed by a hand-curated `alt` list on each quantity.
+   Every blanket transformation fires on EVERY name in the roster, so each one is a collision risk;
+   every alias fires on exactly one quantity, so it is free. When in doubt, write an alias.
+
+   The Indic folds are kept verbatim from the other Kreeda grids so the pipeline stays one shared,
+   audited thing across the repo; on English physics vocabulary they are simply consistent noise
+   (work -> vork, charge -> carge) applied identically to input and to canonical names. The
+   honorific step is the one omission: no physical quantity is called "Shri Torque". */
+const DEV_CONS={ 'क':'k','ख':'k','ग':'g','घ':'g','ङ':'n','च':'c','छ':'c','ज':'j','झ':'j','ञ':'n',
+  'ट':'t','ठ':'t','ड':'d','ढ':'d','ण':'n','त':'t','थ':'t','द':'d','ध':'d','न':'n',
+  'प':'p','फ':'p','ब':'b','भ':'b','म':'m','य':'y','र':'r','ल':'l','व':'v','ळ':'l',
+  'श':'s','ष':'s','स':'s','ह':'h','क़':'k','ख़':'k','ग़':'g','ज़':'j','ड़':'d','ढ़':'d','फ़':'f' };
+const DEV_MATRA={ 'ा':'a','ि':'i','ी':'i','ु':'u','ू':'u','ृ':'ri','ॄ':'ri','े':'e','ै':'ai','ो':'o','ौ':'au' };
+const DEV_VOWEL={ 'अ':'a','आ':'a','इ':'i','ई':'i','उ':'u','ऊ':'u','ऋ':'ri','ए':'e','ऐ':'ai','ओ':'o','औ':'au' };
+function devToAscii(s){
+  let out='', pend='';
+  const flush=()=>{ out+=pend; pend=''; };
+  for(const ch of s){
+    if(DEV_CONS[ch]!==undefined){ flush(); out+=DEV_CONS[ch]; pend='a'; }
+    else if(DEV_MATRA[ch]!==undefined){ pend=DEV_MATRA[ch]; }
+    else if(ch==='्'){ pend=''; }                       // virāma cancels the inherent vowel
+    else if(DEV_VOWEL[ch]!==undefined){ flush(); out+=DEV_VOWEL[ch]; }
+    else if(ch==='ं'||ch==='ँ'){ flush(); out+='m'; }   // anusvāra / candrabindu
+    else if(ch==='ः'){ flush(); out+='h'; }             // visarga
+    else { flush(); }                                   // avagraha, daṇḍa, ZWJ, digits, spaces
+  }
+  flush(); return out;
+}
+function norm(s){
+  if(!s) return '';
+  // 1. Devanāgarī → plain ASCII, only if any Devanāgarī is present
+  if(/[ऀ-ॿ]/.test(s)) s = devToAscii(s);
+  // 2. decompose, then drop every combining mark. One line folds the whole diacritic problem —
+  //    Ångström, Ampère and Poincaré all fall out as plain ASCII with no table to maintain.
+  s = s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+  // 3. case
+  s = s.toLowerCase();
+  // 4. letters only — drops spaces, hyphens, periods, apostrophes, digits. `p.d.` → `pd`.
+  s = s.replace(/[^a-z]/g, '');
+  // 5. Anglo long vowels  (speed / spead, ohmmeter / ohmeter handled below)
+  s = s.replace(/ee/g, 'i').replace(/oo/g, 'u');
+  // 6. w → v
+  s = s.replace(/w/g, 'v');
+  // 7. x → ks   (flux → fluks)
+  s = s.replace(/x/g, 'ks');
+  // 8. aspirates and sibilants collapse. Order matters: ksh before sh.
+  s = s.replace(/ksh/g, 'ks')
+       .replace(/chh?/g, 'c')
+       .replace(/sh/g, 's')
+       .replace(/kh/g, 'k').replace(/gh/g, 'g').replace(/jh/g, 'j')
+       .replace(/th/g, 't').replace(/dh/g, 'd')
+       .replace(/ph/g, 'p').replace(/bh/g, 'b');
+  // 9. collapse any run of the same letter (mass / mas, permittivity / permitivity)
+  s = s.replace(/(.)\1+/g, '$1');
+  // 10. drop a single trailing 'a' — inertia / inerti, alpha / alp. Applied to both sides, so it is
+  //     a fold and not a loss.
+  s = s.replace(/a$/, '');
+  return s;
+}
+
+/* A LIGHTER fold, for the typeahead only. norm() is built for resolution and is deliberately lossy:
+   it drops a trailing 'a' and collapses doubled letters, so a two-character prefix can disappear.
+   Prefix matching needs the letters as typed, minus case and diacritics — and nothing here ever
+   touches validation, so its looseness cannot let a wrong answer through. */
+function soft(s){ return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z]/g,''); }
+
+/* The RAW symbol key: letters only, lower-cased, and NONE of norm()'s folds. It exists because
+   norm() maps `w` → `v`, which would turn the symbol for work into the symbol for velocity. Symbols
+   are matched on this, never on norm(). */
+function rawKey(s){ return (s||'').toLowerCase().replace(/[^a-z]/g,''); }
+
+/* Damerau–Levenshtein, bounded. At ~700 keys a full scan is a fraction of a millisecond and an
+   index would be more code and one more thing to get wrong. */
+function dl(a,b,cap){
+  const n=a.length, m=b.length;
+  if(Math.abs(n-m)>cap) return cap+1;
+  let prev2=null, prev=new Array(m+1), cur=new Array(m+1);
+  for(let j=0;j<=m;j++) prev[j]=j;
+  for(let i=1;i<=n;i++){
+    cur[0]=i; let best=cur[0];
+    for(let j=1;j<=m;j++){
+      const c = a.charCodeAt(i-1)===b.charCodeAt(j-1) ? 0 : 1;
+      let v = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+c);
+      if(i>1 && j>1 && a.charCodeAt(i-1)===b.charCodeAt(j-2) && a.charCodeAt(i-2)===b.charCodeAt(j-1))
+        v = Math.min(v, prev2[j-2]+1);
+      cur[j]=v; if(v<best) best=v;
+    }
+    if(best>cap) return cap+1;
+    prev2=prev; prev=cur; cur=new Array(m+1);
+  }
+  return prev[m];
+}
+function fuzzCap(k){ return k.length<=4 ? 0 : (k.length<=7 ? 1 : 2); }
+
+/* ============================================================================================
+   THE ROSTER — physical quantities, and a short bench of physical constants
+   ============================================================================================
+   Everything a cell can want is a PHYSICAL QUANTITY: something with a name, an SI unit and a
+   dimensional formula. Alongside them sit twelve named CONSTANTS (c, G, h, e, g, k_B, R, N_A, ε₀,
+   μ₀, σ, R∞). Constants are physical quantities too — they have units and dimensions like anything
+   else — but they are a visibly different kind of thing, so every one of them carries a `const`
+   chip in the typeahead and in the reveal panel. A player is never left guessing what a cell wants.
+
+   Schema:
+     id      stable slug. Saves store these. NEVER rename — a rename silently invalidates every
+             in-progress grid in the world.
+     name    canonical display form.
+     sym     the usual symbol. DISPLAY ONLY — it is never a lookup key. F, E, p and V are each
+             several quantities, and resolving a bare symbol silently would be the worst bug
+             available in this game. See SYMS below for how symbols are actually handled.
+     unit    SI unit as written; uname its spelled-out name.
+     d       dimensional formula as exponents of [M, L, T, I, Θ, N, J]. All zeroes = dimensionless.
+     vec     1 = vector, 0 = scalar. Single-valued, so the two criteria are mutually exclusive and
+             the generator refuses to put them on opposite axes.
+     base    1 = one of the seven SI base quantities.
+     epon    1 = its SI unit is a SPECIAL NAMED unit honouring a scientist (newton, joule, pascal,
+             volt, ohm, tesla…). Deliberately strict: torque is measured in N·m and impulse in N·s,
+             and neither of those is a special named unit, so both are 0. That is the teaching point,
+             not an oversight — it is exactly why the joule is never used for torque.
+     br      branches. MULTI-VALUED: energy is at home in all of them, and pretending otherwise
+             would reject a correct answer.
+     neg     1 = can take a negative value. For a vector this means a component along the chosen
+             axis; for a scalar it means the quantity itself is signed (work, heat, potential).
+     law     the named law, principle or relation the quantity appears in, '' if none was written.
+     instr   a named instrument that measures it, '' if none was written.
+     cls     'q' quantity | 'c' constant.
+     fame    1..5, drives Weight (= 6 - fame). 5 = every physics student knows it on sight.
+     gloss   one line for the reveal panel. The reveal panel is the point; a player who filled two
+             cells should still leave having read something true nine times over.
+     alt     hand-written aliases: the synonyms and spellings people actually type.
+   ============================================================================================ */
+const QUANTS=[
+
+/* ---------------------------- the seven SI base quantities ---------------------------- */
+{id:'length',name:'Length',sym:'l',unit:'m',uname:'metre',d:[0,1,0,0,0,0,0],vec:0,base:1,epon:0,
+ br:['mech'],neg:0,law:'',instr:'vernier calliper',cls:'q',fame:5,
+ gloss:'The SI base quantity for extent in space. Since 2019 the metre is fixed by defining the speed of light as exactly 299 792 458 m/s.',
+ alt:['metre','meter']},
+{id:'mass',name:'Mass',sym:'m',unit:'kg',uname:'kilogram',d:[1,0,0,0,0,0,0],vec:0,base:1,epon:0,
+ br:['mech','therm'],neg:0,law:'Newton’s law of gravitation',instr:'beam balance',cls:'q',fame:5,
+ gloss:'The SI base quantity measuring inertia and gravitational charge. The kilogram is now fixed through the Planck constant, not a metal cylinder in Paris.',
+ alt:['inertial mass','rest mass','gravitational mass']},
+{id:'time',name:'Time',sym:'t',unit:'s',uname:'second',d:[0,0,1,0,0,0,0],vec:0,base:1,epon:0,
+ br:['mech','wave'],neg:0,law:'',instr:'stopwatch',cls:'q',fame:5,
+ gloss:'The SI base quantity for duration, fixed by the caesium-133 hyperfine transition at exactly 9 192 631 770 Hz.',
+ alt:['duration','time interval','elapsed time']},
+{id:'electric-current',name:'Electric current',sym:'I',unit:'A',uname:'ampere',d:[0,0,0,1,0,0,0],vec:0,base:1,epon:1,
+ br:['elec','mag'],neg:1,law:'Ohm’s law',instr:'ammeter',cls:'q',fame:5,
+ gloss:'Rate of flow of charge, and an SI base quantity. A scalar despite having a direction: currents at a junction add algebraically, not as vectors.',
+ alt:['current','electrical current']},
+{id:'temperature',name:'Thermodynamic temperature',sym:'T',unit:'K',uname:'kelvin',d:[0,0,0,0,1,0,0],vec:0,base:1,epon:1,
+ br:['therm'],neg:0,law:'ideal gas equation',instr:'thermometer',cls:'q',fame:5,
+ gloss:'The SI base quantity for hotness, measured from absolute zero. The kelvin is fixed by defining the Boltzmann constant.',
+ alt:['temperature','absolute temperature','kelvin temperature']},
+{id:'amount-of-substance',name:'Amount of substance',sym:'n',unit:'mol',uname:'mole',d:[0,0,0,0,0,1,0],vec:0,base:1,epon:0,
+ br:['therm'],neg:0,law:'Avogadro’s law',instr:'',cls:'q',fame:3,
+ gloss:'The SI base quantity counting entities in bulk; one mole contains exactly 6.022 140 76 × 10²³ of them.',
+ alt:['number of moles','moles','mole','quantity of substance']},
+{id:'luminous-intensity',name:'Luminous intensity',sym:'Iᵥ',unit:'cd',uname:'candela',d:[0,0,0,0,0,0,1],vec:0,base:1,epon:0,
+ br:['wave'],neg:0,law:'',instr:'photometer',cls:'q',fame:2,
+ gloss:'The seventh and least-used SI base quantity: luminous power per unit solid angle, weighted by the eye’s response. The candela is not named after anyone.',
+ alt:['candlepower','luminous power per solid angle']},
+
+/* ---------------------------------- mechanics ---------------------------------- */
+{id:'displacement',name:'Displacement',sym:'s',unit:'m',uname:'metre',d:[0,1,0,0,0,0,0],vec:1,base:0,epon:0,
+ br:['mech','wave'],neg:1,law:'',instr:'',cls:'q',fame:5,
+ gloss:'The straight-line change in position, from start point to end point. A vector — and the classic partner to distance, which is not.',
+ alt:['change in position','net displacement']},
+{id:'distance',name:'Distance',sym:'d',unit:'m',uname:'metre',d:[0,1,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mech'],neg:0,law:'',instr:'odometer',cls:'q',fame:5,
+ gloss:'Total path length actually travelled. A scalar, never negative, and never smaller than the magnitude of the displacement.',
+ alt:['path length','distance travelled','distance covered']},
+{id:'speed',name:'Speed',sym:'v',unit:'m/s',uname:'metre per second',d:[0,1,-1,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mech','wave'],neg:0,law:'',instr:'speedometer',cls:'q',fame:5,
+ gloss:'Distance covered per unit time. The scalar magnitude of velocity, and what a speedometer actually reads.',
+ alt:['average speed','instantaneous speed','linear speed']},
+{id:'velocity',name:'Velocity',sym:'v',unit:'m/s',uname:'metre per second',d:[0,1,-1,0,0,0,0],vec:1,base:0,epon:0,
+ br:['mech'],neg:1,law:'Newton’s first law of motion',instr:'',cls:'q',fame:5,
+ gloss:'Rate of change of displacement — speed with a direction attached. Uniform velocity is exactly what Newton’s first law describes.',
+ alt:['linear velocity','average velocity','instantaneous velocity']},
+{id:'acceleration',name:'Acceleration',sym:'a',unit:'m/s²',uname:'metre per second squared',d:[0,1,-2,0,0,0,0],vec:1,base:0,epon:0,
+ br:['mech'],neg:1,law:'Newton’s second law of motion',instr:'',cls:'q',fame:5,
+ gloss:'Rate of change of velocity. Negative along the chosen axis when the body is slowing, which is all "deceleration" ever means.',
+ alt:['linear acceleration','deceleration','retardation']},
+{id:'force',name:'Force',sym:'F',unit:'N',uname:'newton',d:[1,1,-2,0,0,0,0],vec:1,base:0,epon:1,
+ br:['mech','elec','mag'],neg:1,law:'Newton’s second law of motion',instr:'spring balance',cls:'q',fame:5,
+ gloss:'The push or pull that changes momentum. One newton accelerates one kilogram at one metre per second squared.',
+ alt:['net force','resultant force','applied force']},
+{id:'weight',name:'Weight',sym:'W',unit:'N',uname:'newton',d:[1,1,-2,0,0,0,0],vec:1,base:0,epon:1,
+ br:['mech'],neg:0,law:'Newton’s law of gravitation',instr:'spring balance',cls:'q',fame:5,
+ gloss:'The gravitational force on a body, mg. A force in newtons, not a mass in kilograms — the single most common unit error in school physics.',
+ alt:['weight force','gravitational force on a body']},
+{id:'linear-momentum',name:'Linear momentum',sym:'p',unit:'kg m/s',uname:'kilogram metre per second',d:[1,1,-1,0,0,0,0],vec:1,base:0,epon:0,
+ br:['mech'],neg:1,law:'conservation of linear momentum',instr:'',cls:'q',fame:5,
+ gloss:'Mass times velocity. Conserved in every collision and explosion, and the quantity Newton’s second law is really about.',
+ alt:['momentum','translational momentum']},
+{id:'impulse',name:'Impulse',sym:'J',unit:'N s',uname:'newton second',d:[1,1,-1,0,0,0,0],vec:1,base:0,epon:0,
+ br:['mech'],neg:1,law:'impulse–momentum theorem',instr:'',cls:'q',fame:3,
+ gloss:'Force multiplied by the time it acts, and equal to the change in momentum. Its unit N·s is not a special named unit, so it is not "an eponymous unit".',
+ alt:['impulse of a force']},
+{id:'work',name:'Work',sym:'W',unit:'J',uname:'joule',d:[1,2,-2,0,0,0,0],vec:0,base:0,epon:1,
+ br:['mech','elec','therm'],neg:1,law:'work–energy theorem',instr:'',cls:'q',fame:5,
+ gloss:'Force times displacement along the force. A scalar that goes negative whenever the force opposes the motion, as friction always does.',
+ alt:['work done','mechanical work']},
+{id:'energy',name:'Energy',sym:'E',unit:'J',uname:'joule',d:[1,2,-2,0,0,0,0],vec:0,base:0,epon:1,
+ br:['mech','therm','elec','mag','wave','mod'],neg:0,law:'conservation of energy',instr:'',cls:'q',fame:5,
+ gloss:'The capacity to do work, in every branch of the subject. Conserved absolutely: it changes form and never changes total.',
+ alt:['total energy','mechanical energy']},
+{id:'kinetic-energy',name:'Kinetic energy',sym:'K',unit:'J',uname:'joule',d:[1,2,-2,0,0,0,0],vec:0,base:0,epon:1,
+ br:['mech','therm','mod'],neg:0,law:'work–energy theorem',instr:'',cls:'q',fame:5,
+ gloss:'½mv², the energy a body has because it is moving. Never negative, and equal to the net work done on the body from rest.',
+ alt:['ke','translational kinetic energy']},
+{id:'potential-energy',name:'Potential energy',sym:'U',unit:'J',uname:'joule',d:[1,2,-2,0,0,0,0],vec:0,base:0,epon:1,
+ br:['mech','elec'],neg:1,law:'conservation of mechanical energy',instr:'',cls:'q',fame:5,
+ gloss:'Energy stored by position in a field or by deformation. Routinely negative, because the zero is a matter of choice — usually infinity.',
+ alt:['pe','gravitational potential energy','stored energy','elastic potential energy']},
+{id:'power',name:'Power',sym:'P',unit:'W',uname:'watt',d:[1,2,-3,0,0,0,0],vec:0,base:0,epon:1,
+ br:['mech','elec'],neg:0,law:'Joule’s law of heating',instr:'',cls:'q',fame:5,
+ gloss:'Rate of doing work or transferring energy. One watt is one joule per second.',
+ alt:['mechanical power','electrical power','rate of doing work']},
+{id:'pressure',name:'Pressure',sym:'p',unit:'Pa',uname:'pascal',d:[1,-1,-2,0,0,0,0],vec:0,base:0,epon:1,
+ br:['mech','fluid','therm'],neg:0,law:'Pascal’s law',instr:'barometer',cls:'q',fame:5,
+ gloss:'Normal force per unit area. A scalar: a fluid at a point pushes equally in every direction, which is the whole content of Pascal’s law.',
+ alt:['fluid pressure','atmospheric pressure','hydrostatic pressure']},
+{id:'density',name:'Density',sym:'ρ',unit:'kg/m³',uname:'kilogram per cubic metre',d:[1,-3,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mech','fluid'],neg:0,law:'Archimedes’ principle',instr:'hydrometer',cls:'q',fame:5,
+ gloss:'Mass per unit volume. Whether a body floats is settled entirely by its density against the fluid’s.',
+ alt:['mass density','volume density','specific mass']},
+{id:'volume',name:'Volume',sym:'V',unit:'m³',uname:'cubic metre',d:[0,3,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mech','fluid','therm'],neg:0,law:'Boyle’s law',instr:'',cls:'q',fame:5,
+ gloss:'The space a body occupies. One of the two variables in Boyle’s law and one of three in the ideal gas equation.',
+ alt:['volume of a body']},
+{id:'torque',name:'Torque',sym:'τ',unit:'N m',uname:'newton metre',d:[1,2,-2,0,0,0,0],vec:1,base:0,epon:0,
+ br:['mech','mag'],neg:1,law:'principle of moments',instr:'',cls:'q',fame:4,
+ gloss:'The turning effect of a force about an axis, r × F. Its unit is the newton metre and deliberately never the joule, although the dimensions match energy exactly.',
+ alt:['moment of force','turning moment','turning effect of a force','tau']},
+{id:'angular-velocity',name:'Angular velocity',sym:'ω',unit:'rad/s',uname:'radian per second',d:[0,0,-1,0,0,0,0],vec:1,base:0,epon:0,
+ br:['mech'],neg:1,law:'',instr:'tachometer',cls:'q',fame:4,
+ gloss:'Rate of change of angular position, directed along the axis of rotation by the right-hand rule.',
+ alt:['rotational velocity','angular velocity vector']},
+{id:'angular-acceleration',name:'Angular acceleration',sym:'α',unit:'rad/s²',uname:'radian per second squared',d:[0,0,-2,0,0,0,0],vec:1,base:0,epon:0,
+ br:['mech'],neg:1,law:'',instr:'',cls:'q',fame:3,
+ gloss:'Rate of change of angular velocity. Produced by a net torque exactly as linear acceleration is produced by a net force.',
+ alt:['rotational acceleration']},
+{id:'angular-momentum',name:'Angular momentum',sym:'L',unit:'kg m²/s',uname:'kilogram metre squared per second',d:[1,2,-1,0,0,0,0],vec:1,base:0,epon:0,
+ br:['mech','mod'],neg:1,law:'conservation of angular momentum',instr:'',cls:'q',fame:4,
+ gloss:'r × p, the rotational analogue of momentum. Conserved when no external torque acts — a skater pulling her arms in, and Bohr’s quantised orbits.',
+ alt:['moment of momentum','rotational momentum']},
+{id:'moment-of-inertia',name:'Moment of inertia',sym:'I',unit:'kg m²',uname:'kilogram metre squared',d:[1,2,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mech'],neg:0,law:'parallel axis theorem',instr:'',cls:'q',fame:4,
+ gloss:'Σmr² — the rotational analogue of mass, and a scalar for rotation about a fixed axis. It depends on which axis you pick, which is what the parallel axis theorem is for.',
+ alt:['rotational inertia','mass moment of inertia']},
+{id:'gravitational-field',name:'Gravitational field strength',sym:'g',unit:'N/kg',uname:'newton per kilogram',d:[0,1,-2,0,0,0,0],vec:1,base:0,epon:0,
+ br:['mech'],neg:0,law:'Newton’s law of gravitation',instr:'',cls:'q',fame:3,
+ gloss:'Gravitational force per unit mass at a point. Numerically identical to the free-fall acceleration, and dimensionally identical too.',
+ alt:['gravitational field intensity','gravitational field','gravitational intensity']},
+{id:'gravitational-potential',name:'Gravitational potential',sym:'V',unit:'J/kg',uname:'joule per kilogram',d:[0,2,-2,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mech'],neg:1,law:'Newton’s law of gravitation',instr:'',cls:'q',fame:3,
+ gloss:'Gravitational potential energy per unit mass. Always negative with the usual zero at infinity, because gravity only ever attracts.',
+ alt:['gravity potential']},
+{id:'plane-angle',name:'Plane angle',sym:'θ',unit:'rad',uname:'radian',d:[0,0,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mech'],neg:1,law:'',instr:'protractor',cls:'q',fame:3,
+ gloss:'Arc length divided by radius — a ratio of two lengths, so the radian is dimensionless.',
+ alt:['angle','angular displacement in radians']},
+{id:'solid-angle',name:'Solid angle',sym:'Ω',unit:'sr',uname:'steradian',d:[0,0,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mech','wave'],neg:0,law:'',instr:'',cls:'q',fame:1,
+ gloss:'Area on a sphere divided by the radius squared. Dimensionless, and there are 4π steradians in all directions.',
+ alt:['steradian']},
+{id:'coefficient-of-friction',name:'Coefficient of friction',sym:'μ',unit:'—',uname:'dimensionless',d:[0,0,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mech'],neg:0,law:'',instr:'',cls:'q',fame:4,
+ gloss:'The ratio of friction force to normal reaction. A pure number, because it is a force divided by a force.',
+ alt:['friction coefficient','coefficient of static friction','coefficient of kinetic friction']},
+{id:'stress',name:'Stress',sym:'σ',unit:'Pa',uname:'pascal',d:[1,-1,-2,0,0,0,0],vec:0,base:0,epon:1,
+ br:['mech'],neg:0,law:'Hooke’s law',instr:'',cls:'q',fame:4,
+ gloss:'Internal restoring force per unit area in a deformed body. Same unit and dimensions as pressure.',
+ alt:['tensile stress','mechanical stress','longitudinal stress']},
+{id:'strain',name:'Strain',sym:'ε',unit:'—',uname:'dimensionless',d:[0,0,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mech'],neg:0,law:'Hooke’s law',instr:'',cls:'q',fame:4,
+ gloss:'Fractional deformation: change in length over original length. A ratio of two lengths, so it has no unit at all.',
+ alt:['tensile strain','longitudinal strain','fractional deformation']},
+{id:'youngs-modulus',name:'Young’s modulus',sym:'Y',unit:'Pa',uname:'pascal',d:[1,-1,-2,0,0,0,0],vec:0,base:0,epon:1,
+ br:['mech'],neg:0,law:'Hooke’s law',instr:'',cls:'q',fame:4,
+ gloss:'Tensile stress divided by tensile strain — the stiffness of a material in extension. Named after Thomas Young; the unit is the pascal.',
+ alt:['youngs modulus','young modulus','modulus of elasticity','elastic modulus']},
+{id:'bulk-modulus',name:'Bulk modulus',sym:'B',unit:'Pa',uname:'pascal',d:[1,-1,-2,0,0,0,0],vec:0,base:0,epon:1,
+ br:['mech','fluid'],neg:0,law:'Hooke’s law',instr:'',cls:'q',fame:3,
+ gloss:'Volume stress divided by volume strain: how hard a substance is to squeeze. Enormous for liquids, small for gases.',
+ alt:['modulus of compression','volume elasticity']},
+{id:'shear-modulus',name:'Shear modulus',sym:'G',unit:'Pa',uname:'pascal',d:[1,-1,-2,0,0,0,0],vec:0,base:0,epon:1,
+ br:['mech'],neg:0,law:'Hooke’s law',instr:'',cls:'q',fame:2,
+ gloss:'Shearing stress divided by shearing strain. Zero for an ideal fluid, which is precisely why fluids flow.',
+ alt:['modulus of rigidity','rigidity modulus']},
+{id:'poissons-ratio',name:'Poisson’s ratio',sym:'ν',unit:'—',uname:'dimensionless',d:[0,0,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mech'],neg:0,law:'',instr:'',cls:'q',fame:2,
+ gloss:'Lateral strain divided by longitudinal strain — how much a stretched wire thins. A ratio of two ratios, so dimensionless twice over.',
+ alt:['poissons ratio','poisson ratio']},
+{id:'spring-constant',name:'Spring constant',sym:'k',unit:'N/m',uname:'newton per metre',d:[1,0,-2,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mech','wave'],neg:0,law:'Hooke’s law',instr:'',cls:'q',fame:4,
+ gloss:'Restoring force per unit extension, the k in F = −kx. Sets the period of every mass-on-a-spring oscillator.',
+ alt:['force constant','stiffness','spring stiffness','elastic constant']},
+{id:'energy-density',name:'Energy density',sym:'u',unit:'J/m³',uname:'joule per cubic metre',d:[1,-1,-2,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mech','elec','mag'],neg:0,law:'',instr:'',cls:'q',fame:2,
+ gloss:'Energy stored per unit volume — in a stretched wire, a capacitor’s field or a magnetic field. Dimensionally identical to pressure.',
+ alt:['volume energy density','energy per unit volume']},
+
+/* ---------------------------------- fluids ---------------------------------- */
+{id:'relative-density',name:'Relative density',sym:'RD',unit:'—',uname:'dimensionless',d:[0,0,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['fluid'],neg:0,law:'',instr:'hydrometer',cls:'q',fame:3,
+ gloss:'Density of a substance divided by the density of water. A pure number, which is why it is the same in every unit system.',
+ alt:['specific gravity','relative density of a substance']},
+{id:'buoyant-force',name:'Buoyant force',sym:'F_B',unit:'N',uname:'newton',d:[1,1,-2,0,0,0,0],vec:1,base:0,epon:1,
+ br:['fluid','mech'],neg:0,law:'Archimedes’ principle',instr:'',cls:'q',fame:4,
+ gloss:'The upward force a fluid exerts on an immersed body, equal to the weight of fluid displaced.',
+ alt:['upthrust','buoyancy','upward thrust','buoyant thrust']},
+{id:'surface-tension',name:'Surface tension',sym:'S',unit:'N/m',uname:'newton per metre',d:[1,0,-2,0,0,0,0],vec:0,base:0,epon:0,
+ br:['fluid','mech'],neg:0,law:'',instr:'',cls:'q',fame:3,
+ gloss:'Force per unit length along a liquid surface, or equivalently surface energy per unit area. It is what makes small drops spherical.',
+ alt:['coefficient of surface tension','surface energy per unit area']},
+{id:'viscosity',name:'Coefficient of viscosity',sym:'η',unit:'Pa s',uname:'pascal second',d:[1,-1,-1,0,0,0,0],vec:0,base:0,epon:0,
+ br:['fluid'],neg:0,law:'Stokes’ law',instr:'viscometer',cls:'q',fame:3,
+ gloss:'A fluid’s internal friction: the shear stress needed per unit velocity gradient. Honey has a large one, air a tiny one.',
+ alt:['viscosity','dynamic viscosity','coefficient of dynamic viscosity','eta']},
+{id:'compressibility',name:'Compressibility',sym:'κ',unit:'Pa⁻¹',uname:'per pascal',d:[-1,1,2,0,0,0,0],vec:0,base:0,epon:0,
+ br:['fluid','therm'],neg:0,law:'',instr:'',cls:'q',fame:2,
+ gloss:'The reciprocal of the bulk modulus: fractional volume change per unit pressure applied.',
+ alt:['coefficient of compressibility']},
+{id:'flow-rate',name:'Volume flow rate',sym:'Q',unit:'m³/s',uname:'cubic metre per second',d:[0,3,-1,0,0,0,0],vec:0,base:0,epon:0,
+ br:['fluid'],neg:0,law:'equation of continuity',instr:'',cls:'q',fame:2,
+ gloss:'Volume of fluid passing a section per unit time. Constant along a tube of flow — that is the equation of continuity.',
+ alt:['flow rate','discharge','volumetric flow rate','rate of flow']},
+{id:'terminal-velocity',name:'Terminal velocity',sym:'v_t',unit:'m/s',uname:'metre per second',d:[0,1,-1,0,0,0,0],vec:1,base:0,epon:0,
+ br:['fluid','mech'],neg:1,law:'Stokes’ law',instr:'',cls:'q',fame:3,
+ gloss:'The steady velocity reached when drag balances weight, so the net force — and the acceleration — fall to zero.',
+ alt:['terminal speed']},
+
+/* ---------------------------------- thermal ---------------------------------- */
+{id:'heat',name:'Heat',sym:'Q',unit:'J',uname:'joule',d:[1,2,-2,0,0,0,0],vec:0,base:0,epon:1,
+ br:['therm'],neg:1,law:'first law of thermodynamics',instr:'calorimeter',cls:'q',fame:5,
+ gloss:'Energy transferred because of a temperature difference. Signed: negative when a system gives heat out.',
+ alt:['heat energy','thermal energy','quantity of heat','heat transferred']},
+{id:'internal-energy',name:'Internal energy',sym:'U',unit:'J',uname:'joule',d:[1,2,-2,0,0,0,0],vec:0,base:0,epon:1,
+ br:['therm'],neg:0,law:'first law of thermodynamics',instr:'',cls:'q',fame:4,
+ gloss:'The total kinetic and potential energy of a system’s molecules. A state function: ΔU = Q − W is the first law.',
+ alt:['internal energy of a system']},
+{id:'specific-heat-capacity',name:'Specific heat capacity',sym:'c',unit:'J/(kg K)',uname:'joule per kilogram kelvin',d:[0,2,-2,0,-1,0,0],vec:0,base:0,epon:0,
+ br:['therm'],neg:0,law:'principle of calorimetry',instr:'calorimeter',cls:'q',fame:4,
+ gloss:'Heat needed to raise one kilogram by one kelvin. Water’s is unusually large, which is why the sea moderates climate.',
+ alt:['specific heat','specific heat capacity of a substance']},
+{id:'heat-capacity',name:'Heat capacity',sym:'C',unit:'J/K',uname:'joule per kelvin',d:[1,2,-2,0,-1,0,0],vec:0,base:0,epon:0,
+ br:['therm'],neg:0,law:'principle of calorimetry',instr:'calorimeter',cls:'q',fame:3,
+ gloss:'Heat needed to raise a whole body by one kelvin. Unlike specific heat capacity it depends on how much stuff there is.',
+ alt:['thermal capacity','heat capacity of a body']},
+{id:'latent-heat',name:'Specific latent heat',sym:'L',unit:'J/kg',uname:'joule per kilogram',d:[0,2,-2,0,0,0,0],vec:0,base:0,epon:0,
+ br:['therm'],neg:0,law:'',instr:'calorimeter',cls:'q',fame:4,
+ gloss:'Heat per kilogram absorbed in a change of state, at constant temperature. The thermometer stops moving while the ice melts.',
+ alt:['latent heat','specific latent heat of fusion','specific latent heat of vaporisation','latent heat of fusion']},
+{id:'thermal-conductivity',name:'Thermal conductivity',sym:'K',unit:'W/(m K)',uname:'watt per metre kelvin',d:[1,1,-3,0,-1,0,0],vec:0,base:0,epon:0,
+ br:['therm'],neg:0,law:'Fourier’s law of heat conduction',instr:'',cls:'q',fame:3,
+ gloss:'Heat conducted per unit area per unit temperature gradient. Copper’s is a thousand times wood’s.',
+ alt:['coefficient of thermal conductivity','conductivity of heat']},
+{id:'entropy',name:'Entropy',sym:'S',unit:'J/K',uname:'joule per kelvin',d:[1,2,-2,0,-1,0,0],vec:0,base:0,epon:0,
+ br:['therm'],neg:0,law:'second law of thermodynamics',instr:'',cls:'q',fame:4,
+ gloss:'A measure of a system’s disorder, or of how much of its energy is unavailable for work. The entropy of an isolated system never decreases.',
+ alt:['thermodynamic entropy']},
+{id:'linear-expansivity',name:'Coefficient of linear expansion',sym:'α',unit:'K⁻¹',uname:'per kelvin',d:[0,0,0,0,-1,0,0],vec:0,base:0,epon:0,
+ br:['therm'],neg:0,law:'',instr:'',cls:'q',fame:3,
+ gloss:'Fractional increase in length per kelvin of temperature rise. It is why bridges are built with expansion joints.',
+ alt:['linear expansivity','coefficient of linear thermal expansion','coefficient of expansion']},
+{id:'molar-mass',name:'Molar mass',sym:'M',unit:'kg/mol',uname:'kilogram per mole',d:[1,0,0,0,0,-1,0],vec:0,base:0,epon:0,
+ br:['therm'],neg:0,law:'',instr:'',cls:'q',fame:3,
+ gloss:'Mass of one mole of a substance. One of the very few quantities whose dimensional formula contains the mole.',
+ alt:['molar mass of a gas','mass per mole']},
+{id:'number-density',name:'Number density',sym:'n',unit:'m⁻³',uname:'per cubic metre',d:[0,-3,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['therm','elec'],neg:0,law:'',instr:'',cls:'q',fame:1,
+ gloss:'Number of particles per unit volume. It appears in the kinetic theory of gases and again in the drift-velocity formula for a conductor.',
+ alt:['number density of molecules','particle density','number per unit volume']},
+
+/* ---------------------------------- electricity ---------------------------------- */
+{id:'electric-charge',name:'Electric charge',sym:'q',unit:'C',uname:'coulomb',d:[0,0,1,1,0,0,0],vec:0,base:0,epon:1,
+ br:['elec'],neg:1,law:'Coulomb’s law',instr:'ballistic galvanometer',cls:'q',fame:5,
+ gloss:'The property that produces and responds to electric fields. Signed, quantised in units of e, and conserved in every known process.',
+ alt:['charge','quantity of charge','electrical charge']},
+{id:'electric-potential',name:'Electric potential',sym:'V',unit:'V',uname:'volt',d:[1,2,-3,-1,0,0,0],vec:0,base:0,epon:1,
+ br:['elec'],neg:1,law:'',instr:'voltmeter',cls:'q',fame:4,
+ gloss:'Work per unit charge to bring a test charge from infinity to a point. A scalar, and negative around a negative charge.',
+ alt:['electrostatic potential','potential at a point']},
+{id:'potential-difference',name:'Potential difference',sym:'V',unit:'V',uname:'volt',d:[1,2,-3,-1,0,0,0],vec:0,base:0,epon:1,
+ br:['elec'],neg:1,law:'Ohm’s law',instr:'voltmeter',cls:'q',fame:5,
+ gloss:'The work per unit charge between two points — what a voltmeter reads across a component. One volt is one joule per coulomb.',
+ alt:['voltage','pd','p d','electric potential difference','terminal voltage','potential drop']},
+{id:'emf',name:'Electromotive force',sym:'ε',unit:'V',uname:'volt',d:[1,2,-3,-1,0,0,0],vec:0,base:0,epon:1,
+ br:['elec','mag'],neg:0,law:'Faraday’s law of electromagnetic induction',instr:'potentiometer',cls:'q',fame:4,
+ gloss:'Energy per unit charge supplied by a source. Despite the name it is not a force at all — it is measured in volts.',
+ alt:['emf','e m f','electro motive force','induced emf','electromotive force of a cell']},
+{id:'resistance',name:'Electrical resistance',sym:'R',unit:'Ω',uname:'ohm',d:[1,2,-3,-2,0,0,0],vec:0,base:0,epon:1,
+ br:['elec'],neg:0,law:'Ohm’s law',instr:'ohmmeter',cls:'q',fame:5,
+ gloss:'Potential difference divided by current. One ohm is one volt per ampere.',
+ alt:['resistance','ohmic resistance','electric resistance']},
+{id:'resistivity',name:'Resistivity',sym:'ρ',unit:'Ω m',uname:'ohm metre',d:[1,3,-3,-2,0,0,0],vec:0,base:0,epon:0,
+ br:['elec'],neg:0,law:'',instr:'',cls:'q',fame:3,
+ gloss:'A material property: the resistance of a unit cube. Unlike resistance it does not depend on the wire’s length or thickness.',
+ alt:['specific resistance','electrical resistivity']},
+{id:'conductance',name:'Electrical conductance',sym:'G',unit:'S',uname:'siemens',d:[-1,-2,3,2,0,0,0],vec:0,base:0,epon:1,
+ br:['elec'],neg:0,law:'',instr:'',cls:'q',fame:2,
+ gloss:'The reciprocal of resistance. Its unit, the siemens, honours Werner von Siemens and was once cheerfully called the mho.',
+ alt:['conductance','electric conductance']},
+{id:'conductivity',name:'Electrical conductivity',sym:'σ',unit:'S/m',uname:'siemens per metre',d:[-1,-3,3,2,0,0,0],vec:0,base:0,epon:0,
+ br:['elec'],neg:0,law:'',instr:'',cls:'q',fame:2,
+ gloss:'The reciprocal of resistivity, and a property of the material rather than the sample.',
+ alt:['specific conductance','electric conductivity']},
+{id:'capacitance',name:'Capacitance',sym:'C',unit:'F',uname:'farad',d:[-1,-2,4,2,0,0,0],vec:0,base:0,epon:1,
+ br:['elec'],neg:0,law:'',instr:'',cls:'q',fame:4,
+ gloss:'Charge stored per volt applied. The farad is enormous — practical capacitors are measured in microfarads and picofarads.',
+ alt:['electrical capacitance','capacity of a capacitor']},
+{id:'electric-field',name:'Electric field strength',sym:'E',unit:'N/C',uname:'newton per coulomb',d:[1,1,-3,-1,0,0,0],vec:1,base:0,epon:0,
+ br:['elec'],neg:1,law:'Gauss’s law',instr:'',cls:'q',fame:5,
+ gloss:'Force per unit positive charge at a point. A vector, and equal to the negative gradient of the potential — N/C and V/m are the same unit.',
+ alt:['electric field','electric field intensity','electric intensity','electrostatic field']},
+{id:'electric-flux',name:'Electric flux',sym:'Φ_E',unit:'V m',uname:'volt metre',d:[1,3,-3,-1,0,0,0],vec:0,base:0,epon:0,
+ br:['elec'],neg:1,law:'Gauss’s law',instr:'',cls:'q',fame:3,
+ gloss:'The electric field integrated over a surface. A scalar, and by Gauss’s law it depends only on the charge enclosed.',
+ alt:['electrostatic flux','flux of electric field']},
+{id:'dipole-moment',name:'Electric dipole moment',sym:'p',unit:'C m',uname:'coulomb metre',d:[0,1,1,1,0,0,0],vec:1,base:0,epon:0,
+ br:['elec'],neg:0,law:'',instr:'',cls:'q',fame:3,
+ gloss:'Charge times separation, directed from the negative charge to the positive one. It sets the torque a dipole feels in a field.',
+ alt:['electric dipole moment vector']},
+{id:'charge-density',name:'Surface charge density',sym:'σ',unit:'C/m²',uname:'coulomb per square metre',d:[0,-2,1,1,0,0,0],vec:0,base:0,epon:0,
+ br:['elec'],neg:1,law:'Gauss’s law',instr:'',cls:'q',fame:2,
+ gloss:'Charge per unit area on a surface. On a charged conductor it piles up wherever the surface curves most sharply.',
+ alt:['charge density','surface density of charge']},
+{id:'current-density',name:'Current density',sym:'J',unit:'A/m²',uname:'ampere per square metre',d:[0,-2,0,1,0,0,0],vec:1,base:0,epon:0,
+ br:['elec'],neg:1,law:'Ohm’s law',instr:'',cls:'q',fame:2,
+ gloss:'Current per unit cross-sectional area. Unlike current itself this one really is a vector, pointing along the flow.',
+ alt:['electric current density']},
+{id:'drift-velocity',name:'Drift velocity',sym:'v_d',unit:'m/s',uname:'metre per second',d:[0,1,-1,0,0,0,0],vec:1,base:0,epon:0,
+ br:['elec'],neg:1,law:'Ohm’s law',instr:'',cls:'q',fame:3,
+ gloss:'The average velocity electrons acquire along a wire under a field. Startlingly slow — a fraction of a millimetre per second.',
+ alt:['drift speed','drift velocity of electrons']},
+{id:'mobility',name:'Mobility',sym:'μ',unit:'m²/(V s)',uname:'metre squared per volt second',d:[-1,0,2,1,0,0,0],vec:0,base:0,epon:0,
+ br:['elec'],neg:0,law:'',instr:'',cls:'q',fame:1,
+ gloss:'Drift velocity acquired per unit electric field. It is what makes one semiconductor faster than another.',
+ alt:['electron mobility','drift mobility','carrier mobility']},
+{id:'permittivity',name:'Permittivity',sym:'ε',unit:'F/m',uname:'farad per metre',d:[-1,-3,4,2,0,0,0],vec:0,base:0,epon:0,
+ br:['elec'],neg:0,law:'Coulomb’s law',instr:'',cls:'q',fame:3,
+ gloss:'How much a medium weakens the electric field within it. Dividing by the free-space value gives the dielectric constant.',
+ alt:['electric permittivity','absolute permittivity','permittivity of a medium']},
+{id:'reactance',name:'Reactance',sym:'X',unit:'Ω',uname:'ohm',d:[1,2,-3,-2,0,0,0],vec:0,base:0,epon:1,
+ br:['elec'],neg:0,law:'',instr:'',cls:'q',fame:2,
+ gloss:'The opposition an inductor or capacitor offers to alternating current. Measured in ohms, but it dissipates no power.',
+ alt:['inductive reactance','capacitive reactance']},
+{id:'impedance',name:'Impedance',sym:'Z',unit:'Ω',uname:'ohm',d:[1,2,-3,-2,0,0,0],vec:0,base:0,epon:1,
+ br:['elec'],neg:0,law:'',instr:'',cls:'q',fame:3,
+ gloss:'The total opposition of an AC circuit, combining resistance and reactance. Also measured in ohms.',
+ alt:['electrical impedance','ac impedance']},
+
+/* ---------------------------------- magnetism ---------------------------------- */
+{id:'magnetic-flux-density',name:'Magnetic flux density',sym:'B',unit:'T',uname:'tesla',d:[1,0,-2,-1,0,0,0],vec:1,base:0,epon:1,
+ br:['mag'],neg:1,law:'Biot–Savart law',instr:'Hall probe',cls:'q',fame:4,
+ gloss:'The vector field B, defined by the force qv × B on a moving charge. One tesla is a very strong field; the Earth’s is about 50 microtesla.',
+ alt:['magnetic field','magnetic induction','magnetic flux density b']},
+{id:'magnetic-flux',name:'Magnetic flux',sym:'Φ',unit:'Wb',uname:'weber',d:[1,2,-2,-1,0,0,0],vec:0,base:0,epon:1,
+ br:['mag'],neg:1,law:'Faraday’s law of electromagnetic induction',instr:'fluxmeter',cls:'q',fame:4,
+ gloss:'Magnetic flux density integrated over an area. A scalar, and its rate of change is the induced emf.',
+ alt:['flux linkage','magnetic flux through a coil']},
+{id:'inductance',name:'Self-inductance',sym:'L',unit:'H',uname:'henry',d:[1,2,-2,-2,0,0,0],vec:0,base:0,epon:1,
+ br:['mag','elec'],neg:0,law:'Lenz’s law',instr:'',cls:'q',fame:3,
+ gloss:'Flux linkage per unit current in a coil — its electrical inertia. One henry induces one volt for a current changing at one ampere per second.',
+ alt:['inductance','self inductance','coefficient of self induction']},
+{id:'magnetic-moment',name:'Magnetic moment',sym:'m',unit:'A m²',uname:'ampere metre squared',d:[0,2,0,1,0,0,0],vec:1,base:0,epon:0,
+ br:['mag'],neg:0,law:'',instr:'',cls:'q',fame:3,
+ gloss:'Current times loop area, directed along the loop’s axis. It sets the torque a bar magnet or a current loop feels in a field.',
+ alt:['magnetic dipole moment']},
+{id:'magnetising-field',name:'Magnetising field',sym:'H',unit:'A/m',uname:'ampere per metre',d:[0,-1,0,1,0,0,0],vec:1,base:0,epon:0,
+ br:['mag'],neg:1,law:'Ampère’s circuital law',instr:'',cls:'q',fame:2,
+ gloss:'The field H produced by free currents alone, independent of the material’s magnetisation. In strict SI usage this — not B — is called the magnetic field strength.',
+ alt:['magnetic intensity','magnetising force','magnetic field intensity','magnetising field h']},
+{id:'permeability',name:'Permeability',sym:'μ',unit:'H/m',uname:'henry per metre',d:[1,1,-2,-2,0,0,0],vec:0,base:0,epon:0,
+ br:['mag'],neg:0,law:'Ampère’s circuital law',instr:'',cls:'q',fame:3,
+ gloss:'How readily a medium carries magnetic flux, B divided by H. Iron’s is thousands of times that of free space.',
+ alt:['magnetic permeability','absolute permeability','permeability of a medium']},
+
+/* ---------------------------------- waves and optics ---------------------------------- */
+{id:'frequency',name:'Frequency',sym:'f',unit:'Hz',uname:'hertz',d:[0,0,-1,0,0,0,0],vec:0,base:0,epon:1,
+ br:['wave','mod','elec'],neg:0,law:'Planck–Einstein relation',instr:'sonometer',cls:'q',fame:5,
+ gloss:'Cycles per second. The hertz honours Heinrich Hertz, who generated and detected radio waves in the 1880s.',
+ alt:['linear frequency','frequency of a wave','ordinary frequency']},
+{id:'angular-frequency',name:'Angular frequency',sym:'ω',unit:'rad/s',uname:'radian per second',d:[0,0,-1,0,0,0,0],vec:0,base:0,epon:0,
+ br:['wave','mech'],neg:0,law:'',instr:'',cls:'q',fame:3,
+ gloss:'2πf — the rate of phase change of an oscillation. A scalar, unlike angular velocity, which shares its unit and dimensions.',
+ alt:['circular frequency','angular frequency omega']},
+{id:'time-period',name:'Time period',sym:'T',unit:'s',uname:'second',d:[0,0,1,0,0,0,0],vec:0,base:0,epon:0,
+ br:['wave','mech'],neg:0,law:'Kepler’s third law',instr:'stopwatch',cls:'q',fame:4,
+ gloss:'The time for one complete oscillation or orbit — the reciprocal of frequency.',
+ alt:['period','periodic time','time period of oscillation','orbital period']},
+{id:'wavelength',name:'Wavelength',sym:'λ',unit:'m',uname:'metre',d:[0,1,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['wave','mod'],neg:0,law:'de Broglie relation',instr:'',cls:'q',fame:5,
+ gloss:'The distance between successive identical points of a wave. Visible light runs from about 400 to 700 nanometres.',
+ alt:['wave length','wave-length']},
+{id:'wave-number',name:'Wave number',sym:'k̄',unit:'m⁻¹',uname:'per metre',d:[0,-1,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['wave'],neg:0,law:'',instr:'',cls:'q',fame:2,
+ gloss:'The reciprocal of wavelength — waves per metre. Spectroscopists quote it in cm⁻¹ almost universally.',
+ alt:['wavenumber','spectroscopic wavenumber']},
+{id:'amplitude',name:'Amplitude',sym:'A',unit:'m',uname:'metre',d:[0,1,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['wave','mech'],neg:0,law:'',instr:'',cls:'q',fame:4,
+ gloss:'The maximum displacement from equilibrium in an oscillation. A wave’s energy goes as the square of it.',
+ alt:['amplitude of oscillation','peak displacement']},
+{id:'intensity',name:'Intensity',sym:'I',unit:'W/m²',uname:'watt per square metre',d:[1,0,-3,0,0,0,0],vec:0,base:0,epon:0,
+ br:['wave'],neg:0,law:'inverse-square law',instr:'',cls:'q',fame:3,
+ gloss:'Power per unit area carried by a wave. From a point source it falls off as the inverse square of distance.',
+ alt:['wave intensity','sound intensity','irradiance','intensity of a wave']},
+{id:'refractive-index',name:'Refractive index',sym:'n',unit:'—',uname:'dimensionless',d:[0,0,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['wave'],neg:0,law:'Snell’s law',instr:'refractometer',cls:'q',fame:5,
+ gloss:'The ratio of the speed of light in vacuum to its speed in the medium. A pure number: 1.33 for water, about 1.5 for glass.',
+ alt:['index of refraction','absolute refractive index','optical density index']},
+{id:'focal-length',name:'Focal length',sym:'f',unit:'m',uname:'metre',d:[0,1,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['wave'],neg:1,law:'lens maker’s formula',instr:'',cls:'q',fame:5,
+ gloss:'The distance from a lens or mirror to its focus. Negative for a diverging lens under the usual sign convention.',
+ alt:['focal distance','focal length of a lens']},
+{id:'lens-power',name:'Power of a lens',sym:'P',unit:'D',uname:'dioptre',d:[0,-1,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['wave'],neg:1,law:'',instr:'',cls:'q',fame:3,
+ gloss:'The reciprocal of the focal length in metres. Negative for a concave lens — which is what the minus sign on a spectacle prescription means.',
+ alt:['lens power','optical power','dioptric power','power of a spectacle lens']},
+{id:'magnification',name:'Magnification',sym:'m',unit:'—',uname:'dimensionless',d:[0,0,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['wave'],neg:1,law:'',instr:'',cls:'q',fame:4,
+ gloss:'Image height divided by object height. Negative when the image is inverted, so the sign carries real information.',
+ alt:['linear magnification','transverse magnification','lateral magnification']},
+{id:'critical-angle',name:'Critical angle',sym:'C',unit:'rad',uname:'radian',d:[0,0,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['wave'],neg:0,law:'Snell’s law',instr:'',cls:'q',fame:3,
+ gloss:'The angle of incidence beyond which light is totally internally reflected. About 49° for water, and the reason optical fibres work.',
+ alt:['critical angle of incidence']},
+{id:'luminous-flux',name:'Luminous flux',sym:'Φᵥ',unit:'lm',uname:'lumen',d:[0,0,0,0,0,0,1],vec:0,base:0,epon:0,
+ br:['wave'],neg:0,law:'',instr:'',cls:'q',fame:1,
+ gloss:'Total visible light emitted by a source, weighted by the eye’s sensitivity. Printed on every LED bulb box. The lumen is not named after anyone.',
+ alt:['light flux','luminous power']},
+{id:'illuminance',name:'Illuminance',sym:'Eᵥ',unit:'lx',uname:'lux',d:[0,-2,0,0,0,0,1],vec:0,base:0,epon:0,
+ br:['wave'],neg:0,law:'inverse-square law',instr:'lux meter',cls:'q',fame:1,
+ gloss:'Luminous flux falling per unit area of a surface — one lumen per square metre is one lux.',
+ alt:['illumination','light level']},
+
+/* ---------------------------------- modern, atomic and nuclear ---------------------------------- */
+{id:'work-function',name:'Work function',sym:'φ',unit:'J',uname:'joule',d:[1,2,-2,0,0,0,0],vec:0,base:0,epon:1,
+ br:['mod'],neg:0,law:'Einstein’s photoelectric equation',instr:'',cls:'q',fame:3,
+ gloss:'The minimum energy needed to free an electron from a metal surface. Usually quoted in electronvolts, though the SI unit is the joule.',
+ alt:['photoelectric work function','work function of a metal']},
+{id:'threshold-frequency',name:'Threshold frequency',sym:'f₀',unit:'Hz',uname:'hertz',d:[0,0,-1,0,0,0,0],vec:0,base:0,epon:1,
+ br:['mod'],neg:0,law:'Einstein’s photoelectric equation',instr:'',cls:'q',fame:3,
+ gloss:'The lowest light frequency that ejects photoelectrons from a given metal. Below it, no amount of brightness will do.',
+ alt:['threshold frequency of a metal','cut off frequency']},
+{id:'stopping-potential',name:'Stopping potential',sym:'V₀',unit:'V',uname:'volt',d:[1,2,-3,-1,0,0,0],vec:0,base:0,epon:1,
+ br:['mod'],neg:0,law:'Einstein’s photoelectric equation',instr:'voltmeter',cls:'q',fame:3,
+ gloss:'The reverse voltage that just stops the fastest photoelectrons. It measures their maximum kinetic energy directly.',
+ alt:['stopping voltage','cut off potential']},
+{id:'de-broglie-wavelength',name:'de Broglie wavelength',sym:'λ',unit:'m',uname:'metre',d:[0,1,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mod','wave'],neg:0,law:'de Broglie relation',instr:'',cls:'q',fame:3,
+ gloss:'h divided by momentum — the wavelength of a moving particle. Tiny for a cricket ball, comparable to atomic spacings for an electron.',
+ alt:['debroglie wavelength','matter wavelength','de broglie wave length']},
+{id:'binding-energy',name:'Binding energy',sym:'B',unit:'J',uname:'joule',d:[1,2,-2,0,0,0,0],vec:0,base:0,epon:1,
+ br:['mod'],neg:0,law:'mass–energy equivalence',instr:'',cls:'q',fame:3,
+ gloss:'The energy needed to pull a nucleus apart into its nucleons, equal to the mass defect times c².',
+ alt:['nuclear binding energy']},
+{id:'mass-defect',name:'Mass defect',sym:'Δm',unit:'kg',uname:'kilogram',d:[1,0,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mod'],neg:0,law:'mass–energy equivalence',instr:'',cls:'q',fame:3,
+ gloss:'The shortfall between a nucleus’s mass and the sum of its nucleons’. That missing mass is the binding energy.',
+ alt:['mass deficit','nuclear mass defect']},
+{id:'half-life',name:'Half-life',sym:'t½',unit:'s',uname:'second',d:[0,0,1,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mod'],neg:0,law:'radioactive decay law',instr:'',cls:'q',fame:4,
+ gloss:'The time for half the nuclei in a sample to decay. Constant for a given nuclide, whatever the sample size or temperature.',
+ alt:['half life','halflife','half life period']},
+{id:'decay-constant',name:'Decay constant',sym:'λ',unit:'s⁻¹',uname:'per second',d:[0,0,-1,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mod'],neg:0,law:'radioactive decay law',instr:'',cls:'q',fame:3,
+ gloss:'The probability per unit time that a given nucleus decays. Half-life is ln 2 divided by it.',
+ alt:['disintegration constant','radioactive decay constant']},
+{id:'activity',name:'Activity',sym:'A',unit:'Bq',uname:'becquerel',d:[0,0,-1,0,0,0,0],vec:0,base:0,epon:1,
+ br:['mod'],neg:0,law:'radioactive decay law',instr:'Geiger counter',cls:'q',fame:3,
+ gloss:'Decays per second in a sample. One becquerel is one decay per second — a tiny amount; a smoke alarm holds tens of thousands.',
+ alt:['radioactivity','rate of decay','disintegration rate','activity of a sample']},
+{id:'absorbed-dose',name:'Absorbed dose',sym:'D',unit:'Gy',uname:'gray',d:[0,2,-2,0,0,0,0],vec:0,base:0,epon:1,
+ br:['mod'],neg:0,law:'',instr:'',cls:'q',fame:2,
+ gloss:'Radiation energy absorbed per kilogram of tissue. One gray is one joule per kilogram, and honours Louis Harold Gray.',
+ alt:['radiation dose','absorbed radiation dose']},
+{id:'atomic-number',name:'Atomic number',sym:'Z',unit:'—',uname:'dimensionless',d:[0,0,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mod'],neg:0,law:'',instr:'',cls:'q',fame:4,
+ gloss:'The number of protons in a nucleus. A pure count, and what actually decides which element you have.',
+ alt:['proton number','atomic number z']},
+{id:'mass-number',name:'Mass number',sym:'A',unit:'—',uname:'dimensionless',d:[0,0,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mod'],neg:0,law:'',instr:'',cls:'q',fame:4,
+ gloss:'The total number of protons and neutrons in a nucleus. A pure count, and conserved in nuclear reactions.',
+ alt:['nucleon number','mass number a']},
+
+/* ---------------------------------- constants ----------------------------------
+   A different KIND of entity, and the interface says so: every row below shows a `const` chip in
+   the typeahead and in the reveal. They are still physical quantities with units and dimensions, so
+   every criterion applies to them unchanged. */
+{id:'speed-of-light',name:'Speed of light in vacuum',sym:'c',unit:'m/s',uname:'metre per second',d:[0,1,-1,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mod','wave'],neg:0,law:'mass–energy equivalence',instr:'',cls:'c',fame:5,
+ gloss:'Exactly 299 792 458 m/s — a defined value since 1983, which is why the metre is now derived from the second.',
+ alt:['speed of light','light speed','velocity of light']},
+{id:'planck-constant',name:'Planck constant',sym:'h',unit:'J s',uname:'joule second',d:[1,2,-1,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mod'],neg:0,law:'Planck–Einstein relation',instr:'',cls:'c',fame:4,
+ gloss:'6.626 × 10⁻³⁴ J s, the quantum of action. Fixed exactly in 2019, and the kilogram is now defined through it.',
+ alt:['plancks constant','planck s constant','quantum of action']},
+{id:'elementary-charge',name:'Elementary charge',sym:'e',unit:'C',uname:'coulomb',d:[0,0,1,1,0,0,0],vec:0,base:0,epon:1,
+ br:['mod','elec'],neg:0,law:'quantisation of electric charge',instr:'',cls:'c',fame:4,
+ gloss:'1.602 × 10⁻¹⁹ C — the magnitude of the charge on one electron or proton, and the quantum every observed charge is a multiple of.',
+ alt:['electronic charge','electron charge','charge on an electron','fundamental charge','unit charge']},
+{id:'gravitational-constant',name:'Gravitational constant',sym:'G',unit:'N m²/kg²',uname:'newton metre squared per kilogram squared',d:[-1,3,-2,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mech'],neg:0,law:'Newton’s law of gravitation',instr:'',cls:'c',fame:4,
+ gloss:'6.674 × 10⁻¹¹ in SI units, first measured by Cavendish in 1798. Still the least precisely known of the fundamental constants.',
+ alt:['universal gravitational constant','newtons gravitational constant','big g','universal constant of gravitation']},
+{id:'g-acceleration',name:'Acceleration due to gravity',sym:'g',unit:'m/s²',uname:'metre per second squared',d:[0,1,-2,0,0,0,0],vec:1,base:0,epon:0,
+ br:['mech'],neg:1,law:'Newton’s law of gravitation',instr:'',cls:'c',fame:5,
+ gloss:'About 9.81 m/s² at the Earth’s surface, and a vector pointing down. It varies slightly with latitude and altitude.',
+ alt:['acceleration of free fall','gravitational acceleration','free fall acceleration','little g']},
+{id:'boltzmann-constant',name:'Boltzmann constant',sym:'k_B',unit:'J/K',uname:'joule per kelvin',d:[1,2,-2,0,-1,0,0],vec:0,base:0,epon:0,
+ br:['therm'],neg:0,law:'kinetic theory of gases',instr:'',cls:'c',fame:3,
+ gloss:'1.380 649 × 10⁻²³ J/K exactly — the bridge between temperature and the energy of one molecule. It now defines the kelvin.',
+ alt:['boltzmanns constant','boltzmann s constant']},
+{id:'gas-constant',name:'Molar gas constant',sym:'R',unit:'J/(mol K)',uname:'joule per mole kelvin',d:[1,2,-2,0,-1,-1,0],vec:0,base:0,epon:0,
+ br:['therm'],neg:0,law:'ideal gas equation',instr:'',cls:'c',fame:3,
+ gloss:'8.314 J per mole per kelvin — the R in pV = nRT, and simply the Boltzmann constant times the Avogadro constant.',
+ alt:['universal gas constant','gas constant','ideal gas constant']},
+{id:'avogadro-constant',name:'Avogadro constant',sym:'N_A',unit:'mol⁻¹',uname:'per mole',d:[0,0,0,0,0,-1,0],vec:0,base:0,epon:0,
+ br:['therm'],neg:0,law:'Avogadro’s law',instr:'',cls:'c',fame:4,
+ gloss:'Exactly 6.022 140 76 × 10²³ per mole — the number of entities in a mole, fixed by definition since 2019.',
+ alt:['avogadros number','avogadro number','avogadro s number','avogadros constant']},
+{id:'epsilon-zero',name:'Permittivity of free space',sym:'ε₀',unit:'F/m',uname:'farad per metre',d:[-1,-3,4,2,0,0,0],vec:0,base:0,epon:0,
+ br:['elec'],neg:0,law:'Coulomb’s law',instr:'',cls:'c',fame:3,
+ gloss:'8.854 × 10⁻¹² F/m, the constant in Coulomb’s law. Together with μ₀ it fixes the speed of light.',
+ alt:['epsilon naught','epsilon zero','permittivity of vacuum','electric constant','absolute permittivity of free space']},
+{id:'mu-zero',name:'Permeability of free space',sym:'μ₀',unit:'H/m',uname:'henry per metre',d:[1,1,-2,-2,0,0,0],vec:0,base:0,epon:0,
+ br:['mag'],neg:0,law:'Ampère’s circuital law',instr:'',cls:'c',fame:3,
+ gloss:'About 4π × 10⁻⁷ H/m — the magnetic constant, and the partner to ε₀ in c = 1/√(μ₀ε₀).',
+ alt:['mu naught','mu zero','permeability of vacuum','magnetic constant','absolute permeability of free space']},
+{id:'stefan-constant',name:'Stefan–Boltzmann constant',sym:'σ',unit:'W/(m² K⁴)',uname:'watt per square metre kelvin to the fourth',d:[1,0,-3,0,-4,0,0],vec:0,base:0,epon:0,
+ br:['therm'],neg:0,law:'Stefan–Boltzmann law',instr:'',cls:'c',fame:2,
+ gloss:'5.670 × 10⁻⁸ in SI units. It fixes how much a black body radiates: power per unit area goes as the fourth power of temperature.',
+ alt:['stefan constant','stefans constant','stefan boltzmann constant']},
+{id:'rydberg-constant',name:'Rydberg constant',sym:'R∞',unit:'m⁻¹',uname:'per metre',d:[0,-1,0,0,0,0,0],vec:0,base:0,epon:0,
+ br:['mod'],neg:0,law:'Rydberg formula',instr:'',cls:'c',fame:2,
+ gloss:'1.097 × 10⁷ per metre. It sets the wavelengths of every line in the hydrogen spectrum, and is one of the most precisely measured constants in physics.',
+ alt:['rydbergs constant','rydberg s constant']}
+];
+
+/* ============================================================================================
+   THE CRITERION CATALOGUE
+   ============================================================================================
+   Every criterion is a predicate over a quantity, and every predicate is a TAG LOOKUP or an
+   exponent test — never a judgement call at runtime. `test` runs exactly once per criterion at boot
+   to build the bitsets, and is never called again during play.
+
+   `single` marks a family whose underlying tag is single-valued: a quantity is a vector or a scalar
+   and cannot be both, and it is a base quantity or a derived one and cannot be both. Two such
+   criteria facing each other across the grid guarantee an empty cell, so the generator rejects that
+   SHAPE before it counts a single candidate. They may sit together on the same axis — rows never
+   intersect rows.
+
+   `branch` looks single-valued and is not, deliberately. Energy belongs to mechanics AND thermal
+   physics AND electromagnetism, and a grid that rejects "energy" in a thermal cell has told a
+   student something false. Most branch pairs still intersect thinly and the popcount check throws
+   those out for free; there is no special rule and there must not be one.
+
+   THE ONE RULE FOR ADDING A CRITERION: it must be a stable classification — a definition, an SI
+   fact, a dimensional formula. Never "the most important quantity in", never "the largest", never
+   anything that could be re-ranked. A criterion that can flip turns the whole game into a liar.
+
+   Two axes named in the brief are deliberately ABSENT from this catalogue, and the reason is the
+   same for both: they are true, they are interesting, and there are not enough members to build a
+   grid from. "Is conserved" has five honest members (energy, linear momentum, angular momentum,
+   charge, mass); a criterion that small can essentially never produce three cells of three answers
+   each. It is shown in the reveal instead, on the entries that carry it. The same goes for any
+   single named law: "appears in Newton's second law" is four quantities. The generic
+   "appears in a named law" below is the usable form, and the specific law is printed in the reveal.
+   ============================================================================================ */
+function hasTag(list,v){ return list.indexOf(v)>=0; }
+function sameDim(a,b){ for(let i=0;i<7;i++) if(a[i]!==b[i]) return false; return true; }
+const DIM_ENERGY=[1,2,-2,0,0,0,0];
+const CRITERIA=[
+ /* --- kind: vector or scalar. SINGLE-valued. --- */
+ {id:'k-vec',family:'kind',single:true,tier:'core',label:'A vector quantity',short:'Vector',
+  test:q=>q.vec===1},
+ {id:'k-sca',family:'kind',single:true,tier:'core',label:'A scalar quantity',short:'Scalar',
+  test:q=>q.vec===0},
+
+ /* --- SI standing: base or derived. SINGLE-valued, and there are only seven base quantities, so
+        `s-base` is a deep-tier criterion that will rarely survive the three-answer floor. That is
+        the honest consequence of the SI having seven of them, not a bug. --- */
+ {id:'s-base',family:'si',single:true,tier:'deep',label:'One of the seven SI base quantities',short:'SI base quantity',
+  test:q=>q.base===1},
+ {id:'s-der',family:'si',single:true,tier:'core',label:'A derived quantity, not one of the seven SI base quantities',short:'Derived quantity',
+  test:q=>q.base===0},
+
+ /* --- branch. MULTI-valued: energy lives everywhere and pretending otherwise rejects a correct
+        answer. --- */
+ {id:'b-mech',family:'branch',single:false,tier:'core',label:'Belongs to mechanics',short:'Mechanics',
+  test:q=>hasTag(q.br,'mech')},
+ {id:'b-therm',family:'branch',single:false,tier:'core',label:'Belongs to thermal physics',short:'Thermal physics',
+  test:q=>hasTag(q.br,'therm')},
+ {id:'b-elec',family:'branch',single:false,tier:'core',label:'Belongs to electricity',short:'Electricity',
+  test:q=>hasTag(q.br,'elec')},
+ {id:'b-wave',family:'branch',single:false,tier:'core',label:'Belongs to waves and optics',short:'Waves & optics',
+  test:q=>hasTag(q.br,'wave')},
+ {id:'b-mod',family:'branch',single:false,tier:'core',label:'Belongs to modern, atomic or nuclear physics',short:'Modern physics',
+  test:q=>hasTag(q.br,'mod')},
+ {id:'b-mag',family:'branch',single:false,tier:'wide',label:'Belongs to magnetism',short:'Magnetism',
+  test:q=>hasTag(q.br,'mag')},
+ {id:'b-fluid',family:'branch',single:false,tier:'wide',label:'Belongs to fluid mechanics',short:'Fluids',
+  test:q=>hasTag(q.br,'fluid')},
+
+ /* --- dimensional analysis. A dimension "appears" whenever its exponent is non-zero, positive or
+        negative: length appears in resistivity (L³) and in wave number (L⁻¹) alike. --- */
+ {id:'d-m',family:'dim',single:false,tier:'core',label:'Mass appears in its dimensional formula',short:'Dimension has M',
+  test:q=>q.d[0]!==0},
+ {id:'d-l',family:'dim',single:false,tier:'core',label:'Length appears in its dimensional formula',short:'Dimension has L',
+  test:q=>q.d[1]!==0},
+ {id:'d-t',family:'dim',single:false,tier:'core',label:'Time appears in its dimensional formula',short:'Dimension has T',
+  test:q=>q.d[2]!==0},
+ {id:'d-i',family:'dim',single:false,tier:'core',label:'Electric current appears in its dimensional formula',short:'Dimension has I',
+  test:q=>q.d[3]!==0},
+ {id:'d-th',family:'dim',single:false,tier:'deep',label:'Temperature appears in its dimensional formula',short:'Dimension has Θ',
+  test:q=>q.d[4]!==0},
+ {id:'d-none',family:'dim',single:false,tier:'wide',label:'Dimensionless — a pure number with no SI unit',short:'Dimensionless',
+  test:q=>q.d.every(e=>e===0)},
+ {id:'d-energy',family:'dim',single:false,tier:'deep',label:'Has the same dimensional formula as energy, M L² T⁻²',short:'Dimensions of energy',
+  test:q=>sameDim(q.d,DIM_ENERGY)},
+
+ /* --- the unit. `u-epon` is deliberately strict: the quantity's coherent SI unit must itself be a
+        SPECIAL NAMED unit that honours a scientist. Torque is measured in N·m and impulse in N·s;
+        neither of those is a special named unit, so neither counts. That is exactly why the SI
+        never writes torque in joules, and it is the point of the criterion rather than a gap. The
+        candela, mole, metre, second, kilogram, lumen, lux, dioptre and radian honour nobody. --- */
+ {id:'u-epon',family:'unitname',single:false,tier:'core',
+  label:'Its SI unit is a special named unit honouring a scientist (newton, joule, volt, ohm…)',short:'Eponymous unit',
+  test:q=>q.epon===1},
+ {id:'u-joule',family:'siunit',single:true,tier:'deep',label:'Measured in joules',short:'Measured in joules',
+  test:q=>q.unit==='J'},
+ {id:'u-metre',family:'siunit',single:true,tier:'deep',label:'Measured in metres',short:'Measured in metres',
+  test:q=>q.unit==='m'},
+
+ /* --- features --- */
+ {id:'f-law',family:'feat',single:false,tier:'core',label:'Appears in a named law, principle or relation',short:'In a named law',
+  test:q=>!!q.law},
+ {id:'f-instr',family:'feat',single:false,tier:'core',label:'Measured with a named instrument',short:'Named instrument',
+  test:q=>!!q.instr},
+ {id:'f-neg',family:'feat',single:false,tier:'wide',label:'Can take a negative value',short:'Can be negative',
+  test:q=>q.neg===1},
+ {id:'f-const',family:'feat',single:false,tier:'wide',label:'A named physical constant',short:'A constant',
+  test:q=>q.cls==='c'}
+];
+
+/* Weekday ramp (RAMAYANA_GRID.md §4.5). Monday should feel like an invitation; Sunday should feel
+   like the reason you sat through the dimensional-analysis chapter. Keyed off the local weekday of
+   the dayKey, which is the same everywhere for a given dayKey, so it stays a pure function of the
+   date. */
+function tierPool(key){
+  const a=key.split('-'), wd=new Date(+a[0],+a[1]-1,+a[2]).getDay();   // 0=Sun
+  if(wd===1||wd===2) return {tiers:['core'],maxDeep:0};
+  if(wd===3||wd===4) return {tiers:['core','wide'],maxDeep:0};
+  if(wd===0)         return {tiers:['core','wide','deep'],maxDeep:6};
+  return {tiers:['core','wide','deep'],maxDeep:1};                      // Fri, Sat
+}
+
+/* ============================================================================================
+   BITSETS, LOOKUP AND THE BOOT SELF-TESTS
+   ============================================================================================ */
+const N=QUANTS.length, W=Math.ceil(N/32);
+QUANTS.forEach((q,i)=>{ q.index=i; });
+
+/* One Uint32Array per criterion. A cell's candidate count is then W ANDs and a popcount, which is
+   why the generator can afford to reject grids aggressively — solvability checking is essentially
+   free, and that is the whole reason a 3x3 daily fits in a static file with no server. */
+const BITS=CRITERIA.map(c=>{
+  const b=new Uint32Array(W);
+  for(let i=0;i<N;i++) if(c.test(QUANTS[i])) b[i>>5]|=(1<<(i&31));
+  return b;
+});
+function popcount(x){ x=x-((x>>>1)&0x55555555); x=(x&0x33333333)+((x>>>2)&0x33333333);
+  x=(x+(x>>>4))&0x0f0f0f0f; return (x*0x01010101)>>>24; }
+function andBits(a,b){ const o=new Uint32Array(W); for(let w=0;w<W;w++) o[w]=a[w]&b[w]; return o; }
+function countBits(b){ let n=0; for(let w=0;w<W;w++) n+=popcount(b[w]); return n; }
+function bitMembers(b){ const o=[]; for(let w=0;w<W;w++){ let x=b[w]; while(x){ const t=x&-x;
+  o.push((w<<5)+popcount(t-1)); x^=t; } } return o; }   // ascending index order — stable, not a Set
+function testBit(b,i){ return (b[i>>5]>>>(i&31))&1; }
+
+/* KEYS: every canonical name and every alias, through norm(). Lookup is O(1). */
+const KEYS=new Map();
+const COLLISIONS=[];
+function addKey(k,i){
+  if(!k||k.length<2) return;
+  if(KEYS.has(k) && KEYS.get(k)!==i) COLLISIONS.push(k+' → '+QUANTS[KEYS.get(k)].name+' / '+QUANTS[i].name);
+  else KEYS.set(k,i);
+}
+(function buildKeys(){
+  for(let i=0;i<N;i++){
+    const q=QUANTS[i];
+    addKey(norm(q.name),i);
+    for(const a of (q.alt||[])) addKey(norm(a),i);
+  }
+})();
+/* The collision assertion. A collision means norm() has folded two distinct quantities together,
+   which silently makes one of them unanswerable — the exact class of failure the normaliser's
+   conservatism exists to prevent. Costs nothing, catches everything. */
+if(COLLISIONS.length) console.error('[quanta] alias collisions:', COLLISIONS);
+(function selfTest(){
+  const bad=[];
+  for(let i=0;i<N;i++) if(KEYS.get(norm(QUANTS[i].name))!==i) bad.push(QUANTS[i].name);
+  if(bad.length) console.error('[quanta] canonical names that do not round-trip:', bad);
+  const ids=new Set(); QUANTS.forEach(q=>{ if(ids.has(q.id)) console.error('[quanta] duplicate id',q.id); ids.add(q.id); });
+})();
+const KEYLIST=[...KEYS.keys()];   // fixed order, built once; never iterated during daily setup
+
+/* ============================================================================================
+   THE TWO KINDS OF AMBIGUITY, AND WHY NEITHER MAY RESOLVE SILENTLY
+   ============================================================================================
+   RAMAYANA_GRID.md §3.4: two candidates within the fuzzy threshold must NEVER resolve silently.
+   Physics has this problem worse than any other subject in this repo, in two distinct flavours.
+
+   (1) BARE SYMBOLS. F is force, frequency or focal length. E is energy, electric field, emf or the
+       elementary charge. p is pressure, power or momentum. V is volume, potential difference or
+       potential. Resolving one of those silently would spend a guess on a quantity the player never
+       named. So symbols are NEVER accepted as answers: every one of them opens a free
+       disambiguation row instead, which also happens to be a decent little lesson.
+
+       Matched on rawKey(), not norm(): norm folds w→v, which would turn the symbol for work into
+       the symbol for velocity.
+
+   (2) BARE HEAD-WORDS. "Potential" could be electric, gravitational, potential energy or potential
+       difference. "Field", "flux", "moment", "modulus", "capacity", "conductivity" and "intensity"
+       are the same. These are checked BEFORE the exact-name lookup, which is why "power" prompts
+       even though Power is itself a canonical name — an optics cell wants the power of a lens, and
+       charging a guess for the wrong Power would be indefensible.
+
+   Neither prompt costs a guess, and neither list is filtered by what is valid for the open cell.
+   ============================================================================================ */
+const SYMS=[
+ ['f',['force','frequency','focal-length']],
+ ['e',['energy','electric-field','emf','elementary-charge']],
+ ['p',['pressure','power','linear-momentum','dipole-moment']],
+ ['v',['velocity','volume','potential-difference','electric-potential']],
+ ['i',['electric-current','intensity','moment-of-inertia']],
+ ['t',['time','temperature','time-period','torque']],
+ ['a',['acceleration','activity','amplitude','mass-number']],
+ ['m',['mass','magnification','magnetic-moment','molar-mass']],
+ ['w',['work','weight']],
+ ['q',['electric-charge','heat','flow-rate']],
+ ['l',['length','angular-momentum','inductance','latent-heat']],
+ ['c',['speed-of-light','capacitance','specific-heat-capacity','critical-angle']],
+ ['r',['resistance','gas-constant','rydberg-constant']],
+ ['k',['spring-constant','kinetic-energy','thermal-conductivity','boltzmann-constant']],
+ ['g',['gravitational-constant','g-acceleration','gravitational-field','shear-modulus','conductance']],
+ ['h',['planck-constant','magnetising-field']],
+ ['n',['refractive-index','amount-of-substance','number-density','avogadro-constant']],
+ ['d',['distance','absorbed-dose','displacement']],
+ ['s',['displacement','entropy','surface-tension','conductance']],
+ ['u',['internal-energy','potential-energy','energy-density']],
+ ['b',['magnetic-flux-density','bulk-modulus','binding-energy']],
+ ['z',['impedance','atomic-number']],
+ ['j',['current-density','impulse','luminous-intensity']],
+ ['x',['reactance','displacement']],
+ ['rho',['density','resistivity']],
+ ['sigma',['stress','conductivity','charge-density','stefan-constant']],
+ ['mu',['permeability','mobility','coefficient-of-friction']],
+ ['epsilon',['strain','permittivity','emf']],
+ ['lambda',['wavelength','decay-constant','de-broglie-wavelength']],
+ ['phi',['magnetic-flux','work-function','luminous-flux']],
+ ['omega',['angular-velocity','angular-frequency','solid-angle']],
+ ['alpha',['angular-acceleration','linear-expansivity']],
+ /* eta and tau own exactly one quantity each in this roster, so they are plain aliases on
+    those two entries rather than prompts — a symbol is only accepted where it is genuinely
+    unambiguous. */
+ ['theta',['plane-angle','temperature']],
+ ['nu',['poissons-ratio','frequency']]
+];
+/* Head-words that own more than one quantity. Keys are stored through norm(), like everything else
+   in KEYS, so the same folds apply on both sides. */
+const AMBIG=[
+ ['potential',['electric-potential','potential-difference','potential-energy','gravitational-potential']],
+ ['power',['power','lens-power']],
+ ['flux',['magnetic-flux','electric-flux','luminous-flux']],
+ ['field',['electric-field','magnetic-flux-density','gravitational-field','magnetising-field']],
+ ['field strength',['electric-field','magnetic-flux-density','gravitational-field','magnetising-field']],
+ ['magnetic field strength',['magnetic-flux-density','magnetising-field']],
+ ['moment',['torque','moment-of-inertia','magnetic-moment','dipole-moment']],
+ ['modulus',['youngs-modulus','bulk-modulus','shear-modulus']],
+ ['capacity',['capacitance','heat-capacity','specific-heat-capacity']],
+ ['conductivity',['conductivity','thermal-conductivity']],
+ ['intensity',['intensity','luminous-intensity','electric-field','magnetising-field']],
+ ['constant',['spring-constant','decay-constant','gravitational-constant','planck-constant','boltzmann-constant','gas-constant']],
+ ['coefficient',['viscosity','coefficient-of-friction','linear-expansivity']]
+];
+function idIndex(id){ for(let i=0;i<N;i++) if(QUANTS[i].id===id) return i; return -1; }
+const SYMMAP=new Map(), AMBIGMAP=new Map();
+(function buildAmbig(){
+  for(const row of SYMS){ const list=row[1].map(idIndex).filter(i=>i>=0); if(list.length>1) SYMMAP.set(row[0],list); }
+  for(const row of AMBIG){ const list=row[1].map(idIndex).filter(i=>i>=0);
+    if(list.length>1) AMBIGMAP.set(norm(row[0]),list); }
+  /* a symbol row that has collapsed to one owner would resolve silently — that is precisely what
+     this table exists to prevent, so say so loudly rather than quietly accepting it. */
+  for(const row of SYMS){ const list=row[1].map(idIndex);
+    if(list.some(i=>i<0)) console.error('[quanta] SYMS row names an unknown id:', row[0], row[1]); }
+  for(const row of AMBIG){ const list=row[1].map(idIndex);
+    if(list.some(i=>i<0)) console.error('[quanta] AMBIG row names an unknown id:', row[0], row[1]); }
+})();
+
+/* ============================================================================================
+   SOLVABILITY — two separate requirements, and the second is the one implementations get wrong
+   ============================================================================================
+   (a) every cell has at least THREE valid answers. A one-answer cell is a trivia question wearing a
+       puzzle's clothes, and it is also the cell most likely to be wrong — one data error away from
+       unanswerable, with no redundancy to absorb the mistake.
+   (b) a system of distinct representatives must EXIST. Because each quantity may be used once,
+       per-cell non-emptiness does not imply the grid is solvable: three cells whose only candidates
+       are the same three quantities, plus a fourth needing one of them, is an unsolvable grid in
+       which every cell individually looks fine. So: a perfect bipartite matching of size 9, by
+       Kuhn's augmenting paths. Do not skip it and do not assume min(n) >= 3 implies it. It does not. */
+function perfectMatching(cands){
+  const matchQ=new Int32Array(N).fill(-1);           // quantity -> cell
+  const seen=new Uint8Array(N);
+  function tryCell(c){
+    for(const p of cands[c]){
+      if(seen[p]) continue;
+      seen[p]=1;
+      if(matchQ[p]<0 || tryCell(matchQ[p])){ matchQ[p]=c; return true; }
+    }
+    return false;
+  }
+  for(let c=0;c<9;c++){ seen.fill(0); if(!tryCell(c)) return false; }
+  return true;
+}
+
+/* Maximum-weight perfect matching over 9 cells and a bounded candidate pool, by the standard
+   O(n^2 m) Hungarian with potentials. Restricting each cell to its twelve rarest candidates can only
+   UNDERSTATE the optimum, never overstate it, so the "heaviest possible" figure shown to the player
+   is always actually achievable. */
+function heaviestMatching(cands){
+  const idx=new Map(), cols=[];
+  for(let c=0;c<9;c++){
+    const sorted=cands[c].slice().sort((a,b)=>{
+      const d=QUANTS[a].fame-QUANTS[b].fame; return d!==0?d:a-b;   // total comparator: tie-break on index
+    }).slice(0,12);
+    for(const p of sorted) if(!idx.has(p)){ idx.set(p,cols.length); cols.push(p); }
+  }
+  const m=cols.length; if(m<9) return 0;
+  const INF=1e9, cost=[];
+  for(let c=0;c<9;c++){
+    const row=new Array(m).fill(INF);
+    for(const p of cands[c]){ const j=idx.get(p); if(j!==undefined) row[j]=-(6-QUANTS[p].fame); }
+    cost.push(row);
+  }
+  const u=new Array(10).fill(0), v=new Array(m+1).fill(0), pcol=new Array(m+1).fill(0), way=new Array(m+1).fill(0);
+  for(let i=1;i<=9;i++){
+    pcol[0]=i; let j0=0;
+    const minv=new Array(m+1).fill(INF), used=new Array(m+1).fill(false);
+    do{
+      used[j0]=true; const i0=pcol[j0]; let delta=INF, j1=0;
+      for(let j=1;j<=m;j++) if(!used[j]){
+        const cur=cost[i0-1][j-1]-u[i0]-v[j];
+        if(cur<minv[j]){ minv[j]=cur; way[j]=j0; }
+        if(minv[j]<delta){ delta=minv[j]; j1=j; }
+      }
+      if(delta>=INF/2) return 0;
+      for(let j=0;j<=m;j++){ if(used[j]){ u[pcol[j]]+=delta; v[j]-=delta; } else minv[j]-=delta; }
+      j0=j1;
+    } while(pcol[j0]!==0);
+    do{ const j1=way[j0]; pcol[j0]=pcol[j1]; j0=j1; } while(j0);
+  }
+  let total=0;
+  for(let j=1;j<=m;j++) if(pcol[j]) total += -cost[pcol[j]-1][j-1];
+  return total;
+}
+
+/* ============================================================================================
+   GENERATING THE DAY'S GRID
+   ============================================================================================
+   EVERYTHING below draws from ONE mulberry32(daySeed(dayKey())) stream, in a fixed order. A stray
+   Math.random() here desynchronises players worldwide and there is no way to detect it from inside
+   the game. The criterion catalogue and the quantity table are ARRAYS with a fixed order; nothing in
+   daily setup ever iterates a Set, a Map or Object.keys(). */
+const FALLBACK=[
+  {rows:['k-sca','k-vec','b-mech'],cols:['d-m','d-t','b-elec']},
+  {rows:['b-mech','b-therm','b-elec'],cols:['k-sca','d-l','f-law']},
+  {rows:['s-der','d-l','d-t'],cols:['b-elec','d-i','u-epon']},
+  {rows:['k-sca','b-elec','u-epon'],cols:['d-l','d-i','f-instr']},
+  {rows:['b-therm','b-wave','u-epon'],cols:['k-sca','b-mech','d-t']},
+  {rows:['b-mod','d-i','u-epon'],cols:['d-l','d-t','f-law']}
+];
+function critIndex(id){ for(let i=0;i<CRITERIA.length;i++) if(CRITERIA[i].id===id) return i; return -1; }
+
+function axisRuleOK(rows,cols){
+  // Two criteria drawn from the same SINGLE-VALUED family must never sit on opposite axes: one cell
+  // would be empty by construction. Same axis is fine — rows never intersect rows.
+  for(const r of rows) for(const c of cols){
+    const R=CRITERIA[r], C=CRITERIA[c];
+    if(R.single && C.single && R.family===C.family) return false;
+  }
+  return true;
+}
+function buildCells(rows,cols){
+  const cells=[];
+  for(let i=0;i<3;i++) for(let j=0;j<3;j++) cells.push(andBits(BITS[rows[i]],BITS[cols[j]]));
+  return cells;
+}
+function gradeGrid(rows,cols){
+  if(!axisRuleOK(rows,cols)) return null;
+  const cells=buildCells(rows,cols), counts=cells.map(countBits);
+  if(Math.min.apply(null,counts)<3) return null;
+  const sum=counts.reduce((a,b)=>a+b,0);
+  if(sum<40||sum>260) return null;                       // breadth band: neither collapsed nor a blur
+  const cands=cells.map(bitMembers);
+  // Every cell must contain at least one answer with fame >= 3. No cell is ever solvable only by
+  // somebody who read the appendix, and this does more for perceived fairness than anything else.
+  for(const list of cands) if(!list.some(i=>QUANTS[i].fame>=3)) return null;
+  if(!perfectMatching(cands)) return null;
+  return {rows,cols,cells,counts,cands,sum};
+}
+function makeGrid(key){
+  const rng=mulberry32(daySeed(key));
+  const ramp=tierPool(key);
+  const pool=[];
+  for(let i=0;i<CRITERIA.length;i++) if(ramp.tiers.indexOf(CRITERIA[i].tier)>=0) pool.push(i);
+  const draw=(exclude)=>{
+    // rejection sampling against the pool, in fixed index order. Never shuffles a Set.
+    for(let guard=0;guard<400;guard++){
+      const c=pool[Math.floor(rng()*pool.length)];
+      if(exclude.indexOf(c)<0) return c;
+    }
+    return -1;
+  };
+  for(let attempt=0;attempt<200;attempt++){
+    const picked=[];
+    let ok=true;
+    for(let k=0;k<6;k++){ const c=draw(picked); if(c<0){ ok=false; break; } picked.push(c); }
+    if(!ok) continue;
+    const rows=picked.slice(0,3), cols=picked.slice(3,6);
+    let deep=0; for(const c of picked) if(CRITERIA[c].tier==='deep') deep++;
+    if(deep>ramp.maxDeep) continue;
+    const g=gradeGrid(rows,cols);
+    if(g){ g.fallback=false; g.attempt=attempt; return g; }
+  }
+  /* The fallbacks exist so a data edit that accidentally narrows the roster can never produce a day
+     with no puzzle. If the audit ever reports one being used, that is a bug to fix in the data —
+     not a shrug. */
+  const fb=FALLBACK[daySeed(key)%FALLBACK.length];
+  const g=gradeGrid(fb.rows.map(critIndex),fb.cols.map(critIndex));
+  if(g){ g.fallback=true; return g; }
+  const g2={rows:fb.rows.map(critIndex),cols:fb.cols.map(critIndex)};
+  g2.cells=buildCells(g2.rows,g2.cols); g2.counts=g2.cells.map(countBits);
+  g2.cands=g2.cells.map(bitMembers); g2.sum=g2.counts.reduce((a,b)=>a+b,0); g2.fallback=true;
+  return g2;
+}
+
+/* ============================================================================================
+   STATE AND STORAGE
+   ============================================================================================
+   Flat pipe-delimited strings per /DAILY.md, every read and write in try/catch — localStorage throws
+   outright in Safari private mode and on some file:// origins, and a game that cannot save must
+   still play. Corrupt values fall back to defaults; nothing here is allowed to break boot. */
+const params=new URLSearchParams(location.search);
+const ARCHIVE=/^\d{4}-\d{2}-\d{2}$/.test(params.get('date')||'') ? params.get('date') : '';
+const KEY=ARCHIVE||dayKey();
+const LIVE=!ARCHIVE;                                    // archive days write nothing and share no streak
+
+const S={ cells:new Array(9).fill(-1), guesses:0, done:false, dirty:new Array(9).fill(0), open:-1 };
+let GRID=null, settings={snd:1,type:1,theme:'auto'};
+
+function loadSettings(){
+  try{
+    const raw=LS.get(SLUG+'.settings');
+    raw.split(';').forEach(kv=>{ const i=kv.indexOf('='); if(i<0) return;
+      const k=kv.slice(0,i), v=kv.slice(i+1);
+      if(k==='snd') settings.snd = v==='1'?1:0;
+      else if(k==='type') settings.type = v==='1'?1:0;
+      else if(k==='theme'&&['auto','light','dark'].indexOf(v)>=0) settings.theme=v; });
+  }catch(e){}                                            // any garbage at all: keep the defaults
+}
+function saveSettings(){ LS.set(SLUG+'.settings','snd='+settings.snd+';type='+settings.type+';theme='+settings.theme); }
+function loadState(){
+  if(!LIVE) return;
+  try{
+    const raw=LS.get(SLUG+'.state'); if(!raw) return;
+    const a=raw.split('|');
+    if(a[0]!==KEY) return;                               // a day-stamped value from another day is worth zero
+    const ids=(a[1]||'').split(',');
+    for(let i=0;i<9;i++){
+      const id=ids[i]; if(!id) continue;
+      const j=idIndex(id);
+      if(j>=0 && GRID && testBit(GRID.cells[i],j)) S.cells[i]=j;   // ignore anything the grid disagrees with
+    }
+    S.guesses=Math.max(0,Math.min(9,+a[2]||0));
+    S.done=a[3]==='1';
+    const d=a[4]||''; for(let i=0;i<9;i++) S.dirty[i] = d.charAt(i)==='1'?1:0;
+  }catch(e){ S.cells=new Array(9).fill(-1); S.guesses=0; S.done=false; S.dirty=new Array(9).fill(0); }
+}
+function saveState(){
+  if(!LIVE) return;
+  const ids=S.cells.map(i=>i<0?'':QUANTS[i].id).join(',');
+  LS.set(SLUG+'.state', KEY+'|'+ids+'|'+S.guesses+'|'+(S.done?1:0)+'|'+S.dirty.join(''));
+}
+function filled(){ let n=0; for(const c of S.cells) if(c>=0) n++; return n; }
+function weight(){ let w=0; for(const c of S.cells) if(c>=0) w+=6-QUANTS[c].fame; return w; }
+
+/* ============================================================================================
+   DIMENSIONAL FORMULAE, RENDERED
+   ============================================================================================ */
+const DIM_SYM=['M','L','T','I','Θ','N','J'];
+const SUP={'-4':'⁻⁴','-3':'⁻³','-2':'⁻²','-1':'⁻¹','1':'','2':'²','3':'³','4':'⁴'};
+function dimStr(d){
+  let out=[];
+  for(let i=0;i<7;i++) if(d[i]!==0) out.push(DIM_SYM[i]+(SUP[String(d[i])]!==undefined?SUP[String(d[i])]:'^'+d[i]));
+  return out.length ? '['+out.join(' ')+']' : 'dimensionless';
+}
+/* "a ammeter" reads as carelessness, and carelessness is the one thing a reference panel cannot
+   afford. Instrument names in this roster are ordinary English words, so the vowel test is enough. */
+function anA(w){ return (/^[aeiou]/i.test(w)?'an ':'a ')+w; }
+
+/* ============================================================================================
+   AUDIO — WebAudio oscillators only, no files, because the game must work off a disk
+   ============================================================================================ */
+let AC=null;
+function ac(){ try{ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
+  if(AC.state==='suspended') AC.resume(); return AC; }catch(e){ return null; } }
+function ping(){                                         // right answer: a clean quantised chime
+  if(!settings.snd) return; const c=ac(); if(!c) return;
+  const t=c.currentTime;
+  [880,1320].forEach((f,k)=>{
+    const o=c.createOscillator(), g=c.createGain();
+    o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t+k*0.05);
+    g.gain.exponentialRampToValueAtTime(0.16,t+k*0.05+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+k*0.05+0.30);
+    o.connect(g).connect(c.destination); o.start(t+k*0.05); o.stop(t+k*0.05+0.32);
+  });
+}
+function flat(){                                         // wrong: one damped tone. No buzzer.
+  if(!settings.snd) return; const c=ac(); if(!c) return;
+  const t=c.currentTime, o=c.createOscillator(), g=c.createGain();
+  o.type='triangle'; o.frequency.setValueAtTime(196,t); o.frequency.linearRampToValueAtTime(146,t+0.18);
+  g.gain.setValueAtTime(0.13,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+  o.connect(g).connect(c.destination); o.start(t); o.stop(t+0.21);
+}
+function chord(){                                        // 9/9: a rising spectrum, ~1.2s. No samples.
+  if(!settings.snd) return; const c=ac(); if(!c) return;
+  const t=c.currentTime;
+  [261.6,329.6,392.0,523.3].forEach((f,k)=>{
+    const o=c.createOscillator(), g=c.createGain();
+    o.type='sine'; o.frequency.value=f;
+    const s=t+k*0.13;
+    g.gain.setValueAtTime(0.0001,s); g.gain.exponentialRampToValueAtTime(0.12,s+0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001,s+0.9);
+    o.connect(g).connect(c.destination); o.start(s); o.stop(s+0.95);
+  });
+}
+
+/* ============================================================================================
+   RENDER
+   ============================================================================================ */
+const $=id=>document.getElementById(id);
+function critOf(i,isRow){ return CRITERIA[isRow?GRID.rows[i]:GRID.cols[i]]; }
+function cellLabel(k){
+  const r=critOf(Math.floor(k/3),true), c=critOf(k%3,false);
+  const who=S.cells[k]>=0 ? 'Filled with '+QUANTS[S.cells[k]].name+'.' : 'Empty.';
+  return 'Row: '+r.label+'. Column: '+c.label+'. '+who;
+}
+function buildGrid(){
+  const g=$('grid'); g.innerHTML='';
+  const corner=document.createElement('div'); corner.className='corner'; corner.setAttribute('role','presentation');
+  /* The one piece of ornament in the game: a wave meeting a quantised energy ladder. It depicts no
+     logo and no person, which is exactly why it is drawn rather than shipped as a file. */
+  corner.innerHTML='<svg viewBox="0 0 60 60" aria-hidden="true">'+
+    '<path d="M4 34 C10 18, 16 18, 22 34 S34 50, 40 34" fill="none" stroke="var(--line-hi)" '+
+    'stroke-width="2.6" stroke-linecap="round"/>'+
+    '<line x1="44" y1="16" x2="56" y2="16" stroke="var(--line-lo)" stroke-width="2.4" stroke-linecap="round"/>'+
+    '<line x1="44" y1="26" x2="56" y2="26" stroke="var(--line-lo)" stroke-width="2.4" stroke-linecap="round"/>'+
+    '<line x1="44" y1="40" x2="56" y2="40" stroke="var(--line-lo)" stroke-width="2.4" stroke-linecap="round"/>'+
+    '<circle cx="50" cy="49" r="3" fill="var(--line-hi)"/></svg>';
+  g.appendChild(corner);
+  for(let j=0;j<3;j++){
+    const h=document.createElement('div'); h.className='hd'; h.textContent=critOf(j,false).short;
+    h.tabIndex=0; h.setAttribute('role','columnheader'); h.title=critOf(j,false).label;
+    h.addEventListener('click',()=>say(critOf(j,false).label));
+    h.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); say(critOf(j,false).label); } });
+    g.appendChild(h);
+  }
+  for(let i=0;i<3;i++){
+    const h=document.createElement('div'); h.className='hd'; h.textContent=critOf(i,true).short;
+    h.tabIndex=0; h.setAttribute('role','rowheader'); h.title=critOf(i,true).label;
+    h.addEventListener('click',()=>say(critOf(i,true).label));
+    h.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); say(critOf(i,true).label); } });
+    g.appendChild(h);
+    for(let j=0;j<3;j++){
+      const k=i*3+j;
+      const cell=document.createElement('div');
+      cell.className='cell'; cell.id='cell'+k; cell.tabIndex=0;
+      cell.setAttribute('role','gridcell');
+      cell.setAttribute('aria-rowindex',String(i+1)); cell.setAttribute('aria-colindex',String(j+1));
+      cell.addEventListener('click',e=>{ if(e.target.classList.contains('hint')) return; openCell(k); });
+      cell.addEventListener('keydown',e=>onCellKey(e,k));
+      g.appendChild(cell);
+    }
+  }
+  paint();
+}
+function onCellKey(e,k){
+  const i=Math.floor(k/3), j=k%3;
+  let t=-1;
+  if(e.key==='ArrowRight') t=i*3+((j+1)%3);
+  else if(e.key==='ArrowLeft') t=i*3+((j+2)%3);
+  else if(e.key==='ArrowDown') t=((i+1)%3)*3+j;
+  else if(e.key==='ArrowUp') t=((i+2)%3)*3+j;
+  else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openCell(k); return; }
+  if(t>=0){ e.preventDefault(); const el=$('cell'+t); if(el) el.focus(); }
+}
+function paint(){
+  for(let k=0;k<9;k++){
+    const el=$('cell'+k); if(!el) continue;
+    const q=S.cells[k]>=0?QUANTS[S.cells[k]]:null;
+    el.classList.toggle('on',!!q);
+    el.setAttribute('aria-label',cellLabel(k));
+    el.innerHTML='';
+    if(q){
+      const nm=document.createElement('span'); nm.className='nm'; nm.textContent=q.name;
+      const un=document.createElement('span'); un.className='un'; un.textContent=q.unit;
+      const wt=document.createElement('span'); wt.className='wt'; wt.textContent=String(6-q.fame);
+      el.appendChild(nm); el.appendChild(un); el.appendChild(wt);
+    } else {
+      const p=document.createElement('span'); p.className='plus'; p.textContent='+';
+      const b=document.createElement('button'); b.className='hint'; b.type='button';
+      b.setAttribute('aria-label','How many quantities fit this cell'); b.innerHTML='&#9432;';
+      b.addEventListener('click',e=>{ e.stopPropagation();
+        say(GRID.counts[k]+' quantit'+(GRID.counts[k]===1?'y':'ies')+' in the roster fit that cell.'); });
+      el.appendChild(p); el.appendChild(b);
+    }
+  }
+  $('sCells').textContent=filled()+'/9';
+  $('sGuess').textContent=String(9-S.guesses);
+  $('sWeight').textContent=String(weight());
+  $('bReveal').hidden=!S.done;
+}
+function say(t,cls){ const m=$('msg'); m.innerHTML=''; const s=document.createElement('span');
+  if(cls) s.className=cls; s.textContent=t; m.appendChild(s); }
+
+/* ============================================================================================
+   THE SHEET, THE TYPEAHEAD AND RESOLUTION
+   ============================================================================================ */
+function openCell(k){
+  if(S.done || S.cells[k]>=0) return;
+  S.open=k;
+  $('critRow').textContent=critOf(Math.floor(k/3),true).label;
+  $('critCol').textContent=critOf(k%3,false).label;
+  $('sheetMeta').textContent=(9-S.guesses)+' guess'+(9-S.guesses===1?'':'es')+' left · '+
+    GRID.counts[k]+' quantities fit this cell';
+  $('guess').value=''; $('sheetMsg').textContent=''; $('disamb').hidden=true; $('ta').innerHTML='';
+  $('sheet').hidden=false; $('scrim').classList.add('show');
+  requestAnimationFrame(()=>{ $('sheet').classList.add('show'); $('guess').focus(); });
+}
+function closeSheet(){
+  S.open=-1;
+  $('sheet').classList.remove('show'); $('scrim').classList.remove('show');
+  setTimeout(()=>{ if(S.open<0) $('sheet').hidden=true; },220);
+}
+
+/* THE TRAP IN THE TYPEAHEAD, stated where an editor will see it:
+   the suggestion list is drawn from the ENTIRE roster and is NEVER filtered by what is valid for the
+   open cell. Filtering it would hand over the answer. It looks like a kindness and it is a spoiler.
+   If anybody ever writes QUANTS.filter(validForCell) in here, the game is broken. */
+function typeahead(){
+  const box=$('ta'); box.innerHTML='';
+  if(!settings.type) return;
+  const q=soft($('guess').value);
+  if(q.length<2) return;
+  const pre=[], sub=[], seen=new Set();
+  for(let i=0;i<N;i++){
+    const e=QUANTS[i], k=soft(e.name);
+    if(k.indexOf(q)===0) pre.push(i);
+    else if((e.alt||[]).some(a=>soft(a).indexOf(q)===0)) pre.push(i);
+    else if(k.indexOf(q)>=0 || (e.alt||[]).some(a=>soft(a).indexOf(q)>=0)) sub.push(i);
+  }
+  const out=pre.concat(sub).filter(i=>{ if(seen.has(i)) return false; seen.add(i); return true; }).slice(0,6);
+  for(const i of out){
+    const e=QUANTS[i];
+    const li=document.createElement('li'), b=document.createElement('button');
+    b.type='button';
+    b.appendChild(document.createTextNode(e.name));
+    if(e.cls==='c'){ const ch=document.createElement('span'); ch.className='chip const'; ch.textContent='constant';
+      b.appendChild(ch); }
+    const sm=document.createElement('small');
+    sm.textContent=(e.unit==='—'?'no unit':e.unit)+' · '+dimStr(e.d)+' · '+(e.vec?'vector':'scalar');
+    b.appendChild(sm);
+    b.addEventListener('click',()=>{ $('guess').value=e.name; box.innerHTML=''; commit(i); });
+    li.appendChild(b); box.appendChild(li);
+  }
+}
+
+/* Resolution. Returns {kind:'hit'|'none'|'ambiguous', index?, options?, why?}.
+   Order matters and is argued for above the SYMS table: head-words first (so "power" prompts even
+   though it is also a canonical name), then the exact lookup, then symbols on the RAW key, then the
+   bounded fuzzy fallback. Two candidates within the fuzzy threshold never resolve silently. */
+function resolve(text){
+  const k=norm(text), rk=rawKey(text);
+  if(AMBIGMAP.has(k)) return {kind:'ambiguous',options:AMBIGMAP.get(k),why:'word'};
+  if(KEYS.has(k)) return {kind:'hit',index:KEYS.get(k)};
+  if(SYMMAP.has(rk)) return {kind:'ambiguous',options:SYMMAP.get(rk),why:'symbol',sym:text.trim()};
+  if(k.length<2) return {kind:'none',tooShort:true};
+  const cap=fuzzCap(k), hits=[];
+  for(const key of KEYLIST){
+    if(Math.abs(key.length-k.length)>cap) continue;
+    if(dl(k,key,cap)<=cap){ const i=KEYS.get(key); if(hits.indexOf(i)<0) hits.push(i); }
+  }
+  if(hits.length===1) return {kind:'hit',index:hits[0]};
+  if(hits.length>1) return {kind:'ambiguous',options:hits.slice(0,6),why:'fuzzy'};
+  return {kind:'none'};
+}
+
+/* Five outcomes, and ONLY ONE of them costs a guess. A typo, an unknown name, a bare symbol and a
+   repeat are the four things a sincere player does most often; charging for any of them turns a
+   puzzle into a punishment, and it is the single most common way this genre gets ruined. */
+function submit(){
+  if(S.open<0) return;
+  const raw=$('guess').value.trim();
+  const r=resolve(raw);
+  $('disamb').hidden=true;
+  if(r.kind==='none'){
+    if(r.tooShort) return;                              // mid-typo: ignore silently, cost nothing
+    sheetMsg('Quanta doesn’t know that name. The roster is '+N+' physical quantities and named '+
+             'constants from school and A-level physics. No guess spent.');
+    return;
+  }
+  if(r.kind==='ambiguous'){ showDisamb(r.options,r.why,r.sym); return; }
+  commit(r.index);
+}
+function showDisamb(options,why,sym){
+  const d=$('disamb'); d.innerHTML='';
+  const p=document.createElement('p'); p.style.margin='0';
+  p.textContent = why==='symbol'
+    ? 'Symbols are ambiguous in physics — “'+(sym||'that')+'” is several different quantities. Which one? (This costs no guess.)'
+    : (why==='word'
+        ? 'That word names more than one quantity. Which one? (This costs no guess.)'
+        : 'Which one? (This costs no guess.)');
+  d.appendChild(p);
+  const row=document.createElement('div'); row.className='row';
+  for(const i of options){
+    const b=document.createElement('button'); b.type='button'; b.textContent=QUANTS[i].name;
+    b.addEventListener('click',()=>{ d.hidden=true; commit(i); });
+    row.appendChild(b);
+  }
+  d.appendChild(row); d.hidden=false;
+  sheetMsg('');
+}
+function sheetMsg(t,cls){ const m=$('sheetMsg'); m.innerHTML='';
+  const s=document.createElement('span'); if(cls) s.className=cls; s.textContent=t; m.appendChild(s); }
+
+function commit(i){
+  const k=S.open; if(k<0) return;
+  const q=QUANTS[i];
+  const already=S.cells.indexOf(i);
+  if(already>=0){
+    sheetMsg(q.name+' is already placed — row '+(Math.floor(already/3)+1)+', column '+(already%3+1)+
+             '. Each quantity can only be used once. No guess spent.');
+    return;
+  }
+  const r=critOf(Math.floor(k/3),true), c=critOf(k%3,false);
+  const rOK=r.test(q), cOK=c.test(q);
+  if(rOK&&cOK){
+    S.cells[k]=i; $('guess').value='';
+    ping();
+    closeSheet(); paint();
+    const el=$('cell'+k); if(el){ el.classList.add('lay'); setTimeout(()=>el.classList.remove('lay'),380); }
+    say(q.name+' — '+r.label+' ✓ · '+c.label+' ✓','yes');
+    saveState();
+    if(filled()===9) endGrid(true);
+    return;
+  }
+  /* Outcome (d) says WHICH HALF failed. It teaches, it makes a wrong guess feel like it bought
+     something, and it cannot reveal an answer: it tells the player facts about the quantity THEY
+     named, not about any quantity they didn't. */
+  S.guesses++; S.dirty[k]=1; flat();
+  const line=q.name+' — '+r.label+' '+(rOK?'✓':'✗')+' · '+c.label+' '+(cOK?'✓':'✗');
+  sheetMsg(line,'nope'); say(line,'nope');
+  paint(); saveState();
+  if(S.guesses>=9){ closeSheet(); endGrid(false); }
+}
+
+/* ============================================================================================
+   THE END OF A GRID, THE REVEAL PANEL AND SHARING
+   ============================================================================================ */
+let siteStreak=0, heaviest=0;
+function endGrid(perfect){
+  if(S.done) return;
+  S.done=true; saveState(); paint();
+  if(perfect) chord();
+  if(LIVE){
+    /* dailyDone() is called when the grid ENDS, either way — 9/9 or out of guesses. A streak that
+       required a perfect grid would break for everybody in the first week and then mean nothing.
+       Showing up is the feat the streak pays for. */
+    const w=weight();
+    if(w>loadToday(SLUG+'.dbest')) saveToday(SLUG+'.dbest',w);
+    siteStreak=dailyDone();
+    $('sStreak').textContent=String(siteStreak);
+  }
+  track('grid_end',{filled:filled(),guesses:S.guesses,weight:weight(),heaviest:heaviest,
+                    mode:LIVE?'daily':'archive',typeahead:settings.type});
+  say(perfect ? 'Nine of nine. The spectrum is complete.'
+             : filled()+' of nine filled. Every answer is below.');
+  setTimeout(showReveal, perfect?900:400);
+}
+function esc(t){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+function showReveal(){
+  const R=$('revInner');
+  const parts=[];
+  parts.push('<h2 id="revTitle">'+filled()+' of nine</h2>');
+  parts.push('<p><b>Weight '+weight()+'</b> of a possible '+heaviest+' · '+S.guesses+
+             ' of nine guesses spent'+(settings.type?'':' · recall')+'.</p>');
+  parts.push('<textarea class="sharebox" id="shareTxt" rows="7" readonly aria-label="Your result, ready to copy"></textarea>');
+  parts.push('<div class="tools"><button class="btn primary" type="button" id="bCopy">Copy result</button>'+
+             '<button class="btn" type="button" id="bClose">Back to the grid</button></div>');
+  parts.push('<p class="note">Every quantity in the roster that fits each cell, with its SI unit, its '+
+             'dimensional formula, whether it is a vector or a scalar, and the named law or instrument '+
+             'it belongs to. Yours is highlighted. This part is the point of the game.</p>');
+  for(let k=0;k<9;k++){
+    const r=critOf(Math.floor(k/3),true), c=critOf(k%3,false);
+    parts.push('<h3>'+esc(r.label)+' &nbsp;×&nbsp; '+esc(c.label)+
+               ' <span style="font-weight:600;opacity:.75">('+GRID.counts[k]+')</span></h3>');
+    const list=GRID.cands[k].slice().sort((a,b)=>{
+      const d=QUANTS[b].fame-QUANTS[a].fame; return d!==0?d:a-b;   // total comparator, tie-break on index
+    });
+    parts.push('<ul class="ans">');
+    for(const i of list){
+      const q=QUANTS[i], mine=S.cells[k]===i;
+      const extra=[];
+      if(q.law) extra.push('In '+esc(q.law)+'.');
+      if(q.instr) extra.push('Measured with '+anA(esc(q.instr))+'.');
+      if(q.base) extra.push('An SI base quantity.');
+      parts.push('<li'+(mine?' class="mine"':'')+'><b>'+esc(q.name)+'</b>'+
+        (q.cls==='c'?' <span class="chip const">constant</span>':'')+
+        ' <span class="u">'+esc(q.unit==='—'?'no unit':q.unit)+'</span>'+
+        (q.unit==='—'?'':' <span style="opacity:.75">('+esc(q.uname)+')</span>')+
+        ' · '+esc(dimStr(q.d))+' · '+(q.vec?'vector':'scalar')+
+        ' · <span class="w">weight '+(6-q.fame)+'</span>'+
+        '<span class="g">'+esc(q.gloss)+'</span>'+
+        (extra.length?'<span class="g">'+extra.join(' ')+'</span>':'')+'</li>');
+    }
+    parts.push('</ul>');
+  }
+  parts.push('<h3>About this dataset</h3>');
+  parts.push('<p class="note"><b>Every criterion in Quanta is a stable fact</b> — a definition, an SI '+
+    'classification, a dimensional formula. Never a ranking, never "most" or "largest", because those '+
+    'flip and a criterion that flips turns the game into a liar. Three things are worth spelling out, '+
+    'because they are the traps: whether a quantity is a <i>vector</i> is about how it adds, not '+
+    'whether it has a direction — which is why electric current is a scalar; <i>eponymous unit</i> '+
+    'means the coherent SI unit is itself a special named unit honouring a scientist, so the newton, '+
+    'joule and volt count while the N·m of torque and the N·s of impulse do not; and a dimension '+
+    '<i>appears</i> whenever its exponent is non-zero, negative exponents included.</p>');
+  parts.push('<p class="note">Where a fact could not be confirmed against a public reference, the tag '+
+    'was left <b>off</b> rather than guessed. That makes the dataset incomplete rather than wrong, '+
+    'and the difference matters: a missing tag only ever rejects a correct answer and apologises for '+
+    'it, while a wrong tag would also accept an incorrect one and you could not tell which failure '+
+    'you were looking at. Two axes were left out of the grid entirely for a different reason — being '+
+    '<i>conserved</i>, and appearing in one <i>specific</i> named law, each have too few members to '+
+    'build a fair cell from. They are printed above instead, on the entries that carry them.</p>');
+  parts.push('<p class="note"><b>Weight is not rarity scoring.</b> Immaculate Grid’s rarity is a '+
+    '<i>social</i> measurement — it tells you how few of the other players thought of your answer, and '+
+    'knowing that requires a server counting everybody. Quanta has no server and never phones home. '+
+    'Its Weight is an <i>editorial</i> measurement: a number assigned to each quantity when the '+
+    'dataset was written, reflecting roughly how early in a physics course you meet it. It is the same '+
+    'on day one as on day one thousand, and it works on a plane. It can never surprise you by '+
+    'revealing that everybody else also thought of impulse.</p>');
+  parts.push('<p class="note">Definitions, SI units and dimensional formulae are facts and facts are '+
+    'not copyrightable. Quanta ships <b>zero image files</b> and makes no network request of any kind. '+
+    'Compiled by hand from multiple public references, never copied from any single table.</p>');
+  parts.push('<p class="note">Something wrong here? Corrections are welcome — this is a hand-built '+
+    'table and it will have gaps. <a href="../">kreeda.games</a></p>');
+  R.innerHTML=parts.join('');
+  $('shareTxt').value=shareText();
+  $('bCopy').addEventListener('click',doCopy);
+  $('bClose').addEventListener('click',()=>{ $('reveal').classList.remove('show'); $('reveal').hidden=true; });
+  $('reveal').hidden=false; $('reveal').classList.add('show'); $('reveal').scrollTop=0;
+  $('revTitle').setAttribute('tabindex','-1'); $('revTitle').focus();
+}
+
+/* The share grid encodes, per cell, exactly two bits: solved or not, and cleanly or not. It encodes
+   nothing about WHICH quantity was named. The criteria are not secret — every player worldwide sees
+   the identical six the moment they open the page — so revealing which cells somebody found tells a
+   reader nothing they could not already see.
+   THEREFORE: Weight is never encoded per cell. A per-cell weight glyph would leak — telling a reader
+   that your answer to a three-answer cell was a weight-5 name narrows their search to one quantity.
+   Weight appears only as a single total on the score line, where it is not attributable to any cell.
+   This is the one way this format could be broken and it is exactly the kind of thing that looks
+   like a nice idea in review. It isn't. */
+function shareText(){
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const a=KEY.split('-'), head='Kreeda · Quanta · '+(+a[2])+' '+MON[+a[1]-1];
+  let rows='';
+  for(let i=0;i<3;i++){
+    for(let j=0;j<3;j++){
+      const k=i*3+j;
+      rows += S.cells[k]<0 ? '⬜' : (S.dirty[k] ? '🟨' : '🟪');
+    }
+    rows+='\n';
+  }
+  let score=filled()+'/9 · weight '+weight();
+  if(!settings.type) score+=' · recall';
+  if(LIVE && siteStreak>=2) score+=' · streak '+siteStreak+' 🔥';
+  if(!LIVE) score+=' · archive';
+  return head+'\n'+rows+score+'\nkreeda.games/quanta/';
+}
+function doCopy(){
+  const t=shareText(), b=$('bCopy');
+  const ok=()=>{ b.textContent='Copied'; setTimeout(()=>b.textContent='Copy result',1400); };
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok,fallback); }
+    else fallback();
+  }catch(e){ fallback(); }
+  function fallback(){
+    const ta=$('shareTxt'); ta.focus(); ta.select();
+    try{ document.execCommand('copy'); ok(); }catch(e){ b.textContent='Select and copy'; }
+  }
+}
+
+/* The one call into analytics.js, and deliberately the dumbest possible wrapper: if that file was
+   blocked, never loaded, or is doing nothing because we are on file://, this is a no-op and the game
+   cannot tell. Nothing in here is load-bearing. */
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+
+/* ============================================================================================
+   BOOT
+   ============================================================================================ */
+function applyTheme(){
+  const el=document.documentElement;
+  if(settings.theme==='auto') el.removeAttribute('data-theme'); else el.setAttribute('data-theme',settings.theme);
+  $('bTheme').textContent='Theme: '+settings.theme;
+}
+function gapsNotice(){
+  try{
+    if(LS.get(SLUG+'.gapsx')==='1') return;
+    $('staleTxt').textContent=N+' quantities in the roster, not all of physics, and an unconfirmed '+
+      'fact was left untagged rather than guessed. So a correct answer can be rejected as a gap — '+
+      'never as a verdict. Every answer is listed at the end.';
+    $('stale').classList.add('show');
+  }catch(e){}
+}
+function boot(){
+  loadSettings(); applyTheme();
+  GRID=makeGrid(KEY);
+  heaviest=heaviestMatching(GRID.cands);
+  loadState();
+  buildGrid();
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const a=KEY.split('-');
+  $('datechip').textContent=(ARCHIVE?'Archive · ':'')+(+a[2])+' '+MON[+a[1]-1]+' '+a[0];
+  if(ARCHIVE) $('datechip').classList.add('arch');
+  $('asof').textContent=N+' physical quantities and named constants in the roster, at school and '+
+    'A-level. SI units and dimensional formulae throughout.';
+  siteStreak=LIVE ? (LS.get('kreeda.streak').split('|')[0]===dayKey() ? (+LS.get('kreeda.streak').split('|')[1]||0) : 0) : 0;
+  $('sStreak').textContent=String(siteStreak);
+  $('bSound').setAttribute('aria-pressed',settings.snd?'true':'false');
+  $('bSound').textContent='Sound '+(settings.snd?'on':'off');
+  $('bType').setAttribute('aria-pressed',settings.type?'true':'false');
+  $('bType').textContent='Typeahead '+(settings.type?'on':'off');
+  gapsNotice();
+  if(S.done){ say(filled()+' of nine filled today. Tap “See every answer”.'); }
+  else if(filled()>0) say('Picking up where you left off.');
+  else say('Tap a square. Name a physical quantity that fits both its row and its column.');
+  paint();
+
+  $('guess').addEventListener('input',typeahead);
+  $('guess').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
+  $('bSubmit').addEventListener('click',submit);
+  $('bCancel').addEventListener('click',closeSheet);
+  $('scrim').addEventListener('click',closeSheet);
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(!$('reveal').hidden){
+      $('reveal').classList.remove('show'); $('reveal').hidden=true; } else closeSheet(); } });
+  $('bReveal').addEventListener('click',showReveal);
+  $('staleX').addEventListener('click',()=>{ $('stale').classList.remove('show'); LS.set(SLUG+'.gapsx','1'); });
+  $('bSound').addEventListener('click',()=>{ settings.snd=settings.snd?0:1; saveSettings();
+    $('bSound').setAttribute('aria-pressed',settings.snd?'true':'false');
+    $('bSound').textContent='Sound '+(settings.snd?'on':'off'); if(settings.snd) ping(); });
+  $('bType').addEventListener('click',()=>{ settings.type=settings.type?0:1; saveSettings();
+    $('bType').setAttribute('aria-pressed',settings.type?'true':'false');
+    $('bType').textContent='Typeahead '+(settings.type?'on':'off'); typeahead(); });
+  $('bTheme').addEventListener('click',()=>{ settings.theme = settings.theme==='auto'?'light':
+    (settings.theme==='light'?'dark':'auto'); saveSettings(); applyTheme(); });
+  $('bHow').addEventListener('click',()=>say('Nine cells, nine guesses. Each quantity can be used '+
+    'only once. Unknown names, bare symbols, ambiguous words and repeats are all free — only a real '+
+    'quantity that does not fit costs a guess. Weight rewards the less obvious answer.'));
+  /* Keep the sheet above the on-screen keyboard. visualViewport is the only honest source for this;
+     100vh lies on iOS the moment the keyboard opens. */
+  if(window.visualViewport){
+    const fit=()=>{ const vv=window.visualViewport;
+      const lift=Math.max(0, window.innerHeight-(vv.height+vv.offsetTop));
+      $('sheet').style.setProperty('bottom', (window.innerWidth<560? lift+'px' : ''));
+    };
+    window.visualViewport.addEventListener('resize',fit);
+    window.visualViewport.addEventListener('scroll',fit);
+  }
+  track('grid_start',{mode:LIVE?'daily':'archive',fallback:GRID.fallback?1:0,heaviest:heaviest});
+}
+
+/* ============================================================================================
+   AUDIT — dev only, not linked from anywhere. ?audit=N generates the next N days and reports.
+   Run it before any data change ships: it is the only way to actually KNOW the grid is solvable
+   every day, as opposed to intending that it be.
+   ============================================================================================ */
+function audit(n){
+  const out={days:n,fallbacks:[],minCell:1e9,maxCell:0,sumMin:1e9,sumMax:0,noMatch:[],lowCell:[],
+             critUse:{},worst:null};
+  let k=dayKey(), totalMin=0;
+  for(let d=0;d<n;d++){
+    const g=makeGrid(k);
+    if(g.fallback) out.fallbacks.push(k);
+    const mn=Math.min.apply(null,g.counts), mx=Math.max.apply(null,g.counts);
+    if(mn<out.minCell){ out.minCell=mn; out.worst=k; }
+    if(mx>out.maxCell) out.maxCell=mx;
+    out.sumMin=Math.min(out.sumMin,g.sum); out.sumMax=Math.max(out.sumMax,g.sum);
+    totalMin+=mn;
+    if(mn<3) out.lowCell.push(k+':'+mn);
+    if(!perfectMatching(g.cands)) out.noMatch.push(k);
+    for(const c of g.rows.concat(g.cols)){ const id=CRITERIA[c].id; out.critUse[id]=(out.critUse[id]||0)+1; }
+    const a=k.split('-'), t=new Date(+a[0],+a[1]-1,+a[2]); t.setDate(t.getDate()+1); k=dayKey(t);
+  }
+  out.meanMin=+(totalMin/n).toFixed(2);
+  out.ok = out.fallbacks.length===0 && out.lowCell.length===0 && out.noMatch.length===0;
+  console.log('[quanta audit]', JSON.stringify(out));
+  window.__audit=out;
+  return out;
+}
+try{ boot(); }catch(e){ console.error('[quanta] boot failed',e); }
+if(params.get('audit')) audit(Math.max(1,Math.min(2000,+params.get('audit')||365)));
+</script>
+<script src="../analytics.js"></script>
+</body>
+</html>
