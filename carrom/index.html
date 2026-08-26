@@ -342,6 +342,45 @@ function daySeed(k){ let h=5381; for(let i=0;i<k.length;i++) h=(h*33 ^ k.charCod
 const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
            set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
 
+/* Analytics must never be able to break a game. bgTrack is itself wrapped and swallows everything,
+   but the guard is repeated here so a game opened from the file system — where analytics.js injects
+   nothing at all — reaches a no-op rather than an undefined. */
+function track(name,params){ try{ if(window.bgTrack) window.bgTrack(name,params); }catch(e){} }
+/* game_start/game_end bracket ONE match — from the first striker actually fired (see fireStriker) to
+   however it stops being played. Page load already gets a pageview; sitting on the start screen or
+   dragging the striker around without letting go is not "playing", so the flag flips in fireStriker,
+   the one function every human flick and every AI shot both funnel through. */
+const analytics = { started:false, ended:false, t0:0 };
+function modeVocab(){ return game.mode === 'cpu' ? 'vs-ai' : game.mode; }   // 'daily' | '2p' pass through as-is
+/* Fires once per match, from whichever shot happens to be first — a human's drag-release or the AI's
+   opening move on a 2p... no, cpu game where it goes first is never true here (player 0 always opens),
+   but the check still guards a 2p rematch from double-counting if beginTurn ever runs twice. */
+function markStarted(){
+  if (analytics.started) return;
+  analytics.started = true; analytics.ended = false; analytics.t0 = Date.now();
+  const p = { mode: modeVocab() };
+  if (game.mode === 'cpu') p.difficulty = game.diff;
+  track('game_start', p);
+}
+/* The one path every match end funnels through, so a rematch or a menu bail can't send game_end twice
+   for the same match. `outcome` is deliberately the same three-word vocabulary for every mode — even
+   the daily, which has no opponent to lose to, still "loses" to running out of strikes. */
+function markEnded(outcome, extra){
+  if (!analytics.started || analytics.ended) return;
+  analytics.ended = true;
+  const p = Object.assign({ mode: modeVocab(), outcome, duration_s: Math.round((Date.now()-analytics.t0)/1000) }, extra||{});
+  if (game.mode === 'cpu') p.difficulty = game.diff;
+  track('game_end', p);
+}
+/* Called whenever a match is abandoned rather than finished on its own terms: the pause menu's Main
+   Menu button, or Restart thrown away mid-match. A match that already called markEnded (won, lost, or
+   a completed daily) is a no-op here — the flag is what keeps a rematch from being misreported as a quit. */
+function quitCurrentMatch(){
+  if (!game.mode || !analytics.started || analytics.ended) return;
+  const extra = game.mode === 'daily' ? { strikes: game.strikes, pocketed: dailyScore() } : undefined;
+  markEnded('quit', extra);
+}
+
 /* a day-stamped value: returns 0 unless the stamp is today */
 function loadToday(key){ const s=LS.get(key), i=s.indexOf('|');
   return (i<0 || s.slice(0,i)!==dayKey()) ? 0 : (+s.slice(i+1)||0); }
@@ -1220,6 +1259,7 @@ function beginTurn(extra){
 }
 function fireStriker(dx, dy, power){
   if (!game.striker) return;
+  markStarted();   // the first flick of the match, human or AI — see markStarted for why it lives here
   power = clamp(power, 0, 1);
   const v = CONFIG.MIN_V + power * (CONFIG.MAX_V - CONFIG.MIN_V);
   game.striker.vx = dx * v;
@@ -1307,6 +1347,10 @@ function endDaily(){
   $('dailyStat').textContent = score + '/10 in ' + game.strikes
     + (game.strikes === 1 ? ' strike' : ' strikes')
     + (streak >= 2 ? ' · streak ' + streak + ' \u{1F525}' : '');
+  // won = cleared the board, lost = ran out of strikes first — the daily has no opponent, but "lost to
+  // the strike budget" is still a loss, and keeping the same three-word vocabulary as the match modes
+  // means a report can group outcome across all of carrom without a daily-shaped exception.
+  markEnded(cleared ? 'won' : 'lost', { strikes: game.strikes, pocketed: score });
   $('btnRematch').textContent = 'Play again';
   const sb = $('btnShare');
   sb.style.display = '';
@@ -1397,6 +1441,9 @@ function endGame(winner){
   $('dailyResult').hidden = true;
   $('btnRematch').textContent = 'Rematch';
   if (youWon) { Snd.jingle(); confettiBurst(); } else Snd.sad();
+  // youWon is already "player 0 (the bottom seat) won" for both vs-ai and pass-and-play — there is no
+  // separate "player 2's perspective" event, so a 2p match reports from the seat that opened the app.
+  markEnded(youWon ? 'won' : 'lost');
   /* THE ALL-TIME NUMBER is carrom's own: the winner scores the carrommen the loser still has on the
      board, plus 3 for the queen. Every carrom club in India keeps that score, so it needs no explaining.
      Only a Vs Computer win records it — pass-and-play has two owners and no single record to keep — and
@@ -1741,6 +1788,8 @@ function kreedaToast(anchorEl, msg){
 
 /* ---------------- menus / buttons ---------------- */
 function newGame(mode, diff){
+  quitCurrentMatch();   // Restart/Rematch land here too — an unfinished match being thrown away IS a quit
+  analytics.started = false; analytics.ended = false;
   const daily = mode === 'daily';
   game.mode = mode;
   game.diff = diff || game.diff;
@@ -1764,6 +1813,7 @@ function newGame(mode, diff){
   beginTurn(false);
 }
 function toMenu(){
+  quitCurrentMatch();   // no-op if the match already reported won/lost/quit
   game.state = 'MENU';
   game.mode = null; game.paused = false;
   game.striker = null; game.aim = null; game.ai = null;

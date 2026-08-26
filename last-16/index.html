@@ -1469,6 +1469,26 @@ function clearTournamentResume(){
   Settings.resume = null; persistSettings();
 }
 
+/* ============================================================ TELEMETRY ============================================================ */
+/* The one call into analytics.js, and deliberately the dumbest possible wrapper: if that file was
+   blocked, never loaded, or is doing nothing because we're on file://, this is a no-op and the game
+   cannot tell. Nothing in here is load-bearing — no return value is read, nothing branches on it. */
+function track(name,params){ try{ if(window.bgTrack) window.bgTrack(name,params); }catch(e){} }
+
+/* A TOURNAMENT RUN IS A SEQUENCE OF MATCHES, not one sitting of play — a single start/end pair over
+   the whole bracket would tell you nothing about where people actually fall. So game_start/game_end
+   fire once PER MATCH (bracket round or quick match alike), and a separate tournament_end fires once
+   when the run itself is over — eliminated or crowned. matchParams() is the shared shape both events
+   carry, built fresh at the moment it's called so it always describes the match just played/starting,
+   never a stale one left over from a previous pick. */
+function matchParams(extra){
+  const p = { mode: App.mode==='tournament'?'tournament':'quick-match',
+              nation: App.humanNationKey, opponent: App.quickOpponentKey, star_idx: App.humanPlayerIdx };
+  if(App.mode==='tournament') p.round = App.tournament.roundNames[App.tournament.round];
+  if(extra) for(const k in extra) p[k]=extra[k];
+  return p;
+}
+
 /* ============================================================ SCREEN / APP STATE ============================================================ */
 const screens = ['title','mode','nation','player','match','result','champion'];
 function showScreen(name){
@@ -1630,6 +1650,8 @@ function beginMatchFromSelection(){
   teamB.aiScale = aiScale;
   const match = newMatch(teamA, teamB, {isKnockout:true, roundLabel});
   App.match = match;
+  match._t0 = performance.now();   // wall-clock mark, not match.clock — a paused/bannered match still spends real seconds
+  track('game_start', matchParams());
   showScreen('match');
   resizePitchCanvas();
   kickoff(match, Math.random()<0.5?teamA:teamB);
@@ -1676,6 +1698,10 @@ function onMatchEnded(match){
   const human = match.humanTeam;
   const opp = human===match.teamA?match.teamB:match.teamA;
   const humanWon = match.winner===human;
+  // every match ends through here — regulation win/loss AND a decided shootout both funnel into
+  // onMatchEnded, so this is the one place a game_end can't be missed regardless of how it finished
+  track('game_end', matchParams({ outcome: humanWon?'win':'loss',
+    duration_s: Math.round((performance.now()-match._t0)/1000), went_to_penalties: match.penalty?1:0 }));
   document.getElementById('resultTitle').textContent = App.mode==='tournament' ? (App.tournament.roundNames[App.tournament.round]+' RESULT') : 'FULL TIME';
   document.getElementById('resultStats').innerHTML = `${match.teamA.name} ${match.teamA.score} - ${match.teamB.score} ${match.teamB.name}` + (match.penalty?` <br>Penalties: ${match.penalty.scoreA} - ${match.penalty.scoreB}`:'');
   const roundListEl = document.getElementById('roundList');
@@ -1689,6 +1715,10 @@ function onMatchEnded(match){
       AudioEngine.miss();
       if(saveBestFinish(t.round)) document.getElementById('resultStats').innerHTML += '<br><span style="color:#ffd93d;font-weight:800;">New best finish!</span>';
       clearTournamentResume();
+      // the run itself is over — a THIRD event distinct from the match's own game_end, because "lost
+      // the SF" and "lost the R16" are both one game_end(outcome:'loss') and only round_reached here
+      // tells them apart across a whole bracket
+      track('tournament_end', { outcome:'eliminated', round_reached:t.roundNames[t.round], matches_played:t.round+1, nation:t.humanKey });
       const roundLabel = ['Round of 16','Quarter-Finals','Semi-Finals','Final'][t.round] || 'Round of 16';
       const btn = document.createElement('button'); btn.className='btn'; btn.textContent='MAIN MENU';
       btn.addEventListener('click',()=>{ resetToTitle(); });
@@ -1714,6 +1744,7 @@ function onMatchEnded(match){
       // won the final
       saveBestFinish(4);
       clearTournamentResume();
+      track('tournament_end', { outcome:'champion', round_reached:'FINAL', matches_played:4, nation:t.humanKey });
       const btn = document.createElement('button'); btn.className='btn'; btn.textContent='CLAIM TROPHY';
       btn.addEventListener('click',()=>{ showChampion(); });
       btnWrap.appendChild(btn);
@@ -1753,15 +1784,28 @@ document.getElementById('champShareBtn').addEventListener('click',()=>{
 });
 function resetToTitle(){ App.mode=null; App.tournament=null; App.match=null; showScreen('title'); }
 
+/* A match walking away via the pause menu never reaches onMatchEnded — RESTART and MAIN MENU both
+   drop the match object on the floor instead. Without this it's a silent hole in the data: every
+   quit looks identical to a tab just closing, and "how many people bail mid-match" is unanswerable.
+   Guarded on .ended so a match that already finished (result screen showing, pause overlay stale)
+   can't double-report. */
+function abandonMatchIfActive(){
+  if(App.match && !App.match.ended){
+    track('game_end', matchParams({ outcome:'quit',
+      duration_s: Math.round((performance.now()-App.match._t0)/1000), went_to_penalties: App.match.penalty?1:0 }));
+  }
+}
+
 /* ============================================================ PAUSE ============================================================ */
 let paused=false;
 document.getElementById('pauseBtn').addEventListener('click',()=>togglePause());
 document.getElementById('resumeBtn').addEventListener('click',()=>togglePause());
 document.getElementById('restartBtn').addEventListener('click',()=>{
+  abandonMatchIfActive();
   togglePause();
   beginMatchFromSelection();
 });
-document.getElementById('menuBtn').addEventListener('click',()=>{ togglePause(); resetToTitle(); });
+document.getElementById('menuBtn').addEventListener('click',()=>{ abandonMatchIfActive(); togglePause(); resetToTitle(); });
 document.getElementById('muteBtn').addEventListener('click',()=>{
   AudioEngine.muted = !AudioEngine.muted;
   document.getElementById('muteBtn').textContent = AudioEngine.muted?'🔇':'🔊';

@@ -830,7 +830,8 @@ const game={
   introT:0, settleT:0, shotStart:new THREE.Vector3(),
   swing:{ phase:0, needle:0, dirUp:true, power:0, lastPow:null, lastAcc:null },
   meterSpeed:140, holedOut:false, aimDirty:true, msgT:0,
-  daily:false, dailyPlan:null, dailyStreak:0
+  daily:false, dailyPlan:null, dailyStreak:0,
+  t0:0, reported:false   // telemetry bookkeeping — see beginRoundTracking()/roundReport() below
 };
 function H(){ return HOLES[game.hole]; }
 
@@ -1294,7 +1295,34 @@ function finishRound(){
     const b=loadInt(SLUG+'.best');
     if(!b || total<b) LS.set(SLUG+'.best', String(total));
   }
+  roundReport('complete');
 }
+
+/* ============================== TELEMETRY ============================== */
+/* The one call into analytics.js, and deliberately the dumbest possible wrapper: if that file was
+   blocked, never loaded, or is doing nothing because we're on file://, this is a no-op and the game
+   cannot tell. Nothing in here is load-bearing — no return value is read, nothing branches on it. */
+function track(name,params){ try{ if(window.bgTrack) window.bgTrack(name,params); }catch(e){} }
+
+/* A round is four holes, and "how far did they get" matters as much as "how did they do" — a round
+   abandoned on hole 2 and a round finished in 14 both look like a bare play count unless something says
+   otherwise. game.scores only grows as a hole is actually holed out (afterSettle sets
+   game.scores[game.hole] the moment a putt drops), so its length IS holes completed regardless of
+   whether the round ended by playing all four or by walking away — no separate counter to keep in sync. */
+function roundReport(outcome){
+  if(game.reported) return;             // finishRound() and the pagehide safety net below can't both fire
+  game.reported=true;
+  const completed=game.scores.length, strokes=game.scores.reduce((s,v)=>s+v,0);
+  const par=HOLES.slice(0,completed).reduce((s,h)=>s+h.par,0);
+  track('game_end', { mode: game.daily?'daily':'practice', outcome,
+    duration_s: Math.round((performance.now()-game.t0)/1000),
+    holes_completed: completed, strokes, par, to_par: strokes-par });
+}
+/* Closing the tab mid-round never runs finishRound() — pagehide is the last hook that still fires by
+   then, so it's the only chance to record an ABANDONED round instead of it vanishing with no game_end
+   at all. Guarded on TITLE (no round has started yet) and on .reported (a round that already finished
+   normally, scorecard closed, must not also report as quit on the way out). */
+addEventListener('pagehide', function(){ try{ if(game.state!=='TITLE') roundReport('quit'); }catch(e){} });
 function dailyShareText(){
   const d=new Date(), { total, parSum }=roundTotals(), streak=streakOf('kreeda.streak');
   return 'Kreeda · Fairway Four · '+d.getDate()+' '+MONTHS[d.getMonth()]+'\n'
@@ -1426,7 +1454,15 @@ function endIntro(){
   startWalk();                                     // walk onto the tee
 }
 function resetRound(){
-  game.scores=[]; startHole(0);      // conditions are already applied and stay applied: same day, same round
+  game.scores=[]; beginRoundTracking();
+  startHole(0);      // conditions are already applied and stay applied: same day, same round
+}
+/* Shared by both round entry points (fresh TEE OFF/TODAY'S ROUND and PLAY AGAIN's resetRound) so a
+   restarted round always gets its own game_start, its own clock, and can report its own game_end
+   without being shorted by the previous round's already-tripped .reported flag. */
+function beginRoundTracking(){
+  game.t0=performance.now(); game.reported=false;
+  track('game_start', { mode: game.daily?'daily':'practice' });
 }
 /* The daily is a separate entry point, not a toggle mid-round: the conditions have to be settled
    before the first tee shot, because the cup you are aiming at is part of the shot. */
@@ -1438,6 +1474,7 @@ function startRound(daily){
   applyRoundConditions();
   el('titleModal').classList.remove('open');
   game.scores=[];
+  beginRoundTracking();
   startHole(0);
 }
 

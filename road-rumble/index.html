@@ -308,7 +308,7 @@ function newGame(){
   game={
     position:0, playerX:0, speed:maxSpeed*0.12, steer:0, lean:0, bob:0,
     health:100, club:false, crash:false, crashT:0, spin:0, hurtT:0, punchT:0, punchCd:0, boostFlash:0,
-    rivals, traffic, pickups, elapsed:0, hillOffset:0, skyShift:0,
+    rivals, traffic, pickups, elapsed:0, hillOffset:0, skyShift:0, wipeouts:0,
     finished:false, finishPlace:0, finishOrder:[],
     forceThrottle:undefined, forceBrake:undefined, forceSteer:undefined, forcePunch:false
   };
@@ -464,7 +464,7 @@ function updateTraffic(dt){
   }
 }
 function crashPlayer(reason){ const g=game; if(g.crash||g.finished) return;
-  g.crash=true; g.crashT=1.35; g.crashReason=reason; g.spin=0; g.health=Math.max(0,g.health); sfx.crash(); }
+  g.crash=true; g.crashT=1.35; g.crashReason=reason; g.spin=0; g.health=Math.max(0,g.health); g.wipeouts++; sfx.crash(); }
 
 function kreedaShare(text, url, btn){
   try{
@@ -488,6 +488,12 @@ function kreedaToast(anchorEl, msg){
     setTimeout(function(){ try{ anchorEl.textContent = original; }catch(e){} }, 1500);
   }catch(e){}
 }
+
+/* The one call into analytics.js, and deliberately the dumbest possible wrapper: if that file was
+   blocked, never loaded, or is doing nothing because we're on file://, this is a no-op and the game
+   cannot tell. Nothing in here is load-bearing — no return value is read, nothing branches on it. */
+function track(name,params){ try{ if(window.bgTrack) window.bgTrack(name,params); }catch(e){} }
+
 let lastFinishOrd='';
 function liveRank(){ const g=game; let ahead=0; for(const r of g.rivals) if(r.dist>g.position) ahead++; return ahead+1; }
 function finishRacer(who){ const g=game;
@@ -499,6 +505,12 @@ function endRace(){ const g=game; state='over';
   // any rivals not yet finished rank behind the player by current distance
   const place=g.finishPlace, field=g.rivals.length+1;
   const isBest=(best===0)||place<best; if(isBest){ best=place; try{ localStorage.setItem('rumble.best',best); }catch(e){} }
+  // the track is a fixed length and every crash is a temporary wipeout (health floors out and the race
+  // keeps going) rather than a game over, so this is the only ending there is — outcome distinguishes
+  // 1st place from "survived to the line" rather than pretending a DNF exists that the code can't produce.
+  // wipeouts carries how bruising the ride was, which finishing position alone doesn't say.
+  track('game_end', { mode:'race', outcome: place===1?'win':'complete', duration_s: Math.round(g.elapsed),
+    finish_position: place, field_size: field, distance_km: +(g.position/10000).toFixed(2), wipeouts: g.wipeouts });
   const ord=['1st','2nd','3rd','4th','5th','6th'][place-1]||place+'th';
   lastFinishOrd=ord;
   document.getElementById('overTitle').textContent = place===1?'YOU WON':'FINISHED';
@@ -734,6 +746,7 @@ requestAnimationFrame(frame);
 /* ============================ flow ============================ */
 function startGame(){
   audioInit(); newGame(); state='play'; lastT=performance.now(); acc=0;
+  track('game_start', { mode:'race' });   // fires on the Ride/Ride again click — a real gesture, not page load
   document.getElementById('startPanel').classList.add('hidden');
   document.getElementById('overPanel').classList.add('hidden');
   document.getElementById('hud').style.display='block';

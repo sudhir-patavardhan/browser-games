@@ -402,6 +402,11 @@ function shareGrid(bands, lines){
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function shareDate(){ const d=new Date(); return d.getDate()+' '+MONTHS[d.getMonth()]; }
 
+/* Analytics must never be able to break a game. bgTrack is itself wrapped and swallows everything,
+   but the guard is repeated here so a game opened from the file system — where analytics.js injects
+   nothing at all — reaches a no-op rather than an undefined. */
+function track(name,params){ try{ if(window.bgTrack) window.bgTrack(name,params); }catch(e){} }
+
 /* ============================== AUDIO ============================== */
 const AudioEngine = {
   ctx: null,
@@ -970,7 +975,25 @@ class Game {
   constructor(){
     this.board = new Board();
     this.dailyMode = false;
+    this._anaStarted = false; this._anaEnded = false; this._anaT0 = 0;
     this.reset();
+  }
+  /* game_start/game_end bracket ONE run, from the mode button that actually drops the first piece — not
+     the page load that shows the start card — to however it stops: topping out, or the player bailing
+     to a restart mid-run. `markEnded` is the single funnel both endings go through, and its own started/
+     ended flags are what keep a restart from reporting a run that already reported topped_out. */
+  markStarted(){
+    this._anaStarted = true; this._anaEnded = false; this._anaT0 = Date.now();
+    track('game_start', { mode: this.dailyMode ? 'daily' : 'endless' });
+  }
+  markEnded(outcome){
+    if(!this._anaStarted || this._anaEnded) return;
+    this._anaEnded = true;
+    track('game_end', {
+      mode: this.dailyMode ? 'daily' : 'endless', outcome,
+      duration_s: Math.round((Date.now()-this._anaT0)/1000),
+      score: Math.round(this.score), lines: this.lines, level: this.level
+    });
   }
   /* The bag is rebuilt HERE, not in the constructor. A daily retry has to replay the day's sequence from
      the first piece — if the bag stream survived a restart, your second attempt would start mid-sequence
@@ -1000,11 +1023,13 @@ class Game {
     this.setOverlay('start');
   }
   start(daily){
+    this.markEnded('quit');   // abandoning a run in progress for a fresh one IS a quit; a no-op otherwise
     this.dailyMode = daily === true;
     this.reset();
     this.state = 'playing';
     this.setOverlay(null);
     this.spawnPiece();
+    this.markStarted();
   }
   restartFromGameOver(){
     this.start(this.dailyMode);   // R replays the mode you died in, never silently drops you into the other one
@@ -1038,6 +1063,7 @@ class Game {
     this.state = 'gameover';
     this.piece = null;
     AudioEngine.gameOver();
+    this.markEnded('topped_out');
     /* Two ledgers that never touch. A daily run settles against today's row only; an endless run against
        the all-time number. Cross-crediting either way would make the daily's learnable sequence the
        fastest route to a big endless score, which is exactly the corruption the split exists to prevent. */
