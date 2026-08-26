@@ -330,6 +330,12 @@
   </div>
 </div>
 
+<!-- analytics.js first, not last: it must define window.bgTrack before the game script below runs its
+     boot() synchronously and calls track('grid_start', ...) — a script tag after this point would still
+     be fetching when that call happens, and the event would silently vanish (window.bgTrack undefined,
+     not merely a blocked network request). Order-dependent, but analytics.js touches only document.title,
+     location and its own DOM nodes, so nothing here needs the rest of the page to exist first. -->
+<script src="../analytics.js"></script>
 <script>
 (function(){
 "use strict";
@@ -2310,6 +2316,10 @@ function submitEntity(idx){
 function endGrid(perfect){
   if(G.done) return;
   G.done=true; saveState(); renderAll();
+  /* Same event, same parameter names as the other four grids (see BOOT) — mirrors Maidan's grid_end
+     call site exactly. filled/guesses/weight/heaviest are all counts, never which being filled a cell. */
+  track('grid_end',{filled:laidCount(),guesses:G.guesses,weight:weightTotal(),heaviest:G.heaviest,
+                    mode:MODE,typeahead:SET.type});
   let streak=0;
   if(MODE==='daily'){
     /* dailyDone() fires when the grid ENDS, either way — 9/9 or out of guesses. */
@@ -2634,6 +2644,11 @@ window.setuSuggest=suggest;
 window.setuEnd=endGrid;
 window.setuRender=renderAll;
 
+/* The one call into analytics.js, and deliberately the dumbest possible wrapper: if that file was
+   blocked, never loaded, or is doing nothing because we are on file://, this is a no-op and the game
+   cannot tell. Nothing in here is load-bearing. */
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+
 /* ================================================================================
    BOOT
    ================================================================================ */
@@ -2647,9 +2662,14 @@ if(SET.drone){ /* off by default: a puzzle you sit and think over should not hum
 $('tagline').textContent = MODE==='practice' ? 'Practice grid — writes nothing to the daily.'
   : (MODE==='archive' ? 'Archive grid — no streak, no record kept.' : 'Nine stones make a bridge.');
 if(params.get('audit')) setTimeout(function(){ audit(Math.max(1,Math.min(3650,parseInt(params.get('audit'),10)||365))); },0);
+/* Setu is the fifth daily grid and the last to report — same event names, same parameter names
+   (filled, guesses, weight, heaviest, mode[, fallback / typeahead]) as Maidan/Valence/Quanta/Radian,
+   copied from Maidan's two call sites verbatim, so the five grids are one comparable population in a
+   report instead of four plus an invisible fifth. Counts and outcomes only: never a being's name, a
+   cell's contents, or the share string — a daily's answers must never leave the device. */
+track('grid_start',{mode:MODE,fallback:G.fallback?1:0,heaviest:G.heaviest});
 
 })();
 </script>
-<script src="../analytics.js"></script>
 </body>
 </html>

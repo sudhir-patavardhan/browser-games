@@ -517,6 +517,35 @@
             '10': [[28,10],[72,10],[50,29],[28,37],[72,37],[28,63],[72,63],[50,71],[28,90],[72,90]],
         };
 
+        /* Analytics must never be able to break a game. bgTrack is itself wrapped and swallows everything,
+           but the guard is repeated here so a game opened from the file system — where analytics.js injects
+           nothing at all — reaches a no-op rather than an undefined. */
+        function track(name, params) { try { if (window.bgTrack) window.bgTrack(name, params); } catch (e) {} }
+        /* Blackjack has no single round to bracket — a SESSION is a run of hands played back to back on
+           one bankroll, and that is the unit game_start/game_end report on. Nothing fires per hand: a
+           per-hand event is high-frequency and tells you little that the session totals don't already
+           say, and it would swamp every other game's counts in the same property.
+           A session ends one of two ways — the bankroll actually running dry (bust_out, caught in
+           dealInitial's own restock branch) or the player leaving before that happens (quit, caught on
+           the tab going away, the same 'hidden' signal analytics.js trusts for its own flush). `mode` is
+           the bet size the session opened at — the one bounded, meaningful axis a bankroll run has here. */
+        const analytics = { started: false, ended: false, t0: 0, hands: 0, startBalance: 0, mode: '' };
+        function markStarted() {
+            if (analytics.started && !analytics.ended) return;   // already mid-session — this is just the next hand
+            analytics.started = true; analytics.ended = false; analytics.t0 = Date.now();
+            analytics.hands = 0; analytics.startBalance = balance; analytics.mode = 'bet_' + currentBet;
+            track('game_start', { mode: analytics.mode });
+        }
+        function markEnded(outcome) {
+            if (!analytics.started || analytics.ended) return;
+            analytics.ended = true;
+            track('game_end', {
+                mode: analytics.mode, outcome, hands: analytics.hands,
+                duration_s: Math.round((Date.now() - analytics.t0) / 1000),
+                bankroll_delta: Math.round(balance - analytics.startBalance)
+            });
+        }
+
         let deck = [];
         let playerHand = [], dealerHand = [];
         const saved = loadSave();
@@ -667,6 +696,7 @@
             // a $0 table is a dead end, not a difficulty spike — restock and let the message land
             // before the next click actually deals, rather than flashing it for one frame.
             if (balance < 5) {
+                markEnded('bust_out');   // the run that got the bankroll here is over; the restock starts a new one
                 balance = STAKE;
                 updateBalance();
                 showMessage('Fresh stake — $' + STAKE, '#f4d35e');
@@ -675,6 +705,8 @@
             if (balance < currentBet) { showMessage('Not enough chips!', '#ff6b6b'); return; }
 
             hideMessage();
+            markStarted();   // first real deal of a session — a no-op for every hand after the first
+            analytics.hands++;
             createDeck();
             playerHand = [deck.pop(), deck.pop()];
             dealerHand = [deck.pop(), deck.pop()];
@@ -794,6 +826,20 @@
             if (k === 'h') hit();
             if (k === 's') stand();
         });
+
+        /* A session here is a bankroll arc — a run of hands on one stake — so the only real ends are
+           busting out and leaving.
+
+           `visibilitychange`→`hidden` is deliberately NOT one of them, even though it is the more
+           reliable signal to send on. It fires on every tab switch and app switch, and markStarted()
+           reopens a session once markEnded() has closed one, so hanging the end on it would split a
+           single sitting into one session per glance at another tab — each one short, and nearly all
+           of them labelled `quit`. That does not lose data, which would be recoverable; it fabricates
+           it, in exactly the two dimensions (session count and quit rate) anyone would look at first.
+
+           So this reports on pagehide only. Some real departures go unreported — mobile browsers can
+           skip it when the tab is discarded — and an undercount of ends is the honest failure here. */
+        addEventListener('pagehide', function(){ try{ markEnded('quit'); }catch(e){} });
 
         setControls(false);
         // reflect the restored bet in the chip row before the first paint, so the UI never shows

@@ -233,6 +233,46 @@ function renderModeStats(){
   }catch(e){}
 }
 
+/* Analytics must never be able to break a game. bgTrack is itself wrapped and swallows everything,
+   but the guard is repeated here so a game opened from the file system — where analytics.js injects
+   nothing at all — reaches a no-op rather than an undefined. */
+function track(name,params){ try{ if(window.bgTrack) window.bgTrack(name,params); }catch(e){} }
+/* game_start/game_end bracket ONE rack, from the first cue strike (see executeShot, the single choke
+   point for both a human's release and the AI's swing) to however it stops: a legal win, a loss on the
+   8-ball, or the player bailing to the menu mid-rack. A pageview already covers "opened Break Room". */
+const analytics = { started:false, ended:false, t0:0, shots:0 };
+function modeVocab(){ return game.mode==='ai' ? 'vs-ai' : game.mode; }   // '2p' | 'practice' pass through as-is
+function markStarted(){
+  if (analytics.started) return;
+  analytics.started=true; analytics.ended=false; analytics.t0=Date.now();
+  const p = { mode: modeVocab() };
+  if (game.mode==='ai') p.difficulty = game.difficulty;
+  track('game_start', p);
+}
+/* `outcome` deliberately splits the loss reasons the rules engine already distinguishes (scratch on
+   the 8, wrong pocket, potted early) instead of collapsing them into one generic "loss": those are
+   different mistakes a player makes for different reasons, and a report that can't tell them apart
+   can't say which one is actually costing people games. Fires at most once per rack — see quitMatch. */
+function lossOutcome(reason){
+  if (reason==='Scratched on the 8-ball') return 'loss_scratch_8';
+  if (reason==='Potted the 8 in the wrong pocket') return 'loss_wrong_pocket';
+  return 'loss_early_8';                                // 'Potted the 8 early', and the fallback if the text ever drifts
+}
+function markEnded(outcome){
+  if (!analytics.started || analytics.ended) return;
+  analytics.ended=true;
+  const p = { mode: modeVocab(), outcome, duration_s: Math.round((Date.now()-analytics.t0)/1000), shots: analytics.shots };
+  if (game.mode==='ai') p.difficulty = game.difficulty;
+  track('game_end', p);
+}
+/* Called wherever a rack can be abandoned rather than finished on its own terms: Main Menu from the
+   pause overlay, and Restart/Rematch throwing the current table away. A rack that already reported a
+   win or loss is a no-op here — `ended` is what stops a rematch from being double-counted as a quit. */
+function quitMatch(){
+  if (!analytics.started || analytics.ended) return;
+  markEnded('quit');
+}
+
 /* ============================================================ CONFIG ============================================================ */
 const TABLE_W = 1000, TABLE_H = 500;
 const BALL_R = 14;
@@ -868,6 +908,8 @@ const game = {
 };
 
 function newGame(mode, difficulty){
+  quitMatch();   // Restart/Rematch land here too — an unfinished rack being thrown away IS a quit
+  analytics.started=false; analytics.ended=false; analytics.shots=0;
   game.mode=mode; game.difficulty=difficulty||'casual';
   game.balls = rackBalls();
   game.rules = makeRules(mode);
@@ -888,6 +930,8 @@ function beginShotEvents(){
   game.balls.forEach(b=>b.contactedThisShot=false);
 }
 function executeShot(angle, power, spin, english){
+  markStarted();          // the first cue strike of the rack, human or AI — see markStarted for why it lives here
+  analytics.shots++;
   beginShotEvents();
   if(game.mode==='practice') game.shotCount++;   // practice's own "AI" never fires — every shot here is the player's
   const cb = cueBall();
@@ -907,6 +951,7 @@ function afterAllStop(){
     showBanner(result.type==='win' ? 'YOU WIN!' : 'GAME OVER');
     game.timeScale=0.35; game.timeScaleTimer=900;
     recordMatchResult(result);
+    markEnded(result.type==='win' ? 'win' : lossOutcome(game.rules.loseReason));
     setTimeout(()=>{ endGameUI(result.winner); }, 1400);
     game.state='GAME_OVER';
     return;
@@ -1171,7 +1216,7 @@ let paused=false;
 document.getElementById('pauseBtn').addEventListener('click',()=>{ paused=true; document.getElementById('pauseOverlay').classList.remove('hidden'); });
 document.getElementById('resumeBtn').addEventListener('click',()=>{ paused=false; document.getElementById('pauseOverlay').classList.add('hidden'); });
 document.getElementById('restartBtn').addEventListener('click',()=>{ paused=false; document.getElementById('pauseOverlay').classList.add('hidden'); newGame(game.mode, game.difficulty); });
-document.getElementById('menuBtn').addEventListener('click',()=>{ paused=false; document.getElementById('pauseOverlay').classList.add('hidden'); showScreen('screen-mode'); document.getElementById('screen-game').classList.add('hidden'); });
+document.getElementById('menuBtn').addEventListener('click',()=>{ quitMatch(); paused=false; document.getElementById('pauseOverlay').classList.add('hidden'); showScreen('screen-mode'); document.getElementById('screen-game').classList.add('hidden'); });
 document.getElementById('muteBtn').addEventListener('click',()=>{ AudioEngine.muted=!AudioEngine.muted; document.getElementById('muteBtn').textContent=AudioEngine.muted?'🔇':'🔊'; });
 document.getElementById('rematchBtn').addEventListener('click',()=>{ document.getElementById('endOverlay').classList.add('hidden'); newGame(game.mode, game.difficulty); });
 document.getElementById('endMenuBtn').addEventListener('click',()=>{ document.getElementById('endOverlay').classList.add('hidden'); document.getElementById('screen-game').classList.add('hidden'); showScreen('screen-mode'); });

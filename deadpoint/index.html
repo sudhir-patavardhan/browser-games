@@ -357,7 +357,9 @@ function newClimb(route){
     fallV:0, fallX:0,
     particles:[], sweat:0, breath:0,
     lastHold: RH, height:0, maxHeight:0,
-    started:false
+    started:false,
+    holdsThisAttempt:0   // successful latches since THIS attempt began — resets on every reset/fall,
+                          // unlike holdMarks which spans the whole session; see startFall()/finishLatch()
   };
   camSnap();
 }
@@ -602,6 +604,7 @@ function resolveLatch(q){
 }
 function finishLatch(hand, hold, eff, dyno){
   const g=game; const hd=g.hands[hand];
+  g.holdsThisAttempt++;   // only reached by a stuck latch — a slip never calls this, so it can't inflate the count
   hd.gripped=true; hd.hold=hold; hd.x=hold.x; hd.y=hold.y; hd.reachingOut=false;
   hd.creep=0; hd.hold_prev=null;
   hd.pump=clamp(hd.pump - (eff>0.85?6:0), 0, 100);    // solid latch relaxes a touch
@@ -656,6 +659,13 @@ function startFall(){
   g.hands.L.gripped=g.hands.R.gripped=false;
   g.reaching=null; g.latch=null; g.slowmoTarget=1;
   Audio_.fall();
+  /* A session's own game_end only says a climb ended in falls, not WHERE — and where people stop
+     latching is the whole point of watching this game. So every whipper reports on its own, not just
+     the session total: holds_reached is this attempt's count (finishLatch increments it, newClimb
+     resets it), so a grade with a cluster of falls at hold 6 is visible even inside a session that
+     eventually sends. */
+  track('route_fall', { mode: g.route.daily?'daily':'route', grade: g.route.grade,
+    attempt: g.attempts, holds_reached: g.holdsThisAttempt });
 }
 function updateFall(dt){
   const g=game; g.fallV+=900*dt; g.com.y+=g.fallV*dt; g.com.vx*=0.98;
@@ -953,6 +963,14 @@ function showResults(){
     isBest = score>loadBest();
     if(isBest) saveBest(score);
   }
+  sessionReported=true;   // this route/daily is settled — the pagehide safety net below must not also fire
+  /* flash vs send is exactly the attempts/falls pair the scorecard already computed above, just reduced
+     to the one bit the task cares about; falls and attempts ride along raw for anyone who wants the
+     texture instead of the summary. g.time is the session's own clock — it already survives every
+     resetToStart(), so it IS the real time spent on this problem, falls included. */
+  track('game_end', { mode: daily?'daily':'route', grade: g.route.grade, outcome:'complete',
+    flash: (g.attempts===1 && g.falls===0)?1:0, falls: g.falls, attempts: g.attempts,
+    duration_s: Math.round(g.time), score });
   document.getElementById('resTitle').textContent=(daily?'Sent today’s ':'Sent ')+g.route.grade+'!';
   document.getElementById('resStyle').textContent=style + (g.cleanDyno?' · CLEAN DYNO':'') + (g.chalkUsed?'':' · NO-CHALK');
   document.getElementById('resStats').innerHTML=
@@ -1082,8 +1100,8 @@ function buildRouteList(){
 }
 /* holdMarks is reset HERE and not in newClimb, because newClimb also runs after every whipper: the log
    has to span the whole session on one problem, or a route you fell off six times would read as clean. */
-function startRoute(i){ hideAll(); holdMarks={}; newClimb(ROUTES[i]); game.mode='climb'; Audio_.init(); }
-function startDaily(){ hideAll(); holdMarks={}; newClimb(dailyRoute()); game.mode='climb'; Audio_.init(); }
+function startRoute(i){ hideAll(); holdMarks={}; newClimb(ROUTES[i]); game.mode='climb'; Audio_.init(); beginSession(); }
+function startDaily(){ hideAll(); holdMarks={}; newClimb(dailyRoute()); game.mode='climb'; Audio_.init(); beginSession(); }
 
 /* Read fresh every time the card is shown, never cached at boot: a tab left open overnight would
    otherwise keep advertising yesterday's best against a wall that no longer exists. */
@@ -1107,7 +1125,7 @@ document.getElementById('backBtn').onclick=()=>{ renderDailyMeta(); show('titleP
    rather than reusing the object, so a tab open across midnight silently rolls onto the new day's wall
    instead of letting you keep grinding a problem that is no longer the one being shared. */
 document.getElementById('againBtn').onclick=()=>{ hideAll(); holdMarks={};
-  newClimb(game.route.daily?dailyRoute():game.route); game.mode='climb'; };
+  newClimb(game.route.daily?dailyRoute():game.route); game.mode='climb'; beginSession(); };
 document.getElementById('menuBtn').onclick=()=>{ buildRouteList(); show('routePanel'); };
 try{
   const shareBtnEl=document.getElementById('shareBtn');
@@ -1163,6 +1181,35 @@ function kreedaToast(anchorEl,msg){
     },1500);
   }catch(e){}
 }
+
+/* ============================== telemetry ============================== */
+/* The one call into analytics.js, and deliberately the dumbest possible wrapper: if that file was
+   blocked, never loaded, or is doing nothing because we're on file://, this is a no-op and the game
+   cannot tell. Nothing in here is load-bearing — no return value is read, nothing branches on it. */
+function track(name,params){ try{ if(window.bgTrack) window.bgTrack(name,params); }catch(e){} }
+
+/* Whether the CURRENT session (one route or daily pick, however many falls it takes) has already sent
+   its game_end. Set on every fresh pick — startRoute/startDaily/againBtn — and cleared by showResults().
+   resetToStart() deliberately does NOT touch it: a fall is a reset within the same session, not a new
+   one, so it must not look "unreported" again. */
+let sessionReported=true;
+function beginSession(){
+  sessionReported=false;
+  track('game_start', { mode: game.route.daily?'daily':'route', grade: game.route.grade });
+}
+/* There is no in-game way to bail out of a climb — no menu button while on the wall, only the whole tab
+   closing. pagehide is the last hook that still fires by then, so it is the only chance to record an
+   ABANDONED session instead of it vanishing with no game_end at all. holds_reached/attempt describe
+   wherever the player happened to be hanging when they left, same shape as a route_fall. */
+addEventListener('pagehide', function(){
+  try{
+    if(game && !sessionReported){
+      track('game_end', { mode: game.route.daily?'daily':'route', grade: game.route.grade,
+        outcome:'quit', flash:0, falls:game.falls, attempts:game.attempts,
+        duration_s: Math.round(game.time), holds_reached: game.holdsThisAttempt });
+    }
+  }catch(e){}
+});
 
 /* ============================== boot ============================== */
 cv=document.getElementById('c'); ctx=cv.getContext('2d'); resize();

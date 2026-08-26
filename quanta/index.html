@@ -317,6 +317,11 @@ footer.foot a{ color:var(--ink); }
   <div class="inner" id="revInner"></div>
 </section>
 
+<!-- analytics.js first, not last: the game script below calls track('grid_start', ...) synchronously
+     during boot. Loaded after that point this tag would still be fetching when the call happens, and
+     the event vanishes silently — window.bgTrack undefined, which track() swallows by design. This
+     was measured, not guessed: grid_start never once reached the log until the tag moved up. -->
+<script src="../analytics.js"></script>
 <script>
 'use strict';
 /* ============================================================================================
@@ -1999,6 +2004,5 @@ function audit(n){
 try{ boot(); }catch(e){ console.error('[quanta] boot failed',e); }
 if(params.get('audit')) audit(Math.max(1,Math.min(2000,+params.get('audit')||365)));
 </script>
-<script src="../analytics.js"></script>
 </body>
 </html>
