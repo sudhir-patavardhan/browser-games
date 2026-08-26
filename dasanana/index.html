@@ -1328,6 +1328,29 @@ function drawFinale(b){
   }
 }
 
+/* ================================================================ TELEMETRY ================================================================ */
+/* The one call into analytics.js, and deliberately the dumbest possible wrapper: if that file was
+   blocked, never loaded, or is doing nothing because we are on file://, this is a no-op and the game
+   cannot tell. Nothing in here is load-bearing. */
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+/* story vs duel (with difficulty) IS the configuration space, and `stage` (which boss) is what makes
+   "how far did they get" answerable across many plays without ever naming a move, an astra chosen, or
+   anything the player typed. storyIdx is read live rather than frozen on b: it never changes mid-battle
+   (only between battles, before the next startBattle), so there is no staleness risk here the way
+   Ennead's live `settings` had. */
+function battleParams(b){
+  return { mode: storyIdx>=0?'story':'duel', difficulty:b.diffKey, stage:b.enemy.key };
+}
+/* game_end's shape, shared by a real ending (win/loss) and a deliberate walkaway (quit) so both report
+   the same fields. heads_defeated is a count, never which astra or head; duration_s is wall-clock since
+   this attempt's game_start, rounded — a raw float per battle is a high-cardinality dimension. */
+function endParams(b, outcome){
+  const p=battleParams(b);
+  p.outcome=outcome; p.heads_defeated=b.headsDestroyed;
+  p.duration_s = b.startedAt ? Math.round((Date.now()-b.startedAt)/1000) : 0;
+  return p;
+}
+
 /* ================================================================ BATTLE ================================================================ */
 function newBattle(cfgKey, difficulty){
   const cfg=BATTLES[cfgKey];
@@ -1645,6 +1668,7 @@ function finishFinale(b){
 /* ---------------- win / loss ---------------- */
 function battleWon(b){
   b.over=true; b.result='victory'; b.phase='over';
+  track('game_end', endParams(b,'win'));
   let newBest=false;
   if(storyIdx>=0 && b.enemy.key==='ravana') newBest = saveStoryBest(STORY_ORDER.length);   // story completed
   if(storyIdx===-1) newBest = recordDuelResult(b);                                          // pure duel: full 10-head clear
@@ -1685,6 +1709,7 @@ function battleWon(b){
 }
 function battleLost(b){
   b.over=true; b.result='defeat'; b.phase='over';
+  track('game_end', endParams(b,'loss'));
   const newBest = storyIdx===-1 ? recordDuelResult(b) : false;
   AudioEngine.stopDrone();
   AudioEngine.tone(220,0.5,'sawtooth',0.12); AudioEngine.tone(180,0.6,'sawtooth',0.12,0.3); AudioEngine.tone(140,0.9,'sawtooth',0.12,0.6);
@@ -2124,7 +2149,11 @@ function startBattleWithLore(cfgKey, diff){
 function startBattle(cfgKey, diff){
   battle=newBattle(cfgKey,diff);
   battle._diffKey=diff;
+  battle.startedAt=Date.now();
   if(storyIdx>=0) saveStoryBest(storyIdx);   // "furthest reached" banks the moment the battle begins, win or lose
+  // recorded at the start, same as Drift's run_start, so a battle abandoned by closing the tab (no
+  // matching game_end) still counts as a battle that was begun rather than vanishing entirely
+  track('game_start', battleParams(battle));
   showScreen('battle');
   resizeCanvas();
   updateHud(battle);
@@ -2147,8 +2176,16 @@ function toggleMute(){
 }
 document.getElementById('pauseBtn').addEventListener('pointerdown',togglePause);
 document.getElementById('resumeBtn').addEventListener('pointerdown',togglePause);
-document.getElementById('restartBtn').addEventListener('pointerdown',()=>{ togglePause(); startBattle(battle.enemy.key, battle._diffKey); });
-document.getElementById('menuBtn').addEventListener('pointerdown',()=>{ togglePause(); battle=null; AudioEngine.stopDrone(); showScreen('mode'); });
+document.getElementById('restartBtn').addEventListener('pointerdown',()=>{
+  togglePause();
+  if(battle && !battle.over) track('game_end', endParams(battle,'quit'));   // walked away mid-fight
+  startBattle(battle.enemy.key, battle._diffKey);
+});
+document.getElementById('menuBtn').addEventListener('pointerdown',()=>{
+  togglePause();
+  if(battle && !battle.over) track('game_end', endParams(battle,'quit'));   // walked away mid-fight
+  battle=null; AudioEngine.stopDrone(); showScreen('mode');
+});
 document.getElementById('muteBtn').addEventListener('pointerdown',toggleMute);
 document.getElementById('endMenuBtn').addEventListener('pointerdown',()=>{
   document.getElementById('endOverlay').classList.add('hidden');
@@ -2179,9 +2216,12 @@ function kreedaToast(anchorEl, msg){
 document.getElementById('endPrimaryBtn').addEventListener('pointerdown',()=>{
   document.getElementById('endOverlay').classList.add('hidden');
   if(battle && battle.result==='defeat'){
-    // rise again: same battle, heads preserved, tejas restored to 50
+    // rise again: same battle, heads preserved, tejas restored to 50 — a fresh playthrough segment as
+    // far as telemetry is concerned, since battleLost() already closed the one that just ended
     const b=battle;
     b.over=false; b.result=null; b.tejas=50; b.phase='idle'; b.phaseT=0; b.idleDur=3;
+    b.startedAt=Date.now();
+    track('game_start', battleParams(b));
     updateHud(b); AudioEngine.startDrone('battle'); AudioEngine.conch();
     showBanner('Rāma rises','The duel resumes.',1800);
     return;

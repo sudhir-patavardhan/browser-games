@@ -265,12 +265,44 @@ function loadSettings(){
 function clampN(n){ n=n|0; return Math.max(3,Math.min(9,n||3)); }
 function saveSettings(){ try{ localStorage.setItem('ennead.settings', JSON.stringify(settings)); }catch(e){} }
 
+/* ============================ telemetry ============================ */
+/* The one call into analytics.js, and deliberately the dumbest possible wrapper: if that file was
+   blocked, never loaded, or is doing nothing because we are on file://, this is a no-op and the game
+   cannot tell. Nothing in here is load-bearing. */
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+
+/* The configuration space is the interesting dimension here — classic vs ultimate, board size, win
+   length, human-vs-AI (and at what level) or two-player — as bounded numbers/enums, never a free-text
+   "3x3 classic" label. Read off the game object `g`, not the live `settings`: a mid-game Apply Settings
+   reassigns `settings` to the NEXT playthrough before this one's game_end has fired, so the numbers
+   describing an ending playthrough must be frozen on it at creation (see G.cfgOpponent below). */
+function trackCfg(g){
+  return { mode:g.mode, board_size: g.mode==='classic'?g.N:g.B, win_length: g.mode==='classic'?g.k:g.B,
+           opponent:g.cfgOpponent, ai_level:g.cfgAiLevel };
+}
+/* Fires on the first move actually made in a playthrough, human or AI — never on page load, and never
+   twice for one G, because boardEmpty() is false for every move after the first. */
+function beginPlay(){ startSent=true; playStart=Date.now(); track('game_start', trackCfg(G)); }
+/* Fires however a playthrough ends: a line, a full board, or the player walking away mid-game via New
+   Game / Apply Settings (outcome 'quit', from newGame() below, called on the OLD G before it is
+   replaced). Guarded on startSent so a quit with no matching start — a resumed game nobody has moved in
+   yet this session — never reports an end with nothing behind it. */
+function endPlay(g, outcome){
+  if(!startSent) return;
+  const dur = playStart ? Math.round((Date.now()-playStart)/1000) : 0;
+  track('game_end', Object.assign(trackCfg(g), { outcome:outcome, duration_s:dur }));
+  startSent=false; playStart=null;
+}
+function boardEmpty(g){ return g.mode==='classic' ? g.cells.every(c=>!c) : g.boards.every(b=>b.every(c=>!c)); }
+
 /* ============================ game state ============================ */
 let G=null;
 let busy=false;            // input lock during AI / animation
 let focusPos=null;         // {b?,i} for keyboard focus
+let startSent=false, playStart=null;   // per-playthrough: has game_start fired, and when
 
 function newGame(){
+  if(G && G.status==='playing' && startSent) endPlay(G,'quit');   // walked away via New Game / Apply
   const first = settings.firstPlayer==='random' ? (Math.random()<.5?'X':'O') : settings.firstPlayer;
   if(settings.mode==='classic'){
     G={ mode:'classic', N:settings.N, k:settings.k, cells:Array(settings.N*settings.N).fill(null),
@@ -281,6 +313,10 @@ function newGame(){
         subStatus:Array(T).fill('playing'), activeBoard:null, current:first,
         status:'playing', winner:null, metaLine:null, last:null, history:[] };
   }
+  // Frozen at creation rather than read live off `settings` at game_end time — see trackCfg() above.
+  G.cfgOpponent = settings.opponent;
+  G.cfgAiLevel = settings.opponent==='ai' ? settings.difficulty : 'none';
+  startSent=false; playStart=null;
   // AI identity: human always X, AI is O in vs-AI
   busy=false; focusPos=null;
   buildBoard(); syncBoard(); clearWinLine(); closeBanner();
@@ -303,6 +339,7 @@ function ultLegal(b,i){
 
 function doClassicMove(i){
   if(!classicLegal(i)) return false;
+  if(!startSent && boardEmpty(G)) beginPlay();
   pushHistory();
   const p=G.current;
   G.cells[i]=p; G.last=i;
@@ -316,6 +353,7 @@ function doClassicMove(i){
 
 function doUltMove(b,i){
   if(!ultLegal(b,i)) return false;
+  if(!startSent && boardEmpty(G)) beginPlay();
   pushHistory();
   const p=G.current, B=G.B;
   G.boards[b][i]=p; G.last={b,i};
@@ -348,6 +386,7 @@ function afterMove(claimBoard){
     setTimeout(showBanner, 480);
     sfx('win');
     localStorage.removeItem('ennead.game');
+    endPlay(G, G.status==='draw' ? 'draw' : (G.cfgOpponent==='ai' ? (G.winner==='X'?'win':'loss') : 'win'));
   } else {
     updateUndo(); maybeAI();
   }
@@ -752,6 +791,10 @@ function tryResume(){
     if(s.mode==='classic' && (s.N!==settings.N||s.k!==settings.k)) return false;
     if(s.mode==='ultimate' && s.B!==settings.B) return false;
     G={...s, history:[]};
+    // A reload mid-game skipped this playthrough's game_start; treat it as already begun rather than
+    // silently dropping its eventual game_end, but the clock restarts here — duration_s then undercounts
+    // the time spent before the reload, which is the honest number available, not the true one.
+    if(G.status==='playing' && !boardEmpty(G)){ startSent=true; playStart=Date.now(); }
     buildBoard(); syncBoard(); clearWinLine();
     updateUndo(); maybeAI();
     return true;
