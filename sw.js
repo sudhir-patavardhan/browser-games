@@ -4,7 +4,7 @@
    just a bookmark that 404s the moment the network drops. This file is what makes
    the install real.
 
-   These are thirteen self-contained games with no build step — a deploy replaces the
+   These are eighteen self-contained games with no build step — a deploy replaces the
    whole tree at once, nothing here ever changes in place. That means there is no
    value in revalidating against the network on every visit; the entire correctness
    model is CACHE VERSIONING. Bump CACHE, the browser installs a new worker, the new
@@ -14,7 +14,7 @@
    way to know why — that is the one failure mode this file cannot afford.
 */
 
-const CACHE = 'kreeda-v4';
+const CACHE = 'kreeda-v5';
 
 /* The whole app shell, spelled out by hand rather than discovered at runtime — a
    service worker has no directory listing to crawl, so this list IS the offline
@@ -39,7 +39,12 @@ const PRECACHE_URLS = [
   '/dasanana/index.html',
   '/valence/index.html',
   '/quanta/index.html',
-  '/radian/index.html'
+  '/radian/index.html',
+  '/sync/index.html',
+  '/windows/index.html',
+  '/auction/index.html',
+  '/fathom/index.html',
+  '/split/index.html'
 ];
 
 self.addEventListener('install', function(event){

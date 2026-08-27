@@ -28,7 +28,19 @@ Open [`index.html`](index.html) at the repo root for the [Kreeda](https://kreeda
 | [Quanta](quanta/index.html) | The same grid over physical quantities: vector or scalar, base unit or derived, which dimensions appear in it, which branch it belongs to. The reveal gives the SI unit for every answer, including the ones you missed. | [kreeda.games/quanta](https://kreeda.games/quanta/) |
 | [Radian](radian/index.html) | Trigonometry on the unit circle — quadrants, signs, reference angles and exact values. Answer in whichever notation you think in: `30`, `30°` and `π/6` are the same angle, and the reveal shows every answer in both. | [kreeda.games/radian](https://kreeda.games/radian/) |
 
-All thirteen are also playable offline straight from the file system — clone the repo and open any `<game>/index.html` directly, no server required.
+### Play together
+
+Five psychology games for **two people on one phone**. All five share one mechanic — the hidden-input loop: a hand-off screen ("Pass the phone to Priya"), a private answer, and a reveal only once both players have committed. The fun is always the gap between what you predicted and what was revealed. Answers stay on the phone — nothing is uploaded, and these are games for conversation, not psychological assessments.
+
+| Game | Description | Play |
+|---|---|---|
+| [Sync](sync/index.html) | The empathic-accuracy duel. Ten questions, and each of you answers twice: for yourself, and predicting the other. The reveal scores **Similarity** (how alike your answers are), and each player's **Insight** (how well they read the other) — and calls out the asymmetry when one of you reads the other better. Question packs for new pairs, couples, friends, family and coworkers. | [kreeda.games/sync](https://kreeda.games/sync/) |
+| [Windows](windows/index.html) | A playable Johari Window. From a 40-word grid, each player picks six trait words for themselves and six for the other — then each person's window builds pane by pane: **Open** (you both see it), **Hidden** (you claimed it, they don't see it), **Blind spot** (they see it, you didn't say it), Unknown (room to find out). | [kreeda.games/windows](https://kreeda.games/windows/) |
+| [The Auction](auction/index.html) | Values under scarcity. 100 coins, ten lots — Freedom, Security, Adventure, Family, Health and more — and you can't fund them all, which is exactly what makes the bids honest. The reveal overlays both spending profiles, names your shared top priority and your biggest split, and a proxy round lets you bid the other player's coins the way you think they would. | [kreeda.games/auction](https://kreeda.games/auction/) |
+| [Fathom](fathom/index.html) | The closeness dive. A guided descent through three depths of questions answered out loud — Surface, Below, Deep — with two swap tokens each and a "surface for air" break between depths. Before and after, each player privately picks the pair of overlapping circles that feels like the two of you; the ending shows how much closer you surfaced than you began. | [kreeda.games/fathom](https://kreeda.games/fathom/) |
+| [Split](split/index.html) | Trust as a playing field. Ten hidden rounds of Share or Take (3/3 · 1/1 · 5/0), with double- and triple-stakes event rounds and a delayed-reveal silent round. The score says who won; the mirror at the end says how you each played — cooperation, retaliation, forgiveness, endgame — and names both archetypes. | [kreeda.games/split](https://kreeda.games/split/) |
+
+All eighteen are also playable offline straight from the file system — clone the repo and open any `<game>/index.html` directly, no server required.
 
 ## Running a game
 

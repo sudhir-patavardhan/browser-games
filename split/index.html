@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Split — Kreeda</title>
+<meta name="description" content="Two players, one phone, ten rounds of Share or Take. The score says who won — the pattern says who you are. A pass-and-play trust game with a mirror at the end.">
+<link rel="canonical" href="https://kreeda.games/split/">
+<meta name="theme-color" content="#0b0d13">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/split/">
+<meta property="og:title" content="Split — Kreeda">
+<meta property="og:description" content="Two players, one phone, ten rounds of Share or Take. The score says who won — the pattern says who you are.">
+<meta property="og:image" content="https://kreeda.games/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Split — Kreeda">
+<meta name="twitter:description" content="Two players, one phone, ten rounds of Share or Take. The score says who won — the pattern says who you are.">
+<meta name="twitter:image" content="https://kreeda.games/og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Split","description":"Two players, one phone, ten rounds of Share or Take. The score says who won — the pattern says who you are.","url":"https://kreeda.games/split/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+<style>
+/* ============================ tokens ============================
+   Split's identity is a screen divided: crimson on the left, deep blue on the right, a jagged
+   fault line between them that mends as trust grows. One committed dark theme — the drama of
+   the reveal needs a dark room, so we don't ship a light variant. Every colour lives here once. */
+:root{
+  --bg:#0b0d13;      --panel:#151826;   --panel2:#1c2033;  --rule:rgba(160,175,210,.18);
+  --ink:#eef1f8;     --dim:#96a0b8;     --faint:#5c6580;
+  --pa:#e63946;      --pa-soft:rgba(230,57,70,.16);      /* player 1: crimson  */
+  --pb:#5b8def;      --pb-soft:rgba(91,141,239,.16);     /* player 2: deep blue, lifted for dark ground */
+  --pb-deep:#1d3557;
+  --share:#ffd166;   --share-soft:rgba(255,209,102,.14); /* mutual share glows warm */
+  --take:#e63946;    --steel:#6d7690;                    /* mutual take is cold steel */
+  --good:#57d9a3;
+  --shadow:0 14px 40px rgba(0,0,0,.5);
+}
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  /* Explicit ground is mandatory: a transparent body would borrow the host's theme. The two
+     halves of the wash are the two players' colours, meeting in the middle like the game does. */
+  background:
+    radial-gradient(90% 40% at 12% -6%, rgba(230,57,70,.14) 0%, transparent 60%),
+    radial-gradient(90% 40% at 88% -6%, rgba(91,141,239,.16) 0%, transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;              /* guard only — no child is allowed to be wider than the page */
+  -webkit-text-size-adjust:100%;
+}
+.app{ max-width:520px; margin:0 auto;
+  padding:max(10px, env(safe-area-inset-top)) 14px calc(26px + env(safe-area-inset-bottom)); }
+
+button{ font:inherit; color:inherit; }
+button:focus-visible, input:focus-visible, summary:focus-visible{
+  outline:3px solid var(--share); outline-offset:2px; border-radius:8px; }
+
+/* ============================ shared chrome ============================ */
+.wordmark{ text-align:center; margin:18px 0 4px; }
+.wordmark .w{ font-size:44px; font-weight:900; letter-spacing:2px; line-height:1;
+  display:inline-flex; align-items:center; gap:2px; }
+.wordmark .w .l{ color:var(--pa); }
+.wordmark .w .r{ color:var(--pb); }
+.wordmark .w svg{ width:16px; height:44px; }
+.wordmark small{ display:block; font-size:11px; font-weight:700; letter-spacing:3px;
+  text-transform:uppercase; color:var(--dim); margin-top:8px; }
+.pitch{ text-align:center; color:var(--dim); font-size:14.5px; line-height:1.5; margin:10px auto 16px;
+  max-width:34ch; }
+
+.card{ background:var(--panel); border:1px solid var(--rule); border-radius:16px;
+  padding:16px; margin:0 0 14px; box-shadow:var(--shadow); }
+
+.btn{ display:block; width:100%; min-height:52px; border:1px solid var(--rule); border-radius:14px;
+  background:var(--panel2); color:var(--ink); font-size:16px; font-weight:800; letter-spacing:.3px;
+  cursor:pointer; padding:13px 16px; transition:transform .12s ease, opacity .2s ease; }
+.btn:active{ transform:translateY(1px); }
+.btn:disabled{ opacity:.4; cursor:default; }
+.btn.primary{ background:linear-gradient(100deg, var(--pa) 0%, #b32a49 48%, var(--pb-deep) 52%, var(--pb) 100%);
+  border:none; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.35); }
+.btn.ghost{ background:transparent; }
+.btnrow{ display:flex; gap:10px; }
+.btnrow .btn{ flex:1; }
+
+.iconbtn{ min-width:44px; min-height:44px; border-radius:12px; border:1px solid var(--rule);
+  background:var(--panel); color:var(--dim); font-size:16px; font-weight:800; cursor:pointer; }
+
+/* ============================ title screen ============================ */
+.namesgrid{ display:flex; gap:10px; }
+.namefield{ flex:1; min-width:0; }
+.namefield label{ display:block; font-size:11px; font-weight:800; letter-spacing:1.2px;
+  text-transform:uppercase; margin:0 0 6px 2px; }
+.namefield.a label{ color:var(--pa); }
+.namefield.b label{ color:var(--pb); }
+.namefield input{ width:100%; min-height:48px; padding:10px 12px; font-size:16px; font-weight:700;
+  color:var(--ink); background:var(--panel2); border:1px solid var(--rule); border-radius:12px; }
+.namefield.a input{ border-left:3px solid var(--pa); }
+.namefield.b input{ border-right:3px solid var(--pb); }
+
+/* The payoff matrix is the contract of the whole game, so it sits on the title screen in full,
+   not behind a tap. Rows = you, columns = them; every cell shows "you / them". */
+.matrix{ width:100%; border-collapse:separate; border-spacing:4px; margin-top:4px; }
+.matrix th{ font-size:11px; font-weight:800; letter-spacing:.6px; text-transform:uppercase;
+  color:var(--dim); padding:4px 2px; }
+.matrix td{ background:var(--panel2); border:1px solid var(--rule); border-radius:10px;
+  text-align:center; padding:10px 4px; font-size:15px; font-weight:900; }
+.matrix td small{ display:block; font-size:10px; font-weight:700; color:var(--dim); margin-top:2px; }
+.matrix td.ss{ color:var(--share); border-color:rgba(255,209,102,.4); }
+.matrix td.tt{ color:var(--steel); }
+.matrix td.ts{ color:var(--ink); }
+.mx-note{ font-size:12px; color:var(--dim); text-align:center; margin:10px 0 0; line-height:1.5; }
+
+details.how{ border:1px solid var(--rule); border-radius:14px; background:var(--panel);
+  padding:0 14px; margin:0 0 14px; }
+details.how summary{ min-height:48px; display:flex; align-items:center; font-weight:800;
+  font-size:14px; cursor:pointer; list-style:none; }
+details.how summary::after{ content:'+'; margin-left:auto; font-size:20px; color:var(--dim); }
+details.how[open] summary::after{ content:'–'; }
+details.how ul{ margin:0 0 14px; padding-left:20px; color:var(--dim); font-size:13.5px; line-height:1.65; }
+details.how li{ margin-bottom:6px; }
+
+.finelines{ text-align:center; margin-top:16px; }
+.finelines p{ margin:4px 0; font-size:11.5px; color:var(--faint); line-height:1.5; }
+
+/* ============================ in-game HUD ============================ */
+.hud{ margin-bottom:12px; }
+.hudtop{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.hudtop .roundlbl{ flex:1; text-align:center; font-size:12px; font-weight:800; letter-spacing:1.6px;
+  text-transform:uppercase; color:var(--dim); }
+.totals{ display:flex; align-items:stretch; gap:0; border:1px solid var(--rule); border-radius:14px;
+  overflow:hidden; background:var(--panel); }
+.tot{ flex:1; padding:9px 12px; min-width:0; }
+.tot .nm{ font-size:11px; font-weight:800; letter-spacing:.8px; text-transform:uppercase;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tot .pts{ font-size:26px; font-weight:900; line-height:1.1; font-variant-numeric:tabular-nums; }
+.tot.a{ text-align:left; background:linear-gradient(90deg, var(--pa-soft), transparent); }
+.tot.b{ text-align:right; background:linear-gradient(270deg, var(--pb-soft), transparent); }
+.tot.a .nm{ color:var(--pa); } .tot.b .nm{ color:var(--pb); }
+/* The fault line between the totals: its jaggedness is driven by trust from JS.
+   High trust = a nearly straight seam; betrayal tears it open again. */
+.fault{ width:18px; flex:0 0 18px; display:flex; align-items:center; justify-content:center; }
+.fault svg{ width:14px; height:100%; overflow:visible; }
+.fault path{ stroke:var(--share); stroke-width:2; fill:none; stroke-linejoin:round;
+  transition:d .5s ease, stroke .5s ease; }
+
+.trustrow{ display:flex; align-items:center; gap:8px; margin-top:8px; }
+.trustrow .lbl{ font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase;
+  color:var(--faint); flex:0 0 auto; }
+.spark{ flex:1; height:26px; }
+.spark svg{ width:100%; height:100%; display:block; }
+.spark polyline{ fill:none; stroke:var(--share); stroke-width:2; stroke-linecap:round;
+  stroke-linejoin:round; }
+.spark .area{ fill:rgba(255,209,102,.10); stroke:none; }
+
+.dots{ display:flex; justify-content:center; gap:6px; margin-top:8px; }
+.dot{ width:12px; height:12px; border-radius:50%; border:1.5px solid var(--faint); background:transparent; }
+.dot.cur{ border-color:var(--ink); box-shadow:0 0 0 3px rgba(238,241,248,.15); }
+.dot.ss{ background:var(--share); border-color:var(--share); }
+.dot.tt{ background:var(--steel); border-color:var(--steel); }
+.dot.bt{ background:var(--take); border-color:var(--take); border-radius:3px; transform:rotate(45deg); }
+.dot.sealed{ border-style:dashed; border-color:var(--share); }
+
+/* ============================ banner / event screens ============================ */
+.banner{ text-align:center; padding:28px 16px 24px; }
+.banner .rnum{ font-size:13px; font-weight:800; letter-spacing:2.4px; text-transform:uppercase;
+  color:var(--dim); }
+.banner h2{ font-size:30px; font-weight:900; margin:8px 0 4px; }
+.banner .event{ display:inline-block; margin:10px 0 2px; padding:7px 14px; border-radius:999px;
+  font-size:13px; font-weight:900; letter-spacing:1px; text-transform:uppercase; }
+.banner .event.x2{ background:var(--share-soft); color:var(--share); border:1px solid var(--share); }
+.banner .event.silent{ background:var(--panel2); color:var(--dim); border:1px dashed var(--dim); }
+.banner .event.x3{ background:var(--pa-soft); color:#ff8c96; border:1px solid var(--pa); }
+.banner p{ color:var(--dim); font-size:14px; line-height:1.55; max-width:36ch; margin:10px auto 18px; }
+
+/* ============================ hand-off ============================ */
+.handoff{ text-align:center; padding:34px 16px 26px; }
+.handoff .passlbl{ font-size:13px; font-weight:800; letter-spacing:2px; text-transform:uppercase;
+  color:var(--dim); margin-bottom:10px; }
+.handoff .who{ font-size:34px; font-weight:900; margin:0 0 4px; overflow-wrap:anywhere; }
+.handoff .who.a{ color:var(--pa); } .handoff .who.b{ color:var(--pb); }
+.handoff .tilt{ font-size:12.5px; color:var(--faint); margin:12px 0 20px; }
+.handoff .btn{ max-width:320px; margin:18px auto 0; }
+
+/* ============================ choice screen ============================ */
+.choose .youare{ text-align:center; font-size:13px; color:var(--dim); margin:4px 0 14px; }
+.choose .youare b.a{ color:var(--pa); } .choose .youare b.b{ color:var(--pb); }
+.choicewrap{ display:flex; flex-direction:column; gap:12px; }
+.choicebtn{ position:relative; width:100%; min-height:104px; border-radius:18px; cursor:pointer;
+  display:flex; align-items:center; gap:16px; padding:16px 18px; text-align:left;
+  background:var(--panel); border:2px solid var(--rule);
+  transition:border-color .15s ease, background .15s ease, transform .12s ease; }
+.choicebtn:active{ transform:scale(.985); }
+.choicebtn .ic{ width:52px; height:52px; flex:0 0 52px; }
+.choicebtn .tx b{ display:block; font-size:24px; font-weight:900; letter-spacing:1.5px; }
+.choicebtn .tx span{ display:block; font-size:12.5px; color:var(--dim); margin-top:3px; line-height:1.45; }
+.choicebtn.share[aria-pressed="true"]{ border-color:var(--share); background:var(--share-soft); }
+.choicebtn.take[aria-pressed="true"]{ border-color:var(--take); background:var(--pa-soft); }
+.choicebtn.share b{ color:var(--share); } .choicebtn.take b{ color:#ff8c96; }
+.choicebtn .tick{ position:absolute; top:10px; right:12px; font-size:18px; opacity:0;
+  transition:opacity .15s ease; }
+.choicebtn[aria-pressed="true"] .tick{ opacity:1; }
+.lockrow{ margin-top:14px; }
+.stakenote{ text-align:center; font-size:12px; font-weight:800; letter-spacing:1px;
+  text-transform:uppercase; color:var(--share); margin:0 0 12px; }
+
+/* ============================ reveal ============================ */
+.reveal .rlbl{ text-align:center; font-size:12px; font-weight:800; letter-spacing:2px;
+  text-transform:uppercase; color:var(--dim); margin:2px 0 12px; }
+.arena{ position:relative; display:flex; gap:0; align-items:stretch; }
+.rcard{ flex:1; min-width:0; border:1px solid var(--rule); border-radius:16px; background:var(--panel);
+  padding:14px 8px 16px; text-align:center; perspective:600px; }
+.rcard.a{ border-top:3px solid var(--pa); } .rcard.b{ border-top:3px solid var(--pb); }
+.rcard .nm{ font-size:12px; font-weight:800; letter-spacing:.6px; text-transform:uppercase;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 4px; }
+.rcard.a .nm{ color:var(--pa); } .rcard.b .nm{ color:var(--pb); }
+.flip{ position:relative; height:96px; margin-top:10px; transform-style:preserve-3d;
+  transition:transform .5s cubic-bezier(.4,1.4,.6,1); }
+.flip .face{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:4px; backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+.flip .front{ transform:rotateY(180deg); }
+.flip .back .q{ font-size:40px; font-weight:900; color:var(--faint); }
+.flipped .flip{ transform:rotateY(180deg); }
+.flip .cname{ font-size:20px; font-weight:900; letter-spacing:1.5px; }
+.flip .cname.S{ color:var(--share); } .flip .cname.T{ color:#ff8c96; }
+.flip svg{ width:40px; height:40px; }
+.gain{ margin-top:6px; font-size:20px; font-weight:900; font-variant-numeric:tabular-nums;
+  opacity:0; transform:translateY(8px); transition:opacity .35s ease, transform .35s ease; }
+.flipped .gain{ opacity:1; transform:none; }
+.gain.zero{ color:var(--faint); } .gain.plus{ color:var(--good); }
+/* The fault line splits the arena; it calms as trust climbs (JS drives the path). */
+.arenafault{ width:22px; flex:0 0 22px; display:flex; align-items:center; justify-content:center; }
+.arenafault svg{ width:16px; height:88%; overflow:visible; }
+.arenafault path{ stroke:var(--share); stroke-width:2.5; fill:none; stroke-linejoin:round; }
+.verdict{ min-height:52px; text-align:center; font-size:15.5px; font-weight:700; line-height:1.5;
+  color:var(--dim); margin:16px auto 6px; max-width:36ch; opacity:0; transition:opacity .4s ease .25s; }
+.verdict.show{ opacity:1; }
+.verdict b{ color:var(--ink); }
+
+/* ============================ mirror + results ============================ */
+.mirror h2{ text-align:center; font-size:26px; font-weight:900; margin:14px 0 6px; }
+.mirror .sub{ text-align:center; color:var(--dim); font-size:14px; line-height:1.55;
+  max-width:36ch; margin:0 auto 18px; }
+.arch{ border-radius:16px; border:1px solid var(--rule); background:var(--panel);
+  padding:18px 16px; margin-bottom:14px; box-shadow:var(--shadow); }
+.arch.a{ border-top:3px solid var(--pa); } .arch.b{ border-top:3px solid var(--pb); }
+.arch .who{ font-size:12px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; }
+.arch.a .who{ color:var(--pa); } .arch.b .who{ color:var(--pb); }
+.arch h3{ font-size:26px; font-weight:900; margin:4px 0 8px; }
+.arch p{ color:var(--dim); font-size:14px; line-height:1.6; margin:0 0 12px; }
+.statgrid{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.statgrid .sg{ background:var(--panel2); border:1px solid var(--rule); border-radius:10px;
+  padding:7px 10px; }
+.statgrid .sg b{ display:block; font-size:15px; font-weight:900; }
+.statgrid .sg span{ display:block; font-size:10px; font-weight:700; letter-spacing:.6px;
+  text-transform:uppercase; color:var(--dim); margin-top:1px; }
+
+/* Timeline: two rows of ten chips, one per player, so both stories read at a glance. */
+.timeline{ overflow-x:auto; padding-bottom:4px; }
+.tl{ display:grid; grid-template-columns:auto repeat(10, 1fr); gap:4px; min-width:340px;
+  align-items:center; }
+.tl .rowlbl{ font-size:10px; font-weight:800; letter-spacing:.5px; text-transform:uppercase;
+  padding-right:6px; white-space:nowrap; max-width:64px; overflow:hidden; text-overflow:ellipsis; }
+.tl .rowlbl.a{ color:var(--pa); } .tl .rowlbl.b{ color:var(--pb); }
+.tl .chip{ aspect-ratio:1; border-radius:7px; display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:900; border:1px solid var(--rule); min-width:24px; }
+.tl .chip.S{ background:var(--share-soft); color:var(--share); border-color:rgba(255,209,102,.45); }
+.tl .chip.T{ background:var(--pa-soft); color:#ff8c96; border-color:rgba(230,57,70,.45); }
+.tl .rmark{ text-align:center; font-size:9px; font-weight:800; color:var(--faint);
+  letter-spacing:.3px; }
+.tl .rmark.ev{ color:var(--share); }
+
+.rescard{ border:1px solid var(--rule); border-radius:18px; overflow:hidden; margin-bottom:14px;
+  background:var(--panel); box-shadow:var(--shadow); }
+.reshead{ padding:16px; text-align:center;
+  background:linear-gradient(100deg, var(--pa-soft) 0%, transparent 45%, transparent 55%, var(--pb-soft) 100%); }
+.reshead .gname{ font-size:12px; font-weight:800; letter-spacing:2.4px; text-transform:uppercase;
+  color:var(--dim); }
+.score{ display:flex; align-items:baseline; justify-content:center; gap:14px; margin-top:8px; }
+.score .s{ font-size:38px; font-weight:900; font-variant-numeric:tabular-nums; }
+.score .s.a{ color:var(--pa); } .score .s.b{ color:var(--pb); }
+.score .vsnm{ font-size:13px; font-weight:800; max-width:11ch; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; }
+.resline{ text-align:center; color:var(--dim); font-size:13.5px; line-height:1.55; padding:0 16px;
+  margin:10px 0 0; }
+.resbody{ padding:14px 16px 16px; }
+.archrow{ display:flex; gap:8px; margin:0 0 12px; }
+.archrow .am{ flex:1; min-width:0; background:var(--panel2); border:1px solid var(--rule);
+  border-radius:12px; padding:9px 10px; text-align:center; }
+.archrow .am span{ display:block; font-size:10px; font-weight:800; letter-spacing:.6px;
+  text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.archrow .am.a span{ color:var(--pa); } .archrow .am.b span{ color:var(--pb); }
+.archrow .am b{ display:block; font-size:14px; font-weight:900; margin-top:2px; }
+.resdate{ text-align:center; font-size:11px; color:var(--faint); margin-top:10px; }
+
+/* ============================ overlays & toast ============================ */
+.overlay{ position:fixed; inset:0; background:rgba(5,7,12,.78); display:flex; align-items:center;
+  justify-content:center; padding:20px; z-index:50; }
+.overlay[hidden]{ display:none; }
+.sheet{ width:100%; max-width:420px; background:var(--panel); border:1px solid var(--rule);
+  border-radius:18px; padding:18px; box-shadow:var(--shadow); }
+.sheet h3{ margin:0 0 10px; font-size:18px; font-weight:900; }
+.sheet p{ color:var(--dim); font-size:14px; line-height:1.55; }
+#toast{ position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(20px); background:var(--panel2); color:var(--ink);
+  border:1px solid var(--rule); border-radius:12px; padding:10px 16px; font-size:13.5px;
+  font-weight:700; opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease;
+  z-index:60; max-width:88vw; }
+#toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+.copyfallback{ width:100%; margin-top:10px; background:var(--panel2); color:var(--ink);
+  border:1px solid var(--rule); border-radius:10px; font-size:12px; padding:10px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+
+.fade-in{ animation:fadeIn .3s ease; }
+@keyframes fadeIn{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+@keyframes popIn{ 0%{ transform:scale(.8); opacity:0; } 60%{ transform:scale(1.05); }
+  100%{ transform:scale(1); opacity:1; } }
+.pop-in{ animation:popIn .35s ease both; }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation:none !important; transition:none !important; }
+  .flip{ transition:none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hud" id="hud" hidden>
+    <div class="hudtop">
+      <button class="iconbtn" id="homeBtn" aria-label="Leave game and return to title">⌂</button>
+      <div class="roundlbl" id="roundLbl">Round 1 of 10</div>
+      <button class="iconbtn" id="legendBtn" aria-label="Show payoff legend">?</button>
+    </div>
+    <div class="totals" aria-live="polite" aria-atomic="true">
+      <div class="tot a"><span class="nm" id="totNameA"></span><span class="pts" id="totA">0</span></div>
+      <div class="fault" aria-hidden="true"><svg viewBox="0 0 14 60" preserveAspectRatio="none"><path id="faultPath" d=""/></svg></div>
+      <div class="tot b"><span class="nm" id="totNameB"></span><span class="pts" id="totB">0</span></div>
+    </div>
+    <div class="trustrow" aria-hidden="true">
+      <span class="lbl">Trust</span>
+      <div class="spark"><svg viewBox="0 0 100 24" preserveAspectRatio="none">
+        <polygon class="area" id="sparkArea" points=""></polygon>
+        <polyline id="sparkLine" points=""></polyline>
+      </svg></div>
+    </div>
+    <div class="dots" id="dots" aria-hidden="true"></div>
+  </header>
+
+  <main id="stage"></main>
+</div>
+
+<div class="overlay" id="legendOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Payoff legend">
+    <h3>The payoffs</h3>
+    <table class="matrix">
+      <tr><th></th><th>They share</th><th>They take</th></tr>
+      <tr><th>You share</th><td class="ss">3 / 3</td><td class="ts">0 / 5</td></tr>
+      <tr><th>You take</th><td class="ts">5 / 0</td><td class="tt">1 / 1</td></tr>
+    </table>
+    <p class="mx-note">Round 4 pays double · Round 10 pays triple.<br>Round 7 stays sealed until after round 8.</p>
+    <button class="btn" id="legendClose">Got it</button>
+  </div>
+</div>
+
+<div class="overlay" id="quitOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Leave game confirmation">
+    <h3>Leave this game?</h3>
+    <p>The round log for this session will be lost — it lives only on this screen.</p>
+    <div class="btnrow">
+      <button class="btn" id="quitStay">Keep playing</button>
+      <button class="btn primary" id="quitGo">Leave</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="../analytics.js"></script>
+<script>
+'use strict';
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+
+/* ============================ storage ============================
+   Only names and a play counter are persisted. Choices are the whole secret of the game,
+   so they live in memory for the session and nowhere else — ever. */
+const LS = {
+  get(k){ try{ return localStorage.getItem('split.'+k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem('split.'+k, v); }catch(e){} }
+};
+
+const $ = s => document.querySelector(s);
+const stage = $('#stage');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ============================ constants ============================ */
+const ROUNDS = 10;
+// Event rounds are fixed by design so replays feel fair — nobody can claim the game moved the stakes on them.
+const EVENTS = {
+  4:{ tag:'x2', label:'Double stakes', mult:2, blurb:'Every payoff this round is worth twice as much.' },
+  7:{ tag:'silent', label:'Silent round', mult:1, blurb:'You both choose as usual — but the reveal is sealed until after round 8. Two choices in the dark.' },
+  10:{ tag:'x3', label:'Final round · triple stakes', mult:3, blurb:'Last round. Every payoff ×3. The endgame is where strategies show their true face.' }
+};
+function multFor(r){ return EVENTS[r] ? EVENTS[r].mult : 1; }
+function payoff(a,b){ // returns [pointsA, pointsB] before multiplier
+  if(a==='S' && b==='S') return [3,3];
+  if(a==='T' && b==='T') return [1,1];
+  return a==='T' ? [5,0] : [0,5];
+}
+
+const ICON = {
+  // Share: two arrows meeting across the divide. Take: one hand pulling the pot to its side.
+  share:'<svg viewBox="0 0 52 52" aria-hidden="true"><g fill="none" stroke="#ffd166" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20h24M26 12l8 8-8 8"/><path d="M44 32H20M26 24l-8 8 8 8"/></g></svg>',
+  take:'<svg viewBox="0 0 52 52" aria-hidden="true"><g fill="none" stroke="#ff8c96" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="26" r="7"/><path d="M44 26H31M37 18l-8 8 8 8"/></g></svg>'
+};
+
+/* ============================ session state ============================ */
+let names = ['Player 1','Player 2'];
+try{
+  const saved = JSON.parse(LS.get('names') || 'null');
+  if(Array.isArray(saved) && saved.length===2) names = saved.map(n => String(n).slice(0,12));
+}catch(e){}
+
+let G = null;
+function newSession(){
+  G = {
+    round:1,
+    step:0,               // 0 = first chooser is up, 1 = second chooser is up
+    pending:[null,null],  // this round's choices, indexed by player (0/1), cleared after logging
+    log:[],               // per round: { c:[choiceP1,choiceP2], mult, revealed }
+    totals:[0,0],
+    trust:[50],           // one point per REVEALED round, in reveal order
+    revealQueue:[],       // round indices waiting to be revealed (silent round batches two)
+    tiltShown:false,
+    completeSent:false
+  };
+}
+function firstChooser(r){ return (r-1) % 2; } // odd rounds P1 opens, even rounds P2 — nobody always moves blind first
+
+/* ============================ HUD ============================ */
+function showHud(on){ $('#hud').hidden = !on; }
+function updateHud(){
+  $('#roundLbl').textContent = 'Round ' + G.round + ' of ' + ROUNDS;
+  $('#totNameA').textContent = names[0];
+  $('#totNameB').textContent = names[1];
+  $('#totA').textContent = G.totals[0];
+  $('#totB').textContent = G.totals[1];
+  drawFault($('#faultPath'), 14, 60);
+  drawSpark();
+  drawDots();
+}
+// The fault line's amplitude is (100 - trust): full trust renders an almost-straight seam.
+function drawFault(pathEl, w, h){
+  if(!pathEl) return;
+  const trust = G ? G.trust[G.trust.length-1] : 50;
+  const amp = (100 - trust) / 100 * (w/2 - 1);
+  const cx = w/2, segs = 6;
+  let d = 'M' + cx + ' 0';
+  for(let i=1; i<=segs; i++){
+    const y = h * i / segs;
+    const x = i===segs ? cx : cx + (i%2 ? amp : -amp);
+    d += ' L' + x.toFixed(1) + ' ' + y.toFixed(1);
+  }
+  pathEl.setAttribute('d', d);
+  pathEl.style.stroke = trust >= 60 ? 'var(--share)' : (trust <= 35 ? 'var(--take)' : 'var(--steel)');
+}
+function drawSpark(){
+  const pts = G.trust.map((t,i) => {
+    const x = G.trust.length === 1 ? 0 : (i/(ROUNDS)) * 100;
+    const y = 22 - (t/100) * 20;
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  });
+  $('#sparkLine').setAttribute('points', pts.join(' '));
+  const lastX = G.trust.length === 1 ? 0 : ((G.trust.length-1)/ROUNDS) * 100;
+  $('#sparkArea').setAttribute('points', '0,24 ' + pts.join(' ') + ' ' + lastX.toFixed(1) + ',24');
+}
+function drawDots(){
+  const box = $('#dots');
+  box.innerHTML = '';
+  for(let i=0; i<ROUNDS; i++){
+    const d = document.createElement('span');
+    d.className = 'dot';
+    const e = G.log[i];
+    if(e && e.revealed){
+      const [a,b] = e.c;
+      d.classList.add(a==='S' && b==='S' ? 'ss' : (a==='T' && b==='T' ? 'tt' : 'bt'));
+    }else if(e && !e.revealed){
+      d.classList.add('sealed');
+    }else if(i === G.round-1){
+      d.classList.add('cur');
+    }
+    box.appendChild(d);
+  }
+}
+
+/* ============================ screen plumbing ============================
+   Every screen fully replaces the stage. This is the anti-peek guarantee: the moment a choice
+   is locked, the chooser's DOM is gone before the hand-off paints — no back-swipe, no fast tap,
+   no inspector on a borrowed phone shows what was picked. */
+function setStage(html){
+  stage.innerHTML = '<div class="fade-in">' + html + '</div>';
+  window.scrollTo(0,0);
+}
+
+/* ============================ title ============================ */
+function renderTitle(){
+  showHud(false);
+  setStage(
+    '<div class="wordmark"><div class="w"><span class="l">SPL</span>' +
+    '<svg viewBox="0 0 16 44" aria-hidden="true"><path d="M8 0 L5 9 L11 17 L4 26 L10 34 L8 44" fill="none" stroke="#ffd166" stroke-width="2.5" stroke-linejoin="round"/></svg>' +
+    '<span class="r">IT</span></div><small>share · or · take</small></div>' +
+    '<p class="pitch">Ten rounds. Share or Take. The score says who won — the pattern says who you are.</p>' +
+    '<div class="card"><div class="namesgrid">' +
+      '<div class="namefield a"><label for="nameA">Player 1</label>' +
+      '<input id="nameA" maxlength="12" autocomplete="off" value="' + esc(names[0]) + '"></div>' +
+      '<div class="namefield b"><label for="nameB">Player 2</label>' +
+      '<input id="nameB" maxlength="12" autocomplete="off" value="' + esc(names[1]) + '"></div>' +
+    '</div></div>' +
+    '<div class="card"><table class="matrix">' +
+      '<tr><th></th><th>They share</th><th>They take</th></tr>' +
+      '<tr><th>You share</th><td class="ss">3 / 3<small>everyone wins</small></td><td class="ts">0 / 5<small>you got burned</small></td></tr>' +
+      '<tr><th>You take</th><td class="ts">5 / 0<small>you burned them</small></td><td class="tt">1 / 1<small>mutual ruin</small></td></tr>' +
+    '</table><p class="mx-note">Round 4 pays double · round 7 is sealed · round 10 pays triple.</p></div>' +
+    '<details class="how"><summary>How it works</summary><ul>' +
+      '<li>Each round, you each secretly pick <b>Share</b> or <b>Take</b> — pass the phone, choose in private, pass it back.</li>' +
+      '<li>Both choices flip over at the same time, and points fly to the totals.</li>' +
+      '<li>Watch the trust line — mutual sharing mends the fault, betrayal tears it open.</li>' +
+      '<li>After round 10, the mirror: each of you gets a behaviour profile read from your ten choices.</li>' +
+    '</ul></details>' +
+    '<button class="btn primary" id="startBtn">Start — 10 rounds</button>' +
+    '<div class="finelines">' +
+      '<p>Answers stay on this phone and are never uploaded.</p>' +
+      '<p>For fun and conversation — a game, not a psychological assessment.</p>' +
+    '</div>'
+  );
+  $('#startBtn').addEventListener('click', () => {
+    names[0] = ($('#nameA').value.trim() || 'Player 1').slice(0,12);
+    names[1] = ($('#nameB').value.trim() || 'Player 2').slice(0,12);
+    LS.set('names', JSON.stringify(names));
+    newSession();
+    track('game_start', {});
+    showHud(true);
+    updateHud();
+    renderBanner();
+  });
+}
+
+/* ============================ round banner (neutral — both may look) ============================ */
+function renderBanner(){
+  updateHud();
+  const r = G.round, ev = EVENTS[r];
+  const opener = names[firstChooser(r)];
+  let inner = '<div class="rnum">Round ' + r + ' of ' + ROUNDS + '</div>' +
+    '<h2>' + (r===1 ? 'First moves' : (r===ROUNDS ? 'The endgame' : 'Round ' + r)) + '</h2>';
+  if(ev) inner += '<div class="event ' + ev.tag + '">' + ev.label + '</div><p>' + ev.blurb + '</p>';
+  else if(r===1) inner += '<p>No history yet. Just the matrix, the other player, and what you believe about them.</p>';
+  else if(G.log[6] && !G.log[6].revealed && r===8) inner += '<p>Round 7 is still sealed. Choose round 8 without knowing what just happened.</p>';
+  else inner += '<p>Both of you can see this screen. What happens next is private.</p>';
+  inner += '<button class="btn primary" id="bannerGo">Both ready — pass to ' + esc(opener) + '</button>';
+  setStage('<div class="banner card">' + inner + '</div>');
+  $('#bannerGo').addEventListener('click', () => renderHandoff(firstChooser(r)));
+}
+
+/* ============================ hand-off ============================ */
+function renderHandoff(idx){
+  updateHud();
+  const tilt = !G.tiltShown ? '<p class="tilt">Tilt the phone away from the other player 👀</p>' : '';
+  G.tiltShown = true;
+  setStage(
+    '<div class="handoff card">' +
+      '<div class="passlbl">Pass the phone to</div>' +
+      '<h2 class="who ' + (idx===0?'a':'b') + '">' + esc(names[idx]) + '</h2>' +
+      tilt +
+      '<button class="btn primary" id="readyBtn">I\'m ' + esc(names[idx]) + ' — ready</button>' +
+    '</div>'
+  );
+  // Guard against the previous player's finger still travelling: ignore taps for the first
+  // 450ms and accept only one, so a double-tap can never blow through into the private screen.
+  const btn = $('#readyBtn');
+  const armAt = performance.now() + 450;
+  let used = false;
+  btn.addEventListener('click', () => {
+    if(used || performance.now() < armAt) return;
+    used = true;
+    renderChoose(idx);
+  });
+}
+
+/* ============================ private choice ============================ */
+function renderChoose(idx){
+  updateHud();
+  const r = G.round, ev = EVENTS[r];
+  const stake = ev && ev.mult > 1 ? '<p class="stakenote">' + ev.label + ' — payoffs ×' + ev.mult + '</p>'
+              : (ev && ev.tag==='silent' ? '<p class="stakenote">Silent round — sealed until after round 8</p>' : '');
+  setStage(
+    '<div class="choose">' +
+      '<p class="youare">Round ' + r + ' · <b class="' + (idx===0?'a':'b') + '">' + esc(names[idx]) + '</b>, your call. Only you can see this.</p>' +
+      stake +
+      '<div class="choicewrap">' +
+        '<button class="choicebtn share" id="pickShare" aria-pressed="false"><span class="ic">' + ICON.share + '</span>' +
+          '<span class="tx"><b>SHARE</b><span>3 each if they share too · 0 if they take</span></span><span class="tick">✓</span></button>' +
+        '<button class="choicebtn take" id="pickTake" aria-pressed="false"><span class="ic">' + ICON.take + '</span>' +
+          '<span class="tx"><b>TAKE</b><span>5 if they share · 1 each if you both take</span></span><span class="tick">✓</span></button>' +
+      '</div>' +
+      '<div class="lockrow"><button class="btn primary" id="lockBtn" disabled>Pick one to lock in</button></div>' +
+    '</div>'
+  );
+  let choice = null;
+  const share = $('#pickShare'), take = $('#pickTake'), lock = $('#lockBtn');
+  function select(c){
+    choice = c;
+    share.setAttribute('aria-pressed', String(c==='S'));
+    take.setAttribute('aria-pressed', String(c==='T'));
+    lock.disabled = false;
+    lock.textContent = 'Lock in ' + (c==='S' ? 'SHARE' : 'TAKE');
+  }
+  share.addEventListener('click', () => select('S'));
+  take.addEventListener('click', () => select('T'));
+  let locked = false;
+  lock.addEventListener('click', () => {
+    if(locked || !choice) return;
+    locked = true;
+    commitChoice(idx, choice);
+  });
+}
+
+function commitChoice(idx, choice){
+  G.pending[idx] = choice;
+  if(G.step === 0){
+    G.step = 1;
+    renderHandoff(1 - idx);   // stage is fully replaced — the pick above is gone from the DOM
+    return;
+  }
+  // Both committed: log the round, clear the working copy, and route.
+  const r = G.round;
+  G.log[r-1] = { c:[G.pending[0], G.pending[1]], mult:multFor(r), revealed:false };
+  G.pending = [null,null];
+  G.step = 0;
+  if(r === 7){            // sealed: straight to round 8, no reveal
+    G.round = 8;
+    renderBanner();
+  }else if(r === 8){      // unseal 7, then reveal 8
+    G.revealQueue = [6,7];
+    renderReveal();
+  }else{
+    G.revealQueue = [r-1];
+    renderReveal();
+  }
+}
+
+/* ============================ reveal ============================ */
+function renderReveal(){
+  updateHud();
+  const ri = G.revealQueue[0];
+  const e = G.log[ri];
+  const wasSealed = ri === 6 && !e.revealed && G.round === 8;
+  const lbl = wasSealed ? 'Round 7 — unsealed' : 'Round ' + (ri+1) + (e.mult>1 ? ' · ×' + e.mult : '');
+  setStage(
+    '<div class="reveal">' +
+      '<p class="rlbl">' + lbl + '</p>' +
+      '<div class="arena" id="arena">' +
+        revealCard(0, e) +
+        '<div class="arenafault" aria-hidden="true"><svg viewBox="0 0 16 80" preserveAspectRatio="none"><path id="arenaFault" d=""/></svg></div>' +
+        revealCard(1, e) +
+      '</div>' +
+      '<p class="verdict" id="verdict" aria-live="polite"></p>' +
+      '<button class="btn primary" id="revealBtn">Reveal</button>' +
+    '</div>'
+  );
+  drawFault($('#arenaFault'), 16, 80);
+  const btn = $('#revealBtn');
+  let fired = false;
+  btn.addEventListener('click', () => {
+    if(fired) return;
+    fired = true;
+    btn.disabled = true;
+    // A held beat before the flip: the pause is the drama.
+    setTimeout(() => doReveal(ri, btn), reducedMotion ? 0 : 420);
+  });
+}
+function revealCard(p, e){
+  const c = e.c[p];
+  return '<div class="rcard ' + (p===0?'a':'b') + '" id="rc' + p + '">' +
+    '<div class="nm">' + esc(names[p]) + '</div>' +
+    '<div class="flip"><div class="face back"><span class="q">?</span></div>' +
+    '<div class="face front">' + (c==='S' ? ICON.share : ICON.take) +
+    '<span class="cname ' + c + '">' + (c==='S' ? 'SHARE' : 'TAKE') + '</span></div></div>' +
+    '<div class="gain" id="gain' + p + '"></div>' +
+  '</div>';
+}
+function doReveal(ri, btn){
+  const e = G.log[ri];
+  const [ba, bb] = payoff(e.c[0], e.c[1]);
+  const ga = ba * e.mult, gb = bb * e.mult;
+  $('#rc0').classList.add('flipped');
+  $('#rc1').classList.add('flipped');
+  const g0 = $('#gain0'), g1 = $('#gain1');
+  g0.textContent = '+' + ga; g0.classList.add(ga===0 ? 'zero' : 'plus');
+  g1.textContent = '+' + gb; g1.classList.add(gb===0 ? 'zero' : 'plus');
+
+  e.revealed = true;
+  G.totals[0] += ga;
+  G.totals[1] += gb;
+  // Trust moves on what actually happened: mending is slow, tearing is fast — like real life.
+  const prev = G.trust[G.trust.length-1];
+  const delta = (e.c[0]==='S' && e.c[1]==='S') ? 8 : (e.c[0]==='T' && e.c[1]==='T') ? -6 : -14;
+  G.trust.push(Math.max(4, Math.min(96, prev + delta)));
+
+  const v = $('#verdict');
+  v.innerHTML = verdictLine(e);
+  setTimeout(() => {
+    updateHud();
+    v.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = nextLabel();
+    btn.addEventListener('click', advanceAfterReveal, { once:true });
+  }, reducedMotion ? 0 : 650);
+}
+function verdictLine(e){
+  const [a,b] = e.c;
+  const nA = '<b>' + esc(names[0]) + '</b>', nB = '<b>' + esc(names[1]) + '</b>';
+  if(a==='S' && b==='S') return 'Both shared. ' + (3*e.mult) + ' each — the fault line mends a little.';
+  if(a==='T' && b==='T') return 'Both took. ' + (1*e.mult) + ' each — mutual ruin, nobody fooled.';
+  if(a==='T') return nA + ' took while ' + nB + ' shared. ' + (5*e.mult) + ' to 0.';
+  return nB + ' took while ' + nA + ' shared. 0 to ' + (5*e.mult) + '.';
+}
+function nextLabel(){
+  if(G.revealQueue.length > 1) return 'Next — reveal round ' + (G.revealQueue[1]+1);
+  return G.round === ROUNDS ? 'The mirror' : 'Round ' + (G.round+1);
+}
+function advanceAfterReveal(){
+  G.revealQueue.shift();
+  if(G.revealQueue.length){ renderReveal(); return; }
+  if(G.round === ROUNDS){ G.mirrorStep = 0; renderMirror(); return; }
+  G.round++;
+  renderBanner();
+}
+
+/* ============================ the mirror ============================
+   Behaviour metrics from the raw choice log. One honesty rule throughout: the transition into
+   round 8 is excluded from anything that models "reacting to the last round", because round 7's
+   outcome was sealed when that choice was made — no one can retaliate against what they never saw. */
+function metricsFor(p){
+  const me = G.log.map(e => e.c[p]);
+  const op = G.log.map(e => e.c[1-p]);
+  const coop = me.filter(c => c==='S').length / ROUNDS;
+  const known = i => i !== 7;               // index 7 = round 8, reacting to the sealed round 7
+  let provoked=0, retaliated=0, mirror=0, mirrorN=0, switches=0;
+  const retaliationRounds = [];
+  for(let i=1; i<ROUNDS; i++){
+    if(me[i] !== me[i-1]) switches++;
+    if(!known(i)) continue;
+    mirrorN++;
+    if(me[i] === op[i-1]) mirror++;
+    if(op[i-1] === 'T'){
+      provoked++;
+      if(me[i] === 'T'){ retaliated++; retaliationRounds.push(i); }
+    }
+  }
+  let forgiveOps=0, forgave=0;
+  for(const i of retaliationRounds){
+    if(i+1 < ROUNDS){ forgiveOps++; if(me[i+1]==='S') forgave++; }
+  }
+  const eventTakes = [3,6,9].filter(i => me[i]==='T').length;
+  return {
+    coop,
+    retaliation: provoked ? retaliated/provoked : null, provoked,
+    forgiveness: forgiveOps ? forgave/forgiveOps : null, forgiveOps,
+    mirrorRate: mirrorN ? mirror/mirrorN : 0,
+    switchRate: switches/(ROUNDS-1),
+    first: me[0], endTake: me[ROUNDS-1]==='T', eventTakes
+  };
+}
+/* Thresholds are honest and checked in priority order; The Gambler is the truthful fallback —
+   "no rule we tested predicts you" is a real finding, not a shrug. */
+const ARCHETYPES = {
+  steady:{ name:'Steady Hand', test:'shared 8+ of 10',
+    copy:(n)=> n + ' leads with trust and keeps leading with it, even after it costs points. People relax around a player like this — and occasionally take advantage. The pattern says: worth being on a team with.' },
+  stone:{ name:'Stone Wall', test:'took 8+ of 10',
+    copy:(n)=> n + ' played the matrix in front of them, not the person across from them — maximum defence, zero apologies. Ruthlessly consistent, impossible to exploit. Ask what it would have taken to earn a share.' },
+  tft:{ name:'Tit-for-Tat', test:'mirrored the other player\'s last move 70%+',
+    copy:(n)=> n + ' gave back whatever they got, one round later — the most studied strategy in game theory, and one of the most effective. Fair, firm, and quick to reset once the other side comes back around.' },
+  forgiver:{ name:'The Forgiver', test:'hit back when taken from, then shared again (50%+ both)',
+    copy:(n)=> n + ' noticed every betrayal — the retaliation proves it — and then reached across anyway. The take says "I saw that"; the share after it says "I\'d rather rebuild than win". That combination is rare.' },
+  opportunist:{ name:'The Opportunist', test:'cooperated at low stakes, took when stakes spiked',
+    copy:(n)=> n + ' was generous when it was cheap and decisive when it wasn\'t — look at the big rounds. Nothing personal, just excellent timing. Nobody should be angry; everybody should be counting.' },
+  gambler:{ name:'The Gambler', test:'no rule tested predicts their next move',
+    copy:(n)=> n + '\'s moves fit no pattern we test for — not mirroring, not momentum, not the stakes. Unreadable is its own kind of power at this table. Ask them if there was a plan; the answer is the fun part.' }
+};
+function classify(m){
+  if(m.coop >= 0.8) return ARCHETYPES.steady;
+  if(m.coop <= 0.2) return ARCHETYPES.stone;
+  if(m.mirrorRate >= 0.7) return ARCHETYPES.tft;
+  if(m.provoked >= 2 && m.retaliation >= 0.5 && m.forgiveOps >= 1 && m.forgiveness >= 0.5) return ARCHETYPES.forgiver;
+  if((m.eventTakes >= 2 && m.coop >= 0.4) || (m.endTake && m.coop >= 0.5)) return ARCHETYPES.opportunist;
+  return ARCHETYPES.gambler;
+}
+function relationshipLine(){
+  const A = G.log.map(e => e.c[0]), B = G.log.map(e => e.c[1]);
+  const nA = esc(names[0]), nB = esc(names[1]);
+  let lock=0, lagAB=0, lagBA=0, mutS=0, mutT=0, betA=0, betB=0;
+  for(let i=0; i<ROUNDS; i++){
+    if(A[i]===B[i]) lock++;
+    if(A[i]==='S' && B[i]==='S') mutS++;
+    if(A[i]==='T' && B[i]==='T') mutT++;
+    if(A[i]==='T' && B[i]==='S') betA++;
+    if(A[i]==='S' && B[i]==='T') betB++;
+    if(i>0){
+      if(A[i]===B[i-1]) lagAB++;
+      if(B[i]===A[i-1]) lagBA++;
+    }
+  }
+  if(mutS >= 8) return 'You kept choosing each other — ' + mutS + ' rounds of mutual share. The matrix never stood a chance.';
+  if(lagAB >= 7 && lagAB > lagBA) return nA + ' mirrored ' + nB + ' one round late, nearly all game.';
+  if(lagBA >= 7) return nB + ' mirrored ' + nA + ' one round late, nearly all game.';
+  if(lock >= 8) return 'You moved in lockstep — the same call in ' + lock + ' of 10 rounds, without ever seeing each other\'s hand first.';
+  if(mutT >= 4) return 'An arms race through the middle rounds — neither of you blinked first.';
+  if(betA >= 2 && betB >= 2) return 'Honours even: ' + betA + ' clean strikes by ' + nA + ', ' + betB + ' by ' + nB + '. Every one of them is a story.';
+  if(betA === 0 && betB === 0 && mutS + mutT === ROUNDS) return 'Not one one-sided round in ten — whatever you two were doing, you did it together.';
+  return 'Two strategies circling each other, and neither copied the other. Compare notes — that\'s the good part.';
+}
+
+function renderMirror(){
+  updateHud();
+  const step = G.mirrorStep;
+  if(step === 0){
+    setStage('<div class="mirror"><div class="banner card">' +
+      '<div class="rnum">After round 10</div><h2>The mirror</h2>' +
+      '<p>The score is on the board. Now the part the score can\'t show: what your ten choices say about how each of you plays trust.</p>' +
+      '<button class="btn primary" id="mNext">Show ' + esc(names[0]) + ' first</button>' +
+    '</div></div>');
+  }else if(step === 1 || step === 2){
+    const p = step - 1;
+    const m = metricsFor(p);
+    const arch = classify(m);
+    setStage('<div class="mirror">' + archCard(p, m, arch) +
+      '<button class="btn primary" id="mNext">' + (step===1 ? 'Now ' + esc(names[1]) : 'See the whole story') + '</button></div>');
+  }else{
+    setStage('<div class="mirror">' +
+      '<h2>Ten rounds, two stories</h2>' +
+      '<div class="card"><div class="timeline">' + timelineHtml() + '</div></div>' +
+      '<div class="card"><p class="sub" style="margin:0">' + relationshipLine() + '</p></div>' +
+      '<button class="btn primary" id="mNext">The final card</button></div>');
+  }
+  $('#mNext').addEventListener('click', () => {
+    if(G.mirrorStep >= 3){ renderResults(); return; }
+    G.mirrorStep++;
+    renderMirror();
+  }, { once:true });
+}
+function archCard(p, m, arch){
+  const pct = x => Math.round(x*100) + '%';
+  return '<div class="arch ' + (p===0?'a':'b') + ' pop-in" aria-live="polite">' +
+    '<div class="who">' + esc(names[p]) + ' is</div>' +
+    '<h3>' + arch.name + '</h3>' +
+    '<p>' + arch.copy('<b>' + esc(names[p]) + '</b>') + '</p>' +
+    '<div class="statgrid">' +
+      '<div class="sg"><b>' + pct(m.coop) + '</b><span>Shared</span></div>' +
+      '<div class="sg"><b>' + (m.first==='S' ? 'Share' : 'Take') + '</b><span>Opening move</span></div>' +
+      '<div class="sg"><b>' + (m.retaliation===null ? 'Never tested' : pct(m.retaliation)) + '</b><span>Hit back after a take</span></div>' +
+      '<div class="sg"><b>' + (m.forgiveness===null ? '—' : pct(m.forgiveness)) + '</b><span>Shared again after hitting back</span></div>' +
+    '</div></div>';
+}
+function timelineHtml(){
+  const marks = { 3:'×2', 6:'🔇', 9:'×3' };
+  let head = '<div></div>', rowA = '<div class="rowlbl a">' + esc(names[0]) + '</div>',
+      rowB = '<div class="rowlbl b">' + esc(names[1]) + '</div>';
+  for(let i=0; i<ROUNDS; i++){
+    head += '<div class="rmark' + (marks[i] ? ' ev' : '') + '">' + (marks[i] || (i+1)) + '</div>';
+    rowA += '<div class="chip ' + G.log[i].c[0] + '">' + G.log[i].c[0] + '</div>';
+    rowB += '<div class="chip ' + G.log[i].c[1] + '">' + G.log[i].c[1] + '</div>';
+  }
+  return '<div class="tl">' + head + rowA + rowB + '</div>';
+}
+
+/* ============================ results ============================ */
+function renderResults(){
+  updateHud();
+  const mA = metricsFor(0), mB = metricsFor(1);
+  const aA = classify(mA), aB = classify(mB);
+  if(!G.completeSent){
+    G.completeSent = true;
+    track('game_complete', {
+      score_a:G.totals[0], score_b:G.totals[1],
+      coop_rate_a:Math.round(mA.coop*100), coop_rate_b:Math.round(mB.coop*100)
+    });
+    const plays = parseInt(LS.get('plays') || '0', 10) || 0;
+    LS.set('plays', String(plays+1));
+  }
+  const [sa, sb] = G.totals;
+  const scoreLine = sa === sb
+    ? 'Dead even. The matrix couldn\'t separate you — maybe nothing can.'
+    : 'The score says <b>' + esc(names[sa>sb?0:1]) + '</b> won. The pattern says more.';
+  const today = new Date().toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+  setStage(
+    '<div class="rescard" aria-live="polite"><div class="reshead">' +
+      '<div class="gname">Split · 10 rounds</div>' +
+      '<div class="score">' +
+        '<span><span class="vsnm" style="color:var(--pa)">' + esc(names[0]) + '</span><br><span class="s a">' + sa + '</span></span>' +
+        '<span style="color:var(--faint);font-weight:900">·</span>' +
+        '<span><span class="vsnm" style="color:var(--pb)">' + esc(names[1]) + '</span><br><span class="s b">' + sb + '</span></span>' +
+      '</div>' +
+      '<p class="resline">' + scoreLine + '</p>' +
+    '</div><div class="resbody">' +
+      '<div class="archrow">' +
+        '<div class="am a"><span>' + esc(names[0]) + '</span><b>' + aA.name + '</b></div>' +
+        '<div class="am b"><span>' + esc(names[1]) + '</span><b>' + aB.name + '</b></div>' +
+      '</div>' +
+      '<div class="timeline">' + timelineHtml() + '</div>' +
+      '<p class="resline" style="margin-top:12px">' + relationshipLine() + '</p>' +
+      '<div class="resdate">' + today + ' · kreeda.games/split</div>' +
+    '</div></div>' +
+    '<div class="btnrow" style="margin-bottom:10px">' +
+      '<button class="btn" id="againBtn">Play again</button>' +
+      '<button class="btn" id="playersBtn">Change players</button>' +
+    '</div>' +
+    '<button class="btn ghost" id="copyBtn">Copy result</button>' +
+    '<div id="copyHost"></div>'
+  );
+  $('#againBtn').addEventListener('click', () => {
+    newSession();
+    track('game_start', {});
+    updateHud();
+    renderBanner();
+  });
+  $('#playersBtn').addEventListener('click', renderTitle);
+  $('#copyBtn').addEventListener('click', () => copyResult(aA, aB));
+}
+function copyResult(aA, aB){
+  // Emoji per round: 🟡 mutual share, ⚫ mutual take, 🔻 someone got burned. No answers per
+  // player leave the phone unless the players themselves paste this somewhere.
+  const strip = G.log.map(e => {
+    const [a,b] = e.c;
+    return (a==='S'&&b==='S') ? '🟡' : (a==='T'&&b==='T') ? '⚫' : '🔻';
+  }).join('');
+  const text = 'Split — ' + names[0] + ' ' + G.totals[0] + ' · ' + names[1] + ' ' + G.totals[1] + '\n' +
+    strip + '\n' +
+    names[0] + ': ' + aA.name + ' · ' + names[1] + ': ' + aB.name + '\n' +
+    'kreeda.games/split';
+  let done = false;
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(
+        () => toast('Copied!'),
+        () => showCopyFallback(text)
+      );
+      done = true;
+    }
+  }catch(e){}
+  if(!done) showCopyFallback(text);   // clipboard is unavailable on file:// — show it to copy by hand
+}
+function showCopyFallback(text){
+  const host = $('#copyHost');
+  if(host && !host.firstChild){
+    const ta = document.createElement('textarea');
+    ta.className = 'copyfallback';
+    ta.rows = 4;
+    ta.readOnly = true;
+    ta.value = text;
+    ta.setAttribute('aria-label', 'Result text to copy manually');
+    host.appendChild(ta);
+    ta.focus(); ta.select();
+  }
+  toast('Copy it from the box below');
+}
+let toastTimer = null;
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ============================ overlays ============================ */
+$('#legendBtn').addEventListener('click', () => { $('#legendOverlay').hidden = false; $('#legendClose').focus(); });
+$('#legendClose').addEventListener('click', () => { $('#legendOverlay').hidden = true; });
+$('#homeBtn').addEventListener('click', () => { $('#quitOverlay').hidden = false; $('#quitStay').focus(); });
+$('#quitStay').addEventListener('click', () => { $('#quitOverlay').hidden = true; });
+$('#quitGo').addEventListener('click', () => {
+  $('#quitOverlay').hidden = true;
+  G = null;
+  renderTitle();
+});
+
+renderTitle();
+</script>
+</body>
+</html>
