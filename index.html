@@ -83,10 +83,16 @@
   .wrap{ max-width:1160px; margin:0 auto; padding:0 var(--pad) 40px; }
 
   /* ---- hero ---------------------------------------------------------------- */
-  .hero{ padding:20px 0 4px; }
+  /* Measured, not guessed. The old hero — headline, paragraph, four trust pills —
+     ate 288px of an 844px phone; with a 314px card that left exactly ONE game visible
+     on open, which is the whole reason this page was redesigned. An arcade's landing
+     page is not an argument to be read: people arrived to play, and every pixel spent
+     explaining that is a pixel not spent showing them a game. So the pitch is one line
+     and the trust copy is a single thin row rather than four wrapping pills. */
+  .hero{ padding:12px 0 2px; }
   h1{
-    margin:0 0 10px; font-weight:900; letter-spacing:-.5px; line-height:1.06;
-    font-size:clamp(30px, 8.2vw, 56px); max-width:16ch;
+    margin:0; font-weight:900; letter-spacing:-.4px; line-height:1.12;
+    font-size:clamp(20px, 5.2vw, 38px); max-width:24ch;
   }
   h1 em{
     font-style:normal;
@@ -96,20 +102,23 @@
     animation:shift 9s linear infinite;
   }
   @keyframes shift{ to{ background-position:220% 0; } }
-  .sub{ margin:0 0 16px; color:var(--ink-dim); font-size:clamp(15px,3.9vw,18px); line-height:1.5; max-width:52ch; }
-  .trust{ display:flex; flex-wrap:wrap; gap:8px; margin:0; padding:0; list-style:none; }
-  .trust li{
-    font-size:12.5px; font-weight:600; color:var(--ink-dim);
-    border:1px solid var(--line); border-radius:999px; padding:7px 12px;
-    display:flex; align-items:center; gap:6px;
+  /* One row, no borders, no wrap. The bar's own trust line is hidden under 480px, so
+     without this a phone would carry no free/no-signup signal at all — it is the thing
+     that makes a stranger tap, and it costs 18px instead of 68. */
+  .trust{
+    display:flex; gap:0 14px; margin:7px 0 0; padding:0; list-style:none;
+    font-size:12px; color:var(--ink-dim); white-space:nowrap;
+    overflow-x:auto; scrollbar-width:none;
   }
-  .trust svg{ width:13px; height:13px; flex:none; color:var(--accent); }
+  .trust::-webkit-scrollbar{ display:none; }
+  .trust li{ display:flex; align-items:center; gap:5px; flex:none; }
+  .trust svg{ width:11px; height:11px; flex:none; color:var(--accent); }
 
   /* ---- filter chips -------------------------------------------------------- */
   .filters{
     position:sticky; top:var(--barh, 48px); z-index:15;
     display:flex; gap:8px; overflow-x:auto; scrollbar-width:none;
-    margin:24px calc(var(--pad) * -1) 18px; padding:10px var(--pad);
+    margin:14px calc(var(--pad) * -1) 12px; padding:8px var(--pad);
     -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity;
     border-bottom:1px solid transparent;
     transition:background .2s ease, border-color .2s ease;
@@ -120,22 +129,27 @@
   .filters::-webkit-scrollbar{ display:none; }
   .chip{
     flex:none; scroll-snap-align:start;
-    font:inherit; font-size:14px; font-weight:600; color:var(--ink-dim);
+    font:inherit; font-size:13px; font-weight:600; color:var(--ink-dim);
     background:var(--surface); border:1px solid var(--line); border-radius:999px;
-    padding:0 16px; height:40px; cursor:pointer; white-space:nowrap;
+    padding:0 13px; height:34px; cursor:pointer; white-space:nowrap;
     transition:color .15s, background .15s, border-color .15s;
   }
   .chip:hover{ color:var(--ink); border-color:var(--line-strong); }
   .chip[aria-pressed="true"]{ background:var(--ink); color:#0b0b12; border-color:var(--ink); }
 
   /* ---- grid ---------------------------------------------------------------- */
-  .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(250px,1fr)); gap:14px; }
+  /* Two columns on a phone, not one. minmax(250px) meant a single column below 500px
+     and a 314px-tall card, so one game filled the fold. Halving the width roughly
+     halves the height too — the art keeps its 8:3 crop — and four rows now sit where
+     one did. auto-fill still widens it to 3 and 4 columns on bigger screens. */
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(158px,1fr)); gap:10px; }
+  @media (min-width:560px){ .grid{ grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:14px; } }
   @media (min-width:760px){ .grid{ gap:18px; } }
 
   .card{
     position:relative; display:flex; flex-direction:column;
-    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
-    padding:10px 10px 14px; overflow:hidden;
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:7px 7px 9px; overflow:hidden;
     transition:transform .16s ease, border-color .16s ease, background .16s ease;
   }
   @media (hover:hover){
@@ -154,19 +168,27 @@
   }
   .thumb svg{ display:block; width:100%; height:100%; }
 
-  .card .top{ display:flex; align-items:baseline; gap:8px; margin:12px 2px 0; }
-  .card h2{ margin:0; font-size:18px; font-weight:800; letter-spacing:-.2px; }
+  .card .top{ display:flex; align-items:baseline; gap:6px; margin:8px 3px 0; }
+  .card h2{ margin:0; font-size:15px; font-weight:800; letter-spacing:-.2px; }
   .tag{
-    margin-left:auto; flex:none; font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase;
-    color:var(--ink-dim); border:1px solid var(--line); border-radius:999px; padding:3px 8px;
+    margin-left:auto; flex:none; font-size:9.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
+    color:var(--ink-dim); border:1px solid var(--line); border-radius:999px; padding:2px 6px;
   }
-  .card p{
-    margin:6px 2px 0; font-size:13.5px; line-height:1.45; color:var(--ink-dim);
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  /* The blurb and the Play button are both cut on phones. Nobody reads two lines of
+     prose about thirteen games while deciding which to tap — the art and the name do
+     that work — and the whole card is already a link, so a Play button inside it is
+     40px of chrome that adds no affordance. Both return above 560px, where the space
+     is free. */
+  .card p{ display:none; margin:5px 3px 0; font-size:13px; line-height:1.42; color:var(--ink-dim); }
+  @media (min-width:560px){
+    .card p{
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    }
   }
   /* margin-top:auto — grid stretches every card in a row to the tallest one, so
      the action row sits on the bottom edge instead of leaving a dead gap under it. */
-  .foot{ display:flex; align-items:center; gap:10px; margin:12px 2px 0; margin-top:auto; padding-top:12px; }
+  .foot{ display:none; align-items:center; gap:10px; margin:12px 2px 0; margin-top:auto; padding-top:12px; }
+  @media (min-width:560px){ .foot{ display:flex; } }
   .meta{ font-size:12px; color:#7f7f92; }
   .play{
     margin-left:auto; flex:none; display:flex; align-items:center; gap:5px;
@@ -177,78 +199,81 @@
   .play svg{ width:11px; height:11px; }
 
   /* featured card — the one thing a paid visitor sees without scrolling */
-  .card.featured{ padding:12px 12px 16px; border-color:rgba(92,255,110,.28); }
-  .card.featured h2{ font-size:24px; }
+  .card.featured{ border-color:rgba(92,255,110,.28); }
+  .card.featured h2{ font-size:15px; }
+  @media (min-width:560px){ .card.featured{ padding:12px 12px 16px; } .card.featured h2{ font-size:24px; } }
   .card.featured p{ font-size:14.5px; -webkit-line-clamp:3; }
   .card.featured .play{ background:var(--accent); color:#08110a; border-color:var(--accent); font-size:14px; padding:10px 18px; }
   .badge{
-    position:absolute; top:22px; left:22px; z-index:2;
-    font-size:11px; font-weight:800; letter-spacing:.7px; text-transform:uppercase;
-    background:var(--accent); color:#08110a; border-radius:999px; padding:4px 9px;
+    position:absolute; top:14px; left:14px; z-index:2;
+    font-size:9.5px; font-weight:800; letter-spacing:.5px; text-transform:uppercase;
+    background:var(--accent); color:#08110a; border-radius:999px; padding:3px 7px;
     box-shadow:0 2px 10px rgba(0,0,0,.35);
   }
   @media (min-width:760px){
     /* Twice the width would otherwise mean twice the thumbnail height and a row
        that towers over its neighbours — so the art gets a wider crop instead. */
     .card.featured{ grid-column:span 2; }
-    .card.featured .thumb{ aspect-ratio:16/5; }
+    /* 4:1, not 16:5. The grid stretches every card in a row to the tallest, so the
+       featured card's art sets the height of its whole row — at 16:5 that was a 197px
+       thumbnail dragging three neighbours up with it and pushing row two off the fold. */
+    .card.featured .thumb{ aspect-ratio:4/1; }
   }
 
   .empty{ display:none; color:var(--ink-dim); padding:28px 2px; font-size:15px; }
 
-  /* ---- today strip --------------------------------------------------------- */
-  /* The daily loop, surfaced. Everything in here is written by script from what the
-     GAMES recorded (see /DAILY.md) — there is nothing a server could know, so the
-     element ships empty and hidden and is unhidden only when there is something true
-     to say. A first-time visitor with empty storage is the majority of traffic and
-     must see the page exactly as it looked before this existed: no scaffolding, no
-     "streak 0", no dangling header. Hence no display: on .today — the UA sheet's
-     [hidden]{display:none} is left free to do its job, unlike .card below it. */
-  .today{
-    margin:18px 0 0;
-    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
-    padding:12px 12px 13px;
-  }
-  .today-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 2px 10px; }
-  .today-head h2{ margin:0; font-size:15px; font-weight:800; letter-spacing:-.1px; }
-  .today-count{ margin-left:auto; font-size:12px; color:#7f7f92; }
-  .streak{
-    display:inline-flex; align-items:center; gap:5px; flex:none;
-    font-size:13px; font-weight:800; letter-spacing:-.1px;
-    color:var(--accent); background:rgba(92,255,110,.10);
-    border:1px solid rgba(92,255,110,.30); border-radius:999px; padding:4px 11px 4px 9px;
-  }
-  .streak svg{ width:12px; height:14px; flex:none; }
+  /* ---- daily lane ---------------------------------------------------------- */
+  /* The one horizontal rail on the page, and the only place a rail earns its keep.
+     Netflix scrolls sideways because it has thousands of titles and hiding some is
+     unavoidable; this site has thirteen games and wants every one findable, so the
+     grid below stays a grid. What makes the dailies different is that they EXPIRE —
+     a set that changes at midnight is a different kind of object from a game that is
+     always there, and a rail says so at a glance.
 
-  /* Same scroll idiom as the filter chips, for the same reason: at 360px a third
-     pill does not fit, and wrapping them would push the card grid off the fold —
-     which is the one thing this strip must never do to the page it sits on. */
-  .today-row{
-    display:flex; gap:8px; overflow-x:auto; scrollbar-width:none;
-    margin:0 -12px -13px; padding:0 12px 13px;
+     Unlike the strip this replaces, it ships in the markup and is always visible. The
+     old one was written entirely from localStorage, so a first-time visitor — most of
+     the traffic — never learned the dailies existed at all. The loop cannot advertise
+     itself only to people already inside it. Storage now only decorates: streak, and
+     which of today's grids are already done. */
+  .lane{ margin:4px 0 0; }
+  .lane-head{ display:flex; align-items:center; gap:9px; margin:0 2px 8px; }
+  .lane-head h2{ margin:0; font-size:14px; font-weight:800; letter-spacing:-.1px; }
+  .lane-note{ margin-left:auto; font-size:11.5px; color:#7f7f92; }
+  .streak{
+    display:inline-flex; align-items:center; gap:4px; flex:none;
+    font-size:12px; font-weight:800; letter-spacing:-.1px;
+    color:var(--accent); background:rgba(92,255,110,.10);
+    border:1px solid rgba(92,255,110,.30); border-radius:999px; padding:2px 9px 2px 7px;
+  }
+  .streak svg{ width:10px; height:12px; flex:none; }
+
+  /* Bleeds to both edges so a half-cut third tile is visible at 360px — the standard
+     signal that a rail scrolls. A rail whose contents fit exactly looks like a dead end. */
+  .lane-row{
+    display:flex; gap:9px; overflow-x:auto; scrollbar-width:none;
+    margin:0 calc(var(--pad) * -1); padding:0 var(--pad) 2px;
     -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity;
   }
-  .today-row::-webkit-scrollbar{ display:none; }
-  .dpill{
-    flex:none; scroll-snap-align:start;
-    display:inline-flex; align-items:center; gap:7px; white-space:nowrap;
-    font-size:13.5px; font-weight:700; color:var(--ink);
-    background:var(--surface-2); border:1px solid var(--line); border-radius:999px;
-    padding:0 15px; height:38px;
-    transition:color .15s, background .15s, border-color .15s, transform .15s;
+  .lane-row::-webkit-scrollbar{ display:none; }
+  .tile{
+    flex:none; scroll-snap-align:start; position:relative;
+    width:152px; display:flex; flex-direction:column; gap:2px;
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:9px 11px 10px; overflow:hidden;
+    transition:border-color .15s, background .15s, transform .15s;
   }
-  .dpill svg{ width:11px; height:11px; flex:none; display:block; }
-  .dpill .tick{ display:inline-flex; color:var(--accent); }
-  .dpill .num{ color:#7f7f92; font-weight:700; font-variant-numeric:tabular-nums; }
-  .dpill:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
-  @media (hover:hover){ .dpill:hover{ border-color:var(--line-strong); transform:translateY(-1px); } }
-  /* The single most valuable pixel on the page: the next daily not yet played today.
-     Filled accent, same treatment as the featured card's Play button, because it is
-     the same kind of thing — the one action the page is asking for. */
-  .dpill.next{ background:var(--accent); color:#08110a; border-color:var(--accent); font-weight:800; }
-  .dpill.next .num{ color:rgba(8,17,10,.6); }
-  @media (hover:hover){ .dpill.next:hover{ background:#7dff8b; border-color:#7dff8b; } }
-  .dpill.done{ color:var(--ink-dim); }
+  /* The subject's own colour, set per tile — the only thing distinguishing three
+     otherwise identical grids at a glance. */
+  .tile::before{
+    content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--hue);
+  }
+  .tile-name{ font-size:14.5px; font-weight:800; letter-spacing:-.15px; }
+  .tile-sub{ font-size:11.5px; color:var(--ink-dim); }
+  .tile-state{ margin-top:5px; font-size:11.5px; font-weight:700; color:var(--accent); display:flex; align-items:center; gap:4px; }
+  .tile-state svg{ width:10px; height:10px; flex:none; }
+  .tile.done .tile-state{ color:#7f7f92; }
+  .tile:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  @media (hover:hover){ .tile:hover{ border-color:var(--line-strong); background:var(--surface-2); transform:translateY(-2px); } }
 
   /* Per-card daily state — a corner pill floated over the art, mirroring .badge on
      the opposite side so the featured card can carry both without them colliding.
@@ -297,22 +322,39 @@
 <div class="wrap">
 
   <header class="hero">
-    <h1>Games that start the second you <em>tap</em>.</h1>
-    <p class="sub">Thirteen hand-built games that run straight in your browser — phone or laptop. Nothing to install, no account, no waiting.</p>
+    <h1>Thirteen games that start the second you <em>tap</em>.</h1>
     <ul class="trust">
-      <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>Free to play</li>
+      <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>Free</li>
       <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>No sign-up</li>
-      <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>Built for touch</li>
-      <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>Loads in a second</li>
+      <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>No download</li>
+      <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>Works offline</li>
     </ul>
   </header>
 
-  <!-- Returning players' first stop: today's dailies and the streak riding on them.
-       Deliberately empty in the markup — see the "daily loop, surfaced" script at the
-       bottom of this file for why nothing here can be pre-rendered, and the .today
-       rules in the stylesheet for why an empty-storage visit shows nothing at all.
-       Sits above #sentinel so the sticky filter strip keeps pinning exactly as before. -->
-  <section class="today" id="today" hidden aria-label="Today&rsquo;s dailies"></section>
+  <!-- Today's grids. Ships filled, unlike the storage-built strip it replaces: a
+       first-time visitor is most of the traffic and never saw that one, so the daily
+       loop advertised itself only to players already in it. Script only decorates —
+       the streak pill, and which of these are already done today. -->
+  <section class="lane" aria-label="Today&rsquo;s grids">
+    <div class="lane-head">
+      <h2>Today&rsquo;s grids</h2>
+      <span class="lane-note" id="laneNote">New set at midnight</span>
+    </div>
+    <div class="lane-row">
+      <a class="tile" href="valence/index.html" data-daily="valence" style="--hue:#22c3a6">
+        <span class="tile-name">Valence</span><span class="tile-sub">Chemistry</span>
+        <span class="tile-state"><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg>Play today&rsquo;s</span>
+      </a>
+      <a class="tile" href="quanta/index.html" data-daily="quanta" style="--hue:#9a8df0">
+        <span class="tile-name">Quanta</span><span class="tile-sub">Physics</span>
+        <span class="tile-state"><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg>Play today&rsquo;s</span>
+      </a>
+      <a class="tile" href="radian/index.html" data-daily="radian" style="--hue:#4fcfae">
+        <span class="tile-name">Radian</span><span class="tile-sub">Trigonometry</span>
+        <span class="tile-state"><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg>Play today&rsquo;s</span>
+      </a>
+    </div>
+  </section>
 
   <span id="sentinel" aria-hidden="true"></span>
   <nav class="filters" id="filters" aria-label="Filter games by kind">
@@ -938,177 +980,112 @@
 })();
 </script>
 
-<script>
-/* ========================= the daily loop, surfaced =========================
-   Every game here ships its own date-seeded daily and records it under the keys in
-   /DAILY.md. Nothing on this page ever read them, so the one screen every visit starts
-   on was the one screen that never mentioned the reason to come back tomorrow.
+<script>/* ========================= the daily loop, surfaced =========================
+   Read-only, always. This script never writes a key: the games own that ledger
+   (see /DAILY.md) and a landing page that wrote to it could corrupt a real streak
+   from a page nobody was playing on.
 
-   This block is the reader. Four rules it lives by, in order of importance:
+   What changed in the redesign: the lane above ships filled, so this no longer
+   BUILDS anything — it decorates. Three rules survive from the version it replaces
+   and all three are about refusing to overstate what storage says:
 
-   1. IT NEVER WRITES. kreeda.streak, kreeda.daily.* and <slug>.dbest belong to the
-      games; this page only reports them. Even a "harmless" normalisation of a malformed
-      value from here would forge a streak the player never earned or flatten one they
-      did, and the game that owns the key would have no way to tell.
-
-   2. IT HAS NO LIST OF WHICH GAMES HAVE A DAILY. Games are growing dailies right now and
-      a list in this file would be wrong within the week — and wrong in the worst
-      direction, promising a daily that isn't there. The storage IS the evidence: a game
-      that has ever written <slug>.dbest or <slug>.streak has a daily, whatever date is
-      on it; one that never has, doesn't, and gets no badge invented for it. A game that
-      grows a daily next month lights up here the first time somebody finishes it,
-      with no edit to this file.
-
-   3. A STAMP FROM ANOTHER DAY IS WORTH ZERO, not stale-but-usable (/DAILY.md). Yesterday's
-      dbest is not today's best; a kreeda.streak stamped any day but today is not a live
-      streak. drift's own HUD reads it exactly this way (siteStreak(), drift/index.html) —
-      a landing page claiming a streak the game itself denies is worse than one that says
-      nothing. That does mean a streak stamped YESTERDAY, which the player could still
-      save by playing tonight, shows as no streak. Displaying it would require this page
-      to decide a number is alive that every game treats as dead, and rule 1 means it
-      can't write the agreement down. The games own the streak; this page follows.
-
-   4. EVERY READ IS GUARDED AND EVERY VALUE IS GARBAGE UNTIL PARSED. localStorage throws
-      outright in Safari private mode and on some file:// origins, and any extension,
-      other tab or curious devtools session can leave anything at all under these keys.
-      Both degrade to "this game has no daily state" — never to a broken page, and never
-      to `undefined` rendered into the DOM.
-*/
+   1. A day-stamped value from another day is worth zero, not stale-but-usable.
+      Yesterday's dbest is not today's best; a kreeda.streak stamped any day but
+      today is not a live streak and shows nothing at all.
+   2. Anything unparseable is absent. Garbage never reaches the document.
+   3. Storage is evidence of what a player did, never of what exists. The lane's
+      three grids are in the markup; a junk key cannot add a fourth.                */
 (function(){
-  var strip = document.getElementById('today');
-  var grid  = document.getElementById('grid');
-  if (!strip || !grid) return;
-
-  /* Local calendar day, matching dayKey() in /DAILY.md byte for byte. Local, not UTC,
-     because that is the day the games seeded their puzzle against — a landing page on a
-     different clock would call a finished daily unplayed. */
-  var today = (function(){
-    var d = new Date(), p = function(n){ return String(n).padStart(2, '0'); };
-    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
-  })();
+  var lane = document.querySelector('.lane');
+  var grid = document.getElementById('grid');
+  if (!lane || !grid) return;
 
   function read(k){ try{ return localStorage.getItem(k) || ''; }catch(e){ return ''; } }
 
-  /* Parse a `YYYY-MM-DD|number` row. A row without a real date stamp ("{{{") is not a
-     daily row at all and is dropped whole. A row with a real stamp but an unusable
-     number ("2026-08-24|NaN") keeps its DAY — that game genuinely played that day — and
-     loses only the figure, so it reads as "done" with no score rather than "done ·
-     undefined". A stamp from the future is a real stamp on a day that is not today, so
-     it lands where every other other-day stamp lands: proof of a daily, not today's. */
+  var today = (function(){
+    var d = new Date(), p = function(n){ return String(n).padStart(2,'0'); };
+    return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+  })();
+
+  /* "2026-08-27|1240" -> {day, n}. Rule 2 lives here: a row without a well-formed
+     date is null, and a figure that is not a sane number lands on -1 rather than
+     reaching the page as "NaN" or "undefined". */
   function stamped(raw){
     var i = raw.indexOf('|');
     if (i < 0) return null;
     var day = raw.slice(0, i);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
     var n = +raw.slice(i + 1);
-    return { day: day, n: (isFinite(n) && n >= 0 && n < 1e15) ? n : -1 };   // -1 = no usable figure
+    return { day: day, n: (isFinite(n) && n >= 0 && n < 1e15) ? n : -1 };
   }
   function num(n){ try{ return Math.round(n).toLocaleString(); }catch(e){ return String(Math.round(n)); } }
 
-  /* Constant markup, never anything from storage — the only route a stored value takes
-     into the document is textContent, via num(). The tick is the same path the trust
-     list uses, so a check mark means one thing everywhere on the page. */
   var TICK  = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>';
-  var PLAY  = '<svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg>';
   var FLAME = '<svg viewBox="0 0 14 16" fill="currentColor" aria-hidden="true"><path d="M7.7 0c.5 2.8-1.6 4-3.1 5.7-.5-.8-.6-1.7-.6-1.7C2.3 5.5 1 7.4 1 9.5 1 13 3.7 16 7 16s6-3 6-6.5C13 5.9 10.4 3.4 7.7 0zM7 14c-1.5 0-2.6-1.2-2.6-2.7 0-1 .4-1.8 1.4-2.9.2.9.7 1.4.7 1.4 1-1.2 1.5-2 1.4-3.3.9 1.2 1.7 2.4 1.7 3.5C9.6 12.5 8.5 14 7 14z"/></svg>';
 
-  function el(tag, cls, text){
-    var n = document.createElement(tag);
-    if (cls) n.className = cls;
-    if (text != null) n.textContent = text;
-    return n;
+  var doneToday = read('kreeda.daily.' + today).split(',');
+
+  /* ---- the lane's own tiles ------------------------------------------------ */
+  var doneCount = 0, total = 0;
+  [].forEach.call(lane.querySelectorAll('[data-daily]'), function(tile){
+    total++;
+    var slug  = tile.getAttribute('data-daily');
+    var best  = stamped(read(slug + '.dbest'));
+    var done  = doneToday.indexOf(slug) >= 0 || (best && best.day === today);
+    var state = tile.querySelector('.tile-state');
+    if (!done || !state) return;
+    doneCount++;
+    tile.classList.add('done');
+    /* Rule 1: only today's row can supply today's figure, so a dbest from any other
+       day shows the tick with no number rather than yesterday's score dressed up as
+       this morning's. */
+    var score = (best && best.day === today && best.n >= 0) ? best.n : -1;
+    state.innerHTML = TICK;
+    state.appendChild(document.createTextNode(score >= 0 ? ('Done · ' + num(score)) : 'Done'));
+  });
+
+  var note = document.getElementById('laneNote');
+  if (note && doneCount) {
+    note.textContent = doneCount >= total ? 'All done · new set at midnight'
+                                          : (doneCount + ' of ' + total + ' done');
   }
 
-  /* The slug set comes from the cards actually in this document, never from the keys.
-     That is what makes a junk key ("evil.dbest") unable to introduce a row, and it means
-     every name and href rendered below is one this page already vouches for — no lookup
-     table to drift out of sync with the grid. */
-  var doneToday = read('kreeda.daily.' + today).split(',');
-  var dailies = [];
+  /* ---- the streak ---------------------------------------------------------- */
+  /* Shown only when stamped today. A streak the player can still save by playing
+     tonight is deliberately NOT advertised here: DAILY.md's "worth zero, not
+     stale-but-usable" rule is unconditional, and the games' own HUDs read it the
+     same way. A landing page claiming a streak the game itself denies is the worse
+     failure of the two. */
+  var s = stamped(read('kreeda.streak'));
+  var streak = (s && s.day === today && s.n > 0) ? s.n : 0;
+  if (streak >= 2) {
+    var pill = document.createElement('span');
+    pill.className = 'streak';
+    pill.innerHTML = FLAME;
+    pill.appendChild(document.createTextNode(num(streak) + '-day streak'));
+    var h = lane.querySelector('.lane-head h2');
+    if (h && h.parentNode) h.parentNode.insertBefore(pill, h.nextSibling);
+  }
+
+  /* ---- per-card state on the grid ------------------------------------------ */
+  /* Storage is the evidence of which games have a daily at all: a card that has ever
+     written <slug>.dbest or <slug>.streak has one, a card that never has does not.
+     A game gaining a daily later lights up here with no edit to this file. The slug
+     set is intersected with cards actually in the document, so a junk key can never
+     paint a badge on nothing. */
   [].forEach.call(grid.querySelectorAll('.card'), function(card){
-    var slug = card.getAttribute('data-game'), h = card.querySelector('h2');
-    if (!slug || !h) return;
+    var slug = card.getAttribute('data-game');
+    if (!slug) return;
     var best = stamped(read(slug + '.dbest'));
     var run  = stamped(read(slug + '.streak'));
     var listed = doneToday.indexOf(slug) >= 0;
-    if (!best && !run && !listed) return;                 // no daily here: invent no state
+    if (!best && !run && !listed) return;
     var done = listed || (best && best.day === today);
-    dailies.push({
-      slug: slug,
-      name: h.textContent,
-      href: card.getAttribute('href'),
-      done: !!done,
-      /* Only today's row can supply today's figure. A dbest stamped any other day is
-         worth zero here, so the pill shows the tick and no number. */
-      score: (best && best.day === today) ? best.n : -1,
-      card: card
-    });
-  });
-
-  if (!dailies.length) return;   // first visit: the page stays precisely as it was
-
-  /* ---- per-card state. A game with a daily says where it stands; one without stays
-     untouched, which is why this loop runs over `dailies` and not over every card. */
-  dailies.forEach(function(d){
-    var pill = el('span', 'dstat' + (d.done ? ' done' : ''));
-    if (d.done) pill.innerHTML = TICK;
-    /* "Daily" stays in the label even when there is a figure: this pill sits on the same
-       art as the endless-mode game, and a bare number there would read as an all-time
-       best — the exact conflation DAILY.md keeps the two keys separate to avoid. */
-    pill.appendChild(el('span', null,
-      d.done ? (d.score >= 0 ? 'Daily ' + num(d.score) : 'Daily done') : 'Daily ready'));
-    /* Appended last so a screen reader hears the game and its pitch before its daily
-       state; the absolute positioning puts it over the art regardless of DOM order. */
-    d.card.appendChild(pill);
-  });
-
-  /* ---- the strip. Unplayed first — what is LEFT to do is the entire point of it —
-     with card order preserved inside each group, so the featured game stays first
-     among equals rather than the order shuffling day to day. */
-  var todo = dailies.filter(function(d){ return !d.done; });
-  var did  = dailies.filter(function(d){ return d.done; });
-
-  var s = stamped(read('kreeda.streak'));
-  var streak = (s && s.day === today && s.n > 0) ? s.n : 0;   // rule 3; garbage figures land on -1 and fail this
-
-  var head = el('div', 'today-head');
-  if (streak) {
-    var flame = el('span', 'streak');
-    flame.innerHTML = FLAME;
-    flame.appendChild(el('span', null, streak + '-day streak'));
-    head.appendChild(flame);
-  }
-  head.appendChild(el('h2', null, todo.length ? 'Today’s dailies' : 'Today’s dailies — all done'));
-  head.appendChild(el('span', 'today-count',
-    !todo.length      ? 'New set at midnight'
-    : !did.length     ? (todo.length === 1 ? '1 waiting' : todo.length + ' waiting')
-                      : did.length + ' of ' + dailies.length + ' done'));
-
-  var row = el('div', 'today-row');
-  todo.concat(did).forEach(function(d, i){
-    var a = el('a', 'dpill' + (d.done ? ' done' : (i === 0 ? ' next' : '')));
-    a.href = d.href;
-    if (d.done) { var t = el('span', 'tick'); t.innerHTML = TICK; a.appendChild(t); }
-    a.appendChild(el('span', null, d.name));
-    if (d.done && d.score >= 0) a.appendChild(el('span', 'num', num(d.score)));
-    if (!d.done) { var g = el('span', 'go'); g.innerHTML = PLAY; a.appendChild(g); }
-    a.addEventListener('click', function(){
-      if (window.bgTrack) bgTrack('daily_click', {
-        game_id: d.slug, state: d.done ? 'done' : 'todo', position: i + 1
-      });
-    });
-    row.appendChild(a);
-  });
-
-  strip.appendChild(head);
-  strip.appendChild(row);
-  strip.hidden = false;
-
-  /* Whether the loop is worth the pixels is an empirical question, and this is the only
-     place it can be answered: how many visits arrive already holding a streak, and how
-     many of them convert on the strip rather than the grid. */
-  if (window.bgTrack) bgTrack('daily_strip_view', {
-    streak: streak, todo: todo.length, total: dailies.length
+    var score = (best && best.day === today && best.n >= 0) ? best.n : -1;
+    var pill = document.createElement('span');
+    pill.className = 'dstat' + (done ? ' done' : '');
+    pill.textContent = done ? (score >= 0 ? ('Daily ' + num(score)) : 'Daily done') : 'Daily ready';
+    card.appendChild(pill);
   });
 })();
 </script>
