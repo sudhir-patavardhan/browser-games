@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sync — Kreeda</title>
+<meta name="description" content="How well do you actually know each other? Two players, one phone: answer each question for yourself, predict the other player, then reveal together. Similarity and insight, measured in ten rounds.">
+<link rel="canonical" href="https://kreeda.games/sync/">
+<meta name="theme-color" content="#14101f">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/sync/">
+<meta property="og:title" content="Sync — Kreeda">
+<meta property="og:description" content="How well do you actually know each other? Answer for yourself, predict the other player, reveal together. Two players, one phone.">
+<meta property="og:image" content="https://kreeda.games/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sync — Kreeda">
+<meta name="twitter:description" content="How well do you actually know each other? Answer for yourself, predict the other player, reveal together. Two players, one phone.">
+<meta name="twitter:image" content="https://kreeda.games/og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Sync","description":"How well do you actually know each other? Two players, one phone: answer each question for yourself, predict the other player, then reveal together.","url":"https://kreeda.games/sync/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+<style>
+/* ============================ tokens ============================
+   Dusk violet: the hour when people actually talk. One committed dark look — this game is played
+   with two heads over one phone, usually in the evening, and a theme flip mid-hand-off would read
+   as a glitch. Every colour lives here once. Player A is always violet, player B always rose,
+   everywhere — meters, chips, reveal rows — so ownership never needs a label twice. */
+:root{
+  --ground:#14101f;  --ground-2:#1b1530;
+  --panel:#211a36;   --panel-2:#2a2246;  --rule:rgba(190,175,255,.16);
+  --ink:#f0ecfa;     --ink-dim:#a89fc7;
+  --a:#7c5cff;       --a-soft:rgba(124,92,255,.18);
+  --b:#ff6b9d;       --b-soft:rgba(255,107,157,.16);
+  --ok:#57d9a3;      --ok-soft:rgba(87,217,163,.14);
+  --no:#ff8c7a;      --no-soft:rgba(255,140,122,.12);
+  --gold:#ffd166;
+  --shade:rgba(8,5,16,.72);
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  /* explicit background is mandatory: a transparent body would borrow the host's theme */
+  background:
+    radial-gradient(120% 60% at 18% -10%, rgba(124,92,255,.20) 0%, transparent 55%),
+    radial-gradient(120% 60% at 88% -6%, rgba(255,107,157,.14) 0%, transparent 50%),
+    linear-gradient(180deg, var(--ground-2) 0%, var(--ground) 42%, #0e0b17 100%);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;               /* guard only; nothing here should ever be wider than the column */
+  -webkit-text-size-adjust:100%;
+}
+.wrap{ max-width:520px; margin:0 auto;
+  padding: max(14px, env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
+
+button{ font:inherit; color:inherit; cursor:pointer; }
+button:focus-visible, input:focus-visible, summary:focus-visible{
+  outline:3px solid var(--gold); outline-offset:2px; }
+
+/* ============================ shared chrome ============================ */
+.top{ display:flex; align-items:center; gap:10px; margin:2px 0 14px; min-height:44px; }
+.wordmark{ display:flex; align-items:center; gap:9px; }
+.wordmark svg{ width:34px; height:34px; flex:none; }
+.wordmark b{ font-size:22px; font-weight:900; letter-spacing:1px; }
+.wordmark small{ display:block; font-size:10px; font-weight:700; letter-spacing:2.6px;
+  text-transform:uppercase; color:var(--ink-dim); }
+.homebtn{ margin-left:auto; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
+  min-width:44px; min-height:44px; padding:8px 12px; font-size:13px; font-weight:800; color:var(--ink-dim); }
+
+.card{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:18px 16px; }
+.btn{
+  display:block; width:100%; min-height:52px; padding:14px 16px; margin-top:10px;
+  background:var(--panel-2); border:1px solid var(--rule); border-radius:14px;
+  font-size:16px; font-weight:800; letter-spacing:.2px; text-align:center;
+  transition:transform .1s ease, background .15s ease;
+}
+.btn:active{ transform:scale(.985); }
+.btn.primary{ background:linear-gradient(100deg, var(--a) 0%, #9b6bff 55%, var(--b) 130%);
+  border-color:transparent; color:#fff; box-shadow:0 8px 24px rgba(124,92,255,.35); }
+.btn.ghost{ background:transparent; border-color:var(--rule); color:var(--ink-dim); font-weight:700; }
+.btn[disabled]{ opacity:.45; cursor:default; }
+
+.dim{ color:var(--ink-dim); }
+.tiny{ font-size:12px; line-height:1.55; }
+
+/* ============================ title ============================ */
+.hero{ text-align:center; margin:26px 0 20px; }
+.hero svg{ width:120px; height:74px; }
+.hero h1{ font-size:44px; font-weight:900; letter-spacing:3px; margin:6px 0 4px;
+  background:linear-gradient(95deg, var(--a), var(--b)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.hero p{ margin:0; font-size:15px; color:var(--ink-dim); font-weight:600; line-height:1.45; }
+
+.field{ margin-top:12px; }
+.field label{ display:block; font-size:11px; font-weight:800; letter-spacing:1.4px;
+  text-transform:uppercase; color:var(--ink-dim); margin:0 0 5px 2px; }
+.field input{
+  width:100%; font:inherit; font-size:16px; font-weight:700;   /* 16px or iOS zooms on focus */
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:12px 12px; min-height:48px;
+}
+.field.pa input{ border-left:4px solid var(--a); }
+.field.pb input{ border-left:4px solid var(--b); }
+
+.packs{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.pack{ flex:1 1 30%; min-height:46px; padding:10px 8px; background:var(--panel-2);
+  border:1px solid var(--rule); border-radius:12px; font-size:13.5px; font-weight:800; }
+.pack[aria-pressed="true"]{ background:var(--a-soft); border-color:var(--a); color:#fff;
+  box-shadow:inset 0 0 0 1px var(--a); }
+
+details.how{ margin-top:14px; border:1px solid var(--rule); border-radius:14px;
+  background:var(--panel); padding:0 14px; }
+details.how summary{ cursor:pointer; font-size:14px; font-weight:800; padding:13px 0;
+  min-height:44px; list-style:none; display:flex; align-items:center; gap:8px; }
+details.how summary::before{ content:'▸'; color:var(--ink-dim); transition:transform .15s ease; }
+details.how[open] summary::before{ transform:rotate(90deg); }
+details.how ul{ margin:0 0 14px; padding-left:20px; font-size:13.5px; line-height:1.65;
+  color:var(--ink-dim); }
+details.how li b{ color:var(--ink); }
+
+.foot{ margin-top:20px; text-align:center; font-size:11px; line-height:1.7; color:var(--ink-dim); }
+.foot a{ color:var(--ink-dim); }
+
+/* ============================ hand-off ============================ */
+.handoff{ min-height:76vh; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; text-align:center; padding:20px 6px; }
+.handoff .pass{ font-size:13px; font-weight:800; letter-spacing:2.4px; text-transform:uppercase;
+  color:var(--ink-dim); }
+.handoff h2{ font-size:36px; font-weight:900; margin:12px 0 6px; overflow-wrap:anywhere; }
+.handoff h2.pa{ color:#b7a3ff; } .handoff h2.pb{ color:#ffa2c1; }
+.handoff .sub{ font-size:15px; color:var(--ink-dim); margin:0 0 26px; line-height:1.5; }
+.handoff .btn{ max-width:340px; }
+.handoff .peek{ margin-top:22px; font-size:12.5px; color:var(--ink-dim); }
+@media (prefers-reduced-motion:no-preference){
+  .handoff h2{ animation:heartbeat 1.6s ease-in-out infinite; }
+  @keyframes heartbeat{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.03);} }
+}
+
+/* ============================ answering ============================ */
+.progress{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.progress .n{ font-size:12.5px; font-weight:800; color:var(--ink-dim); white-space:nowrap; }
+.bar{ flex:1; height:6px; border-radius:99px; background:var(--panel-2); overflow:hidden; }
+.bar i{ display:block; height:100%; border-radius:99px; width:0%;
+  background:linear-gradient(90deg, var(--a), var(--b)); transition:width .3s ease; }
+
+.modechip{ display:inline-flex; align-items:center; gap:7px; font-size:11.5px; font-weight:900;
+  letter-spacing:1.6px; text-transform:uppercase; border-radius:999px; padding:7px 13px; }
+.modechip.self{ background:var(--a-soft); color:#c9b8ff; box-shadow:inset 0 0 0 1px var(--a); }
+.modechip.pred{ background:var(--b-soft); color:#ffb3cb; box-shadow:inset 0 0 0 1px var(--b); }
+
+.qtext{ font-size:22px; font-weight:900; line-height:1.3; margin:12px 0 4px; }
+.qsub{ font-size:14px; color:var(--ink-dim); margin:0 0 16px; line-height:1.5; }
+.qsub b{ color:var(--ink); }
+
+.opt{
+  display:block; width:100%; text-align:left; min-height:54px; padding:14px 16px; margin-top:9px;
+  background:var(--panel); border:1px solid var(--rule); border-radius:14px;
+  font-size:16px; font-weight:700; line-height:1.35;
+  transition:transform .1s ease, background .15s ease, border-color .15s ease;
+}
+.opt:active{ transform:scale(.985); }
+.opt.picked{ background:var(--a-soft); border-color:var(--a); }
+.pred .opt.picked{ background:var(--b-soft); border-color:var(--b); }
+@media (prefers-reduced-motion:no-preference){
+  .stepin{ animation:stepin .22s ease; }
+  @keyframes stepin{ from{ opacity:0; transform:translateX(14px);} to{ opacity:1; transform:none;} }
+}
+.backrow{ margin-top:16px; }
+.backrow .btn{ min-height:44px; }
+
+/* lock-in */
+.lock{ text-align:center; padding:26px 4px 6px; }
+.lock .bignum{ font-size:52px; font-weight:900;
+  background:linear-gradient(95deg, var(--a), var(--b)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.lock h2{ font-size:22px; font-weight:900; margin:4px 0 8px; }
+.lock p{ font-size:14px; color:var(--ink-dim); line-height:1.55; margin:0 0 20px; }
+
+/* ============================ reveal ============================ */
+.tallies{ display:flex; gap:7px; margin-bottom:12px; }
+.tally{ flex:1; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
+  padding:7px 6px; text-align:center; min-width:0; }
+.tally b{ display:block; font-size:17px; font-weight:900; }
+.tally span{ display:block; font-size:9.5px; font-weight:800; letter-spacing:.6px;
+  text-transform:uppercase; color:var(--ink-dim); margin-top:1px; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; }
+.tally.t-sim b{ color:var(--ok); } .tally.t-a b{ color:#b7a3ff; } .tally.t-b b{ color:#ffa2c1; }
+
+.rq{ font-size:19px; font-weight:900; line-height:1.35; margin:2px 0 14px; }
+.rrow{ display:flex; align-items:center; gap:11px; background:var(--panel); border:1px solid var(--rule);
+  border-radius:13px; padding:11px 13px; margin-top:9px; }
+.rrow .who{ font-size:11px; font-weight:900; letter-spacing:.8px; text-transform:uppercase;
+  width:74px; flex:none; line-height:1.3; overflow-wrap:anywhere; }
+.rrow .who.pa{ color:#b7a3ff; } .rrow .who.pb{ color:#ffa2c1; }
+.rrow .what{ flex:1; font-size:15px; font-weight:700; line-height:1.35; min-width:0;
+  overflow-wrap:anywhere; }
+.rrow .what small{ display:block; font-size:11.5px; font-weight:600; color:var(--ink-dim); }
+.rrow .mark{ flex:none; width:30px; height:30px; border-radius:99px; display:flex;
+  align-items:center; justify-content:center; font-size:15px; font-weight:900; }
+.mark.hit{ background:var(--ok-soft); color:var(--ok); box-shadow:inset 0 0 0 1.5px var(--ok); }
+.mark.miss{ background:var(--no-soft); color:var(--no); box-shadow:inset 0 0 0 1.5px var(--no); }
+.rrow.same{ border-color:rgba(87,217,163,.45); }
+@media (prefers-reduced-motion:no-preference){
+  .rrow{ opacity:0; transform:translateY(10px); animation:rise .4s ease forwards; }
+  @keyframes rise{ to{ opacity:1; transform:none; } }
+}
+
+/* ============================ results ============================ */
+.results h2{ font-size:15px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--ink-dim); text-align:center; margin:4px 0 2px; }
+.pairtitle{ text-align:center; font-size:30px; font-weight:900; line-height:1.2; margin:2px 0 4px;
+  background:linear-gradient(95deg, #c9b8ff, var(--b)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.pairsub{ text-align:center; font-size:14px; color:var(--ink-dim); margin:0 0 16px; line-height:1.5; }
+.names{ text-align:center; font-size:14px; font-weight:800; margin:0 0 14px; }
+.names .na{ color:#b7a3ff; } .names .nb{ color:#ffa2c1; }
+.names .x{ color:var(--ink-dim); font-weight:600; padding:0 6px; }
+
+.meter{ margin-top:13px; }
+.meter .mhead{ display:flex; justify-content:space-between; align-items:baseline; font-size:13px;
+  font-weight:800; margin-bottom:5px; }
+.meter .mhead b{ font-size:15px; }
+.mtrack{ height:12px; background:var(--panel-2); border-radius:99px; overflow:hidden; }
+.mtrack i{ display:block; height:100%; width:0%; border-radius:99px; transition:width 1s cubic-bezier(.2,.7,.2,1); }
+.meter.m-sim i{ background:var(--ok); } .meter.m-a i{ background:var(--a); } .meter.m-b i{ background:var(--b); }
+
+.callout{ margin-top:14px; padding:12px 14px; border-radius:13px; background:var(--panel-2);
+  border:1px solid var(--rule); font-size:13.5px; line-height:1.55; }
+.callout b{ font-weight:900; }
+.callout.best{ border-color:rgba(87,217,163,.4); }
+.callout.miss{ border-color:rgba(255,140,122,.35); }
+.callout .lbl{ display:block; font-size:10.5px; font-weight:900; letter-spacing:1.4px;
+  text-transform:uppercase; margin-bottom:4px; }
+.callout.best .lbl{ color:var(--ok); } .callout.miss .lbl{ color:var(--no); }
+.callout.asym .lbl{ color:var(--gold); }
+
+.datefoot{ text-align:center; font-size:11.5px; color:var(--ink-dim); margin-top:14px; }
+
+.sharebox{ width:100%; margin-top:10px; font-size:13px; line-height:1.5;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:10px; resize:none; }
+
+/* toast + confirm modal */
+.toast{ position:fixed; left:50%; bottom:calc(26px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(8px); background:var(--panel-2); color:var(--ink);
+  border:1px solid var(--rule); border-radius:12px; padding:11px 18px; font-size:14px;
+  font-weight:800; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:90;
+  box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:88vw; text-align:center; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+.scrim{ position:fixed; inset:0; background:var(--shade); z-index:70; display:none;
+  align-items:center; justify-content:center; padding:20px; }
+.scrim.show{ display:flex; }
+.confirmbox{ background:var(--panel); border:1px solid var(--rule); border-radius:18px;
+  padding:20px 18px; max-width:340px; width:100%; }
+.confirmbox h3{ margin:0 0 6px; font-size:18px; font-weight:900; }
+.confirmbox p{ margin:0 0 14px; font-size:13.5px; color:var(--ink-dim); line-height:1.5; }
+
+@media (prefers-reduced-motion:reduce){
+  *{ animation:none !important; transition:none !important; }
+  .rrow{ opacity:1; transform:none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="scrim" id="scrim">
+  <div class="confirmbox" role="alertdialog" aria-modal="true" aria-labelledby="cfTitle" aria-describedby="cfBody">
+    <h3 id="cfTitle">Leave this game?</h3>
+    <p id="cfBody">The round in progress will be discarded. Answers are never saved anywhere.</p>
+    <button class="btn primary" type="button" id="cfYes">Leave</button>
+    <button class="btn ghost" type="button" id="cfNo">Keep playing</button>
+  </div>
+</div>
+
+<!-- analytics.js before the game script: track() below fires synchronously and would otherwise
+     race the tag load and vanish — same lesson valence learned the hard way. -->
+<script src="../analytics.js"></script>
+<script>
+'use strict';
+/* ============================================================================================
+   SYNC — an empathic-accuracy duel. Two players, one phone. Every question is answered twice by
+   each player: once for yourself, once predicting the other. Nothing is revealed until both have
+   locked in — the entire game is the gap between prediction and reveal.
+
+   Privacy is a design constraint, not a feature flag: answers live in one in-memory session
+   object (S) and NOTHING else. localStorage holds only names and a play counter. Analytics gets
+   counts, never content. A page refresh mid-game loses the round by design — that is cheaper
+   than answers ever touching disk.
+   ============================================================================================ */
+
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+
+/* Seeded PRNG so a session's draw is deterministic given its seed — reshuffles can never
+   disagree with themselves mid-session — while each new session still gets a fresh seed. */
+function mulberry32(a){ return function(){ a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a);
+  t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+
+function esc(s){ return String(s).replace(/[&<>"']/g,
+  c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============================================================================================
+   QUESTION BANK — 64 original questions.
+   Tags: n = New pair · c = Couple · f = Friends · a = Family · w = Coworkers.
+   Every question is answerable about A PERSON, not about the world: there is no correct option,
+   only a true one. Options are kept short enough to survive two names and a tick on one reveal
+   row. A question may serve several packs; a session draws 10 from its pack without repeats.
+   ============================================================================================ */
+const BANK=[
+ {q:"You're upset. What do you want first?", o:["Solutions","Company","Space","Distraction"], t:"ncfaw"},
+ {q:"Ideal Saturday morning:", o:["Sleep in, no shame","Out the door by nine","Slow coffee, no plans","Errands crushed early"], t:"ncfaw"},
+ {q:"Pineapple on pizza is…", o:["A crime","Delicious","Fine — for other people","Whatever's in the box"], t:"ncfaw"},
+ {q:"A surprise party thrown for you would be…", o:["The dream","Sweet, but stressful","My actual nightmare"], t:"ncfaw"},
+ {q:"Phone battery hits 4%. Inside, you feel…", o:["Genuine panic","Mild unease","Nothing","Strangely free"], t:"ncfaw"},
+ {q:"Someone starts crying in front of you. First instinct?", o:["Hug them","Just listen","Start fixing","Quietly panic"], t:"ncfaw"},
+ {q:"A month's pay lands unexpectedly. Most of it goes to…", o:["Savings, instantly","A trip","Something shiny","Debts and bills"], t:"ncfaw"},
+ {q:"Your texting style, honestly:", o:["Replies in seconds","Twice-a-day batches","Read now, reply Thursday","I'd rather just call"], t:"ncfaw"},
+ {q:"A big decision is looming. You…", o:["Make a list","Poll everyone you know","Sleep on it","Go with the gut"], t:"ncfaw"},
+ {q:"Four-hour drive. You hope the car is…", o:["Full of conversation","Full of loud music","Comfortably silent","A rolling nap pod"], t:"ncfaw"},
+ {q:"Being ten minutes early feels…", o:["Correct","Like wasted time","Physically impossible","Like winning"], t:"ncfaw"},
+ {q:"The karaoke mic is headed your way. You…", o:["Grab it","Duet only","Need one more drink","Vanish"], t:"ncfaw"},
+ {q:"Scary movie tonight?", o:["Front row","Through my fingers","Comedies only","I'll be in the kitchen"], t:"ncfaw"},
+ {q:"The correct number of morning alarms:", o:["One","Two, spaced","Five, escalating","None — I just wake up"], t:"ncfaw"},
+ {q:"You win arguments mostly by…", o:["Facts","Persistence","Patience","Deciding it's not worth it"], t:"ncfaw"},
+ {q:"A weekend of camping sounds…", o:["Perfect — deep woods","Fine — cabin with wifi","Better as a nice hotel","Like a punishment"], t:"ncfaw"},
+ {q:"Your camera roll is mostly…", o:["People","Screenshots","Food and places","Pets and skies"], t:"ncfaw"},
+ {q:"Plans get cancelled last minute. You feel…", o:["Genuinely crushed","Mildly annoyed","Neutral","Secretly thrilled"], t:"ncfaw"},
+ {q:"Cold pizza for breakfast:", o:["Elite","Acceptable","Only reheated","Horrifying"], t:"ncfaw"},
+ {q:"You'd rather be known for…", o:["Making something","Knowing everything","Being kind","Not being known"], t:"ncfaw"},
+ {q:"A free afternoon appears from nowhere. You…", o:["Nap, obviously","Call someone","Start a project","Wander outside"], t:"ncfaw"},
+ {q:"New restaurant. You order…", o:["My usual kind of thing","The weirdest item","Whatever they recommend","What you're having"], t:"ncfaw"},
+ {q:"Compliments make you…", o:["Glow all day","Deflect with a joke","A little suspicious","Ask for specifics"], t:"ncfaw"},
+ {q:"Losing a board game, you are…", o:["Fine. Totally fine","Quietly plotting revenge","Openly salty","Already over it"], t:"ncfaw"},
+ {q:"Ideal pet, no practical limits:", o:["Dog","Cat","Something scaly or feathered","Plants count"], t:"ncfaw"},
+ {q:"A full day of rain means…", o:["Cozy heaven","Ruined plans","Perfect sleep","Nothing changes"], t:"ncfaw"},
+ {q:"One slice left and you both want it:", o:["Split it","Rock paper scissors","Take it — I insist","Fastest hand wins"], t:"ncfaw"},
+ {q:"Airport arrival time:", o:["Three hours early","Two, comfortably","Sprinting to the gate","Depends who's flying"], t:"ncfaw"},
+ {q:"Your junk drawer situation:", o:["No junk drawer exists","One, curated","Several","Every drawer qualifies"], t:"ncfaw"},
+ {q:"Singing along in the car:", o:["Full concert","Backup vocals only","Quiet humming","Silence, please"], t:"ncfaw"},
+ {q:"The restaurant brings the wrong order. You…", o:["Send it back nicely","Eat it anyway","Make someone else ask","Depends how hungry"], t:"ncfaw"},
+ {q:"Your birthday, ideally:", o:["Big party","Small dinner","Just the closest people","Pretend it isn't happening"], t:"ncfaw"},
+ {q:"Your group chat role:", o:["The planner","The meme supply","The lurker","Replies a week later"], t:"ncfw"},
+ {q:"Road-trip snack philosophy:", o:["Packed from home","Gas-station chaos","One enormous drink","Stops are for quitters"], t:"ncfa"},
+ {q:"A 2 a.m. \"you up?\" text from a friend:", o:["Already replying","Calling them now","Morning-me will handle it","Depends which friend"], t:"ncf"},
+ {q:"Best kind of date night:", o:["Fancy night out","Couch and takeaway","Something outdoors","Something new and weird"], t:"nc"},
+ {q:"Care lands best on you as…", o:["Kind words","Undivided time","Help with the boring stuff","A really good hug"], t:"ncfa"},
+ {q:"After an argument, you first need…", o:["To talk it out now","An hour alone","A hug before words","To pretend, then talk"], t:"ca"},
+ {q:"Anniversaries and big dates should be…", o:["Planned to the minute","A total surprise","Planned together","Low-key, tiny"], t:"c"},
+ {q:"The thermostat war — you are team…", o:["Warmer, always","Colder, always","Whatever, wear socks","Window open year-round"], t:"ca"},
+ {q:"Someone taking food off your plate is…", o:["Romance","Fine if they ask","Taxable","Theft"], t:"ncf"},
+ {q:"Dream future home:", o:["City apartment","Suburbs and a garden","Somewhere remote","Never the same place twice"], t:"nc"},
+ {q:"When plans involve meeting new people, you feel…", o:["Energized","Fine after ten minutes","Tired in advance","Depends on the people"], t:"ncfw"},
+ {q:"Chores work best…", o:["Split strictly 50/50","Whoever notices first","Assigned lanes forever","Outsourced someday"], t:"ca"},
+ {q:"Family photo time. You are…", o:["The organizer","First to smile","Blinking in every shot","Mysteriously missing"], t:"a"},
+ {q:"Holiday traditions are…", o:["Sacred","Nice but flexible","For replacing with new ones","Exhausting"], t:"ac"},
+ {q:"At a family gathering you're usually…", o:["In the kitchen","With the kids or pets","Deep in one conversation","Near the exit"], t:"a"},
+ {q:"The old family stories get retold. You…", o:["Tell them louder","Correct the details","Laugh every single time","Have heard ENOUGH"], t:"a"},
+ {q:"Hand-me-downs are…", o:["Treasures","Fine if useful","Clutter","Emotional landmines"], t:"a"},
+ {q:"A meeting that could've been an email. You…", o:["Say so, politely","Suffer in silence","Multitask discreetly","Secretly enjoy it"], t:"w"},
+ {q:"Your desk, right now:", o:["Spotless","Organized chaos","Actual chaos","What desk"], t:"w"},
+ {q:"Praise at work lands best…", o:["Publicly","Privately","In writing","As a raise"], t:"w"},
+ {q:"Monday morning, you are…", o:["Weirdly energized","Fine by ten","Coffee-dependent","In mourning for Sunday"], t:"w"},
+ {q:"Lunch on a busy day is…", o:["A sacred break","Eaten at the desk","Whenever it happens","…did I eat?"], t:"w"},
+ {q:"A colleague repeats your idea as theirs. You…", o:["Reclaim it in the room","Talk to them after","Escalate it","Let it go — and remember"], t:"w"},
+ {q:"Deadline in one hour, work half done. You…", o:["Head down, silence","Ask for help","Negotiate more time","Ship it rough"], t:"nw"},
+ {q:"At the office party you're…", o:["On the dance floor","Guarding the snacks","One drink, then home","Not attending"], t:"wf"},
+ {q:"First impressions of you are usually…", o:["Spot on","Too serious","Too silly","Completely wrong"], t:"nfw"},
+ {q:"Your childhood bedroom was…", o:["Museum-neat","Postered floor to ceiling","Organized chaos","A declared disaster zone"], t:"nfa"},
+ {q:"Small talk is…", o:["Fun, actually","A skill I perform","Mildly painful","A door to real talk"], t:"nwf"},
+ {q:"Menu item you can't pronounce:", o:["Point and hope","Ask how to say it","Order the safe thing","That's the dare — order it"], t:"nfc"},
+ {q:"Your most likely secret talent:", o:["Useless trivia","Something crafty","A party trick","Finding lost things"], t:"nfa"},
+ {q:"Lost in a new city together:", o:["Best part of the trip","Fun for an hour","Map out immediately","I simply don't get lost"], t:"ncf"},
+ {q:"You win the lottery. It stays secret for…", o:["Seconds","One day","Until the paperwork clears","Forever"], t:"ncfaw"}
+];
+
+const PACKS=[
+  {id:'n', name:'New pair',  blurb:'Just met, or never played'},
+  {id:'c', name:'Couple',    blurb:'Partners'},
+  {id:'f', name:'Friends',   blurb:'Old or new'},
+  {id:'a', name:'Family',    blurb:'Siblings, parents, cousins'},
+  {id:'w', name:'Coworkers', blurb:'Team, office, shift'}
+];
+const ROUNDS=10;
+
+/* ============================ state ============================
+   S is the whole game and it lives only in memory. self/pred are option indexes, -1 = unanswered.
+   phase is a plain string state machine; every transition goes through show() which wipes the DOM,
+   so a previous player's inputs cannot survive into a hand-off even for one frame. */
+let S=null;
+function newSession(pack){
+  const rnd=mulberry32((Date.now() ^ (Math.random()*0xffffffff))>>>0);
+  const pool=BANK.filter(x=>x.t.indexOf(pack)>=0);
+  /* Fisher–Yates on a copy, take the first ROUNDS — no repeats possible within a session */
+  const deck=pool.slice();
+  for(let i=deck.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=deck[i]; deck[i]=deck[j]; deck[j]=t; }
+  S={ pack:pack, qs:deck.slice(0,ROUNDS),
+      self:[[],[]], pred:[[],[]],           // [playerIdx][questionIdx]
+      names:names.slice(), done:[false,false] };
+  for(let p=0;p<2;p++) for(let i=0;i<ROUNDS;i++){ S.self[p][i]=-1; S.pred[p][i]=-1; }
+}
+
+let names=['Player 1','Player 2'];
+try{ const n=JSON.parse(LS.get('sync.names')||'[]');
+  if(Array.isArray(n)&&n.length===2) names=[String(n[0]).slice(0,12)||'Player 1',
+                                            String(n[1]).slice(0,12)||'Player 2']; }catch(e){}
+
+let firstHandoff=true;   // the "tilt the phone away" hint shows once per page load
+
+/* ============================ rendering core ============================
+   One container, innerHTML replaced wholesale per screen. GEN is a render generation counter:
+   every handler captures the generation it was bound in and no-ops if a render has happened
+   since — this is the double-tap guard. A fast second tap on a hand-off button finds either a
+   disabled button or a stale generation; it can never advance the state machine twice. */
+const app=document.getElementById('app');
+let GEN=0;
+function show(html){ GEN++; app.innerHTML=html; window.scrollTo(0,0); }
+function on(id,fn){
+  const g=GEN, el=document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('click',function(e){
+    if(g!==GEN || el.disabled) return;
+    el.disabled=true;                       // released only if the handler chooses to re-render
+    try{ fn(e); }finally{ if(g===GEN) el.disabled=false; }
+  });
+}
+
+const MOTIF='<svg viewBox="0 0 120 74" aria-hidden="true"><g fill="none" stroke-linecap="round">'
+ +'<path d="M14 37 q6-22 12-22 t12 22 12 22 12-22 8-14" stroke="#7c5cff" stroke-width="7" opacity=".9"/>'
+ +'<path d="M46 37 q6 22 12 22 t12-22 12-22 12 22 8 14" stroke="#ff6b9d" stroke-width="7" opacity=".9"/>'
+ +'</g></svg>';
+const MARK='<svg viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke-linecap="round" stroke-width="5">'
+ +'<path d="M6 20 q4-11 8-11 t8 11" stroke="#7c5cff"/><path d="M18 20 q4 11 8 11 t8-11" stroke="#ff6b9d"/></g></svg>';
+
+function header(showHome){
+  return '<header class="top"><span class="wordmark">'+MARK+'<span><b>Sync</b>'
+   +'<small>Kreeda · Together</small></span></span>'
+   +(showHome?'<button class="homebtn" type="button" id="bHome" aria-label="Leave game and return to start">Home</button>':'')
+   +'</header>';
+}
+function bindHome(){
+  on('bHome',()=>{ openConfirm(()=>{ S=null; title(); }); });
+}
+
+/* confirm modal — the only way out of a live session other than finishing it */
+const scrim=document.getElementById('scrim');
+let confirmCb=null;
+document.getElementById('cfYes').addEventListener('click',()=>{ scrim.classList.remove('show');
+  const cb=confirmCb; confirmCb=null; if(cb) cb(); });
+document.getElementById('cfNo').addEventListener('click',()=>{ scrim.classList.remove('show'); confirmCb=null; });
+function openConfirm(cb){ confirmCb=cb; scrim.classList.add('show'); }
+
+let toastT=null;
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ============================ title ============================
+   pack is session-only, deliberately not persisted: storage holds names and a play count and
+   nothing else — see the privacy note at the top. */
+let pack='n';
+
+function title(){
+  show(
+   '<div class="hero">'+MOTIF+'<h1>SYNC</h1>'
+   +'<p>How well do you actually know each other?<br>Two players. One phone. Ten questions, answered twice.</p></div>'
+   +'<div class="card">'
+   +'<div class="field pa"><label for="inA">Player 1</label>'
+   +'<input id="inA" type="text" maxlength="12" autocomplete="off" value="'+esc(names[0])+'"></div>'
+   +'<div class="field pb"><label for="inB">Player 2</label>'
+   +'<input id="inB" type="text" maxlength="12" autocomplete="off" value="'+esc(names[1])+'"></div>'
+   +'<div class="field"><label id="packLbl">Pack</label>'
+   +'<div class="packs" role="group" aria-labelledby="packLbl">'
+   +PACKS.map(p=>'<button class="pack" type="button" data-pack="'+p.id+'" aria-pressed="'
+     +(p.id===pack)+'">'+p.name+'</button>').join('')
+   +'</div></div>'
+   +'<button class="btn primary" type="button" id="bStart">Start</button>'
+   +'</div>'
+   +'<details class="how"><summary>How it works</summary><ul>'
+   +'<li>Each question gets answered two ways: <b>for yourself</b>, and <b>predicting the other player</b>.</li>'
+   +'<li>Player 1 answers all ten privately, then hands the phone over. No peeking — nothing shows until both are done.</li>'
+   +'<li>Then you reveal together, question by question: answers, predictions, hits and misses.</li>'
+   +'<li>Three scores: <b>Similarity</b>, and each player’s <b>Insight</b> into the other.</li>'
+   +'</ul></details>'
+   +'<footer class="foot">For fun and conversation — a game, not a psychological assessment.<br>'
+   +'Answers stay on this phone and are never uploaded.<br><a href="../">Kreeda</a></footer>'
+  );
+  document.querySelectorAll('.pack').forEach(el=>{
+    el.addEventListener('click',()=>{
+      pack=el.getAttribute('data-pack');
+      document.querySelectorAll('.pack').forEach(x=>x.setAttribute('aria-pressed',
+        String(x.getAttribute('data-pack')===pack)));
+    });
+  });
+  on('bStart',()=>{
+    const a=document.getElementById('inA').value.trim().slice(0,12)||'Player 1';
+    const b=document.getElementById('inB').value.trim().slice(0,12)||'Player 2';
+    names=[a,b]; LS.set('sync.names',JSON.stringify(names));
+    newSession(pack);
+    track('game_start',{pack:pack});
+    handoff(0);
+  });
+}
+
+/* ============================ hand-off ============================
+   The interstitial renders through show(), which has already destroyed the previous screen —
+   so by the time this paints there is nothing underneath to peek at, however fast the tap. */
+function handoff(p){
+  const nm=S.names[p], cls=p===0?'pa':'pb';
+  show(
+   '<div class="handoff">'
+   +'<div class="pass">Pass the phone to</div>'
+   +'<h2 class="'+cls+'">'+esc(nm)+'</h2>'
+   +'<p class="sub">'+(S.done[0]||S.done[1]
+      ? esc(S.names[p===0?1:0])+' is done. Your turn — same ten questions.'
+      : 'Answer privately. Nothing is shown to '+esc(S.names[p===0?1:0])+' until the reveal.')+'</p>'
+   +'<button class="btn primary" type="button" id="bReady">I’m '+esc(nm)+' — show me</button>'
+   +(firstHandoff?'<p class="peek">👀 tilt the phone away while you answer</p>':'')
+   +'</div>'
+  );
+  firstHandoff=false;
+  on('bReady',()=>question(p,0,'self'));
+}
+
+/* ============================ answering ============================
+   Two clearly separated steps per question: SELF first, then PREDICT. A tap on an option briefly
+   shows the pick, then advances; Back walks the same rail in reverse (your own answers only —
+   the other player's are never reachable from here). */
+function question(p,qi,mode){
+  const other=S.names[p===0?1:0];
+  const step=qi*2+(mode==='pred'?1:0), total=ROUNDS*2;
+  const q=S.qs[qi];
+  const cur=(mode==='self'?S.self:S.pred)[p][qi];
+  show(
+   header(true)
+   +'<div class="progress"><span class="n">'+(qi+1)+' of '+ROUNDS+'</span>'
+   +'<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="'+total+'" aria-valuenow="'+step+'">'
+   +'<i style="width:'+Math.round(step/total*100)+'%"></i></div></div>'
+   +'<div class="stepin '+(mode==='pred'?'pred':'')+'">'
+   +'<span class="modechip '+(mode==='self'?'self':'pred')+'">'
+   +(mode==='self'?'You':'Predict · '+esc(other))+'</span>'
+   +'<p class="qtext">'+esc(q.q)+'</p>'
+   +'<p class="qsub">'+(mode==='self'
+      ? 'Answer for <b>yourself</b>.'
+      : 'What will <b>'+esc(other)+'</b> pick for themselves?')+'</p>'
+   +q.o.map((opt,i)=>'<button class="opt'+(i===cur?' picked':'')+'" type="button" data-i="'+i+'">'
+      +esc(opt)+'</button>').join('')
+   +'</div>'
+   +'<div class="backrow">'+(step>0
+      ?'<button class="btn ghost" type="button" id="bBack">← Back</button>':'')+'</div>'
+  );
+  bindHome();
+  const g=GEN;
+  document.querySelectorAll('.opt').forEach(el=>{
+    el.addEventListener('click',()=>{
+      if(g!==GEN) return;                                  // stale screen: ignore
+      const i=+el.getAttribute('data-i');
+      (mode==='self'?S.self:S.pred)[p][qi]=i;
+      el.classList.add('picked');
+      /* tiny beat so the pick registers visually before the slide; guarded by GEN so a double
+         tap can't queue two advances */
+      setTimeout(()=>{ if(g!==GEN) return; advance(p,qi,mode); },130);
+    });
+  });
+  on('bBack',()=>{
+    if(mode==='pred') question(p,qi,'self');
+    else question(p,qi-1,'pred');
+  });
+}
+function advance(p,qi,mode){
+  if(mode==='self') question(p,qi,'pred');
+  else if(qi+1<ROUNDS) question(p,qi+1,'self');
+  else lockin(p);
+}
+
+/* explicit lock-in before the phone changes hands — the last chance to go back */
+function lockin(p){
+  const other=p===0?1:0;
+  show(
+   header(true)
+   +'<div class="lock">'
+   +'<div class="bignum">'+ROUNDS+'/'+ROUNDS+'</div>'
+   +'<h2>All answered, '+esc(S.names[p])+'</h2>'
+   +'<p>Lock in to hide your answers and pass the phone.<br>You can’t change them after this.</p>'
+   +'<button class="btn primary" type="button" id="bLock">Lock in &amp; pass to '
+   +esc(S.names[other])+'</button>'
+   +'<button class="btn ghost" type="button" id="bRevise">← Go back and revise</button>'
+   +'</div>'
+  );
+  bindHome();
+  on('bLock',()=>{
+    S.done[p]=true;
+    if(S.done[0]&&S.done[1]) revealIntro();
+    else handoff(other);
+  });
+  on('bRevise',()=>question(p,ROUNDS-1,'pred'));
+}
+
+/* ============================ scoring ============================ */
+function scoreQ(i){
+  return { same: S.self[0][i]===S.self[1][i],
+           aHit: S.pred[0][i]===S.self[1][i],     // A predicted B correctly
+           bHit: S.pred[1][i]===S.self[0][i] };   // B predicted A correctly
+}
+function totals(){
+  let sim=0, ia=0, ib=0;
+  for(let i=0;i<ROUNDS;i++){ const s=scoreQ(i); if(s.same)sim++; if(s.aHit)ia++; if(s.bHit)ib++; }
+  return {sim:sim, ia:ia, ib:ib};
+}
+
+/* ============================ reveal ============================
+   The reveal is a hard gate: it is only reachable from lockin() once both done flags are true.
+   Guarded again here anyway — a state machine bug should fail loudly to the hand-off, not
+   quietly leak answers. */
+function revealIntro(){
+  if(!S){ title(); return; }
+  if(!(S.done[0]&&S.done[1])){ handoff(S.done[0]?1:0); return; }
+  show(
+   header(true)
+   +'<div class="handoff">'
+   +'<div class="pass">Both locked in</div>'
+   +'<h2>Sit together</h2>'
+   +'<p class="sub">'+esc(S.names[0])+' and '+esc(S.names[1])+' — shoulder to shoulder.<br>'
+   +'Ten questions, revealed one at a time.</p>'
+   +'<button class="btn primary" type="button" id="bGo">Start the reveal</button>'
+   +'</div>'
+  );
+  bindHome();
+  on('bGo',()=>reveal(0));
+}
+
+function reveal(i){
+  if(!(S&&S.done[0]&&S.done[1])) return;
+  const q=S.qs[i], s=scoreQ(i);
+  /* running tallies count only questions revealed so far — the totals stay a surprise */
+  let sim=0, ia=0, ib=0;
+  for(let k=0;k<=i;k++){ const t=scoreQ(k); if(t.same)sim++; if(t.aHit)ia++; if(t.bHit)ib++; }
+  const A=esc(S.names[0]), B=esc(S.names[1]);
+  const d=n=>'style="animation-delay:'+n+'ms"';
+  show(
+   header(true)
+   +'<div class="progress"><span class="n">Reveal '+(i+1)+' of '+ROUNDS+'</span>'
+   +'<div class="bar"><i style="width:'+Math.round((i+1)/ROUNDS*100)+'%"></i></div></div>'
+   +'<div class="tallies">'
+   +'<div class="tally t-sim"><b>'+sim+'</b><span>Same</span></div>'
+   +'<div class="tally t-a"><b>'+ia+'</b><span>'+A+' got right</span></div>'
+   +'<div class="tally t-b"><b>'+ib+'</b><span>'+B+' got right</span></div>'
+   +'</div>'
+   +'<div aria-live="polite">'
+   +'<p class="rq">'+esc(q.q)+'</p>'
+   +'<div class="rrow'+(s.same?' same':'')+'" '+d(60)+'><span class="who pa">'+A+'</span>'
+   +'<span class="what">'+esc(q.o[S.self[0][i]])+'</span>'
+   +'<span class="mark '+(s.same?'hit':'miss')+'" aria-label="'+(s.same?'same answer':'different answers')+'">'
+   +(s.same?'=':'≠')+'</span></div>'
+   +'<div class="rrow'+(s.same?' same':'')+'" '+d(280)+'><span class="who pb">'+B+'</span>'
+   +'<span class="what">'+esc(q.o[S.self[1][i]])+'</span>'
+   +'<span class="mark '+(s.same?'hit':'miss')+'" aria-hidden="true">'+(s.same?'=':'≠')+'</span></div>'
+   +'<div class="rrow" '+d(620)+'><span class="who pa">'+A+' guessed</span>'
+   +'<span class="what">'+esc(q.o[S.pred[0][i]])+'<small>for '+B+'</small></span>'
+   +'<span class="mark '+(s.aHit?'hit':'miss')+'" aria-label="'+(s.aHit?'correct prediction':'wrong prediction')+'">'
+   +(s.aHit?'✓':'✗')+'</span></div>'
+   +'<div class="rrow" '+d(900)+'><span class="who pb">'+B+' guessed</span>'
+   +'<span class="what">'+esc(q.o[S.pred[1][i]])+'<small>for '+A+'</small></span>'
+   +'<span class="mark '+(s.bHit?'hit':'miss')+'" aria-label="'+(s.bHit?'correct prediction':'wrong prediction')+'">'
+   +(s.bHit?'✓':'✗')+'</span></div>'
+   +'</div>'
+   +'<button class="btn primary" type="button" id="bNext" style="margin-top:18px">'
+   +(i+1<ROUNDS?'Next question':'See the verdict')+'</button>'
+  );
+  bindHome();
+  on('bNext',()=>{ if(i+1<ROUNDS) reveal(i+1); else results(); });
+}
+
+/* ============================ verdicts ============================ */
+function pairTitle(t){
+  const d=Math.abs(t.ia-t.ib);
+  if(t.sim>=8&&t.ia>=8&&t.ib>=8) return ['Open books',
+    'High similarity, high insight both ways. Very little is hiding here.'];
+  if(t.ia>=7&&t.ib>=7&&t.sim<=4) return ['Fluent translators',
+    'You answer differently — and you both know exactly how. That’s real attention.'];
+  if(d>=3) return ['One-way mirror',
+    'One of you sees through the glass; the other sees a reflection. Worth talking about.'];
+  if(t.sim>=7&&t.ia<=4&&t.ib<=4) return ['Twins by accident',
+    'You keep giving the same answers without predicting them. Alike, and still surprising.'];
+  if(t.sim<=3&&t.ia<=3&&t.ib<=3) return ['Beautiful strangers',
+    'Low overlap, low prediction — which means everything is still left to discover.'];
+  if(t.ia+t.ib>=13) return ['Mind readers',
+    'The predictions landed on both sides. You’ve clearly been paying attention.'];
+  if(t.sim>=6) return ['Same wavelength',
+    'More overlap than not, and the misses are the interesting part.'];
+  return ['Still unfolding',
+    'Some hits, some misses, plenty of material. This pairing has chapters left.'];
+}
+
+function bestAndMiss(){
+  let best=null, bScore=-1, miss=null, mScore=4;
+  for(let i=0;i<ROUNDS;i++){
+    const s=scoreQ(i), pts=(s.same?1:0)+(s.aHit?1:0)+(s.bHit?1:0);
+    if(pts>bScore){ bScore=pts; best=i; }
+    if(pts<mScore){ mScore=pts; miss=i; }
+  }
+  const A=esc(S.names[0]), B=esc(S.names[1]);
+  let bHtml=null, mHtml=null;
+  if(bScore===3){
+    const q=S.qs[best];
+    bHtml='You both knew: <b>'+esc(q.q)+'</b> — “'+esc(q.o[S.self[0][best]])
+     +'”, called correctly from both sides.';
+  }else if(bScore===2){
+    const q=S.qs[best], s=scoreQ(best);
+    bHtml=s.same
+      ? 'Same answer, no rehearsal: <b>'+esc(q.q)+'</b> — both said “'+esc(q.o[S.self[0][best]])+'”.'
+      : 'Read each other right on: <b>'+esc(q.q)+'</b> — both predictions landed.';
+  }else if(bScore>=0){
+    bHtml='No clean sweep this round — that’s next game’s material.';
+  }
+  if(mScore===0){
+    const q=S.qs[miss];
+    mHtml='Total scramble on: <b>'+esc(q.q)+'</b>. '+A+' said “'+esc(q.o[S.self[0][miss]])
+     +'”, '+B+' said “'+esc(q.o[S.self[1][miss]])+'” — and neither prediction landed. Ask about it.';
+  }else if(mScore<3){
+    const q=S.qs[miss], s=scoreQ(miss);
+    mHtml='Closest to a miss: <b>'+esc(q.q)+'</b>'
+     +(!s.aHit&&!s.bHit?' — both predictions were off.':
+       !s.aHit?' — '+A+'’s prediction was off.':
+       !s.bHit?' — '+B+'’s prediction was off.':' — different answers, worth a story.');
+  }else{
+    mHtml='Not a single miss anywhere. Genuinely spooky.';
+  }
+  return {best:bHtml, miss:mHtml};
+}
+
+/* ============================ results ============================ */
+let completeSent=false;
+function results(){
+  if(!(S&&S.done[0]&&S.done[1])) return;
+  const t=totals(), A=esc(S.names[0]), B=esc(S.names[1]);
+  const pt=pairTitle(t), bm=bestAndMiss();
+  const d=Math.abs(t.ia-t.ib);
+  const asym = d>=2
+    ? (t.ia>t.ib ? A+' reads '+B+' better than '+B+' reads '+A+' — for now.'
+                 : B+' reads '+A+' better than '+A+' reads '+B+' — for now.')
+    : null;
+  const packName=PACKS.find(p=>p.id===S.pack).name;
+  const today=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+
+  if(!completeSent){
+    completeSent=true;
+    track('game_complete',{pack:S.pack, similarity:t.sim, insight_a:t.ia, insight_b:t.ib});
+    const plays=(+LS.get('sync.plays')||0)+1; LS.set('sync.plays',String(plays));
+  }
+
+  show(
+   header(false)
+   +'<div class="results" aria-live="polite">'
+   +'<h2>The verdict</h2>'
+   +'<div class="pairtitle">'+pt[0]+'</div>'
+   +'<p class="pairsub">'+pt[1]+'</p>'
+   +'<div class="card">'
+   +'<p class="names"><span class="na">'+A+'</span><span class="x">×</span>'
+   +'<span class="nb">'+B+'</span><span class="x">·</span><span class="dim">'+packName+' pack</span></p>'
+   +'<div class="meter m-sim"><div class="mhead"><span>Similarity</span><b>'+t.sim+'/'+ROUNDS+'</b></div>'
+   +'<div class="mtrack"><i data-w="'+(t.sim*10)+'"></i></div></div>'
+   +'<div class="meter m-a"><div class="mhead"><span>'+A+'’s insight</span><b>'+t.ia+'/'+ROUNDS+'</b></div>'
+   +'<div class="mtrack"><i data-w="'+(t.ia*10)+'"></i></div></div>'
+   +'<div class="meter m-b"><div class="mhead"><span>'+B+'’s insight</span><b>'+t.ib+'/'+ROUNDS+'</b></div>'
+   +'<div class="mtrack"><i data-w="'+(t.ib*10)+'"></i></div></div>'
+   +(asym?'<div class="callout asym"><span class="lbl">The asymmetry</span>'+asym+'</div>':'')
+   +(bm.best?'<div class="callout best"><span class="lbl">Best moment</span>'+bm.best+'</div>':'')
+   +(bm.miss?'<div class="callout miss"><span class="lbl">Biggest miss</span>'+bm.miss+'</div>':'')
+   +'<p class="datefoot">'+esc(today)+' · kreeda.games/sync</p>'
+   +'</div>'
+   +'<button class="btn primary" type="button" id="bAgain">Play again</button>'
+   +'<button class="btn" type="button" id="bCopy">Copy result</button>'
+   +'<button class="btn ghost" type="button" id="bChange">Change players</button>'
+   +'<div id="shareSlot"></div>'
+   +'</div>'
+   +'<footer class="foot">Mismatches aren’t wrong answers — they’re the conversation.<br>'
+   +'<a href="../">Kreeda</a></footer>'
+  );
+  /* meters animate from zero after first paint; width transition is CSS, reduced-motion kills it */
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    document.querySelectorAll('.mtrack i').forEach(el=>{ el.style.width=el.getAttribute('data-w')+'%'; });
+  }));
+
+  on('bAgain',()=>{ completeSent=false; newSession(S.pack);
+    track('game_start',{pack:S.pack}); handoff(0); });
+  on('bChange',()=>{ completeSent=false; S=null; title(); });
+  on('bCopy',()=>{
+    const text=shareText(t,pt[0],packName);
+    let done=false;
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(()=>toast('Copied!'),()=>showShareBox(text));
+        done=true;
+      }
+    }catch(e){}
+    if(!done) showShareBox(text);   // clipboard is unavailable on file:// — show it to copy by hand
+  });
+}
+function shareText(t,title,packName){
+  const row=(fn,y,n)=>{ let s=''; for(let i=0;i<ROUNDS;i++) s+=fn(scoreQ(i))?y:n; return s; };
+  return 'Sync · '+S.names[0]+' × '+S.names[1]+' · '+packName+' pack\n'
+   +'“'+title+'”\n'
+   +'Same answers  '+row(s=>s.same,'🟢','⚫')+'  '+t.sim+'/'+ROUNDS+'\n'
+   +S.names[0]+'’s insight '+row(s=>s.aHit,'🟣','⚫')+'  '+t.ia+'/'+ROUNDS+'\n'
+   +S.names[1]+'’s insight '+row(s=>s.bHit,'🔴','⚫')+'  '+t.ib+'/'+ROUNDS+'\n'
+   +'kreeda.games/sync';
+}
+function showShareBox(text){
+  const slot=document.getElementById('shareSlot');
+  if(!slot) return;
+  slot.innerHTML='<textarea class="sharebox" rows="6" readonly aria-label="Result text to copy manually"></textarea>';
+  const ta=slot.querySelector('textarea'); ta.value=text;
+  ta.focus(); try{ ta.select(); }catch(e){}
+  toast('Copy it from the box below');
+}
+
+/* ============================ boot self-test ============================
+   Cheap invariants that would otherwise only fail in a player's hands: every pack must be able
+   to deal a full session, and every option index used anywhere must exist. Runs once, logs only. */
+(function audit(){
+  try{
+    PACKS.forEach(p=>{
+      const n=BANK.filter(x=>x.t.indexOf(p.id)>=0).length;
+      if(n<ROUNDS) console.warn('sync: pack "'+p.id+'" has only '+n+' questions');
+    });
+    BANK.forEach((x,i)=>{
+      if(!(x.o.length>=2&&x.o.length<=4)) console.warn('sync: question '+i+' has '+x.o.length+' options');
+    });
+  }catch(e){}
+})();
+
+title();
+</script>
+</body>
+</html>
