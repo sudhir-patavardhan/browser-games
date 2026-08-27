@@ -20,18 +20,15 @@ Open [`index.html`](index.html) at the repo root for the [Kreeda](https://kreeda
 | [Last 16](last-16/index.html) | Arcade football set at the World Cup 2026 Round of 16 — pick 1 of 16 real nations and one of 4 real star players, control them directly while AI plays everyone else, and fight through the real bracket (Tournament mode) or play a single Quick Match. Penalty shootouts, stamina, fouls, and procedural crowd/kick audio included. | [kreeda.games/last-16](https://kreeda.games/last-16/) |
 | [Road Rumble](road-rumble/index.html) | A Road Rash&ndash;style racing brawler on a pseudo-3D highway — six riders sprint a course of curves, crests and oncoming traffic. Pin the throttle, thread the cars, and get physical: pull alongside a rival and throw a punch (auto-targeting the nearest rider) to knock them down, or grab a roadside club for extra reach. Rivals swing back and a truck to the face is a wipeout, so it's a scrap to stay upright and finish high. Grid start, live position, health/stamina and distance bars, procedural engine + impact audio, and a saved best finish. Keyboard (steer / gas / brake / punch) plus full on-screen touch controls. | [kreeda.games/road-rumble](https://kreeda.games/road-rumble/) |
 | [Fairway Four](fairway-four/index.html) | Full-3D golf over four authored holes (par 4/3/5/4) rendered with Three.js — cinematic birds-eye-to-address camera swoops, a three-click swing meter with draw/fade from your timing, wind and Magnus-lift ball flight, bunkers, water, trees, out-of-bounds, and a sloped putting green with a flowing break grid. Keyboard + mouse. | [kreeda.games/fairway-four](https://kreeda.games/fairway-four/) (needs internet once for the Three.js CDN) |
-| [Deadpoint](deadpoint/index.html) | A side-on 2.5D rock-climbing game built around *the commit* — reach a hold, time the latch at the bright ring, then trust it with your weight while a per-hand pump clock burns. Center-of-mass balance makes you barn-door off the wall (fight it by flagging a foot with `A`/`D`); chalk resets slip and boosts grip; rest recovers pump; and dynos launch into slow-mo with a latch window at the apex. Six procedurally-generated, always-solvable boulder problems V0–V5 with an articulated IK climber, golden-hour parallax wall, top-out payoff, and Flash/Send scoring. Mouse + keyboard. | [kreeda.games/deadpoint](https://kreeda.games/deadpoint/) |
 | [Ennead](ennead/index.html) | Configurable tic-tac-toe with two modes sharing one engine. **Classic:** any board `N×N` from 3×3 up to 9×9 with a selectable win length `k` (3×3 noughts-and-crosses through gomoku). **Ultimate:** a nested `9×9` of nine sub-boards where winning a sub-board claims a meta-cell and every move sends your opponent to a specific sub-board — with an active-board spotlight and a sub-board-claim animation. Local 2-player or a three-level AI (Hard 3×3 plays perfectly), undo, light/dark themes, keyboard control, and `localStorage` resume. | [kreeda.games/ennead](https://kreeda.games/ennead/) |
 | [Daśānana](dasanana/index.html) | A Rāmāyaṇa astra-duel: Rāvaṇa invokes divine missiles and you must answer with the true counter (water quenches fire, light dispels darkness…) before both loose. Restore tejas by rhythm-chanting authentic Āditya-Hṛdayam ślokas (Devanāgarī + IAST), survive the Śakti spear and his Brahmāstra, and unlock your own Brahmāstra for the final head. Story mode (Khara → Indrajit → Rāvaṇa) and three duel difficulties, with procedural tanpura drones, chant bells, and conch. | [kreeda.games/dasanana](https://kreeda.games/dasanana/) |
 
-| [Setu](setu/index.html) | A daily nine-cell grid from the Rāmāyaṇa. Each row and column carries a criterion — a kāṇḍa, a lineage, a class of being, a deed — and every cell wants a being who satisfies both. Names are matched however you spell them: IAST with full diacritics, Devanāgarī, or the regional name you actually grew up saying, so **Hanumān**, `हनुमान्`, Anjaneya and Maruti are all the same answer. The day's grid is generated from the date and is guaranteed solvable — not merely non-empty, but with a real assignment that uses each being once. However you finish, the reveal panel shows every valid answer for every cell with a gloss and a sarga-level citation, so a grid you failed is still a grid you learned something from. | [kreeda.games/setu](https://kreeda.games/setu/) |
-| [Maidan](maidan/index.html) | The same nine cells, played on cricket — countries, formats, eras and career milestones. Every criterion is a **monotone fact**: an event that happened or a threshold crossed, never a ranking or a form table, so the grid can fall out of date but it cannot become wrong. Ships a visible `DATA_AS_OF` date and no image files at all — factual statistics are free to use, crests and kit are not. | [kreeda.games/maidan](https://kreeda.games/maidan/) |
 
 | [Valence](valence/index.html) | The grid as a chemistry revision aid. Nine cells, an element in each, and criteria drawn from the things a syllabus actually asks about — group and family, block, state at room temperature, whether the symbol comes from the English name or the Latin one. Answer with the name or the symbol, in any case. | [kreeda.games/valence](https://kreeda.games/valence/) |
 | [Quanta](quanta/index.html) | The same grid over physical quantities: vector or scalar, base unit or derived, which dimensions appear in it, which branch it belongs to. The reveal gives the SI unit for every answer, including the ones you missed. | [kreeda.games/quanta](https://kreeda.games/quanta/) |
 | [Radian](radian/index.html) | Trigonometry on the unit circle — quadrants, signs, reference angles and exact values. Answer in whichever notation you think in: `30`, `30°` and `π/6` are the same angle, and the reveal shows every answer in both. | [kreeda.games/radian](https://kreeda.games/radian/) |
 
-All sixteen are also playable offline straight from the file system — clone the repo and open any `<game>/index.html` directly, no server required.
+All thirteen are also playable offline straight from the file system — clone the repo and open any `<game>/index.html` directly, no server required.
 
 ## Running a game
 
@@ -46,12 +43,11 @@ No server required — just open the file directly, or serve the repo root with 
 
 ## The daily loop
 
-Five games — [Drift](drift/index.html), [Chroma Blocks](chroma-blocks/index.html), [Carrom](carrom/index.html),
-[Deadpoint](deadpoint/index.html) and [Fairway Four](fairway-four/index.html) — carry a **daily** alongside
-their normal mode: today's road, today's bag, today's board, today's problem, today's round.
-[Setu](setu/index.html), [Maidan](maidan/index.html), [Valence](valence/index.html),
-[Quanta](quanta/index.html) and [Radian](radian/index.html) are daily all the way down: one grid a day and
-nothing else, the way the format wants to be played.
+Four games — [Drift](drift/index.html), [Chroma Blocks](chroma-blocks/index.html), [Carrom](carrom/index.html)
+and [Fairway Four](fairway-four/index.html) — carry a **daily** alongside their normal mode: today's road,
+today's bag, today's board, today's round. [Valence](valence/index.html), [Quanta](quanta/index.html) and
+[Radian](radian/index.html) are daily all the way down: one grid a day and nothing else, the way the format
+wants to be played.
 
 The whole thing turns on one property. The day's challenge is drawn from `mulberry32(daySeed(dayKey()))`,
 a pure function of the calendar date, so **every player in the world gets the identical puzzle and no
@@ -68,11 +64,11 @@ Results share as a **spoiler-free block grid** rather than a sentence — the sh
 answer:
 
 ```
-Kreeda · Deadpoint · 24 Aug
-🟩🟩🟩🟩🟨
-🟩🟩🟨🟨🟩
-🟩🟩🟩🟩
-V3 · flash · streak 4 🔥
+Kreeda · Radian · 24 Aug
+🟦🟦🟦
+🟦🟦🟦
+🟦🟦🟦
+9/9 · weight 31 · streak 4 🔥
 ```
 
 [`DAILY.md`](DAILY.md) is the contract: the storage keys, the helpers, the streak rules and the share
@@ -82,7 +78,7 @@ from one place, not because they import from one.
 
 ## Offline
 
-[`sw.js`](sw.js) is a cache-first service worker that precaches the landing page and all sixteen games, so
+[`sw.js`](sw.js) is a cache-first service worker that precaches the landing page and all thirteen games, so
 a hosted copy keeps working with the network gone and the install promised by
 [`manifest.webmanifest`](manifest.webmanifest) is a real one.
 
@@ -203,13 +199,14 @@ serving an extracted zip on its own and driving it: no page errors, game fully p
 
 ## Publishing the daily grids
 
-The five daily grids — [Setu](setu/index.html), [Maidan](maidan/index.html), [Valence](valence/index.html),
-[Quanta](quanta/index.html) and [Radian](radian/index.html) — are the ones worth listing in directories,
-because a daily is the only thing those directories index.
+The three daily grids — [Valence](valence/index.html), [Quanta](quanta/index.html) and
+[Radian](radian/index.html) — are the ones worth listing in directories, because a daily is the only thing
+those directories index. All three are revision aids, which is a sharper pitch than a puzzle: chemistry,
+physics and trigonometry at high-school level.
 
 They are submission-ready as they stand: complete `<title>`, meta description, canonical, OG/Twitter tags,
 `VideoGame` JSON-LD, a 1200×630 OG image in [`assets/`](assets/), and **no external network dependency at
-all**. Each is 81–176 KB, comfortably inside any portal's first-playable limit.
+all**. Each is 81–129 KB, comfortably inside any portal's first-playable limit.
 
 Two kinds of destination, costing very different things:
 
@@ -235,11 +232,11 @@ happens the same way — a spec for the next feature or fix, not a diff — with
 and what ships. The `DRIFT_FEATURES.md` file inside [`drift/`](drift/) is a living example of that
 spec-then-Claude-Code loop for the most involved game here.
 
-[`RAMAYANA_GRID.md`](RAMAYANA_GRID.md) and [`CRICKET_GRID.md`](CRICKET_GRID.md) are the specs
-[Setu](setu/index.html) and [Maidan](maidan/index.html) were built from, and they are worth reading
-before changing either game. They are where the reasoning lives: why validation folds diacritics by NFD
-decomposition instead of a substitution table, why a solvable grid needs a perfect matching and not
-merely non-empty cells, why rarity scoring is impossible without a server and what replaced it. Setu's
-§6 sets out what that game will not do with material that is living scripture to hundreds of millions of
-people, and both specs flag the facts they were not certain of rather than asserting them — those flags
-are still open and are the first thing to check before trusting a cell.
+[`RAMAYANA_GRID.md`](RAMAYANA_GRID.md) and [`CRICKET_GRID.md`](CRICKET_GRID.md) are kept even though
+the two games they were written for — Setu and Maidan — have been removed. They remain the authority on
+the grid mechanic itself, which [Valence](valence/index.html), [Quanta](quanta/index.html) and
+[Radian](radian/index.html) were all built from and still cite in their own comments: why validation
+folds diacritics by NFD decomposition instead of a substitution table, why a solvable grid needs a
+perfect matching and not merely non-empty cells, why rarity scoring is impossible without a server and
+what replaced it. Read them before changing any grid. The two removed games are in git history if
+either is ever wanted back.

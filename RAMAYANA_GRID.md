@@ -1,5 +1,9 @@
 # Setu — a daily Rāmāyaṇa grid
 
+> **Status: not built.** Setu was implemented and later removed from the collection; this spec is kept
+> because it remains the authority on the grid mechanic that Valence, Quanta and Radian are built on. The
+> game itself is in git history.
+
 **Slug:** `setu` · **URL:** `kreeda.games/setu/` · **Category:** puzzle · **Tag:** DAILY
 
 A 3×3 grid. Three criteria down the left, three across the top. Each of the nine cells wants the name

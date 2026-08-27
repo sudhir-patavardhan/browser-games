@@ -4,7 +4,7 @@
    just a bookmark that 404s the moment the network drops. This file is what makes
    the install real.
 
-   These are sixteen self-contained games with no build step — a deploy replaces the
+   These are thirteen self-contained games with no build step — a deploy replaces the
    whole tree at once, nothing here ever changes in place. That means there is no
    value in revalidating against the network on every visit; the entire correctness
    model is CACHE VERSIONING. Bump CACHE, the browser installs a new worker, the new
@@ -14,7 +14,7 @@
    way to know why — that is the one failure mode this file cannot afford.
 */
 
-const CACHE = 'kreeda-v3';
+const CACHE = 'kreeda-v4';
 
 /* The whole app shell, spelled out by hand rather than discovered at runtime — a
    service worker has no directory listing to crawl, so this list IS the offline
@@ -35,11 +35,8 @@ const PRECACHE_URLS = [
   '/last-16/index.html',
   '/road-rumble/index.html',
   '/fairway-four/index.html',
-  '/deadpoint/index.html',
   '/ennead/index.html',
   '/dasanana/index.html',
-  '/setu/index.html',
-  '/maidan/index.html',
   '/valence/index.html',
   '/quanta/index.html',
   '/radian/index.html'

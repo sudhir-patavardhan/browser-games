@@ -26,16 +26,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://kreeda.games/setu/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://kreeda.games/maidan/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://kreeda.games/carrom/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -67,11 +57,6 @@
   </url>
   <url>
     <loc>https://kreeda.games/fairway-four/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://kreeda.games/deadpoint/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

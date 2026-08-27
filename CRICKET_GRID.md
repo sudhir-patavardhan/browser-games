@@ -1,5 +1,8 @@
 # Maidan — a daily cricket grid
 
+> **Status: not built.** Maidan was implemented and later removed from the collection; this spec is kept
+> for the mechanic it describes, which the remaining grids share. The game itself is in git history.
+
 **Slug:** `maidan` · **URL:** `kreeda.games/maidan/` · **Category:** sports · **Tag:** DAILY
 
 The same 3×3 grid as `RAMAYANA_GRID.md` — three criteria down, three across, nine cells, nine guesses,
