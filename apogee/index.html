@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Apogee — Kreeda</title>
+<meta name="description" content="Build a rocket from parts — nose, tanks, engine, fins, boosters — then light it and see how high your design flies. Cross the Kármán line to reach space.">
+<link rel="canonical" href="https://kreeda.games/apogee/">
+<meta name="theme-color" content="#0b1e33">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/apogee/">
+<meta property="og:title" content="Apogee — Kreeda">
+<meta property="og:description" content="Build a rocket from parts — nose, tanks, engine, fins, boosters — then light it and see how high your design flies.">
+<meta property="og:image" content="https://kreeda.games/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Apogee — Kreeda">
+<meta name="twitter:description" content="Build a rocket from parts — nose, tanks, engine, fins, boosters — then light it and see how high your design flies.">
+<meta name="twitter:image" content="https://kreeda.games/og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Apogee","description":"Build a rocket from parts — nose, tanks, engine, fins, boosters — then light it and see how high your design flies.","url":"https://kreeda.games/apogee/","image":"https://kreeda.games/og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Building","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;900&family=Inter:wght@400;600;700&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; }
+body {
+  background:#0b1e33;
+  color:#eaf4ff;
+  font-family:'Inter', system-ui, sans-serif;
+  height:100dvh;
+  display:flex; flex-direction:column;
+  overflow:hidden;
+  user-select:none; -webkit-user-select:none;
+  touch-action:manipulation;
+}
+
+/* ---------- header ---------- */
+header {
+  display:flex; align-items:center; gap:10px;
+  padding:max(8px, env(safe-area-inset-top)) 14px 8px;
+  background:linear-gradient(180deg,#0d2340,#0b1e33);
+  border-bottom:1px solid rgba(120,190,255,0.18);
+  z-index:30; flex:0 0 auto;
+}
+.back {
+  color:#8fc3ff; text-decoration:none; font-weight:600; font-size:0.85rem;
+  padding:6px 10px 6px 6px; border-radius:8px; white-space:nowrap;
+}
+.back:active { background:rgba(140,195,255,0.12); }
+h1 {
+  font-family:'Rubik', system-ui, sans-serif; font-weight:900;
+  font-size:clamp(1.15rem, 4.5vw, 1.5rem); letter-spacing:0.04em;
+  color:#ffd24a; flex:1 1 auto; min-width:0;
+}
+h1 .rocket-glyph { display:inline-block; transform:rotate(-45deg) translateY(1px); }
+.pill {
+  font-size:0.75rem; font-weight:700; color:#bfe0ff;
+  background:rgba(120,190,255,0.12); border:1px solid rgba(120,190,255,0.25);
+  padding:5px 10px; border-radius:999px; white-space:nowrap;
+}
+#muteBtn {
+  background:rgba(120,190,255,0.12); border:1px solid rgba(120,190,255,0.25);
+  color:#bfe0ff; font-size:0.95rem; width:34px; height:30px; border-radius:8px; cursor:pointer;
+}
+
+/* ---------- build scene ---------- */
+#buildScreen { flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
+#scene {
+  position:relative; flex:1 1 auto; min-height:0; overflow:hidden;
+  background:linear-gradient(180deg,#3f8fd4 0%, #6db4e8 45%, #9cd1f2 75%, #c8e8fa 100%);
+}
+#scene .sun {
+  position:absolute; top:8%; right:10%; width:54px; height:54px; border-radius:50%;
+  background:radial-gradient(circle,#fff8d8 30%, #ffd95e 60%, rgba(255,217,94,0) 72%);
+  box-shadow:0 0 60px 24px rgba(255,222,120,0.35);
+}
+#scene .cloud {
+  position:absolute; height:22px; border-radius:999px; background:rgba(255,255,255,0.85);
+  box-shadow:14px -10px 0 2px rgba(255,255,255,0.8), 32px -4px 0 0 rgba(255,255,255,0.75);
+  animation:driftby linear infinite;
+}
+@keyframes driftby { from { transform:translateX(-140px); } to { transform:translateX(calc(100vw + 140px)); } }
+#ground {
+  position:absolute; left:0; right:0; bottom:0; height:58px;
+  background:linear-gradient(180deg,#4d9e4f 0 34%, #3d8340 34% 40%, #8f9aa6 40%);
+}
+#padSvg { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); z-index:1; }
+
+#hint {
+  position:absolute; left:50%; top:34%; transform:translate(-50%,-50%);
+  text-align:center; color:rgba(10,40,70,0.75); font-weight:700;
+  font-size:clamp(0.95rem, 3.6vw, 1.2rem); line-height:1.5; pointer-events:none;
+  text-shadow:0 1px 0 rgba(255,255,255,0.4); padding:0 24px; transition:opacity 0.3s;
+}
+#hint .arrow { display:block; font-size:1.6rem; animation:bob 1.4s ease-in-out infinite; }
+@keyframes bob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(8px); } }
+
+/* the assembled rocket */
+#stack {
+  position:absolute; left:50%; bottom:36px; transform:translateX(-50%);
+  width:64px; z-index:4; transform-origin:50% 100%;
+  touch-action:none;
+}
+#stack .seg { position:relative; width:64px; margin-bottom:-2px; cursor:grab; }
+#stack .seg svg { display:block; width:100%; height:auto; }
+#stack .overlay { position:absolute; left:50%; bottom:0; transform:translateX(-50%); pointer-events:none; }
+#stack .overlay svg { display:block; pointer-events:none; }
+#stack .overlay svg path, #stack .overlay svg rect, #stack .overlay svg ellipse { pointer-events:auto; cursor:grab; }
+.seg.snapin { animation:snapin 0.22s ease-out; }
+@keyframes snapin { from { transform:scale(1.15); } to { transform:scale(1); } }
+
+/* stats card */
+#stats {
+  position:absolute; top:10px; left:10px; z-index:6;
+  background:rgba(8,26,46,0.82); backdrop-filter:blur(4px);
+  border:1px solid rgba(120,190,255,0.25); border-radius:12px;
+  padding:9px 12px; font-size:0.72rem; line-height:1.55; min-width:132px;
+}
+#stats .row { display:flex; justify-content:space-between; gap:14px; color:#bfe0ff; }
+#stats .row b { color:#fff; font-variant-numeric:tabular-nums; }
+#stats .verdict { margin-top:5px; padding-top:5px; border-top:1px solid rgba(120,190,255,0.18); font-weight:700; }
+#stats .verdict.ok { color:#7dffa9; }
+#stats .verdict.warn { color:#ffd24a; }
+#stats .verdict.bad { color:#ff9d8f; }
+
+#launchBtn {
+  position:absolute; right:12px; bottom:14px; z-index:6;
+  font-family:'Rubik', sans-serif; font-weight:900; font-size:1.05rem; letter-spacing:0.06em;
+  padding:13px 22px; border-radius:14px; border:none; cursor:pointer;
+  background:linear-gradient(180deg,#ff7a3c,#e8481f); color:#fff;
+  box-shadow:0 6px 18px rgba(232,72,31,0.45), inset 0 1px 0 rgba(255,255,255,0.35);
+  transition:transform 0.12s, opacity 0.2s;
+}
+#launchBtn:active { transform:scale(0.95); }
+#launchBtn:disabled { opacity:0.35; cursor:default; filter:grayscale(0.7); }
+#clearBtn {
+  position:absolute; left:12px; bottom:14px; z-index:6;
+  background:rgba(8,26,46,0.6); color:#bfe0ff; border:1px solid rgba(120,190,255,0.3);
+  font-size:0.75rem; font-weight:600; padding:8px 13px; border-radius:10px; cursor:pointer;
+}
+
+/* ---------- parts shelf ---------- */
+#shelf {
+  flex:0 0 auto; background:linear-gradient(180deg,#122a47,#0d2036);
+  border-top:2px solid rgba(120,190,255,0.25);
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+  z-index:20;
+}
+#shelf .shelf-label {
+  font-size:0.66rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
+  color:#79a8d8; margin:0 4px 6px;
+}
+#shelfRow {
+  display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px;
+}
+#shelfRow::-webkit-scrollbar { display:none; }
+.part-card {
+  flex:0 0 auto; width:88px; border-radius:12px; cursor:grab;
+  background:rgba(255,255,255,0.06); border:1px solid rgba(120,190,255,0.22);
+  /* pan-x keeps the shelf swipe-scrollable while a vertical pull starts a part drag */
+  padding:7px 6px 6px; text-align:center; touch-action:pan-x;
+  transition:border-color 0.15s, background 0.15s;
+}
+.part-card.inuse { border-color:#7dffa9; background:rgba(125,255,169,0.08); }
+.part-card .art { height:52px; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+.part-card .art svg { max-height:52px; max-width:70px; }
+.part-card .nm { font-size:0.66rem; font-weight:700; color:#eaf4ff; margin-top:4px; pointer-events:none; }
+.part-card .st { font-size:0.6rem; color:#8fb6dd; pointer-events:none; }
+
+/* floating drag ghost */
+#dragGhost { position:fixed; z-index:100; pointer-events:none; transform:translate(-50%,-60%); filter:drop-shadow(0 6px 12px rgba(0,0,0,0.4)); }
+#dragGhost svg { display:block; width:74px; height:auto; }
+
+/* ---------- flight ---------- */
+#flightWrap { position:fixed; inset:0; z-index:40; display:none; background:#000; }
+#flightWrap.on { display:block; }
+#flightCanvas { position:absolute; inset:0; width:100%; height:100%; }
+#flightHud {
+  position:absolute; top:max(10px, env(safe-area-inset-top)); left:0; right:0;
+  display:flex; flex-direction:column; align-items:center; gap:2px; pointer-events:none;
+}
+#altRead { font-family:'Rubik', sans-serif; font-weight:900; font-size:clamp(1.6rem, 7vw, 2.4rem); color:#fff; text-shadow:0 2px 10px rgba(0,0,0,0.5); font-variant-numeric:tabular-nums; }
+#spdRead { font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.85); font-variant-numeric:tabular-nums; }
+#fuelWrap { margin-top:6px; width:min(46vw, 220px); height:8px; border-radius:99px; background:rgba(255,255,255,0.2); overflow:hidden; }
+#fuelBar { height:100%; width:100%; background:linear-gradient(90deg,#ffd24a,#ff7a3c); border-radius:99px; transition:width 0.15s linear; }
+#milestone {
+  position:absolute; top:34%; left:0; right:0; text-align:center; pointer-events:none;
+  font-family:'Rubik', sans-serif; font-weight:900; letter-spacing:0.08em;
+  font-size:clamp(1.2rem, 5.5vw, 2rem); color:#ffd24a; text-shadow:0 2px 14px rgba(0,0,0,0.6);
+  opacity:0; transform:scale(0.8); transition:opacity 0.3s, transform 0.3s;
+}
+#milestone.show { opacity:1; transform:scale(1); }
+
+/* ---------- results ---------- */
+#results {
+  position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+  background:rgba(3,8,16,0.72); backdrop-filter:blur(3px); padding:20px;
+}
+#results.on { display:flex; }
+#resultCard {
+  width:min(92vw, 380px); background:linear-gradient(180deg,#132b4a,#0b1c33);
+  border:1px solid rgba(120,190,255,0.3); border-radius:20px; padding:22px 20px 18px;
+  text-align:center; animation:rise 0.35s ease-out;
+}
+@keyframes rise { from { transform:translateY(30px); opacity:0; } to { transform:none; opacity:1; } }
+#resultCard .lbl { font-size:0.7rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#79a8d8; }
+#resultKm { font-family:'Rubik', sans-serif; font-weight:900; font-size:clamp(2.2rem, 11vw, 3.2rem); color:#fff; line-height:1.1; font-variant-numeric:tabular-nums; }
+#resultKm small { font-size:0.45em; color:#8fc3ff; }
+#newBest { display:none; margin:6px auto 0; width:max-content; font-size:0.72rem; font-weight:800; color:#0a2412; background:linear-gradient(180deg,#8dffb0,#4ade7a); padding:4px 12px; border-radius:99px; }
+#newBest.on { display:block; }
+#resultStars { font-size:1.3rem; letter-spacing:0.2em; margin:10px 0 4px; }
+#resultMsg { font-size:0.85rem; color:#cfe6ff; line-height:1.5; min-height:2.4em; }
+#resultTip { font-size:0.72rem; color:#8fb6dd; margin-top:6px; line-height:1.5; }
+#resultBtns { display:flex; gap:10px; margin-top:16px; }
+#resultBtns button {
+  flex:1; padding:12px 8px; border-radius:12px; border:none; cursor:pointer;
+  font-family:'Inter', sans-serif; font-weight:700; font-size:0.85rem;
+}
+#againBtn { background:linear-gradient(180deg,#ff7a3c,#e8481f); color:#fff; }
+#backBtn  { background:rgba(120,190,255,0.15); color:#cfe6ff; border:1px solid rgba(120,190,255,0.3) !important; }
+
+/* toast */
+#toast {
+  position:fixed; left:50%; bottom:calc(120px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+  background:rgba(8,26,46,0.92); color:#ffd24a; border:1px solid rgba(255,210,74,0.4);
+  padding:9px 16px; border-radius:12px; font-size:0.8rem; font-weight:600; white-space:nowrap;
+  opacity:0; pointer-events:none; transition:opacity 0.25s; z-index:60;
+}
+#toast.on { opacity:1; }
+
+@media (min-width:700px) {
+  #stack { width:76px; }
+  #stack .seg { width:76px; }
+  .part-card { width:104px; }
+  #shelfRow { justify-content:center; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="../" aria-label="Back to Kreeda">&#8249; Kreeda</a>
+  <h1><span class="rocket-glyph">🚀</span> APOGEE</h1>
+  <span class="pill" id="bestPill">Best —</span>
+  <button id="muteBtn" aria-label="Toggle sound">🔊</button>
+</header>
+
+<div id="buildScreen">
+  <div id="scene">
+    <div class="sun"></div>
+    <div class="cloud" style="top:12%; width:70px; animation-duration:52s; animation-delay:-12s;"></div>
+    <div class="cloud" style="top:28%; width:52px; animation-duration:70s; animation-delay:-40s; opacity:0.8;"></div>
+    <div class="cloud" style="top:45%; width:90px; animation-duration:60s; animation-delay:-25s; opacity:0.65;"></div>
+    <div id="ground"></div>
+    <svg id="padSvg" width="190" height="86" viewBox="0 0 190 86" aria-hidden="true">
+      <rect x="30" y="70" width="130" height="10" rx="3" fill="#5b6672"/>
+      <rect x="40" y="78" width="110" height="8" fill="#49525c"/>
+      <rect x="150" y="0" width="10" height="72" fill="#8a2f24"/>
+      <rect x="150" y="0" width="10" height="72" fill="url(#towergrid)"/>
+      <defs>
+        <pattern id="towergrid" width="10" height="12" patternUnits="userSpaceOnUse">
+          <path d="M0 0 L10 12 M10 0 L0 12" stroke="#c8503e" stroke-width="1.6" fill="none"/>
+        </pattern>
+      </defs>
+      <rect x="146" y="0" width="18" height="4" fill="#8a2f24"/>
+      <circle cx="164" cy="2" r="2.4" fill="#ffd24a"/>
+    </svg>
+    <div id="hint">Tap or drag parts from the shelf<br>to build your rocket<span class="arrow">⌄</span></div>
+    <div id="stack"></div>
+    <div id="stats" aria-live="polite"></div>
+    <button id="clearBtn">Clear pad</button>
+    <button id="launchBtn" disabled>LAUNCH</button>
+  </div>
+
+  <div id="shelf">
+    <div class="shelf-label">Rocket parts — tap to fit, tap the rocket to remove</div>
+    <div id="shelfRow"></div>
+  </div>
+</div>
+
+<div id="flightWrap">
+  <canvas id="flightCanvas"></canvas>
+  <div id="flightHud">
+    <div id="altRead">0 m</div>
+    <div id="spdRead">0 m/s</div>
+    <div id="fuelWrap"><div id="fuelBar"></div></div>
+  </div>
+  <div id="milestone"></div>
+  <div id="results">
+    <div id="resultCard">
+      <div class="lbl" id="resultLbl">Apogee</div>
+      <div id="resultKm">0.0<small> km</small></div>
+      <div id="newBest">NEW BEST!</div>
+      <div id="resultStars"></div>
+      <div id="resultMsg"></div>
+      <div id="resultTip"></div>
+      <div id="resultBtns">
+        <button id="backBtn">Rebuild</button>
+        <button id="againBtn">Launch again</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="../analytics.js"></script>
+<script>
+'use strict';
+/* =========================================================================
+   APOGEE — build a rocket from parts, launch it, chase the Kármán line.
+   Everything lives in this one file so the game keeps working opened
+   straight off the disk, same contract as every other game in the repo.
+   ========================================================================= */
+
+/* Analytics must never be able to break the game — bgTrack is absent
+   entirely when the file is opened from disk. */
+function track(name, params) { try { if (window.bgTrack) window.bgTrack(name, params); } catch (e) {} }
+
+/* ---------------- part catalog ----------------
+   The whole design space is here. Numbers are tuned so that a first careless
+   build hops a few km, a considered one reaches tens of km, and only a
+   well-matched engine/tank/fin combination crosses 100 km. The interesting
+   traps are deliberate: the Titan on a small tank drinks it dry in seconds
+   (worse than the Sparrow), and the Sparrow under three Jumbos can't lift
+   the pad weight at all. */
+const CATALOG = {
+  cone:    { role:'nose',    name:'Aero Cone',    stat:'Light · sleek',      mass:15,  cda:0.055 },
+  capsule: { role:'nose',    name:'Crew Capsule', stat:'Heavy · draggy',     mass:40,  cda:0.085 },
+  slim:    { role:'tank',    name:'Slim Tank',    stat:'70 kg fuel',         dry:15,  fuel:70  },
+  jumbo:   { role:'tank',    name:'Jumbo Tank',   stat:'180 kg fuel',        dry:35,  fuel:180 },
+  sparrow: { role:'engine',  name:'Sparrow',      stat:'Gentle · sips fuel', mass:30,  thrust:4600,  burnRate:2.0 },
+  titan:   { role:'engine',  name:'Titan',        stat:'Mighty · thirsty',   mass:60,  thrust:12500, burnRate:6.2 },
+  fins:    { role:'fins',    name:'Fins',         stat:'Flies straight',     mass:12,  cda:0.012 },
+  boosters:{ role:'booster', name:'Boosters',     stat:'+5 s of shove',      dry:40,  thrust:7500, burnTime:5 },
+};
+const SHELF_ORDER = ['cone','capsule','slim','jumbo','sparrow','titan','fins','boosters'];
+const MAX_TANKS = 3;
+const G = 9.81;
+
+/* ---------------- persistence ---------------- */
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+let best = parseFloat(lsGet('apogee.best')) || 0;
+let muted = lsGet('apogee.muted') === '1';
+
+/* ---------------- audio (all synthesized) ---------------- */
+let AC = null;
+function ac() {
+  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (AC && AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function beep(freq, dur, type, vol, when) {
+  if (muted) return; const c = ac(); if (!c) return;
+  const t = c.currentTime + (when || 0);
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = type || 'square'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol || 0.08, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur);
+}
+function snapSound()  { beep(660, 0.06, 'triangle', 0.12); beep(990, 0.05, 'triangle', 0.08, 0.04); }
+function thudSound()  { beep(140, 0.12, 'sine', 0.14); }
+function popSound()   { beep(220, 0.1, 'square', 0.1); beep(160, 0.14, 'square', 0.08, 0.05); }
+function chime()      { beep(880, 0.12, 'sine', 0.1); beep(1320, 0.18, 'sine', 0.08, 0.1); }
+function fanfare()    { [523, 659, 784, 1047].forEach((f, i) => beep(f, 0.22, 'triangle', 0.11, i * 0.13)); }
+function failHorn()   { beep(220, 0.25, 'sawtooth', 0.08); beep(185, 0.4, 'sawtooth', 0.08, 0.22); }
+
+/* engine rumble: looped filtered noise whose loudness tracks throttle */
+let rumble = null;
+function rumbleStart() {
+  if (muted) return; const c = ac(); if (!c || rumble) return;
+  const len = c.sampleRate * 2, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = c.createBufferSource(); src.buffer = buf; src.loop = true;
+  const filt = c.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 320;
+  const g = c.createGain(); g.gain.value = 0;
+  src.connect(filt).connect(g).connect(c.destination); src.start();
+  rumble = { src, g };
+}
+function rumbleSet(level) { if (rumble) rumble.g.gain.value = Math.min(0.34, level); }
+function rumbleStop() { if (rumble) { try { rumble.src.stop(); } catch (e) {} rumble = null; } }
+
+/* ---------------- part artwork ----------------
+   One drawing per part, reused at every size (shelf card, pad stack, flight
+   sprite) by scaling the same SVG. Stack pieces share a 120-unit-wide
+   viewBox with the body spanning x=30..90 so they visually join. */
+const ART = {
+  cone: `<svg viewBox="0 0 120 72" xmlns="http://www.w3.org/2000/svg">
+    <path d="M60 4 C78 22 88 46 90 70 L30 70 C32 46 42 22 60 4 Z" fill="#e8483a"/>
+    <path d="M60 4 C51 22 45 46 44 70 L30 70 C32 46 42 22 60 4 Z" fill="#ffffff" opacity="0.28"/>
+    <circle cx="60" cy="10" r="4" fill="#ffd24a"/></svg>`,
+  capsule: `<svg viewBox="0 0 120 84" xmlns="http://www.w3.org/2000/svg">
+    <path d="M60 4 C82 12 90 40 90 82 L30 82 C30 40 38 12 60 4 Z" fill="#d9e2ec"/>
+    <path d="M60 4 C46 12 34 40 34 82 L30 82 C30 40 38 12 60 4 Z" fill="#ffffff" opacity="0.5"/>
+    <path d="M30 74 L90 74 L90 82 L30 82 Z" fill="#94a4b8"/>
+    <circle cx="60" cy="42" r="13" fill="#173a5e" stroke="#7fb2e0" stroke-width="4"/>
+    <circle cx="56" cy="38" r="4" fill="#bfe0ff" opacity="0.8"/></svg>`,
+  slim: `<svg viewBox="0 0 120 58" xmlns="http://www.w3.org/2000/svg">
+    <rect x="30" y="2" width="60" height="54" rx="7" fill="#f2f5f8"/>
+    <rect x="30" y="2" width="14" height="54" rx="7" fill="#ffffff"/>
+    <rect x="30" y="22" width="60" height="14" fill="#4a90d9"/>
+    <rect x="30" y="2" width="60" height="54" rx="7" fill="none" stroke="#b8c4d0" stroke-width="2"/>
+    <circle cx="40" cy="12" r="1.6" fill="#9aa8b6"/><circle cx="80" cy="12" r="1.6" fill="#9aa8b6"/>
+    <circle cx="40" cy="47" r="1.6" fill="#9aa8b6"/><circle cx="80" cy="47" r="1.6" fill="#9aa8b6"/></svg>`,
+  jumbo: `<svg viewBox="0 0 120 108" xmlns="http://www.w3.org/2000/svg">
+    <rect x="30" y="2" width="60" height="104" rx="8" fill="#f2f5f8"/>
+    <rect x="30" y="2" width="14" height="104" rx="8" fill="#ffffff"/>
+    <rect x="30" y="20" width="60" height="15" fill="#e8483a"/>
+    <rect x="30" y="72" width="60" height="15" fill="#e8483a"/>
+    <rect x="30" y="2" width="60" height="104" rx="8" fill="none" stroke="#b8c4d0" stroke-width="2"/>
+    <circle cx="40" cy="12" r="1.6" fill="#9aa8b6"/><circle cx="80" cy="12" r="1.6" fill="#9aa8b6"/>
+    <circle cx="40" cy="97" r="1.6" fill="#9aa8b6"/><circle cx="80" cy="97" r="1.6" fill="#9aa8b6"/>
+    <text x="60" y="58" text-anchor="middle" font-family="Arial" font-size="13" font-weight="bold" fill="#94a4b8">FUEL</text></svg>`,
+  sparrow: `<svg viewBox="0 0 120 52" xmlns="http://www.w3.org/2000/svg">
+    <rect x="30" y="0" width="60" height="14" fill="#5b6672"/>
+    <path d="M48 14 L72 14 L66 26 L78 46 L42 46 L54 26 Z" fill="#8a95a3"/>
+    <path d="M48 14 L58 14 L52 26 L58 46 L42 46 L54 26 Z" fill="#aab6c4" opacity="0.7"/>
+    <rect x="52" y="12" width="16" height="5" rx="2" fill="#39424c"/></svg>`,
+  titan: `<svg viewBox="0 0 120 62" xmlns="http://www.w3.org/2000/svg">
+    <rect x="30" y="0" width="60" height="16" fill="#4a545f"/>
+    <rect x="36" y="4" width="8" height="10" rx="3" fill="#ffd24a"/>
+    <rect x="76" y="4" width="8" height="10" rx="3" fill="#ffd24a"/>
+    <path d="M42 16 L78 16 L70 30 L88 56 L32 56 L50 30 Z" fill="#6e7a88"/>
+    <path d="M42 16 L56 16 L50 30 L52 56 L32 56 L50 30 Z" fill="#98a5b3" opacity="0.7"/>
+    <rect x="48" y="13" width="24" height="6" rx="2" fill="#2e363f"/></svg>`,
+  fins: `<svg viewBox="0 0 168 74" xmlns="http://www.w3.org/2000/svg">
+    <path d="M56 0 L56 62 L10 74 L26 30 Z" fill="#e8483a"/>
+    <path d="M56 0 L56 62 L34 68 L40 26 Z" fill="#ffffff" opacity="0.25"/>
+    <path d="M112 0 L112 62 L158 74 L142 30 Z" fill="#e8483a"/>
+    <path d="M112 0 L112 62 L134 68 L128 26 Z" fill="#a83228" opacity="0.45"/></svg>`,
+  boosters: `<svg viewBox="0 0 190 96" xmlns="http://www.w3.org/2000/svg">
+    <g><path d="M28 22 C28 12 34 4 41 4 C48 4 54 12 54 22 L54 78 L28 78 Z" fill="#f2b632"/>
+    <path d="M28 22 C28 12 34 4 41 4 C41 4 34 12 34 22 L34 78 L28 78 Z" fill="#ffffff" opacity="0.35"/>
+    <path d="M31 78 L51 78 L47 90 L35 90 Z" fill="#5b6672"/><rect x="28" y="40" width="26" height="8" fill="#e8483a"/></g>
+    <g><path d="M136 22 C136 12 142 4 149 4 C156 4 162 12 162 22 L162 78 L136 78 Z" fill="#f2b632"/>
+    <path d="M136 22 C136 12 142 4 149 4 C149 4 142 12 142 22 L142 78 L136 78 Z" fill="#ffffff" opacity="0.35"/>
+    <path d="M139 78 L159 78 L155 90 L143 90 Z" fill="#5b6672"/><rect x="136" y="40" width="26" height="8" fill="#e8483a"/></g></svg>`,
+};
+
+/* ---------------- rocket state ---------------- */
+let rocket = { engine:null, tanks:[], nose:null, fins:false, boosters:false };
+try {
+  const saved = JSON.parse(lsGet('apogee.design') || 'null');
+  if (saved && typeof saved === 'object') {
+    rocket.engine = CATALOG[saved.engine] && CATALOG[saved.engine].role === 'engine' ? saved.engine : null;
+    rocket.nose   = CATALOG[saved.nose]   && CATALOG[saved.nose].role   === 'nose'   ? saved.nose   : null;
+    rocket.tanks  = Array.isArray(saved.tanks) ? saved.tanks.filter(t => CATALOG[t] && CATALOG[t].role === 'tank').slice(0, MAX_TANKS) : [];
+    rocket.fins = !!saved.fins; rocket.boosters = !!saved.boosters;
+  }
+} catch (e) {}
+
+function saveDesign() { lsSet('apogee.design', JSON.stringify(rocket)); }
+
+function rocketStats() {
+  let dry = 0, fuel = 0, thrust = 0, burnRate = 0, cda = 0.05;
+  if (rocket.engine) { const e = CATALOG[rocket.engine]; dry += e.mass; thrust = e.thrust; burnRate = e.burnRate; }
+  for (const t of rocket.tanks) { dry += CATALOG[t].dry; fuel += CATALOG[t].fuel; }
+  if (rocket.nose) { const n = CATALOG[rocket.nose]; dry += n.mass; cda = n.cda; }
+  if (rocket.fins) { dry += CATALOG.fins.mass; cda += CATALOG.fins.cda; }
+  const boosterDry = rocket.boosters ? CATALOG.boosters.dry : 0;
+  const m0 = dry + fuel + boosterDry;
+  const liftThrust = thrust + (rocket.boosters ? CATALOG.boosters.thrust : 0);
+  return { dry, fuel, thrust, burnRate, cda, m0, twr: m0 ? liftThrust / (m0 * G) : 0 };
+}
+function rocketComplete() { return rocket.engine && rocket.nose && rocket.tanks.length > 0; }
+
+/* ---------------- toast ---------------- */
+const toastEl = document.getElementById('toast');
+let toastTimer = 0;
+function toast(msg) {
+  toastEl.textContent = msg; toastEl.classList.add('on');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('on'), 1800);
+}
+
+/* ---------------- shelf ---------------- */
+const shelfRow = document.getElementById('shelfRow');
+for (const id of SHELF_ORDER) {
+  const p = CATALOG[id];
+  const card = document.createElement('div');
+  card.className = 'part-card'; card.dataset.part = id;
+  card.innerHTML = `<div class="art">${ART[id]}</div><div class="nm">${p.name}</div><div class="st">${p.stat}</div>`;
+  shelfRow.appendChild(card);
+}
+function refreshShelfHighlights() {
+  for (const card of shelfRow.children) {
+    const id = card.dataset.part, p = CATALOG[id];
+    const used = (p.role === 'engine' && rocket.engine === id) || (p.role === 'nose' && rocket.nose === id) ||
+                 (p.role === 'tank' && rocket.tanks.includes(id)) || (p.role === 'fins' && rocket.fins) ||
+                 (p.role === 'booster' && rocket.boosters);
+    card.classList.toggle('inuse', used);
+  }
+}
+
+/* ---------------- assembling / removing ---------------- */
+function addPart(id) {
+  const p = CATALOG[id];
+  if (p.role === 'engine') rocket.engine = id;
+  else if (p.role === 'nose') rocket.nose = id;
+  else if (p.role === 'fins') { if (rocket.fins) { toast('Fins already fitted'); return false; } rocket.fins = true; }
+  else if (p.role === 'booster') { if (rocket.boosters) { toast('Boosters already fitted'); return false; } rocket.boosters = true; }
+  else if (p.role === 'tank') {
+    if (rocket.tanks.length >= MAX_TANKS) { toast('Max ' + MAX_TANKS + ' tanks — swap one out'); thudSound(); return false; }
+    rocket.tanks.push(id);
+  }
+  snapSound(); saveDesign(); renderStack();
+  return true;
+}
+function removePart(role, tankIndex) {
+  if (role === 'engine') rocket.engine = null;
+  else if (role === 'nose') rocket.nose = null;
+  else if (role === 'fins') rocket.fins = false;
+  else if (role === 'booster') rocket.boosters = false;
+  else if (role === 'tank') rocket.tanks.splice(tankIndex, 1);
+  thudSound(); saveDesign(); renderStack();
+}
+
+/* ---------------- pad stack rendering ---------------- */
+const stackEl = document.getElementById('stack');
+const sceneEl = document.getElementById('scene');
+const hintEl = document.getElementById('hint');
+const statsEl = document.getElementById('stats');
+const launchBtn = document.getElementById('launchBtn');
+
+/* px height of a stack piece at width w, from its viewBox ratio */
+const VB = { cone:[120,72], capsule:[120,84], slim:[120,58], jumbo:[120,108], sparrow:[120,52], titan:[120,62], fins:[168,74], boosters:[190,96] };
+function segH(id, w) { return Math.round(w * VB[id][1] / VB[id][0]); }
+
+function renderStack(snapId) {
+  stackEl.innerHTML = '';
+  const w = stackEl.clientWidth || 64;
+  /* bottom-up: engine, tanks, nose — DOM order top-down so build array top-first */
+  const order = [];
+  if (rocket.nose) order.push({ id:rocket.nose, role:'nose' });
+  for (let i = rocket.tanks.length - 1; i >= 0; i--) order.push({ id:rocket.tanks[i], role:'tank', idx:i });
+  if (rocket.engine) order.push({ id:rocket.engine, role:'engine' });
+
+  for (const seg of order) {
+    const d = document.createElement('div');
+    d.className = 'seg' + (seg.id === snapId ? ' snapin' : '');
+    d.innerHTML = ART[seg.id];
+    d.dataset.role = seg.role; if (seg.role === 'tank') d.dataset.idx = seg.idx;
+    stackEl.appendChild(d);
+  }
+  /* fins hug the lowest body section; boosters flank it */
+  if (rocket.fins) {
+    const finW = Math.round(w * 168 / 120);
+    const d = document.createElement('div');
+    d.className = 'overlay'; d.dataset.role = 'fins';
+    d.style.width = finW + 'px'; d.style.bottom = '2px';
+    d.innerHTML = ART.fins;
+    stackEl.appendChild(d);
+  }
+  if (rocket.boosters) {
+    const bW = Math.round(w * 190 / 120);
+    const d = document.createElement('div');
+    d.className = 'overlay'; d.dataset.role = 'booster';
+    d.style.width = bW + 'px'; d.style.bottom = '0px';
+    d.innerHTML = ART.boosters;
+    stackEl.appendChild(d);
+  }
+
+  /* shrink to fit if a tall build outgrows the scene */
+  const stackH = order.reduce((s, seg) => s + segH(seg.id, w) - 2, 0);
+  const room = sceneEl.clientHeight - 110;
+  stackEl.style.transform = 'translateX(-50%)' + (stackH > room ? ' scale(' + (room / stackH).toFixed(3) + ')' : '');
+
+  hintEl.style.opacity = order.length || rocket.fins || rocket.boosters ? '0' : '1';
+  refreshShelfHighlights();
+  renderStats();
+}
+
+function renderStats() {
+  const s = rocketStats();
+  const parts = rocket.engine || rocket.nose || rocket.tanks.length || rocket.fins || rocket.boosters;
+  if (!parts) { statsEl.style.display = 'none'; launchBtn.disabled = true; return; }
+  statsEl.style.display = 'block';
+  let verdict, cls;
+  if (!rocket.engine) { verdict = 'Needs an engine'; cls = 'bad'; }
+  else if (!rocket.tanks.length) { verdict = 'Needs a fuel tank'; cls = 'bad'; }
+  else if (!rocket.nose) { verdict = 'Needs a nose'; cls = 'bad'; }
+  else if (s.twr < 1) { verdict = '⚠ Too heavy to lift off!'; cls = 'bad'; }
+  else if (!rocket.fins) { verdict = 'No fins — it’ll wobble'; cls = 'warn'; }
+  else if (s.twr < 1.3) { verdict = 'Heavy… but it’ll fly'; cls = 'warn'; }
+  else { verdict = '✓ Ready to fly!'; cls = 'ok'; }
+  statsEl.innerHTML =
+    `<div class="row"><span>Mass</span><b>${Math.round(s.m0)} kg</b></div>` +
+    `<div class="row"><span>Thrust</span><b>${(s.thrust / 1000).toFixed(1)}${rocket.boosters ? '+' + (CATALOG.boosters.thrust / 1000).toFixed(1) : ''} kN</b></div>` +
+    `<div class="row"><span>Fuel</span><b>${Math.round(s.fuel)} kg</b></div>` +
+    `<div class="row"><span>Lift-off TWR</span><b>${s.twr ? s.twr.toFixed(2) : '—'}</b></div>` +
+    `<div class="verdict ${cls}">${verdict}</div>`;
+  launchBtn.disabled = !rocketComplete();
+}
+
+/* ---------------- drag & drop / tap ----------------
+   One pointer story for both directions: press a shelf card to add (tap) or
+   drag a ghost onto the scene; press a placed piece to pull it off. A short
+   press with no movement counts as a tap — that alone makes the game fully
+   playable one-thumbed on a phone; dragging is the tactile extra. */
+const ghost = document.createElement('div'); ghost.id = 'dragGhost';
+let drag = null; // { partId, role, tankIdx, fromStack, moved, x0, y0 }
+
+function pointInScene(x, y) {
+  const r = sceneEl.getBoundingClientRect();
+  return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+}
+
+document.addEventListener('pointerdown', (e) => {
+  ac(); // unlock audio on first gesture
+  const card = e.target.closest && e.target.closest('.part-card');
+  if (card) {
+    drag = { partId: card.dataset.part, fromStack: false, moved: false, x0: e.clientX, y0: e.clientY };
+    e.preventDefault();
+    return;
+  }
+  const seg = e.target.closest && e.target.closest('#stack .seg, #stack .overlay');
+  if (seg) {
+    let partId;
+    const role = seg.dataset.role;
+    if (role === 'engine') partId = rocket.engine;
+    else if (role === 'nose') partId = rocket.nose;
+    else if (role === 'fins') partId = 'fins';
+    else if (role === 'booster') partId = 'boosters';
+    else partId = rocket.tanks[+seg.dataset.idx];
+    drag = { partId, role, tankIdx: +seg.dataset.idx || 0, fromStack: true, moved: false, x0: e.clientX, y0: e.clientY };
+    e.preventDefault();
+  }
+}, { passive: false });
+
+document.addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > 8) {
+    drag.moved = true;
+    if (drag.fromStack) removePart(drag.role, drag.tankIdx); // lifts the piece off the rocket
+    ghost.innerHTML = ART[drag.partId];
+    document.body.appendChild(ghost);
+  }
+  if (drag.moved) { ghost.style.left = e.clientX + 'px'; ghost.style.top = e.clientY + 'px'; }
+});
+
+document.addEventListener('pointerup', (e) => {
+  if (!drag) return;
+  const d = drag; drag = null;
+  if (ghost.parentNode) ghost.remove();
+  if (!d.moved) {
+    /* tap: shelf card fits the part; placed piece pops off */
+    if (d.fromStack) removePart(d.role, d.tankIdx);
+    else if (addPart(d.partId)) renderStack(d.partId);
+    return;
+  }
+  /* drag: dropping anywhere on the scene fits it, anywhere else discards */
+  if (pointInScene(e.clientX, e.clientY)) { if (addPart(d.partId)) renderStack(d.partId); }
+  else if (d.fromStack) toast(CATALOG[d.partId].name + ' removed');
+});
+document.addEventListener('pointercancel', () => { if (ghost.parentNode) ghost.remove(); drag = null; });
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  rocket = { engine:null, tanks:[], nose:null, fins:false, boosters:false };
+  thudSound(); saveDesign(); renderStack();
+});
+
+/* ---------------- flight sprite ----------------
+   The pad stack is DOM; the flight is canvas. Bridging them is one SVG
+   string of the assembled rocket rendered to an Image via a data URL —
+   same-origin, so it works offline and from file://. */
+function buildSprite() {
+  const w = 120;
+  const order = [];
+  if (rocket.nose) order.push(rocket.nose);
+  for (let i = rocket.tanks.length - 1; i >= 0; i--) order.push(rocket.tanks[i]);
+  if (rocket.engine) order.push(rocket.engine);
+  let totalH = order.reduce((s, id) => s + VB[id][1] - 3, 0) + 3;
+  const pad = 40; // room for fins overhang either side
+  let y = 0, inner = '';
+  for (const id of order) {
+    const svgBody = ART[id].replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
+    inner += `<g transform="translate(${pad},${y})">${svgBody}</g>`;
+    y += VB[id][1] - 3;
+  }
+  if (rocket.fins) {
+    const fb = ART.fins.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
+    inner += `<g transform="translate(${pad + 60 - 84},${totalH - 76})">${fb}</g>`;
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w + pad * 2}" height="${totalH}" viewBox="0 0 ${w + pad * 2} ${totalH}">${inner}</svg>`;
+  const img = new Image();
+  img.src = 'data:image/svg+xml,' + encodeURIComponent(svg);
+  return { img, w: w + pad * 2, h: totalH };
+}
+function boosterSprite() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="96" viewBox="28 0 34 96">` +
+    ART.boosters.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '').split('<g>')[1].replace('</g>', '') + `</svg>`;
+  const img = new Image();
+  img.src = 'data:image/svg+xml,' + encodeURIComponent(svg);
+  return img;
+}
+
+/* ---------------- flight ---------------- */
+const flightWrap = document.getElementById('flightWrap');
+const canvas = document.getElementById('flightCanvas');
+const ctx = canvas.getContext('2d');
+const altRead = document.getElementById('altRead');
+const spdRead = document.getElementById('spdRead');
+const fuelBar = document.getElementById('fuelBar');
+const milestoneEl = document.getElementById('milestone');
+const resultsEl = document.getElementById('results');
+
+const MILESTONES = [
+  { h: 1000,   label: '1 KM UP!' },
+  { h: 10000,  label: 'STRATOSPHERE' },
+  { h: 50000,  label: 'MESOSPHERE' },
+  { h: 100000, label: '🌌 KÁRMÁN LINE — SPACE!' },
+];
+const PPM = 3; // world pixels per metre near the ground
+
+let F = null;   // flight state
+let rafId = 0;
+
+function sizeCanvas() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(canvas.clientWidth * dpr);
+  canvas.height = Math.round(canvas.clientHeight * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', () => { if (F) sizeCanvas(); renderStack(); });
+
+function startFlight() {
+  if (!rocketComplete()) return;
+  const s = rocketStats();
+  const sprite = buildSprite();
+  const clouds = [];
+  for (let i = 0; i < 46; i++) clouds.push({ h: 350 + Math.random() * 9000, x: Math.random(), s: 0.6 + Math.random() * 1.3 });
+  const stars = [];
+  for (let i = 0; i < 90; i++) stars.push({ x: Math.random(), y: Math.random(), r: 0.5 + Math.random() * 1.4, tw: Math.random() * 6 });
+  F = {
+    phase: 'count', t: -3.5, h: 0, v: 0, wob: 0, maxV: 0,
+    fuel: s.fuel, fuel0: s.fuel, dry: s.dry, thrust: s.thrust, burnRate: s.burnRate, cda: s.cda,
+    boostersOn: rocket.boosters, boosterJet: null, boosterImg: rocket.boosters ? boosterSprite() : null,
+    sprite, clouds, stars, particles: [], lastBeep: 4, milestoneIdx: 0, apogee: 0,
+    shakeSeed: 0, doneT: 0, outcome: '', startWall: Date.now(),
+  };
+  flightWrap.classList.add('on');
+  resultsEl.classList.remove('on');
+  milestoneEl.classList.remove('show');
+  sizeCanvas();
+  rumbleStart();
+  track('game_start', { mode: rocket.engine + '_x' + rocket.tanks.length });
+  cancelAnimationFrame(rafId);
+  let last = performance.now();
+  const loop = (now) => {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    stepFlight(dt); drawFlight();
+    if (F) rafId = requestAnimationFrame(loop);
+  };
+  rafId = requestAnimationFrame(loop);
+}
+
+function stepFlight(dt) {
+  if (!F) return;
+  F.t += dt;
+
+  if (F.phase === 'count') {
+    const remaining = -F.t;
+    const n = Math.ceil(remaining);
+    if (n < F.lastBeep && n > 0) { F.lastBeep = n; beep(n === 1 ? 660 : 440, 0.15, 'square', 0.1); }
+    if (F.t >= 0) { F.phase = 'fly'; beep(880, 0.4, 'square', 0.12); }
+    return;
+  }
+  if (F.phase === 'done') { F.doneT += dt; return; }
+
+  /* Time warp: the fun is the lift-off and the apogee, not two real-time
+     minutes of coasting between them. Sim time accelerates smoothly with
+     altitude — 1× through the launch, up to 12× high in the coast. */
+  const warp = 1 + 11 * Math.min(1, Math.max(0, (F.h - 3000) / 42000));
+  F.warp = warp;
+
+  /* physics — identical model to the balance sim this was tuned with */
+  const sub = Math.ceil(4 * warp), sdt = dt * warp / sub;
+  for (let i = 0; i < sub; i++) {
+    const bAttached = F.boostersOn && F.t < CATALOG.boosters.burnTime;
+    if (F.boostersOn && !bAttached) {
+      F.boostersOn = false; popSound();
+      F.boosterJet = { t: 0, h: F.h, vL: -70 - Math.random() * 30, vR: 70 + Math.random() * 30, vv: F.v };
+    }
+    let thrust = 0;
+    if (F.fuel > 0) { thrust += F.thrust; F.fuel = Math.max(0, F.fuel - F.burnRate * sdt); }
+    if (bAttached) thrust += CATALOG.boosters.thrust;
+    const m = F.dry + F.fuel + (bAttached ? CATALOG.boosters.dry : 0);
+    let stab = 1;
+    if (!rocket.fins && F.v > 40) { F.wob = Math.min(0.85, F.wob + sdt * F.v / 1400); stab = Math.cos(F.wob); }
+    const rho = 1.225 * Math.exp(-F.h / 8500);
+    const dragF = 0.5 * rho * F.cda * F.v * Math.abs(F.v);
+    const a = (thrust * stab - dragF) / m - G;
+    F.v += a * sdt; F.h += F.v * sdt;
+    if (F.h < 0) { F.h = 0; if (F.v < 0) F.v = 0; }
+    F.maxV = Math.max(F.maxV, F.v);
+    F.curThrust = thrust; F.curMass = m;
+
+    /* engine that can't out-pull gravity never leaves the pad — call it */
+    if (F.t > 6 && F.h < 2 && thrust > 0 && thrust < m * G) { endFlight('pad'); return; }
+    /* burnout + falling = apogee reached */
+    if (F.fuel <= 0 && !bAttached && F.v <= 0 && F.h > 0) { endFlight('apogee'); return; }
+    /* burnt out while still on the pad */
+    if (F.fuel <= 0 && !bAttached && F.h <= 0) { endFlight('pad'); return; }
+  }
+  if (F.boosterJet) F.boosterJet.t += dt;
+
+  rumbleSet(F.curThrust > 0 ? 0.1 + 0.2 * Math.min(1, F.curThrust / 15000) : 0);
+
+  /* milestones */
+  while (F.milestoneIdx < MILESTONES.length && F.h >= MILESTONES[F.milestoneIdx].h) {
+    const ms = MILESTONES[F.milestoneIdx++];
+    milestoneEl.textContent = ms.label;
+    milestoneEl.classList.add('show');
+    setTimeout(() => milestoneEl.classList.remove('show'), 1600);
+    if (ms.h >= 100000) fanfare(); else chime();
+  }
+
+  /* exhaust particles */
+  if (F.curThrust > 0) {
+    for (let i = 0; i < 3; i++) {
+      F.particles.push({ x: (Math.random() - 0.5) * 10, hOff: -6, vx: (Math.random() - 0.5) * 60, vh: -160 - Math.random() * 120, life: 0.5 + Math.random() * 0.3, t: 0, fire: true });
+    }
+    if (F.h < 250) for (let i = 0; i < 2; i++) {
+      F.particles.push({ x: (Math.random() - 0.5) * 26, hOff: -F.h, vx: (Math.random() < 0.5 ? -1 : 1) * (40 + Math.random() * 110), vh: 10 + Math.random() * 30, life: 1.6 + Math.random(), t: 0, fire: false });
+    }
+  }
+  for (const p of F.particles) { p.t += dt; p.x += p.vx * dt; p.hOff += p.vh * dt * 0.2; }
+  F.particles = F.particles.filter(p => p.t < p.life);
+}
+
+function endFlight(outcome) {
+  F.phase = 'done'; F.outcome = outcome; F.apogee = F.h; F.doneT = 0;
+  rumbleStop();
+  if (outcome === 'pad') failHorn();
+  setTimeout(showResults, outcome === 'pad' ? 900 : 1300);
+}
+
+/* ---------------- flight drawing ---------------- */
+function lerp(a, b, t) { return a + (b - a) * t; }
+function skyColor(h) {
+  /* day blue → deep blue → near-black as the atmosphere thins */
+  const stops = [[0, 63,143,212], [12000, 42,84,150], [40000, 16,26,56], [90000, 4,6,14], [200000, 2,3,8]];
+  let i = 0; while (i < stops.length - 2 && h > stops[i + 1][0]) i++;
+  const [h0, r0, g0, b0] = stops[i], [h1, r1, g1, b1] = stops[i + 1];
+  const t = Math.min(1, Math.max(0, (h - h0) / (h1 - h0)));
+  return `rgb(${Math.round(lerp(r0, r1, t))},${Math.round(lerp(g0, g1, t))},${Math.round(lerp(b0, b1, t))})`;
+}
+
+function drawFlight() {
+  if (!F) return;
+  const W = canvas.clientWidth, H = canvas.clientHeight;
+  const hPx = F.h * PPM;
+  const camY = Math.max(0, hPx - H * 0.38);            // world-px of screen bottom
+  const groundY = H + camY;                            // screen y of ground line
+  const cx = W / 2;
+
+  ctx.fillStyle = skyColor(F.h);
+  ctx.fillRect(0, 0, W, H);
+
+  /* stars fade in above ~30 km */
+  const starA = Math.min(1, Math.max(0, (F.h - 30000) / 40000));
+  if (starA > 0) {
+    for (const st of F.stars) {
+      const y = ((st.y * H * 3 + camY * 0.015) % (H + 20)) - 10;
+      ctx.globalAlpha = starA * (0.5 + 0.5 * Math.sin(F.t * 2 + st.tw));
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(st.x * W, y, st.r, st.r + Math.min(14, F.v * 0.01 * starA));
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /* milestone altitude lines */
+  ctx.setLineDash([10, 12]);
+  for (const ms of MILESTONES) {
+    const y = groundY - ms.h * PPM;
+    if (y > -40 && y < H + 40) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '600 11px Inter, sans-serif';
+      ctx.fillText((ms.h / 1000) + ' km', 8, y - 6);
+    }
+  }
+  ctx.setLineDash([]);
+
+  /* clouds */
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  for (const c of F.clouds) {
+    const y = groundY - c.h * PPM;
+    if (y < -60 || y > H + 60) continue;
+    const x = c.x * W;
+    ctx.globalAlpha = 0.8 * Math.max(0.15, 1 - F.h / 20000);
+    ctx.beginPath();
+    ctx.ellipse(x, y, 34 * c.s, 12 * c.s, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + 20 * c.s, y - 8 * c.s, 22 * c.s, 10 * c.s, 0, 0, Math.PI * 2);
+    ctx.ellipse(x - 22 * c.s, y - 5 * c.s, 18 * c.s, 9 * c.s, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  /* ground + pad while in view */
+  if (groundY < H + 80) {
+    ctx.fillStyle = '#4d9e4f'; ctx.fillRect(0, groundY - 20, W, H);
+    ctx.fillStyle = '#8f9aa6'; ctx.fillRect(cx - 70, groundY - 26, 140, 8);
+    ctx.fillStyle = '#8a2f24'; ctx.fillRect(cx + 52, groundY - 92, 8, 66);
+  }
+
+  /* smoke & flame particles (world-anchored near pad, rocket-anchored fire) */
+  const sc = 0.62; // sprite scale
+  const sprH = F.sprite.h * sc, sprW = F.sprite.w * sc;
+  const rocketBaseY = groundY - 26 - hPx;
+
+  for (const p of F.particles) {
+    const lifeT = p.t / p.life;
+    if (p.fire) {
+      const y = rocketBaseY - p.hOff * 0.2 - sc * 6 - (p.vh * p.t * 0.35);
+      ctx.globalAlpha = 1 - lifeT;
+      ctx.fillStyle = lifeT < 0.4 ? '#ffd24a' : '#ff7a3c';
+      ctx.beginPath(); ctx.arc(cx + p.x + p.vx * p.t, y, 5 * (1 - lifeT * 0.6), 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.globalAlpha = 0.5 * (1 - lifeT);
+      ctx.fillStyle = '#e8edf2';
+      ctx.beginPath(); ctx.arc(cx + p.x + p.vx * p.t, groundY - 30 - p.vh * p.t, 8 + 26 * lifeT, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  /* jettisoned boosters tumbling away */
+  if (F.boosterJet && F.boosterImg) {
+    const bj = F.boosterJet;
+    const bh = bj.h + bj.vv * bj.t - 4.9 * bj.t * bj.t * 6; // exaggerated fall reads better
+    const by = groundY - 26 - bh * PPM;
+    if (by < H + 120 && bj.t < 4) {
+      for (const side of [-1, 1]) {
+        ctx.save();
+        ctx.translate(cx + (side < 0 ? bj.vL : bj.vR) * bj.t * PPM * 0.15 + side * sprW * 0.34, by - sprH * 0.3);
+        ctx.rotate(side * bj.t * 2.2);
+        ctx.globalAlpha = Math.max(0, 1 - bj.t / 4);
+        ctx.drawImage(F.boosterImg, -10, -28, 21, 58);
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /* the rocket */
+  const shake = (F.phase === 'fly' && F.curThrust > 0) ? 2.5 : 0;
+  const wobA = F.wob * Math.sin(F.t * 6) * 0.6;
+  ctx.save();
+  ctx.translate(cx + (Math.random() - 0.5) * shake, rocketBaseY - sprH / 2 + (Math.random() - 0.5) * shake);
+  ctx.rotate(wobA);
+  if (F.curThrust > 0 && F.phase === 'fly') {
+    /* main flame */
+    const flick = 0.8 + Math.random() * 0.5;
+    const fl = (18 + 26 * Math.min(1, F.curThrust / 15000)) * flick;
+    const grd = ctx.createLinearGradient(0, sprH / 2, 0, sprH / 2 + fl * 2);
+    grd.addColorStop(0, '#fff3c4'); grd.addColorStop(0.45, '#ffb63c'); grd.addColorStop(1, 'rgba(255,80,40,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.moveTo(-8, sprH / 2 - 4);
+    ctx.quadraticCurveTo(0, sprH / 2 + fl * 2, 8, sprH / 2 - 4);
+    ctx.closePath(); ctx.fill();
+    if (F.boostersOn && F.t < CATALOG.boosters.burnTime) {
+      ctx.fillStyle = 'rgba(255,182,60,0.85)';
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(side * sprW * 0.33 - 5, sprH / 2 - 8);
+        ctx.quadraticCurveTo(side * sprW * 0.33, sprH / 2 + fl * 1.3, side * sprW * 0.33 + 5, sprH / 2 - 8);
+        ctx.closePath(); ctx.fill();
+      }
+    }
+  }
+  if (F.sprite.img.complete) ctx.drawImage(F.sprite.img, -sprW / 2, -sprH / 2, sprW, sprH);
+  /* boosters still attached ride along */
+  if (F.boostersOn && F.boosterImg && F.boosterImg.complete && F.t < CATALOG.boosters.burnTime) {
+    ctx.drawImage(F.boosterImg, -sprW * 0.33 - 10, sprH / 2 - 58, 21, 58);
+    ctx.drawImage(F.boosterImg, sprW * 0.33 - 10, sprH / 2 - 58, 21, 58);
+  }
+  ctx.restore();
+
+  /* countdown overlay */
+  if (F.phase === 'count') {
+    const n = Math.ceil(-F.t);
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.font = '900 ' + Math.min(120, W * 0.28) + 'px Rubik, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(n > 0 ? String(n) : 'GO', cx, H * 0.42);
+    ctx.textAlign = 'left';
+  }
+  /* apogee flash */
+  if (F.phase === 'done' && F.outcome === 'apogee') {
+    ctx.fillStyle = 'rgba(255,210,74,' + Math.max(0, 1 - F.doneT) + ')';
+    ctx.font = '900 ' + Math.min(54, W * 0.12) + 'px Rubik, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('APOGEE', cx, H * 0.3);
+    ctx.textAlign = 'left';
+  }
+
+  /* HUD */
+  altRead.textContent = F.h < 1000 ? Math.round(F.h) + ' m' : (F.h / 1000).toFixed(1) + ' km';
+  spdRead.textContent = Math.round(Math.max(0, F.v)) + ' m/s' + (F.warp > 1.5 ? ' · ×' + Math.round(F.warp) : '');
+  fuelBar.style.width = (F.fuel0 ? (F.fuel / F.fuel0) * 100 : 0) + '%';
+}
+
+/* ---------------- results ---------------- */
+function starsFor(km) { return km >= 100 ? 5 : km >= 60 ? 4 : km >= 25 ? 3 : km >= 5 ? 2 : 1; }
+function msgFor(km, outcome) {
+  if (outcome === 'pad') return 'It never left the pad — too much rocket for that engine. Shed a tank or fit the Titan.';
+  if (km >= 100) return 'Past the Kármán line — that’s officially SPACE. Mission control is in tears. 🛰️';
+  if (km >= 60) return 'The sky turned black and the stars came out. Space is so close…';
+  if (km >= 25) return 'High above the weather — a serious piece of engineering.';
+  if (km >= 5) return 'Up through the clouds! Now make it climb higher.';
+  if (km >= 1) return 'A solid hop. More fuel, more fins, more sky.';
+  return 'It flew! Briefly. Back to the drawing board.';
+}
+function tipFor(km, outcome) {
+  const s = rocketStats();
+  if (outcome === 'pad') return 'Tip: lift-off needs a thrust-to-weight ratio above 1.';
+  if (!rocket.fins) return 'Tip: without fins the rocket wobbles and wastes thrust.';
+  if (rocket.engine === 'titan' && s.fuel <= 70) return 'Tip: the Titan drains a Slim Tank in seconds — feed it Jumbos.';
+  if (rocket.engine === 'sparrow' && s.fuel >= 360) return 'Tip: the Sparrow struggles with that much weight — try the Titan.';
+  if (rocket.nose === 'capsule' && km < 100) return 'Tip: the Crew Capsule is heavy — the Aero Cone flies higher.';
+  if (km < 100 && !rocket.boosters) return 'Tip: boosters add a mighty shove off the pad.';
+  return km >= 100 ? 'Can you beat your own record?' : 'Tip: more tanks only help if the engine can lift them.';
+}
+
+function showResults() {
+  if (!F) return;
+  const km = F.apogee / 1000;
+  const isBest = km > best;
+  if (isBest) { best = km; lsSet('apogee.best', String(best)); }
+  document.getElementById('bestPill').textContent = best > 0 ? 'Best ' + best.toFixed(1) + ' km' : 'Best —';
+  document.getElementById('resultLbl').textContent = F.outcome === 'pad' ? 'Launch failed' : 'Apogee';
+  document.getElementById('resultKm').innerHTML = km.toFixed(1) + '<small> km</small>';
+  document.getElementById('newBest').classList.toggle('on', isBest && km > 0);
+  const n = F.outcome === 'pad' ? 0 : starsFor(km);
+  document.getElementById('resultStars').textContent = '★'.repeat(n) + '☆'.repeat(5 - n);
+  document.getElementById('resultMsg').textContent = msgFor(km, F.outcome);
+  document.getElementById('resultTip').textContent = tipFor(km, F.outcome);
+  resultsEl.classList.add('on');
+  track('game_end', {
+    mode: rocket.engine + '_x' + rocket.tanks.length,
+    outcome: F.outcome, apogee_km: Math.round(km * 10) / 10,
+    nose: rocket.nose, fins: rocket.fins ? 1 : 0, boosters: rocket.boosters ? 1 : 0,
+    duration_s: Math.round((Date.now() - F.startWall) / 1000),
+  });
+}
+
+function exitFlight() {
+  cancelAnimationFrame(rafId);
+  rumbleStop();
+  F = null;
+  flightWrap.classList.remove('on');
+  resultsEl.classList.remove('on');
+  renderStack();
+}
+
+launchBtn.addEventListener('click', startFlight);
+document.getElementById('backBtn').addEventListener('click', exitFlight);
+document.getElementById('againBtn').addEventListener('click', () => { resultsEl.classList.remove('on'); startFlight(); });
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && !F && !launchBtn.disabled) { e.preventDefault(); startFlight(); }
+  if (e.code === 'Escape' && F && resultsEl.classList.contains('on')) exitFlight();
+});
+
+/* mute */
+const muteBtn = document.getElementById('muteBtn');
+function renderMute() { muteBtn.textContent = muted ? '🔇' : '🔊'; }
+muteBtn.addEventListener('click', () => { muted = !muted; lsSet('apogee.muted', muted ? '1' : '0'); if (muted) rumbleStop(); renderMute(); });
+renderMute();
+
+/* boot */
+document.getElementById('bestPill').textContent = best > 0 ? 'Best ' + best.toFixed(1) + ' km' : 'Best —';
+renderStack();
+</script>
+</body>
+</html>
