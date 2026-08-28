@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Apogee — Kreeda</title>
-<meta name="description" content="Build a rocket from parts — nose, tanks, engine, fins, boosters — then light it and see how high your design flies. Cross the Kármán line to reach space.">
+<meta name="description" content="Build a rocket from real parts — payload, tanks, engines, fins, avionics, boosters — learn what each one does, then launch and see how high your design flies. Cross the Kármán line to reach space.">
 <link rel="canonical" href="https://kreeda.games/apogee/">
 <meta name="theme-color" content="#0b1e33">
 
@@ -12,13 +12,13 @@
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/apogee/">
 <meta property="og:title" content="Apogee — Kreeda">
-<meta property="og:description" content="Build a rocket from parts — nose, tanks, engine, fins, boosters — then light it and see how high your design flies.">
+<meta property="og:description" content="Build a rocket from real parts, learn what each one does, then launch and see how high your design flies.">
 <meta property="og:image" content="https://kreeda.games/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Apogee — Kreeda">
-<meta name="twitter:description" content="Build a rocket from parts — nose, tanks, engine, fins, boosters — then light it and see how high your design flies.">
+<meta name="twitter:description" content="Build a rocket from real parts, learn what each one does, then launch and see how high your design flies.">
 <meta name="twitter:image" content="https://kreeda.games/og.png">
 
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
@@ -26,7 +26,7 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Apogee","description":"Build a rocket from parts — nose, tanks, engine, fins, boosters — then light it and see how high your design flies.","url":"https://kreeda.games/apogee/","image":"https://kreeda.games/og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Building","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Apogee","description":"Build a rocket from real parts, learn what each one does, then launch and see how high your design flies.","url":"https://kreeda.games/apogee/","image":"https://kreeda.games/og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Educational","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 
 <style>
@@ -47,7 +47,7 @@ body {
 
 /* ---------- header ---------- */
 header {
-  display:flex; align-items:center; gap:10px;
+  display:flex; align-items:center; gap:8px;
   padding:max(8px, env(safe-area-inset-top)) 14px 8px;
   background:linear-gradient(180deg,#0d2340,#0b1e33);
   border-bottom:1px solid rgba(120,190,255,0.18);
@@ -55,23 +55,23 @@ header {
 }
 .back {
   color:#8fc3ff; text-decoration:none; font-weight:600; font-size:0.85rem;
-  padding:6px 10px 6px 6px; border-radius:8px; white-space:nowrap;
+  padding:6px 8px 6px 4px; border-radius:8px; white-space:nowrap;
 }
 .back:active { background:rgba(140,195,255,0.12); }
 h1 {
   font-family:'Rubik', system-ui, sans-serif; font-weight:900;
-  font-size:clamp(1.15rem, 4.5vw, 1.5rem); letter-spacing:0.04em;
+  font-size:clamp(1.05rem, 4.2vw, 1.5rem); letter-spacing:0.04em;
   color:#ffd24a; flex:1 1 auto; min-width:0;
 }
 h1 .rocket-glyph { display:inline-block; transform:rotate(-45deg) translateY(1px); }
 .pill {
-  font-size:0.75rem; font-weight:700; color:#bfe0ff;
+  font-size:0.72rem; font-weight:700; color:#bfe0ff;
   background:rgba(120,190,255,0.12); border:1px solid rgba(120,190,255,0.25);
-  padding:5px 10px; border-radius:999px; white-space:nowrap;
+  padding:5px 9px; border-radius:999px; white-space:nowrap;
 }
-#muteBtn {
+.hbtn {
   background:rgba(120,190,255,0.12); border:1px solid rgba(120,190,255,0.25);
-  color:#bfe0ff; font-size:0.95rem; width:34px; height:30px; border-radius:8px; cursor:pointer;
+  color:#bfe0ff; font-size:0.95rem; min-width:34px; height:30px; border-radius:8px; cursor:pointer;
 }
 
 /* ---------- build scene ---------- */
@@ -115,7 +115,7 @@ h1 .rocket-glyph { display:inline-block; transform:rotate(-45deg) translateY(1px
 #stack .seg { position:relative; width:64px; margin-bottom:-2px; cursor:grab; }
 #stack .seg svg { display:block; width:100%; height:auto; }
 #stack .overlay { position:absolute; left:50%; bottom:0; transform:translateX(-50%); pointer-events:none; }
-#stack .overlay svg { display:block; pointer-events:none; }
+#stack .overlay svg { display:block; width:100%; height:auto; pointer-events:none; }
 #stack .overlay svg path, #stack .overlay svg rect, #stack .overlay svg ellipse { pointer-events:auto; cursor:grab; }
 .seg.snapin { animation:snapin 0.22s ease-out; }
 @keyframes snapin { from { transform:scale(1.15); } to { transform:scale(1); } }
@@ -125,10 +125,10 @@ h1 .rocket-glyph { display:inline-block; transform:rotate(-45deg) translateY(1px
   position:absolute; top:10px; left:10px; z-index:6;
   background:rgba(8,26,46,0.82); backdrop-filter:blur(4px);
   border:1px solid rgba(120,190,255,0.25); border-radius:12px;
-  padding:9px 12px; font-size:0.72rem; line-height:1.55; min-width:132px;
+  padding:9px 12px; font-size:0.72rem; line-height:1.55; min-width:148px; max-width:210px;
 }
-#stats .row { display:flex; justify-content:space-between; gap:14px; color:#bfe0ff; }
-#stats .row b { color:#fff; font-variant-numeric:tabular-nums; }
+#stats .row { display:flex; justify-content:space-between; gap:12px; color:#bfe0ff; }
+#stats .row b { color:#fff; font-variant-numeric:tabular-nums; text-align:right; }
 #stats .verdict { margin-top:5px; padding-top:5px; border-top:1px solid rgba(120,190,255,0.18); font-weight:700; }
 #stats .verdict.ok { color:#7dffa9; }
 #stats .verdict.warn { color:#ffd24a; }
@@ -150,6 +150,20 @@ h1 .rocket-glyph { display:inline-block; transform:rotate(-45deg) translateY(1px
   font-size:0.75rem; font-weight:600; padding:8px 13px; border-radius:10px; cursor:pointer;
 }
 
+/* fact card — the lesson attached to every fitted part */
+#factCard {
+  position:absolute; left:50%; bottom:12px; transform:translate(-50%, 130%);
+  width:min(92%, 400px); z-index:8;
+  background:linear-gradient(180deg,#13304f,#0d2340);
+  border:1px solid rgba(255,210,74,0.45); border-radius:14px;
+  padding:11px 40px 11px 14px; box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  transition:transform 0.28s ease-out; cursor:pointer;
+}
+#factCard.on { transform:translate(-50%, 0); }
+#factCard .ft { font-family:'Rubik', sans-serif; font-weight:700; font-size:0.8rem; color:#ffd24a; margin-bottom:3px; }
+#factCard .fb { font-size:0.74rem; line-height:1.5; color:#dcecff; }
+#factCard .fx { position:absolute; top:6px; right:10px; color:#8fb6dd; font-size:0.95rem; }
+
 /* ---------- parts shelf ---------- */
 #shelf {
   flex:0 0 auto; background:linear-gradient(180deg,#122a47,#0d2036);
@@ -166,15 +180,19 @@ h1 .rocket-glyph { display:inline-block; transform:rotate(-45deg) translateY(1px
 }
 #shelfRow::-webkit-scrollbar { display:none; }
 .part-card {
-  flex:0 0 auto; width:88px; border-radius:12px; cursor:grab;
+  flex:0 0 auto; width:92px; border-radius:12px; cursor:grab;
   background:rgba(255,255,255,0.06); border:1px solid rgba(120,190,255,0.22);
   /* pan-x keeps the shelf swipe-scrollable while a vertical pull starts a part drag */
-  padding:7px 6px 6px; text-align:center; touch-action:pan-x;
+  padding:6px 6px 6px; text-align:center; touch-action:pan-x;
   transition:border-color 0.15s, background 0.15s;
 }
 .part-card.inuse { border-color:#7dffa9; background:rgba(125,255,169,0.08); }
-.part-card .art { height:52px; display:flex; align-items:center; justify-content:center; pointer-events:none; }
-.part-card .art svg { max-height:52px; max-width:70px; }
+.part-card .rl {
+  font-size:0.54rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase;
+  color:var(--rc, #79a8d8); margin-bottom:3px; pointer-events:none;
+}
+.part-card .art { height:50px; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+.part-card .art svg { max-height:50px; max-width:72px; }
 .part-card .nm { font-size:0.66rem; font-weight:700; color:#eaf4ff; margin-top:4px; pointer-events:none; }
 .part-card .st { font-size:0.6rem; color:#8fb6dd; pointer-events:none; }
 
@@ -195,44 +213,99 @@ h1 .rocket-glyph { display:inline-block; transform:rotate(-45deg) translateY(1px
 #fuelWrap { margin-top:6px; width:min(46vw, 220px); height:8px; border-radius:99px; background:rgba(255,255,255,0.2); overflow:hidden; }
 #fuelBar { height:100%; width:100%; background:linear-gradient(90deg,#ffd24a,#ff7a3c); border-radius:99px; transition:width 0.15s linear; }
 #milestone {
-  position:absolute; top:34%; left:0; right:0; text-align:center; pointer-events:none;
-  font-family:'Rubik', sans-serif; font-weight:900; letter-spacing:0.08em;
-  font-size:clamp(1.2rem, 5.5vw, 2rem); color:#ffd24a; text-shadow:0 2px 14px rgba(0,0,0,0.6);
-  opacity:0; transform:scale(0.8); transition:opacity 0.3s, transform 0.3s;
+  position:absolute; top:30%; left:0; right:0; text-align:center; pointer-events:none;
+  opacity:0; transform:scale(0.8); transition:opacity 0.3s, transform 0.3s; padding:0 16px;
 }
 #milestone.show { opacity:1; transform:scale(1); }
+#milestone .mt {
+  font-family:'Rubik', sans-serif; font-weight:900; letter-spacing:0.08em;
+  font-size:clamp(1.15rem, 5.2vw, 1.9rem); color:#ffd24a; text-shadow:0 2px 14px rgba(0,0,0,0.6);
+}
+#milestone .ms {
+  margin-top:4px; font-size:clamp(0.72rem, 3vw, 0.9rem); font-weight:600;
+  color:rgba(255,255,255,0.92); text-shadow:0 1px 8px rgba(0,0,0,0.7); line-height:1.4;
+}
 
 /* ---------- results ---------- */
 #results {
   position:absolute; inset:0; display:none; align-items:center; justify-content:center;
-  background:rgba(3,8,16,0.72); backdrop-filter:blur(3px); padding:20px;
+  background:rgba(3,8,16,0.72); backdrop-filter:blur(3px); padding:16px;
 }
 #results.on { display:flex; }
 #resultCard {
-  width:min(92vw, 380px); background:linear-gradient(180deg,#132b4a,#0b1c33);
-  border:1px solid rgba(120,190,255,0.3); border-radius:20px; padding:22px 20px 18px;
+  width:min(94vw, 400px); max-height:92%; overflow-y:auto;
+  background:linear-gradient(180deg,#132b4a,#0b1c33);
+  border:1px solid rgba(120,190,255,0.3); border-radius:20px; padding:18px 18px 16px;
   text-align:center; animation:rise 0.35s ease-out;
 }
 @keyframes rise { from { transform:translateY(30px); opacity:0; } to { transform:none; opacity:1; } }
 #resultCard .lbl { font-size:0.7rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#79a8d8; }
-#resultKm { font-family:'Rubik', sans-serif; font-weight:900; font-size:clamp(2.2rem, 11vw, 3.2rem); color:#fff; line-height:1.1; font-variant-numeric:tabular-nums; }
+#resultKm { font-family:'Rubik', sans-serif; font-weight:900; font-size:clamp(2rem, 10vw, 3rem); color:#fff; line-height:1.1; font-variant-numeric:tabular-nums; }
 #resultKm small { font-size:0.45em; color:#8fc3ff; }
 #newBest { display:none; margin:6px auto 0; width:max-content; font-size:0.72rem; font-weight:800; color:#0a2412; background:linear-gradient(180deg,#8dffb0,#4ade7a); padding:4px 12px; border-radius:99px; }
 #newBest.on { display:block; }
-#resultStars { font-size:1.3rem; letter-spacing:0.2em; margin:10px 0 4px; }
-#resultMsg { font-size:0.85rem; color:#cfe6ff; line-height:1.5; min-height:2.4em; }
+#resultStars { font-size:1.25rem; letter-spacing:0.2em; margin:8px 0 2px; }
+#resultMsg { font-size:0.83rem; color:#cfe6ff; line-height:1.5; }
+#missionLog {
+  margin:10px 0 2px; text-align:left; font-size:0.7rem; line-height:1.7;
+  background:rgba(8,20,38,0.6); border:1px solid rgba(120,190,255,0.18);
+  border-radius:12px; padding:9px 12px;
+}
+#missionLog .ml-h { font-size:0.62rem; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:#79a8d8; margin-bottom:2px; }
+#missionLog .ml-r { display:flex; justify-content:space-between; gap:10px; color:#bfe0ff; }
+#missionLog .ml-r b { color:#fff; font-variant-numeric:tabular-nums; }
+#recoveryLine { font-size:0.74rem; font-weight:700; margin-top:6px; }
+#recoveryLine.good { color:#7dffa9; }
+#recoveryLine.bad { color:#ff9d8f; }
 #resultTip { font-size:0.72rem; color:#8fb6dd; margin-top:6px; line-height:1.5; }
-#resultBtns { display:flex; gap:10px; margin-top:16px; }
+#resultBtns { display:flex; gap:8px; margin-top:14px; }
 #resultBtns button {
-  flex:1; padding:12px 8px; border-radius:12px; border:none; cursor:pointer;
-  font-family:'Inter', sans-serif; font-weight:700; font-size:0.85rem;
+  flex:1; padding:11px 6px; border-radius:12px; border:none; cursor:pointer;
+  font-family:'Inter', sans-serif; font-weight:700; font-size:0.8rem;
 }
 #againBtn { background:linear-gradient(180deg,#ff7a3c,#e8481f); color:#fff; }
 #backBtn  { background:rgba(120,190,255,0.15); color:#cfe6ff; border:1px solid rgba(120,190,255,0.3) !important; }
+#quizFromResult { background:rgba(255,210,74,0.16); color:#ffd24a; border:1px solid rgba(255,210,74,0.4) !important; }
+
+/* ---------- quiz (Flight School) ---------- */
+#quizWrap {
+  position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
+  background:rgba(3,8,16,0.85); backdrop-filter:blur(4px); padding:16px;
+}
+#quizWrap.on { display:flex; }
+#quizCard {
+  width:min(94vw, 420px); max-height:92%; overflow-y:auto;
+  background:linear-gradient(180deg,#132b4a,#0b1c33);
+  border:1px solid rgba(255,210,74,0.35); border-radius:20px; padding:18px;
+  animation:rise 0.3s ease-out;
+}
+#quizCard .qh { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+#quizCard .qh .qt { font-family:'Rubik', sans-serif; font-weight:900; font-size:1rem; color:#ffd24a; }
+#quizCard .qh .qp { font-size:0.72rem; font-weight:700; color:#79a8d8; font-variant-numeric:tabular-nums; }
+#quizQ { font-size:0.92rem; font-weight:700; line-height:1.5; color:#eaf4ff; min-height:3em; margin-bottom:12px; }
+.qopt {
+  display:block; width:100%; text-align:left; margin-bottom:8px; padding:11px 13px;
+  background:rgba(120,190,255,0.1); border:1px solid rgba(120,190,255,0.28); border-radius:12px;
+  color:#dcecff; font-family:'Inter', sans-serif; font-size:0.8rem; font-weight:600; line-height:1.4; cursor:pointer;
+  transition:background 0.12s, border-color 0.12s;
+}
+.qopt.correct { background:rgba(125,255,169,0.18); border-color:#4ade7a; color:#c8ffdd; }
+.qopt.wrong { background:rgba(255,90,60,0.15); border-color:#ff6a4d; color:#ffc9be; }
+.qopt:disabled { cursor:default; opacity:0.92; }
+#quizFoot { display:flex; gap:8px; margin-top:6px; }
+#quizFoot button {
+  flex:1; padding:11px 6px; border-radius:12px; border:none; cursor:pointer;
+  font-family:'Inter', sans-serif; font-weight:700; font-size:0.8rem;
+}
+#quizNext { background:linear-gradient(180deg,#ffd24a,#f2a824); color:#2a1c04; }
+#quizClose { background:rgba(120,190,255,0.15); color:#cfe6ff; border:1px solid rgba(120,190,255,0.3) !important; }
+#quizScoreBig { font-family:'Rubik', sans-serif; font-weight:900; font-size:2.4rem; color:#fff; text-align:center; }
+#quizRank { text-align:center; font-weight:800; color:#ffd24a; font-size:1rem; margin:4px 0 8px; }
+#quizSub { text-align:center; font-size:0.76rem; color:#9fc4e8; line-height:1.5; }
 
 /* toast */
 #toast {
-  position:fixed; left:50%; bottom:calc(120px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+  position:fixed; left:50%; bottom:calc(130px + env(safe-area-inset-bottom)); transform:translateX(-50%);
   background:rgba(8,26,46,0.92); color:#ffd24a; border:1px solid rgba(255,210,74,0.4);
   padding:9px 16px; border-radius:12px; font-size:0.8rem; font-weight:600; white-space:nowrap;
   opacity:0; pointer-events:none; transition:opacity 0.25s; z-index:60;
@@ -253,7 +326,8 @@ h1 .rocket-glyph { display:inline-block; transform:rotate(-45deg) translateY(1px
   <a class="back" href="../" aria-label="Back to Kreeda">&#8249; Kreeda</a>
   <h1><span class="rocket-glyph">🚀</span> APOGEE</h1>
   <span class="pill" id="bestPill">Best —</span>
-  <button id="muteBtn" aria-label="Toggle sound">🔊</button>
+  <button class="hbtn" id="quizBtn" aria-label="Flight School quiz" title="Flight School quiz">🎓</button>
+  <button class="hbtn" id="muteBtn" aria-label="Toggle sound">🔊</button>
 </header>
 
 <div id="buildScreen">
@@ -281,6 +355,7 @@ h1 .rocket-glyph { display:inline-block; transform:rotate(-45deg) translateY(1px
     <div id="stats" aria-live="polite"></div>
     <button id="clearBtn">Clear pad</button>
     <button id="launchBtn" disabled>LAUNCH</button>
+    <div id="factCard" role="status"><span class="fx">✕</span><div class="ft"></div><div class="fb"></div></div>
   </div>
 
   <div id="shelf">
@@ -296,7 +371,7 @@ h1 .rocket-glyph { display:inline-block; transform:rotate(-45deg) translateY(1px
     <div id="spdRead">0 m/s</div>
     <div id="fuelWrap"><div id="fuelBar"></div></div>
   </div>
-  <div id="milestone"></div>
+  <div id="milestone"><div class="mt"></div><div class="ms"></div></div>
   <div id="results">
     <div id="resultCard">
       <div class="lbl" id="resultLbl">Apogee</div>
@@ -304,12 +379,23 @@ h1 .rocket-glyph { display:inline-block; transform:rotate(-45deg) translateY(1px
       <div id="newBest">NEW BEST!</div>
       <div id="resultStars"></div>
       <div id="resultMsg"></div>
+      <div id="missionLog"></div>
+      <div id="recoveryLine"></div>
       <div id="resultTip"></div>
       <div id="resultBtns">
         <button id="backBtn">Rebuild</button>
+        <button id="quizFromResult">🎓 Quiz</button>
         <button id="againBtn">Launch again</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="quizWrap">
+  <div id="quizCard">
+    <div class="qh"><span class="qt">🎓 FLIGHT SCHOOL</span><span class="qp" id="quizProg"></span></div>
+    <div id="quizBody"></div>
+    <div id="quizFoot"></div>
   </div>
 </div>
 
@@ -319,9 +405,15 @@ h1 .rocket-glyph { display:inline-block; transform:rotate(-45deg) translateY(1px
 <script>
 'use strict';
 /* =========================================================================
-   APOGEE — build a rocket from parts, launch it, chase the Kármán line.
-   Everything lives in this one file so the game keeps working opened
-   straight off the disk, same contract as every other game in the repo.
+   APOGEE — build a rocket from real parts, learn what each one does,
+   launch it, chase the Kármán line.
+
+   Three loops, borrowed from Garage's educational bet and grafted onto a
+   physics sandbox: FIT (every part fitted pops a fact card about the real
+   thing), FLY (the flight itself teaches — atmosphere layers, max-Q,
+   gravity vs drag losses in the mission log), RECALL (the Flight School
+   quiz checks it stuck). Everything lives in this one file so the game
+   keeps working opened straight off the disk.
    ========================================================================= */
 
 /* Analytics must never be able to break the game — bgTrack is absent
@@ -329,23 +421,41 @@ h1 .rocket-glyph { display:inline-block; transform:rotate(-45deg) translateY(1px
 function track(name, params) { try { if (window.bgTrack) window.bgTrack(name, params); } catch (e) {} }
 
 /* ---------------- part catalog ----------------
-   The whole design space is here. Numbers are tuned so that a first careless
-   build hops a few km, a considered one reaches tens of km, and only a
-   well-matched engine/tank/fin combination crosses 100 km. The interesting
-   traps are deliberate: the Titan on a small tank drinks it dry in seconds
-   (worse than the Sparrow), and the Sparrow under three Jumbos can't lift
-   the pad weight at all. */
+   The whole design space. Engines carry sea-level AND vacuum thrust —
+   a real nozzle is tuned for one air pressure, so the Aether is feeble on
+   the pad and mighty up high, which is exactly why real rockets stage.
+   Numbers are tuned so a careless build hops ~10 km, a considered one
+   reaches tens of km, and only a matched engine/tank/fin/guidance combo
+   crosses 100 km — with a booster-lifted Aether as the endgame discovery. */
 const CATALOG = {
-  cone:    { role:'nose',    name:'Aero Cone',    stat:'Light · sleek',      mass:15,  cda:0.055 },
-  capsule: { role:'nose',    name:'Crew Capsule', stat:'Heavy · draggy',     mass:40,  cda:0.085 },
-  slim:    { role:'tank',    name:'Slim Tank',    stat:'70 kg fuel',         dry:15,  fuel:70  },
-  jumbo:   { role:'tank',    name:'Jumbo Tank',   stat:'180 kg fuel',        dry:35,  fuel:180 },
-  sparrow: { role:'engine',  name:'Sparrow',      stat:'Gentle · sips fuel', mass:30,  thrust:4600,  burnRate:2.0 },
-  titan:   { role:'engine',  name:'Titan',        stat:'Mighty · thirsty',   mass:60,  thrust:12500, burnRate:6.2 },
-  fins:    { role:'fins',    name:'Fins',         stat:'Flies straight',     mass:12,  cda:0.012 },
-  boosters:{ role:'booster', name:'Boosters',     stat:'+5 s of shove',      dry:40,  thrust:7500, burnTime:5 },
+  cone:    { role:'nose',    name:'Aero Cone',    stat:'Light · sleek',       mass:15,  cda:0.055,
+             fact:'Pointed shapes part the air smoothly instead of shoving it. Real payload fairings are dropped once the air thins — no point hauling their weight all the way to space.' },
+  capsule: { role:'nose',    name:'Crew Capsule', stat:'Heavy · crewed',      mass:40,  cda:0.085,
+             fact:'Crew ride at the very top — the safest seat, where an escape rocket can pull the capsule clear in an emergency. Seats, air and a heat shield make it the heaviest nose you can fit.' },
+  probe:   { role:'nose',    name:'Science Probe',stat:'Instruments aboard',  mass:25,  cda:0.065,
+             fact:'Sounding rockets carry instruments that measure the very atmosphere they climb through. No seats, air or heat shield needed, so a probe flies lighter than a crew capsule.' },
+  chute:   { role:'chute',   name:'Parachute',    stat:'Recovery',            mass:12,
+             fact:'Packed just below the nose. After apogee it pops open and turns a falling rocket into a drifting one — Apollo capsules splashed down under three of these.' },
+  avionics:{ role:'avionics',name:'Avionics',     stat:'Guidance brain',      mass:8,
+             fact:'The rocket’s brain: gyroscopes sense every tilt and the computer steers by nudging the engine. Without guidance, tiny wobbles grow all the way up.' },
+  slim:    { role:'tank',    name:'Slim Tank',    stat:'70 kg fuel',          dry:15,  fuel:70,
+             fact:'A rocket is mostly tank: propellant is about 90% of a real launcher’s lift-off mass, so the structure has to be feather-light.' },
+  jumbo:   { role:'tank',    name:'Jumbo Tank',   stat:'180 kg fuel',         dry:35,  fuel:180,
+             fact:'More propellant burns longer — but a tank is dead weight the moment it’s empty. Big tanks only pay off with an engine strong enough to lift them.' },
+  sparrow: { role:'engine',  name:'Sparrow',      stat:'Efficient · gentle',  mass:30,  sl:4600,  vac:5200,  burnRate:2.0,
+             fact:'A small, efficient engine — high specific impulse means more push per kilogram of propellant. Perfect for light rockets; it simply can’t lift a heavy one.' },
+  titan:   { role:'engine',  name:'Titan',        stat:'Mighty · thirsty',    mass:60,  sl:12500, vac:13800, burnRate:6.2,
+             fact:'Raw thrust. Lift-off needs thrust greater than weight — a thrust-to-weight ratio above 1 — and Titan delivers, but it drinks propellant three times faster than Sparrow.' },
+  aether:  { role:'engine',  name:'Aether',       stat:'Vacuum engine',       mass:45,  sl:6200,  vac:17500, burnRate:4.2,
+             fact:'A vacuum engine: its huge nozzle lets exhaust expand where the air is thin. Feeble at sea level, mighty in space — real upper stages use engines like this. Boosters can carry it through the thick air.' },
+  fins:    { role:'fins',    name:'Fins',         stat:'Flies straight',      mass:12,  cda:0.012,
+             fact:'Feathers on an arrow: when the tail catches more air than the nose, the rocket weathervanes straight. Fins keep the centre of pressure behind the centre of gravity.' },
+  boosters:{ role:'booster', name:'Boosters',     stat:'Solid · 5 s shove',   dry:40,  thrust:7500, burnTime:5,
+             fact:'Solid-fuel strap-ons: once lit they can’t be throttled or shut down. They burn out in seconds and are dropped — shedding dead weight is the whole idea of staging.' },
 };
-const SHELF_ORDER = ['cone','capsule','slim','jumbo','sparrow','titan','fins','boosters'];
+const SHELF_ORDER = ['cone','capsule','probe','chute','avionics','slim','jumbo','sparrow','titan','aether','fins','boosters'];
+const ROLE_LABEL = { nose:'Nose', chute:'Recovery', avionics:'Guidance', tank:'Tank', engine:'Engine', fins:'Stability', booster:'Stage 0' };
+const ROLE_COLOR = { nose:'#ff9d8f', chute:'#f2b632', avionics:'#7dffa9', tank:'#8fc3ff', engine:'#ff7a3c', fins:'#e8483a', booster:'#ffd24a' };
 const MAX_TANKS = 3;
 const G = 9.81;
 
@@ -353,6 +463,7 @@ const G = 9.81;
 function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 let best = parseFloat(lsGet('apogee.best')) || 0;
+let quizBest = parseInt(lsGet('apogee.quizBest'), 10) || 0;
 let muted = lsGet('apogee.muted') === '1';
 
 /* ---------------- audio (all synthesized) ---------------- */
@@ -377,6 +488,8 @@ function popSound()   { beep(220, 0.1, 'square', 0.1); beep(160, 0.14, 'square',
 function chime()      { beep(880, 0.12, 'sine', 0.1); beep(1320, 0.18, 'sine', 0.08, 0.1); }
 function fanfare()    { [523, 659, 784, 1047].forEach((f, i) => beep(f, 0.22, 'triangle', 0.11, i * 0.13)); }
 function failHorn()   { beep(220, 0.25, 'sawtooth', 0.08); beep(185, 0.4, 'sawtooth', 0.08, 0.22); }
+function rightSound() { beep(660, 0.1, 'triangle', 0.11); beep(880, 0.16, 'triangle', 0.09, 0.09); }
+function wrongSound() { beep(220, 0.2, 'sawtooth', 0.07); }
 
 /* engine rumble: looped filtered noise whose loudness tracks throttle */
 let rumble = null;
@@ -396,26 +509,46 @@ function rumbleStop() { if (rumble) { try { rumble.src.stop(); } catch (e) {} ru
 /* ---------------- part artwork ----------------
    One drawing per part, reused at every size (shelf card, pad stack, flight
    sprite) by scaling the same SVG. Stack pieces share a 120-unit-wide
-   viewBox with the body spanning x=30..90 so they visually join. */
+   viewBox with the body spanning x=30..90 so they visually join. Every SVG
+   carries explicit width/height matching its viewBox: Safari gives a
+   viewBox-only SVG no intrinsic size, so max-width/max-height alone
+   collapse it to nothing. */
 const ART = {
-  cone: `<svg viewBox="0 0 120 72" xmlns="http://www.w3.org/2000/svg">
+  cone: `<svg viewBox="0 0 120 72" width="120" height="72" xmlns="http://www.w3.org/2000/svg">
     <path d="M60 4 C78 22 88 46 90 70 L30 70 C32 46 42 22 60 4 Z" fill="#e8483a"/>
     <path d="M60 4 C51 22 45 46 44 70 L30 70 C32 46 42 22 60 4 Z" fill="#ffffff" opacity="0.28"/>
     <circle cx="60" cy="10" r="4" fill="#ffd24a"/></svg>`,
-  capsule: `<svg viewBox="0 0 120 84" xmlns="http://www.w3.org/2000/svg">
+  capsule: `<svg viewBox="0 0 120 84" width="120" height="84" xmlns="http://www.w3.org/2000/svg">
     <path d="M60 4 C82 12 90 40 90 82 L30 82 C30 40 38 12 60 4 Z" fill="#d9e2ec"/>
     <path d="M60 4 C46 12 34 40 34 82 L30 82 C30 40 38 12 60 4 Z" fill="#ffffff" opacity="0.5"/>
     <path d="M30 74 L90 74 L90 82 L30 82 Z" fill="#94a4b8"/>
     <circle cx="60" cy="42" r="13" fill="#173a5e" stroke="#7fb2e0" stroke-width="4"/>
     <circle cx="56" cy="38" r="4" fill="#bfe0ff" opacity="0.8"/></svg>`,
-  slim: `<svg viewBox="0 0 120 58" xmlns="http://www.w3.org/2000/svg">
+  probe: `<svg viewBox="0 0 120 66" width="120" height="66" xmlns="http://www.w3.org/2000/svg">
+    <line x1="60" y1="2" x2="60" y2="16" stroke="#8a95a3" stroke-width="3"/>
+    <circle cx="60" cy="3" r="2.6" fill="#ffd24a"/>
+    <path d="M44 16 L76 16 L90 64 L30 64 Z" fill="#e8b64c"/>
+    <path d="M44 16 L58 16 L48 64 L30 64 Z" fill="#f7d98a" opacity="0.8"/>
+    <path d="M30 26 L90 26 M30 38 L90 38 M30 50 L90 50" stroke="#b8862e" stroke-width="1.4" opacity="0.6"/>
+    <circle cx="60" cy="42" r="9" fill="#39424c"/><circle cx="60" cy="42" r="5" fill="#7fb2e0"/></svg>`,
+  chute: `<svg viewBox="0 0 120 26" width="120" height="26" xmlns="http://www.w3.org/2000/svg">
+    <path d="M30 24 L30 12 Q30 2 60 2 Q90 2 90 12 L90 24 Z" fill="#e8483a"/>
+    <path d="M42 24 L42 8.5 Q46 4 54 3 L54 24 Z M66 24 L66 3 Q74 4 78 8.5 L78 24 Z" fill="#f2f5f8"/>
+    <rect x="30" y="20" width="60" height="4" fill="#94a4b8"/></svg>`,
+  avionics: `<svg viewBox="0 0 120 26" width="120" height="26" xmlns="http://www.w3.org/2000/svg">
+    <rect x="30" y="2" width="60" height="22" rx="4" fill="#39424c"/>
+    <rect x="30" y="2" width="60" height="6" rx="3" fill="#4a545f"/>
+    <circle cx="44" cy="15" r="3" fill="#7dffa9"/><circle cx="56" cy="15" r="3" fill="#ffd24a"/>
+    <rect x="66" y="12" width="16" height="6" rx="2" fill="#7fb2e0"/>
+    <line x1="90" y1="13" x2="96" y2="13" stroke="#8a95a3" stroke-width="2.4"/></svg>`,
+  slim: `<svg viewBox="0 0 120 58" width="120" height="58" xmlns="http://www.w3.org/2000/svg">
     <rect x="30" y="2" width="60" height="54" rx="7" fill="#f2f5f8"/>
     <rect x="30" y="2" width="14" height="54" rx="7" fill="#ffffff"/>
     <rect x="30" y="22" width="60" height="14" fill="#4a90d9"/>
     <rect x="30" y="2" width="60" height="54" rx="7" fill="none" stroke="#b8c4d0" stroke-width="2"/>
     <circle cx="40" cy="12" r="1.6" fill="#9aa8b6"/><circle cx="80" cy="12" r="1.6" fill="#9aa8b6"/>
     <circle cx="40" cy="47" r="1.6" fill="#9aa8b6"/><circle cx="80" cy="47" r="1.6" fill="#9aa8b6"/></svg>`,
-  jumbo: `<svg viewBox="0 0 120 108" xmlns="http://www.w3.org/2000/svg">
+  jumbo: `<svg viewBox="0 0 120 108" width="120" height="108" xmlns="http://www.w3.org/2000/svg">
     <rect x="30" y="2" width="60" height="104" rx="8" fill="#f2f5f8"/>
     <rect x="30" y="2" width="14" height="104" rx="8" fill="#ffffff"/>
     <rect x="30" y="20" width="60" height="15" fill="#e8483a"/>
@@ -424,24 +557,32 @@ const ART = {
     <circle cx="40" cy="12" r="1.6" fill="#9aa8b6"/><circle cx="80" cy="12" r="1.6" fill="#9aa8b6"/>
     <circle cx="40" cy="97" r="1.6" fill="#9aa8b6"/><circle cx="80" cy="97" r="1.6" fill="#9aa8b6"/>
     <text x="60" y="58" text-anchor="middle" font-family="Arial" font-size="13" font-weight="bold" fill="#94a4b8">FUEL</text></svg>`,
-  sparrow: `<svg viewBox="0 0 120 52" xmlns="http://www.w3.org/2000/svg">
+  sparrow: `<svg viewBox="0 0 120 52" width="120" height="52" xmlns="http://www.w3.org/2000/svg">
     <rect x="30" y="0" width="60" height="14" fill="#5b6672"/>
     <path d="M48 14 L72 14 L66 26 L78 46 L42 46 L54 26 Z" fill="#8a95a3"/>
     <path d="M48 14 L58 14 L52 26 L58 46 L42 46 L54 26 Z" fill="#aab6c4" opacity="0.7"/>
     <rect x="52" y="12" width="16" height="5" rx="2" fill="#39424c"/></svg>`,
-  titan: `<svg viewBox="0 0 120 62" xmlns="http://www.w3.org/2000/svg">
+  titan: `<svg viewBox="0 0 120 62" width="120" height="62" xmlns="http://www.w3.org/2000/svg">
     <rect x="30" y="0" width="60" height="16" fill="#4a545f"/>
     <rect x="36" y="4" width="8" height="10" rx="3" fill="#ffd24a"/>
     <rect x="76" y="4" width="8" height="10" rx="3" fill="#ffd24a"/>
     <path d="M42 16 L78 16 L70 30 L88 56 L32 56 L50 30 Z" fill="#6e7a88"/>
     <path d="M42 16 L56 16 L50 30 L52 56 L32 56 L50 30 Z" fill="#98a5b3" opacity="0.7"/>
     <rect x="48" y="13" width="24" height="6" rx="2" fill="#2e363f"/></svg>`,
-  fins: `<svg viewBox="0 0 168 74" xmlns="http://www.w3.org/2000/svg">
+  aether: `<svg viewBox="0 0 120 74" width="120" height="74" xmlns="http://www.w3.org/2000/svg">
+    <rect x="30" y="0" width="60" height="12" fill="#4a545f"/>
+    <rect x="52" y="10" width="16" height="8" rx="2" fill="#39424c"/>
+    <path d="M52 18 L68 18 L64 26 L86 68 L34 68 L56 26 Z" fill="#5f7d99"/>
+    <path d="M52 18 L60 18 L56 26 L52 68 L34 68 L56 26 Z" fill="#8fb2cf" opacity="0.7"/>
+    <path d="M38 60 L82 60" stroke="#3d5266" stroke-width="2.4"/>
+    <path d="M42 50 L78 50" stroke="#3d5266" stroke-width="2"/>
+    <circle cx="60" cy="14" r="2.4" fill="#7dffa9"/></svg>`,
+  fins: `<svg viewBox="0 0 168 74" width="168" height="74" xmlns="http://www.w3.org/2000/svg">
     <path d="M56 0 L56 62 L10 74 L26 30 Z" fill="#e8483a"/>
     <path d="M56 0 L56 62 L34 68 L40 26 Z" fill="#ffffff" opacity="0.25"/>
     <path d="M112 0 L112 62 L158 74 L142 30 Z" fill="#e8483a"/>
     <path d="M112 0 L112 62 L134 68 L128 26 Z" fill="#a83228" opacity="0.45"/></svg>`,
-  boosters: `<svg viewBox="0 0 190 96" xmlns="http://www.w3.org/2000/svg">
+  boosters: `<svg viewBox="0 0 190 96" width="190" height="96" xmlns="http://www.w3.org/2000/svg">
     <g><path d="M28 22 C28 12 34 4 41 4 C48 4 54 12 54 22 L54 78 L28 78 Z" fill="#f2b632"/>
     <path d="M28 22 C28 12 34 4 41 4 C41 4 34 12 34 22 L34 78 L28 78 Z" fill="#ffffff" opacity="0.35"/>
     <path d="M31 78 L51 78 L47 90 L35 90 Z" fill="#5b6672"/><rect x="28" y="40" width="26" height="8" fill="#e8483a"/></g>
@@ -449,9 +590,12 @@ const ART = {
     <path d="M136 22 C136 12 142 4 149 4 C149 4 142 12 142 22 L142 78 L136 78 Z" fill="#ffffff" opacity="0.35"/>
     <path d="M139 78 L159 78 L155 90 L143 90 Z" fill="#5b6672"/><rect x="136" y="40" width="26" height="8" fill="#e8483a"/></g></svg>`,
 };
+/* px height of a stack piece at width w, from its viewBox ratio */
+const VB = { cone:[120,72], capsule:[120,84], probe:[120,66], chute:[120,26], avionics:[120,26], slim:[120,58], jumbo:[120,108], sparrow:[120,52], titan:[120,62], aether:[120,74], fins:[168,74], boosters:[190,96] };
+function segH(id, w) { return Math.round(w * VB[id][1] / VB[id][0]); }
 
 /* ---------------- rocket state ---------------- */
-let rocket = { engine:null, tanks:[], nose:null, fins:false, boosters:false };
+let rocket = { engine:null, tanks:[], nose:null, fins:false, boosters:false, avionics:false, chute:false };
 try {
   const saved = JSON.parse(lsGet('apogee.design') || 'null');
   if (saved && typeof saved === 'object') {
@@ -459,31 +603,48 @@ try {
     rocket.nose   = CATALOG[saved.nose]   && CATALOG[saved.nose].role   === 'nose'   ? saved.nose   : null;
     rocket.tanks  = Array.isArray(saved.tanks) ? saved.tanks.filter(t => CATALOG[t] && CATALOG[t].role === 'tank').slice(0, MAX_TANKS) : [];
     rocket.fins = !!saved.fins; rocket.boosters = !!saved.boosters;
+    rocket.avionics = !!saved.avionics; rocket.chute = !!saved.chute;
   }
 } catch (e) {}
 
 function saveDesign() { lsSet('apogee.design', JSON.stringify(rocket)); }
 
 function rocketStats() {
-  let dry = 0, fuel = 0, thrust = 0, burnRate = 0, cda = 0.05;
-  if (rocket.engine) { const e = CATALOG[rocket.engine]; dry += e.mass; thrust = e.thrust; burnRate = e.burnRate; }
+  let dry = 0, fuel = 0, sl = 0, vac = 0, burnRate = 0, cda = 0.05;
+  if (rocket.engine) { const e = CATALOG[rocket.engine]; dry += e.mass; sl = e.sl; vac = e.vac; burnRate = e.burnRate; }
   for (const t of rocket.tanks) { dry += CATALOG[t].dry; fuel += CATALOG[t].fuel; }
   if (rocket.nose) { const n = CATALOG[rocket.nose]; dry += n.mass; cda = n.cda; }
   if (rocket.fins) { dry += CATALOG.fins.mass; cda += CATALOG.fins.cda; }
+  if (rocket.avionics) dry += CATALOG.avionics.mass;
+  if (rocket.chute) dry += CATALOG.chute.mass;
   const boosterDry = rocket.boosters ? CATALOG.boosters.dry : 0;
   const m0 = dry + fuel + boosterDry;
-  const liftThrust = thrust + (rocket.boosters ? CATALOG.boosters.thrust : 0);
-  return { dry, fuel, thrust, burnRate, cda, m0, twr: m0 ? liftThrust / (m0 * G) : 0 };
+  const liftThrust = sl + (rocket.boosters ? CATALOG.boosters.thrust : 0);
+  /* wobble growth divisor — how fast instability builds with speed */
+  const stabDiv = rocket.fins && rocket.avionics ? Infinity : rocket.fins ? 9000 : rocket.avionics ? 2600 : 1400;
+  const stabLabel = rocket.fins && rocket.avionics ? 'Locked in' : rocket.fins ? 'Fins only' : rocket.avionics ? 'Guided, finless' : 'None — wobbly';
+  return { dry, fuel, sl, vac, burnRate, cda, m0, stabDiv, stabLabel, twr: m0 ? liftThrust / (m0 * G) : 0 };
 }
 function rocketComplete() { return rocket.engine && rocket.nose && rocket.tanks.length > 0; }
 
-/* ---------------- toast ---------------- */
+/* ---------------- toast & fact card ---------------- */
 const toastEl = document.getElementById('toast');
 let toastTimer = 0;
 function toast(msg) {
   toastEl.textContent = msg; toastEl.classList.add('on');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('on'), 1800);
 }
+const factEl = document.getElementById('factCard');
+let factTimer = 0;
+function showFact(id) {
+  const p = CATALOG[id]; if (!p || !p.fact) return;
+  factEl.querySelector('.ft').textContent = p.name + ' — ' + ROLE_LABEL[p.role];
+  factEl.querySelector('.fb').textContent = p.fact;
+  factEl.classList.add('on');
+  clearTimeout(factTimer); factTimer = setTimeout(hideFact, 7000);
+}
+function hideFact() { factEl.classList.remove('on'); clearTimeout(factTimer); }
+factEl.addEventListener('click', hideFact);
 
 /* ---------------- shelf ---------------- */
 const shelfRow = document.getElementById('shelfRow');
@@ -491,7 +652,8 @@ for (const id of SHELF_ORDER) {
   const p = CATALOG[id];
   const card = document.createElement('div');
   card.className = 'part-card'; card.dataset.part = id;
-  card.innerHTML = `<div class="art">${ART[id]}</div><div class="nm">${p.name}</div><div class="st">${p.stat}</div>`;
+  card.style.setProperty('--rc', ROLE_COLOR[p.role]);
+  card.innerHTML = `<div class="rl">${ROLE_LABEL[p.role]}</div><div class="art">${ART[id]}</div><div class="nm">${p.name}</div><div class="st">${p.stat}</div>`;
   shelfRow.appendChild(card);
 }
 function refreshShelfHighlights() {
@@ -499,7 +661,8 @@ function refreshShelfHighlights() {
     const id = card.dataset.part, p = CATALOG[id];
     const used = (p.role === 'engine' && rocket.engine === id) || (p.role === 'nose' && rocket.nose === id) ||
                  (p.role === 'tank' && rocket.tanks.includes(id)) || (p.role === 'fins' && rocket.fins) ||
-                 (p.role === 'booster' && rocket.boosters);
+                 (p.role === 'booster' && rocket.boosters) || (p.role === 'avionics' && rocket.avionics) ||
+                 (p.role === 'chute' && rocket.chute);
     card.classList.toggle('inuse', used);
   }
 }
@@ -511,11 +674,13 @@ function addPart(id) {
   else if (p.role === 'nose') rocket.nose = id;
   else if (p.role === 'fins') { if (rocket.fins) { toast('Fins already fitted'); return false; } rocket.fins = true; }
   else if (p.role === 'booster') { if (rocket.boosters) { toast('Boosters already fitted'); return false; } rocket.boosters = true; }
+  else if (p.role === 'avionics') { if (rocket.avionics) { toast('Avionics already fitted'); return false; } rocket.avionics = true; }
+  else if (p.role === 'chute') { if (rocket.chute) { toast('Parachute already fitted'); return false; } rocket.chute = true; }
   else if (p.role === 'tank') {
     if (rocket.tanks.length >= MAX_TANKS) { toast('Max ' + MAX_TANKS + ' tanks — swap one out'); thudSound(); return false; }
     rocket.tanks.push(id);
   }
-  snapSound(); saveDesign(); renderStack();
+  snapSound(); saveDesign(); renderStack(); showFact(id);
   return true;
 }
 function removePart(role, tankIndex) {
@@ -523,8 +688,14 @@ function removePart(role, tankIndex) {
   else if (role === 'nose') rocket.nose = null;
   else if (role === 'fins') rocket.fins = false;
   else if (role === 'booster') rocket.boosters = false;
+  else if (role === 'avionics') rocket.avionics = false;
+  else if (role === 'chute') rocket.chute = false;
   else if (role === 'tank') rocket.tanks.splice(tankIndex, 1);
-  thudSound(); saveDesign(); renderStack();
+  thudSound(); saveDesign(); renderStack(); hideFact();
+}
+function clearRocket() {
+  rocket = { engine:null, tanks:[], nose:null, fins:false, boosters:false, avionics:false, chute:false };
+  thudSound(); saveDesign(); renderStack(); hideFact();
 }
 
 /* ---------------- pad stack rendering ---------------- */
@@ -534,19 +705,22 @@ const hintEl = document.getElementById('hint');
 const statsEl = document.getElementById('stats');
 const launchBtn = document.getElementById('launchBtn');
 
-/* px height of a stack piece at width w, from its viewBox ratio */
-const VB = { cone:[120,72], capsule:[120,84], slim:[120,58], jumbo:[120,108], sparrow:[120,52], titan:[120,62], fins:[168,74], boosters:[190,96] };
-function segH(id, w) { return Math.round(w * VB[id][1] / VB[id][0]); }
+/* stack order, top-down: nose, parachute, avionics, tanks, engine — the
+   order the real thing stacks in */
+function stackOrder() {
+  const order = [];
+  if (rocket.nose) order.push({ id:rocket.nose, role:'nose' });
+  if (rocket.chute) order.push({ id:'chute', role:'chute' });
+  if (rocket.avionics) order.push({ id:'avionics', role:'avionics' });
+  for (let i = rocket.tanks.length - 1; i >= 0; i--) order.push({ id:rocket.tanks[i], role:'tank', idx:i });
+  if (rocket.engine) order.push({ id:rocket.engine, role:'engine' });
+  return order;
+}
 
 function renderStack(snapId) {
   stackEl.innerHTML = '';
   const w = stackEl.clientWidth || 64;
-  /* bottom-up: engine, tanks, nose — DOM order top-down so build array top-first */
-  const order = [];
-  if (rocket.nose) order.push({ id:rocket.nose, role:'nose' });
-  for (let i = rocket.tanks.length - 1; i >= 0; i--) order.push({ id:rocket.tanks[i], role:'tank', idx:i });
-  if (rocket.engine) order.push({ id:rocket.engine, role:'engine' });
-
+  const order = stackOrder();
   for (const seg of order) {
     const d = document.createElement('div');
     d.className = 'seg' + (seg.id === snapId ? ' snapin' : '');
@@ -556,18 +730,16 @@ function renderStack(snapId) {
   }
   /* fins hug the lowest body section; boosters flank it */
   if (rocket.fins) {
-    const finW = Math.round(w * 168 / 120);
     const d = document.createElement('div');
     d.className = 'overlay'; d.dataset.role = 'fins';
-    d.style.width = finW + 'px'; d.style.bottom = '2px';
+    d.style.width = Math.round(w * 168 / 120) + 'px'; d.style.bottom = '2px';
     d.innerHTML = ART.fins;
     stackEl.appendChild(d);
   }
   if (rocket.boosters) {
-    const bW = Math.round(w * 190 / 120);
     const d = document.createElement('div');
     d.className = 'overlay'; d.dataset.role = 'booster';
-    d.style.width = bW + 'px'; d.style.bottom = '0px';
+    d.style.width = Math.round(w * 190 / 120) + 'px'; d.style.bottom = '0px';
     d.innerHTML = ART.boosters;
     stackEl.appendChild(d);
   }
@@ -584,22 +756,28 @@ function renderStack(snapId) {
 
 function renderStats() {
   const s = rocketStats();
-  const parts = rocket.engine || rocket.nose || rocket.tanks.length || rocket.fins || rocket.boosters;
+  const parts = rocket.engine || rocket.nose || rocket.tanks.length || rocket.fins || rocket.boosters || rocket.avionics || rocket.chute;
   if (!parts) { statsEl.style.display = 'none'; launchBtn.disabled = true; return; }
   statsEl.style.display = 'block';
   let verdict, cls;
   if (!rocket.engine) { verdict = 'Needs an engine'; cls = 'bad'; }
   else if (!rocket.tanks.length) { verdict = 'Needs a fuel tank'; cls = 'bad'; }
   else if (!rocket.nose) { verdict = 'Needs a nose'; cls = 'bad'; }
+  else if (s.twr < 1 && rocket.engine === 'aether' && !rocket.boosters) { verdict = '⚠ Aether is weak in thick air — add boosters!'; cls = 'bad'; }
   else if (s.twr < 1) { verdict = '⚠ Too heavy to lift off!'; cls = 'bad'; }
+  else if (rocket.nose === 'capsule' && !rocket.chute) { verdict = '⚠ Crew aboard, no parachute'; cls = 'warn'; }
   else if (!rocket.fins) { verdict = 'No fins — it’ll wobble'; cls = 'warn'; }
+  else if (!rocket.avionics) { verdict = 'Add avionics to fly dead straight'; cls = 'warn'; }
   else if (s.twr < 1.3) { verdict = 'Heavy… but it’ll fly'; cls = 'warn'; }
   else { verdict = '✓ Ready to fly!'; cls = 'ok'; }
+  const thrustTxt = s.sl === s.vac || !s.sl ? (s.sl / 1000).toFixed(1) + ' kN'
+    : (s.sl / 1000).toFixed(1) + '→' + (s.vac / 1000).toFixed(1) + ' kN';
   statsEl.innerHTML =
     `<div class="row"><span>Mass</span><b>${Math.round(s.m0)} kg</b></div>` +
-    `<div class="row"><span>Thrust</span><b>${(s.thrust / 1000).toFixed(1)}${rocket.boosters ? '+' + (CATALOG.boosters.thrust / 1000).toFixed(1) : ''} kN</b></div>` +
+    `<div class="row"><span>Thrust</span><b>${thrustTxt}${rocket.boosters ? ' +' + (CATALOG.boosters.thrust / 1000).toFixed(1) : ''}</b></div>` +
     `<div class="row"><span>Fuel</span><b>${Math.round(s.fuel)} kg</b></div>` +
     `<div class="row"><span>Lift-off TWR</span><b>${s.twr ? s.twr.toFixed(2) : '—'}</b></div>` +
+    `<div class="row"><span>Stability</span><b>${s.stabLabel}</b></div>` +
     `<div class="verdict ${cls}">${verdict}</div>`;
   launchBtn.disabled = !rocketComplete();
 }
@@ -633,6 +811,8 @@ document.addEventListener('pointerdown', (e) => {
     else if (role === 'nose') partId = rocket.nose;
     else if (role === 'fins') partId = 'fins';
     else if (role === 'booster') partId = 'boosters';
+    else if (role === 'avionics') partId = 'avionics';
+    else if (role === 'chute') partId = 'chute';
     else partId = rocket.tanks[+seg.dataset.idx];
     drag = { partId, role, tankIdx: +seg.dataset.idx || 0, fromStack: true, moved: false, x0: e.clientX, y0: e.clientY };
     e.preventDefault();
@@ -666,10 +846,7 @@ document.addEventListener('pointerup', (e) => {
 });
 document.addEventListener('pointercancel', () => { if (ghost.parentNode) ghost.remove(); drag = null; });
 
-document.getElementById('clearBtn').addEventListener('click', () => {
-  rocket = { engine:null, tanks:[], nose:null, fins:false, boosters:false };
-  thudSound(); saveDesign(); renderStack();
-});
+document.getElementById('clearBtn').addEventListener('click', clearRocket);
 
 /* ---------------- flight sprite ----------------
    The pad stack is DOM; the flight is canvas. Bridging them is one SVG
@@ -677,10 +854,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
    same-origin, so it works offline and from file://. */
 function buildSprite() {
   const w = 120;
-  const order = [];
-  if (rocket.nose) order.push(rocket.nose);
-  for (let i = rocket.tanks.length - 1; i >= 0; i--) order.push(rocket.tanks[i]);
-  if (rocket.engine) order.push(rocket.engine);
+  const order = stackOrder().map(s => s.id);
   let totalH = order.reduce((s, id) => s + VB[id][1] - 3, 0) + 3;
   const pad = 40; // room for fins overhang either side
   let y = 0, inner = '';
@@ -716,16 +890,22 @@ const fuelBar = document.getElementById('fuelBar');
 const milestoneEl = document.getElementById('milestone');
 const resultsEl = document.getElementById('results');
 
+/* Atmosphere-layer milestones: each crossing teaches a real fact about the
+   altitude the rocket just passed. Heights in metres. */
 const MILESTONES = [
-  { h: 1000,   label: '1 KM UP!' },
-  { h: 10000,  label: 'STRATOSPHERE' },
-  { h: 50000,  label: 'MESOSPHERE' },
-  { h: 100000, label: '🌌 KÁRMÁN LINE — SPACE!' },
+  { h: 1000,   title: '1 KM UP!',           sub: 'Higher than the Burj Khalifa — the tallest building is 0.83 km.' },
+  { h: 12000,  title: 'TOP OF THE TROPOSPHERE', sub: 'All weather lives below here. Airliners cruise at 10–12 km.' },
+  { h: 31000,  title: 'STRATOSPHERE',       sub: 'Above the ozone layer that soaks up the Sun’s UV. Balloons top out near 40 km.' },
+  { h: 50000,  title: 'MESOSPHERE',         sub: 'The layer where meteors burn up as shooting stars.' },
+  { h: 100000, title: '🌌 KÁRMÁN LINE — SPACE!', sub: '100 km up: where space officially begins.' },
+  { h: 400000, title: 'ISS ALTITUDE!',      sub: 'The Space Station orbits here — moving sideways at 7.7 km/s to stay up.' },
 ];
 const PPM = 3; // world pixels per metre near the ground
+const RHO0 = 1.225;
 
 let F = null;   // flight state
 let rafId = 0;
+let milestoneTimer = 0;
 
 function sizeCanvas() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -734,6 +914,14 @@ function sizeCanvas() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 window.addEventListener('resize', () => { if (F) sizeCanvas(); renderStack(); });
+
+function flashMilestone(title, sub) {
+  milestoneEl.querySelector('.mt').textContent = title;
+  milestoneEl.querySelector('.ms').textContent = sub || '';
+  milestoneEl.classList.add('show');
+  clearTimeout(milestoneTimer);
+  milestoneTimer = setTimeout(() => milestoneEl.classList.remove('show'), 2600);
+}
 
 function startFlight() {
   if (!rocketComplete()) return;
@@ -745,10 +933,12 @@ function startFlight() {
   for (let i = 0; i < 90; i++) stars.push({ x: Math.random(), y: Math.random(), r: 0.5 + Math.random() * 1.4, tw: Math.random() * 6 });
   F = {
     phase: 'count', t: -3.5, h: 0, v: 0, wob: 0, maxV: 0,
-    fuel: s.fuel, fuel0: s.fuel, dry: s.dry, thrust: s.thrust, burnRate: s.burnRate, cda: s.cda,
+    fuel: s.fuel, fuel0: s.fuel, dry: s.dry, sl: s.sl, vac: s.vac, burnRate: s.burnRate,
+    cda: s.cda, stabDiv: s.stabDiv,
     boostersOn: rocket.boosters, boosterJet: null, boosterImg: rocket.boosters ? boosterSprite() : null,
     sprite, clouds, stars, particles: [], lastBeep: 4, milestoneIdx: 0, apogee: 0,
-    shakeSeed: 0, doneT: 0, outcome: '', startWall: Date.now(),
+    maxQ: 0, qFlashed: false, gLoss: 0, dLoss: 0, burnoutV: 0, burnoutH: 0, burnoutSeen: false,
+    doneT: 0, outcome: '', startWall: Date.now(), warp: 1, curThrust: 0,
   };
   flightWrap.classList.add('on');
   resultsEl.classList.remove('on');
@@ -792,20 +982,38 @@ function stepFlight(dt) {
     if (F.boostersOn && !bAttached) {
       F.boostersOn = false; popSound();
       F.boosterJet = { t: 0, h: F.h, vL: -70 - Math.random() * 30, vR: 70 + Math.random() * 30, vv: F.v };
+      flashMilestone('BOOSTERS AWAY', 'Empty casings are dead weight — dropping them is staging.');
     }
+    const rho = RHO0 * Math.exp(-F.h / 8500);
     let thrust = 0;
-    if (F.fuel > 0) { thrust += F.thrust; F.fuel = Math.max(0, F.fuel - F.burnRate * sdt); }
+    if (F.fuel > 0) {
+      /* nozzle physics: engine thrust slides from sea-level to vacuum
+         rating as the air thins */
+      thrust += F.vac - (F.vac - F.sl) * (rho / RHO0);
+      F.fuel = Math.max(0, F.fuel - F.burnRate * sdt);
+      if (F.fuel <= 0 && !F.burnoutSeen) { F.burnoutSeen = true; F.burnoutV = F.v; F.burnoutH = F.h; }
+    }
     if (bAttached) thrust += CATALOG.boosters.thrust;
     const m = F.dry + F.fuel + (bAttached ? CATALOG.boosters.dry : 0);
     let stab = 1;
-    if (!rocket.fins && F.v > 40) { F.wob = Math.min(0.85, F.wob + sdt * F.v / 1400); stab = Math.cos(F.wob); }
-    const rho = 1.225 * Math.exp(-F.h / 8500);
-    const dragF = 0.5 * rho * F.cda * F.v * Math.abs(F.v);
+    if (F.stabDiv !== Infinity && F.v > 40) { F.wob = Math.min(0.85, F.wob + sdt * F.v / F.stabDiv); stab = Math.cos(F.wob); }
+    const q = 0.5 * rho * F.v * F.v;
+    if (q > F.maxQ) F.maxQ = q;
+    const dragF = q * F.cda * Math.sign(F.v);
     const a = (thrust * stab - dragF) / m - G;
+    if (thrust > 0) { F.gLoss += G * sdt; F.dLoss += Math.abs(dragF) / m * sdt; }
     F.v += a * sdt; F.h += F.v * sdt;
     if (F.h < 0) { F.h = 0; if (F.v < 0) F.v = 0; }
     F.maxV = Math.max(F.maxV, F.v);
     F.curThrust = thrust; F.curMass = m;
+
+    /* max-Q: the moment of peak aerodynamic pressure, called out once the
+       pressure has clearly fallen off its peak — a real launch milestone */
+    if (!F.qFlashed && F.maxQ > 5000 && q < F.maxQ * 0.75 && thrust > 0) {
+      F.qFlashed = true;
+      flashMilestone('MAX-Q', 'Peak air pressure on the rocket: ' + (F.maxQ / 1000).toFixed(0) + ' kPa. It only gets easier from here.');
+      chime();
+    }
 
     /* engine that can't out-pull gravity never leaves the pad — call it */
     if (F.t > 6 && F.h < 2 && thrust > 0 && thrust < m * G) { endFlight('pad'); return; }
@@ -818,12 +1026,10 @@ function stepFlight(dt) {
 
   rumbleSet(F.curThrust > 0 ? 0.1 + 0.2 * Math.min(1, F.curThrust / 15000) : 0);
 
-  /* milestones */
+  /* atmosphere-layer milestones */
   while (F.milestoneIdx < MILESTONES.length && F.h >= MILESTONES[F.milestoneIdx].h) {
     const ms = MILESTONES[F.milestoneIdx++];
-    milestoneEl.textContent = ms.label;
-    milestoneEl.classList.add('show');
-    setTimeout(() => milestoneEl.classList.remove('show'), 1600);
+    flashMilestone(ms.title, ms.sub);
     if (ms.h >= 100000) fanfare(); else chime();
   }
 
@@ -844,7 +1050,7 @@ function endFlight(outcome) {
   F.phase = 'done'; F.outcome = outcome; F.apogee = F.h; F.doneT = 0;
   rumbleStop();
   if (outcome === 'pad') failHorn();
-  setTimeout(showResults, outcome === 'pad' ? 900 : 1300);
+  setTimeout(showResults, outcome === 'pad' ? 900 : 1500);
 }
 
 /* ---------------- flight drawing ---------------- */
@@ -987,6 +1193,25 @@ function drawFlight() {
     ctx.drawImage(F.boosterImg, -sprW * 0.33 - 10, sprH / 2 - 58, 21, 58);
     ctx.drawImage(F.boosterImg, sprW * 0.33 - 10, sprH / 2 - 58, 21, 58);
   }
+  /* parachute pops at apogee if fitted */
+  if (F.phase === 'done' && F.outcome === 'apogee' && rocket.chute) {
+    const open = Math.min(1, F.doneT * 1.6);
+    const cw = 46 * open, ch = 30 * open;
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(-cw / 2, -sprH / 2 - ch); ctx.lineTo(-8, -sprH / 2 + 4);
+    ctx.moveTo(cw / 2, -sprH / 2 - ch); ctx.lineTo(8, -sprH / 2 + 4);
+    ctx.moveTo(0, -sprH / 2 - ch - 4); ctx.lineTo(0, -sprH / 2 + 4);
+    ctx.stroke();
+    const cg = ctx.createLinearGradient(-cw / 2, 0, cw / 2, 0);
+    cg.addColorStop(0, '#e8483a'); cg.addColorStop(0.5, '#f2f5f8'); cg.addColorStop(1, '#e8483a');
+    ctx.fillStyle = cg;
+    ctx.beginPath();
+    ctx.moveTo(-cw / 2, -sprH / 2 - ch);
+    ctx.quadraticCurveTo(0, -sprH / 2 - ch - 26 * open, cw / 2, -sprH / 2 - ch);
+    ctx.quadraticCurveTo(0, -sprH / 2 - ch + 10, -cw / 2, -sprH / 2 - ch);
+    ctx.closePath(); ctx.fill();
+  }
   ctx.restore();
 
   /* countdown overlay */
@@ -1016,7 +1241,8 @@ function drawFlight() {
 /* ---------------- results ---------------- */
 function starsFor(km) { return km >= 100 ? 5 : km >= 60 ? 4 : km >= 25 ? 3 : km >= 5 ? 2 : 1; }
 function msgFor(km, outcome) {
-  if (outcome === 'pad') return 'It never left the pad — too much rocket for that engine. Shed a tank or fit the Titan.';
+  if (outcome === 'pad') return 'It never left the pad — not enough thrust for that weight. Shed a tank, fit a stronger engine, or strap on boosters.';
+  if (km >= 400) return 'Past the altitude of the International Space Station! (To stay up there, you’d also need to fly sideways at 7.7 km/s — that’s what “orbit” means.)';
   if (km >= 100) return 'Past the Kármán line — that’s officially SPACE. Mission control is in tears. 🛰️';
   if (km >= 60) return 'The sky turned black and the stars came out. Space is so close…';
   if (km >= 25) return 'High above the weather — a serious piece of engineering.';
@@ -1026,12 +1252,16 @@ function msgFor(km, outcome) {
 }
 function tipFor(km, outcome) {
   const s = rocketStats();
+  if (outcome === 'pad' && rocket.engine === 'aether' && !rocket.boosters) return 'Tip: the Aether is a vacuum engine — feeble at sea level. Boosters can carry it through the thick air.';
   if (outcome === 'pad') return 'Tip: lift-off needs a thrust-to-weight ratio above 1.';
+  if (rocket.nose === 'capsule' && !rocket.chute) return 'Tip: crew capsules need a parachute — nobody enjoys the last metre otherwise.';
   if (!rocket.fins) return 'Tip: without fins the rocket wobbles and wastes thrust.';
+  if (!rocket.avionics) return 'Tip: avionics correct the last of the wobble — guided rockets waste no thrust.';
   if (rocket.engine === 'titan' && s.fuel <= 70) return 'Tip: the Titan drains a Slim Tank in seconds — feed it Jumbos.';
-  if (rocket.engine === 'sparrow' && s.fuel >= 360) return 'Tip: the Sparrow struggles with that much weight — try the Titan.';
+  if (rocket.engine === 'sparrow' && s.fuel >= 360) return 'Tip: the Sparrow struggles with that much weight — try a stronger engine.';
   if (rocket.nose === 'capsule' && km < 100) return 'Tip: the Crew Capsule is heavy — the Aero Cone flies higher.';
   if (km < 100 && !rocket.boosters) return 'Tip: boosters add a mighty shove off the pad.';
+  if (km >= 100 && rocket.engine !== 'aether') return 'Tip: there’s an engine on the shelf built for the vacuum up there…';
   return km >= 100 ? 'Can you beat your own record?' : 'Tip: more tanks only help if the engine can lift them.';
 }
 
@@ -1047,12 +1277,37 @@ function showResults() {
   const n = F.outcome === 'pad' ? 0 : starsFor(km);
   document.getElementById('resultStars').textContent = '★'.repeat(n) + '☆'.repeat(5 - n);
   document.getElementById('resultMsg').textContent = msgFor(km, F.outcome);
+
+  /* mission log: the flight's own numbers become the physics lesson */
+  const log = document.getElementById('missionLog');
+  if (F.outcome === 'pad') { log.style.display = 'none'; }
+  else {
+    log.style.display = 'block';
+    const rows = [
+      ['Burnout', (F.burnoutH >= 1000 ? (F.burnoutH / 1000).toFixed(1) + ' km' : Math.round(F.burnoutH) + ' m') + ' at ' + Math.round(F.burnoutV) + ' m/s'],
+      ['Top speed', Math.round(F.maxV) + ' m/s'],
+      ['Max-Q (peak air pressure)', (F.maxQ / 1000).toFixed(0) + ' kPa'],
+      ['Lost to gravity', Math.round(F.gLoss) + ' m/s'],
+      ['Lost to drag', Math.round(F.dLoss) + ' m/s'],
+    ];
+    log.innerHTML = '<div class="ml-h">Mission log</div>' +
+      rows.map(r => `<div class="ml-r"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
+  }
+
+  /* recovery: the parachute's moment */
+  const rec = document.getElementById('recoveryLine');
+  if (F.outcome === 'pad') { rec.textContent = ''; rec.className = ''; }
+  else if (rocket.chute) { rec.textContent = '🪂 Recovered under parachute' + (rocket.nose === 'capsule' ? ' — crew safe!' : ''); rec.className = 'good'; }
+  else if (rocket.nose === 'capsule') { rec.textContent = '⚠ Crew capsule came down with no parachute!'; rec.className = 'bad'; }
+  else { rec.textContent = ''; rec.className = ''; }
+
   document.getElementById('resultTip').textContent = tipFor(km, F.outcome);
   resultsEl.classList.add('on');
   track('game_end', {
     mode: rocket.engine + '_x' + rocket.tanks.length,
     outcome: F.outcome, apogee_km: Math.round(km * 10) / 10,
     nose: rocket.nose, fins: rocket.fins ? 1 : 0, boosters: rocket.boosters ? 1 : 0,
+    avionics: rocket.avionics ? 1 : 0, chute: rocket.chute ? 1 : 0,
     duration_s: Math.round((Date.now() - F.startWall) / 1000),
   });
 }
@@ -1066,19 +1321,123 @@ function exitFlight() {
   renderStack();
 }
 
-launchBtn.addEventListener('click', startFlight);
+launchBtn.addEventListener('click', () => { hideFact(); startFlight(); });
 document.getElementById('backBtn').addEventListener('click', exitFlight);
 document.getElementById('againBtn').addEventListener('click', () => { resultsEl.classList.remove('on'); startFlight(); });
 document.addEventListener('keydown', (e) => {
-  if (e.code === 'Space' && !F && !launchBtn.disabled) { e.preventDefault(); startFlight(); }
-  if (e.code === 'Escape' && F && resultsEl.classList.contains('on')) exitFlight();
+  if (e.code === 'Space' && !F && !launchBtn.disabled && !quizWrap.classList.contains('on')) { e.preventDefault(); startFlight(); }
+  if (e.code === 'Escape') {
+    if (quizWrap.classList.contains('on')) closeQuiz();
+    else if (F && resultsEl.classList.contains('on')) exitFlight();
+  }
 });
+
+/* ---------------- Flight School quiz ----------------
+   The recall half of the lesson: build mode teaches with the answer in
+   hand, the quiz checks it stuck. Ten questions drawn from a larger pool,
+   options shuffled, immediate right/wrong feedback with a one-line
+   explanation, ranks and a saved best. */
+const QUIZ_POOL = [
+  { q:'What must a rocket’s thrust-to-weight ratio beat to lift off the pad?', a:'1', o:['0.5','2','10'], x:'Thrust must exceed weight — TWR above 1 — or the rocket just sits there burning fuel.' },
+  { q:'Roughly how much of a real rocket’s lift-off mass is propellant?', a:'About 90%', o:['About 10%','About 50%','About 99.9%'], x:'Rockets are flying fuel tanks — around 90% of the Saturn V’s launch mass was propellant.' },
+  { q:'Where does space officially begin?', a:'The Kármán line, 100 km up', o:['Where the clouds end, 10 km','At the ozone layer, 25 km','At the Moon'], x:'100 km — the Kármán line — is the internationally recognised edge of space.' },
+  { q:'What do fins do for a rocket?', a:'Keep it flying straight, like feathers on an arrow', o:['Make it lighter','Add extra thrust','Slow it down for landing'], x:'Fins keep the centre of pressure behind the centre of gravity, so the rocket weathervanes straight.' },
+  { q:'Why are boosters dropped once they burn out?', a:'Empty casings are dead weight', o:['They get too hot','They block the view','To make a splash'], x:'Shedding mass you no longer need is the whole idea of staging.' },
+  { q:'Which layer of the atmosphere holds nearly all the weather?', a:'The troposphere (bottom ~12 km)', o:['The stratosphere','The mesosphere','The thermosphere'], x:'Clouds, rain and storms all live in the lowest layer; airliners cruise near its top.' },
+  { q:'Where do meteors burn up as shooting stars?', a:'The mesosphere (~50–85 km)', o:['The troposphere','On the ground','Beyond the Moon'], x:'Meteors slam into thickening air around 50–85 km up and burn from friction.' },
+  { q:'What is “apogee”?', a:'The highest point of the flight', o:['The launch moment','The speed of sound','The rocket’s nose'], x:'From Greek — the point farthest from Earth. This game is named after it.' },
+  { q:'What is max-Q?', a:'The moment of peak aerodynamic pressure', o:['Maximum fuel flow','The loudest moment','Maximum crew comfort'], x:'Speed is rising while air is thinning — their product peaks part-way up. Real launches call it out.' },
+  { q:'A vacuum engine’s huge nozzle makes it strongest…', a:'High up, where the air is thin', o:['At sea level','Underwater','It’s the same everywhere'], x:'Exhaust expands further in thin air, so vacuum nozzles trade sea-level punch for power up high.' },
+  { q:'How does the avionics unit steer the rocket?', a:'Gyroscopes sense tilt; the engine is nudged to correct', o:['It flaps the fins like wings','It shifts the fuel around','A pilot with a joystick'], x:'Most rockets steer by gimballing — tilting the engine nozzle a few degrees.' },
+  { q:'Why does the crew capsule ride at the very top?', a:'An escape rocket can pull it clear in an emergency', o:['Best view','It’s the heaviest part','To stay warm'], x:'Top of the stack is the one place a capsule can be yanked away from a failing rocket.' },
+  { q:'What does a parachute do for a rocket?', a:'Slows the fall so the rocket can be recovered', o:['Steers it to space','Adds lift going up','Keeps the rain off'], x:'After apogee, everything falls. A parachute turns a crash into a landing.' },
+  { q:'The International Space Station orbits at about…', a:'400 km', o:['40 km','4,000 km','Halfway to the Moon'], x:'~400 km up — and moving sideways at 7.7 km/s, which is what keeps it in orbit.' },
+  { q:'“Specific impulse” measures an engine’s…', a:'Push per kilogram of propellant — its efficiency', o:['Loudness','Weight','Top speed'], x:'High specific impulse means the engine squeezes more speed from every kilogram of fuel.' },
+  { q:'Once lit, solid-fuel boosters…', a:'Can’t be throttled or shut down', o:['Can be paused anytime','Burn for hours','Refuel themselves'], x:'Solid fuel burns until it’s gone — simple, powerful, and completely uncontrollable.' },
+];
+const quizWrap = document.getElementById('quizWrap');
+const quizBody = document.getElementById('quizBody');
+const quizFoot = document.getElementById('quizFoot');
+const quizProg = document.getElementById('quizProg');
+let quiz = null; // { qs, idx, score, answered }
+
+function shuffled(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+function openQuiz() {
+  quiz = { qs: shuffled(QUIZ_POOL).slice(0, 10), idx: 0, score: 0, answered: false };
+  quizWrap.classList.add('on');
+  resultsEl.classList.remove('on');
+  track('game_start', { mode: 'quiz' });
+  renderQuiz();
+}
+function closeQuiz() {
+  quizWrap.classList.remove('on');
+  quiz = null;
+  if (F) resultsEl.classList.add('on'); // return to the results we came from
+}
+function quizRank(sc) { return sc >= 9 ? '🏅 Flight Director' : sc >= 7 ? '🚀 Commander' : sc >= 5 ? '✈️ Pilot' : '📘 Cadet'; }
+
+function renderQuiz() {
+  if (!quiz) return;
+  if (quiz.idx >= quiz.qs.length) { renderQuizResult(); return; }
+  const item = quiz.qs[quiz.idx];
+  quiz.answered = false;
+  quizProg.textContent = (quiz.idx + 1) + ' / ' + quiz.qs.length;
+  const opts = shuffled([item.a, ...item.o]);
+  quizBody.innerHTML = '<div id="quizQ">' + item.q + '</div>' +
+    opts.map(o => `<button class="qopt">${o}</button>`).join('') +
+    '<div id="quizX" style="font-size:0.72rem;color:#9fc4e8;line-height:1.5;min-height:2.6em;margin-top:2px;"></div>';
+  quizFoot.innerHTML = '<button id="quizClose">Close</button>';
+  document.getElementById('quizClose').addEventListener('click', closeQuiz);
+  for (const btn of quizBody.querySelectorAll('.qopt')) {
+    btn.addEventListener('click', () => {
+      if (quiz.answered) return;
+      quiz.answered = true;
+      const right = btn.textContent === item.a;
+      if (right) { quiz.score++; btn.classList.add('correct'); rightSound(); }
+      else {
+        btn.classList.add('wrong'); wrongSound();
+        for (const b of quizBody.querySelectorAll('.qopt')) if (b.textContent === item.a) b.classList.add('correct');
+      }
+      for (const b of quizBody.querySelectorAll('.qopt')) b.disabled = true;
+      document.getElementById('quizX').textContent = item.x;
+      quizFoot.innerHTML = '<button id="quizClose">Close</button><button id="quizNext">' + (quiz.idx + 1 >= quiz.qs.length ? 'Finish' : 'Next →') + '</button>';
+      document.getElementById('quizClose').addEventListener('click', closeQuiz);
+      document.getElementById('quizNext').addEventListener('click', () => { quiz.idx++; renderQuiz(); });
+    });
+  }
+}
+function renderQuizResult() {
+  const sc = quiz.score, total = quiz.qs.length;
+  const isBest = sc > quizBest;
+  if (isBest) { quizBest = sc; lsSet('apogee.quizBest', String(quizBest)); }
+  quizProg.textContent = '';
+  quizBody.innerHTML =
+    `<div id="quizScoreBig">${sc} / ${total}</div>` +
+    `<div id="quizRank">${quizRank(sc)}</div>` +
+    `<div id="quizSub">${isBest ? 'New best score!' : 'Best so far: ' + quizBest + ' / ' + total}<br>` +
+    (sc >= 9 ? 'You could run mission control.' : sc >= 7 ? 'Solid rocketry. The last few facts are hiding in the part cards.' : 'Every part you fit on the pad teaches one of these — build a rocket and read the cards!') + '</div>';
+  quizFoot.innerHTML = '<button id="quizClose">Done</button><button id="quizNext">Try again</button>';
+  document.getElementById('quizClose').addEventListener('click', closeQuiz);
+  document.getElementById('quizNext').addEventListener('click', openQuiz);
+  track('game_end', { mode: 'quiz', outcome: 'complete', score: sc });
+}
+document.getElementById('quizBtn').addEventListener('click', openQuiz);
+document.getElementById('quizFromResult').addEventListener('click', openQuiz);
 
 /* mute */
 const muteBtn = document.getElementById('muteBtn');
 function renderMute() { muteBtn.textContent = muted ? '🔇' : '🔊'; }
 muteBtn.addEventListener('click', () => { muted = !muted; lsSet('apogee.muted', muted ? '1' : '0'); if (muted) rumbleStop(); renderMute(); });
 renderMute();
+
+/* test hook — drives the same code paths as the pointer UI (add, remove,
+   launch), in the spirit of the other games' verify harnesses */
+window.__apogee = {
+  get rocket() { return rocket; },
+  get flight() { return F; },
+  addPart, removePart, clear: clearRocket, launch: startFlight, stats: rocketStats,
+};
 
 /* boot */
 document.getElementById('bestPill').textContent = best > 0 ? 'Best ' + best.toFixed(1) + ' km' : 'Best —';
