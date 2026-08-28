@@ -14,7 +14,7 @@
    way to know why — that is the one failure mode this file cannot afford.
 */
 
-const CACHE = 'kreeda-v7';
+const CACHE = 'kreeda-v8';
 
 /* The whole app shell, spelled out by hand rather than discovered at runtime — a
    service worker has no directory listing to crawl, so this list IS the offline

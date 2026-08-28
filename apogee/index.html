@@ -115,7 +115,7 @@ h1 .rocket-glyph { display:inline-block; transform:rotate(-45deg) translateY(1px
 #stack .seg { position:relative; width:64px; margin-bottom:-2px; cursor:grab; }
 #stack .seg svg { display:block; width:100%; height:auto; }
 #stack .overlay { position:absolute; left:50%; bottom:0; transform:translateX(-50%); pointer-events:none; }
-#stack .overlay svg { display:block; pointer-events:none; }
+#stack .overlay svg { display:block; width:100%; height:auto; pointer-events:none; }
 #stack .overlay svg path, #stack .overlay svg rect, #stack .overlay svg ellipse { pointer-events:auto; cursor:grab; }
 .seg.snapin { animation:snapin 0.22s ease-out; }
 @keyframes snapin { from { transform:scale(1.15); } to { transform:scale(1); } }
@@ -398,24 +398,24 @@ function rumbleStop() { if (rumble) { try { rumble.src.stop(); } catch (e) {} ru
    sprite) by scaling the same SVG. Stack pieces share a 120-unit-wide
    viewBox with the body spanning x=30..90 so they visually join. */
 const ART = {
-  cone: `<svg viewBox="0 0 120 72" xmlns="http://www.w3.org/2000/svg">
+  cone: `<svg viewBox="0 0 120 72" width="120" height="72" xmlns="http://www.w3.org/2000/svg">
     <path d="M60 4 C78 22 88 46 90 70 L30 70 C32 46 42 22 60 4 Z" fill="#e8483a"/>
     <path d="M60 4 C51 22 45 46 44 70 L30 70 C32 46 42 22 60 4 Z" fill="#ffffff" opacity="0.28"/>
     <circle cx="60" cy="10" r="4" fill="#ffd24a"/></svg>`,
-  capsule: `<svg viewBox="0 0 120 84" xmlns="http://www.w3.org/2000/svg">
+  capsule: `<svg viewBox="0 0 120 84" width="120" height="84" xmlns="http://www.w3.org/2000/svg">
     <path d="M60 4 C82 12 90 40 90 82 L30 82 C30 40 38 12 60 4 Z" fill="#d9e2ec"/>
     <path d="M60 4 C46 12 34 40 34 82 L30 82 C30 40 38 12 60 4 Z" fill="#ffffff" opacity="0.5"/>
     <path d="M30 74 L90 74 L90 82 L30 82 Z" fill="#94a4b8"/>
     <circle cx="60" cy="42" r="13" fill="#173a5e" stroke="#7fb2e0" stroke-width="4"/>
     <circle cx="56" cy="38" r="4" fill="#bfe0ff" opacity="0.8"/></svg>`,
-  slim: `<svg viewBox="0 0 120 58" xmlns="http://www.w3.org/2000/svg">
+  slim: `<svg viewBox="0 0 120 58" width="120" height="58" xmlns="http://www.w3.org/2000/svg">
     <rect x="30" y="2" width="60" height="54" rx="7" fill="#f2f5f8"/>
     <rect x="30" y="2" width="14" height="54" rx="7" fill="#ffffff"/>
     <rect x="30" y="22" width="60" height="14" fill="#4a90d9"/>
     <rect x="30" y="2" width="60" height="54" rx="7" fill="none" stroke="#b8c4d0" stroke-width="2"/>
     <circle cx="40" cy="12" r="1.6" fill="#9aa8b6"/><circle cx="80" cy="12" r="1.6" fill="#9aa8b6"/>
     <circle cx="40" cy="47" r="1.6" fill="#9aa8b6"/><circle cx="80" cy="47" r="1.6" fill="#9aa8b6"/></svg>`,
-  jumbo: `<svg viewBox="0 0 120 108" xmlns="http://www.w3.org/2000/svg">
+  jumbo: `<svg viewBox="0 0 120 108" width="120" height="108" xmlns="http://www.w3.org/2000/svg">
     <rect x="30" y="2" width="60" height="104" rx="8" fill="#f2f5f8"/>
     <rect x="30" y="2" width="14" height="104" rx="8" fill="#ffffff"/>
     <rect x="30" y="20" width="60" height="15" fill="#e8483a"/>
@@ -424,24 +424,24 @@ const ART = {
     <circle cx="40" cy="12" r="1.6" fill="#9aa8b6"/><circle cx="80" cy="12" r="1.6" fill="#9aa8b6"/>
     <circle cx="40" cy="97" r="1.6" fill="#9aa8b6"/><circle cx="80" cy="97" r="1.6" fill="#9aa8b6"/>
     <text x="60" y="58" text-anchor="middle" font-family="Arial" font-size="13" font-weight="bold" fill="#94a4b8">FUEL</text></svg>`,
-  sparrow: `<svg viewBox="0 0 120 52" xmlns="http://www.w3.org/2000/svg">
+  sparrow: `<svg viewBox="0 0 120 52" width="120" height="52" xmlns="http://www.w3.org/2000/svg">
     <rect x="30" y="0" width="60" height="14" fill="#5b6672"/>
     <path d="M48 14 L72 14 L66 26 L78 46 L42 46 L54 26 Z" fill="#8a95a3"/>
     <path d="M48 14 L58 14 L52 26 L58 46 L42 46 L54 26 Z" fill="#aab6c4" opacity="0.7"/>
     <rect x="52" y="12" width="16" height="5" rx="2" fill="#39424c"/></svg>`,
-  titan: `<svg viewBox="0 0 120 62" xmlns="http://www.w3.org/2000/svg">
+  titan: `<svg viewBox="0 0 120 62" width="120" height="62" xmlns="http://www.w3.org/2000/svg">
     <rect x="30" y="0" width="60" height="16" fill="#4a545f"/>
     <rect x="36" y="4" width="8" height="10" rx="3" fill="#ffd24a"/>
     <rect x="76" y="4" width="8" height="10" rx="3" fill="#ffd24a"/>
     <path d="M42 16 L78 16 L70 30 L88 56 L32 56 L50 30 Z" fill="#6e7a88"/>
     <path d="M42 16 L56 16 L50 30 L52 56 L32 56 L50 30 Z" fill="#98a5b3" opacity="0.7"/>
     <rect x="48" y="13" width="24" height="6" rx="2" fill="#2e363f"/></svg>`,
-  fins: `<svg viewBox="0 0 168 74" xmlns="http://www.w3.org/2000/svg">
+  fins: `<svg viewBox="0 0 168 74" width="168" height="74" xmlns="http://www.w3.org/2000/svg">
     <path d="M56 0 L56 62 L10 74 L26 30 Z" fill="#e8483a"/>
     <path d="M56 0 L56 62 L34 68 L40 26 Z" fill="#ffffff" opacity="0.25"/>
     <path d="M112 0 L112 62 L158 74 L142 30 Z" fill="#e8483a"/>
     <path d="M112 0 L112 62 L134 68 L128 26 Z" fill="#a83228" opacity="0.45"/></svg>`,
-  boosters: `<svg viewBox="0 0 190 96" xmlns="http://www.w3.org/2000/svg">
+  boosters: `<svg viewBox="0 0 190 96" width="190" height="96" xmlns="http://www.w3.org/2000/svg">
     <g><path d="M28 22 C28 12 34 4 41 4 C48 4 54 12 54 22 L54 78 L28 78 Z" fill="#f2b632"/>
     <path d="M28 22 C28 12 34 4 41 4 C41 4 34 12 34 22 L34 78 L28 78 Z" fill="#ffffff" opacity="0.35"/>
     <path d="M31 78 L51 78 L47 90 L35 90 Z" fill="#5b6672"/><rect x="28" y="40" width="26" height="8" fill="#e8483a"/></g>
