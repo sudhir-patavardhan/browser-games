@@ -78,8 +78,10 @@ window.addEventListener('error', function(ev){
     color:#0c1018; background:linear-gradient(180deg,#ffe38a,#ffb648); padding:2px 8px; border-radius:8px; }
 
   /* touch controls */
-  .touch{ position:fixed; inset:0; z-index:4; pointer-events:none; display:none; }
-  body.touch .touch{ display:block; }
+  /* #touch, not .touch: the body also carries class "touch" on touch devices, and an element
+     selector of .touch would match it too — display:none on body blanks the whole page. */
+  #touch{ position:fixed; inset:0; z-index:4; pointer-events:none; display:none; }
+  body.touch #touch{ display:block; }
   .btn{ position:fixed; pointer-events:auto; border:none; border-radius:50%; touch-action:none;
     display:flex; align-items:center; justify-content:center; font-weight:900; color:#fff;
     text-shadow:0 1px 3px rgba(0,0,0,.35); box-shadow:0 8px 22px rgba(0,0,0,.3);
