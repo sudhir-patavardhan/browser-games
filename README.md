@@ -92,14 +92,18 @@ from one place, not because they import from one.
 
 ## Offline
 
-[`sw.js`](sw.js) is a cache-first service worker that precaches the landing page and all thirteen games, so
-a hosted copy keeps working with the network gone and the install promised by
+[`sw.js`](sw.js) is a service worker that precaches the landing page and all the games, so a hosted copy
+keeps working with the network gone and the install promised by
 [`manifest.webmanifest`](manifest.webmanifest) is a real one.
 
-Correctness here is **cache versioning**, not revalidation: nothing in a deploy changes in place, the whole
-tree is replaced at once. Bump `CACHE` in `sw.js` and `activate` wipes every cache that isn't the current
-name. Forget to bump it and players stay on the old build indefinitely with no way to know why — that is
-the one failure mode the file cannot afford, and the reason it is written the way it is.
+Freshness is **network-first for pages, background refresh for everything else**. A page load reaches for
+the network and falls back to cache only when that fails, so a deploy shows up on the very next reload —
+no cache bump, no clearing site data. Other same-origin assets answer from cache instantly and re-fetch in
+the background, so they are at most one load behind. Bumping `CACHE` in `sw.js` remains the deep clean:
+`activate` wipes every cache that isn't the current name, evicting entries for anything renamed or deleted.
+
+The landing page footer shows an "Updated" stamp — the `Last-Modified` header of the HTML actually being
+rendered — so at a glance you can tell whether the build on screen is the one just published.
 
 Two things it deliberately does not do: it never caches cross-origin requests (analytics, and Fairway
 Four's Three.js off a CDN — this worker has no version story for someone else's asset), and it does

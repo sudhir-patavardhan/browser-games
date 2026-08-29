@@ -5,16 +5,25 @@
    the install real.
 
    These are twenty self-contained games with no build step — a deploy replaces the
-   whole tree at once, nothing here ever changes in place. That means there is no
-   value in revalidating against the network on every visit; the entire correctness
-   model is CACHE VERSIONING. Bump CACHE, the browser installs a new worker, the new
-   worker's activate wipes every cache that isn't the current name, and every client
-   is on the new build on next load. Forget to bump it and ship a fix, or forget the
-   wipe in activate, and players are stuck replaying the old build forever with no
-   way to know why — that is the one failure mode this file cannot afford.
+   whole tree at once, nothing here ever changes in place. Freshness works in two
+   tiers:
+
+   - Page loads (navigations) go NETWORK-FIRST: the network copy wins whenever it
+     answers, and the cache is only the offline fallback. A deploy therefore shows
+     up on the very next reload — no cache bump, no "clear site data". The cost is
+     one round-trip per page load, which these hand-sized HTML files can afford.
+   - Everything else (icons, analytics.js, the manifest) answers from cache
+     instantly and re-fetches in the background, so an asset is never more than one
+     load behind.
+
+   CACHE versioning remains as the deep clean: bump it and the new worker's
+   activate wipes every cache that isn't the current name, evicting entries for
+   anything renamed or deleted. It is no longer the only way a fix reaches players
+   — that is what network-first pages are for — but forget the wipe in activate and
+   dead entries accumulate forever, so it stays.
 */
 
-const CACHE = 'kreeda-v8';
+const CACHE = 'kreeda-v9';
 
 /* The whole app shell, spelled out by hand rather than discovered at runtime — a
    service worker has no directory listing to crawl, so this list IS the offline
@@ -93,15 +102,43 @@ self.addEventListener('fetch', function(event){
   // forever. Leaving the event unhandled lets the browser do its normal thing.
   if (url.origin !== self.location.origin) return;
 
+  // Page loads: network first, so what renders is always the deployed build when
+  // there is any network at all. The successful response also refreshes the cached
+  // copy, so the offline fallback below is the newest build ever seen, not the one
+  // from install time.
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      fetch(req).then(function(res){
+        if (res && res.ok) {
+          var copy = res.clone();
+          caches.open(CACHE).then(function(cache){ cache.put(req, copy); }).catch(function(){});
+        }
+        return res;
+      }).catch(function(){
+        // Offline. The browser's own offline interstitial is a dead end with no way
+        // back into the app — the cached page (or at worst the cached landing page)
+        // keeps the install usable.
+        return caches.match(req).then(function(cached){
+          return cached || caches.match('/');
+        });
+      })
+    );
+    return;
+  }
+
+  // Everything else: the cached copy answers instantly, and the same request is
+  // re-fetched in the background to refresh the cache for next time — an asset is
+  // stale for at most one load, without a page ever waiting on the network for it.
   event.respondWith(
     caches.match(req).then(function(cached){
-      if (cached) return cached; // cache-first: a hit is authoritative, no revalidation
-      return fetch(req).catch(function(){
-        // Offline and not in the precached shell. For a page load specifically, the
-        // browser's own offline interstitial is a dead end with no way back into the
-        // app — the cached landing page at least leaves the install usable.
-        if (req.mode === 'navigate') return caches.match('/');
-      });
+      var refreshed = fetch(req).then(function(res){
+        if (res && res.ok) {
+          var copy = res.clone();
+          caches.open(CACHE).then(function(cache){ cache.put(req, copy); }).catch(function(){});
+        }
+        return res;
+      }).catch(function(){ return cached; });
+      return cached || refreshed;
     })
   );
 });
