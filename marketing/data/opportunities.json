@@ -1,7 +1,7 @@
 [
   {
     "id": "reddit-webgames-01",
-    "discoveredAt": "2026-08-29T05:15:31.376Z",
+    "discoveredAt": "2026-08-29T14:21:26.149Z",
     "platform": "Reddit (r/webgames)",
     "author": "u/arcade_seeker",
     "sourceUrl": "https://reddit.com/r/webgames/comments/sample1",
@@ -14,7 +14,7 @@
   },
   {
     "id": "reddit-climbing-02",
-    "discoveredAt": "2026-08-29T05:15:31.376Z",
+    "discoveredAt": "2026-08-29T14:21:26.149Z",
     "platform": "Reddit (r/climbing)",
     "author": "u/boulder_bro",
     "sourceUrl": "https://reddit.com/r/climbing/comments/sample2",
@@ -27,7 +27,7 @@
   },
   {
     "id": "hn-ask-03",
-    "discoveredAt": "2026-08-29T05:15:31.376Z",
+    "discoveredAt": "2026-08-29T14:21:26.149Z",
     "platform": "Hacker News",
     "author": "gamedev_curious",
     "sourceUrl": "https://news.ycombinator.com/item?id=sample3",
@@ -40,7 +40,7 @@
   },
   {
     "id": "twitter-break-04",
-    "discoveredAt": "2026-08-29T05:15:31.376Z",
+    "discoveredAt": "2026-08-29T14:21:26.149Z",
     "platform": "Twitter/X",
     "author": "@casual_coder",
     "sourceUrl": "https://twitter.com/casual_coder/status/sample4",
