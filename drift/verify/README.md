@@ -30,7 +30,6 @@ Chrome/Chromium. The game exposes `window.__drift` (`start()`, `setInput(steer, 
 ./drift/verify/run.sh stereo       # the music rides with the wheels: over 10 km/h it plays, stopped it doesn't
 ./drift/verify/run.sh analytics    # telemetry: silent on file://, unable to throw at the game, honest about the run
 ./drift/verify/run.sh cabin        # the cabin never closes on the horizon — every window shape keeps its road
-./drift/verify/run.sh biomes       # rain / snow / desert zones: seeded sequence, real crossfades, grip that agrees with the sky
 ./drift/verify/shoot.sh driver f.png   # screenshot the car mid-drive, so you can LOOK at it
 ./drift/verify/shoot.sh driver b.png 14000 500,900 70 bridge   # ...having driven until a bridge is ahead
 ./drift/verify/clip.sh                 # re-cut drift/clip.webm — the 9 s of real driving on the start card
@@ -99,7 +98,10 @@ The claims it defends, in rough order of how much they matter:
   they drive the page from `file://` under a virtual clock, and a pending request can stall one), and
   `track()` cannot be made to throw by any call shape, including a `gtag` that throws on every hit. Then the
   part that has to be right: a real run driven to a real death reports numbers matching the run's own final
-  state, and a reason matching the actual reason.
+  state, a reason matching the actual reason, and the game it came from on every event. What the file does
+  on a real origin — going live, and timing how long the game was actually played — is invisible from
+  `file://` by design, so it is pinned separately by `../../verify/analytics.sh`, which serves the repo over
+  http on localhost.
 - **The car sounds like what it is doing.** What it sounds like is a pure function of the car (`driveTone`),
   so `run.sh sound` can check the *decision* — pitch is road speed and nothing else, loudness is |kW| and
   not speed, regen bends the note down proportionally, and the grass is louder and much darker than tarmac

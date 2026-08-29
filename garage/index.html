@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Garage — Kreeda</title>
+<meta name="description" content="Build a car from 19 real parts — chassis, carburetor, alternator, driveshaft — and learn what every one of them does.">
+<link rel="canonical" href="https://kreeda.games/garage/">
+<meta name="theme-color" content="#0b0e14">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/garage/">
+<meta property="og:title" content="Garage — Kreeda">
+<meta property="og:description" content="Build a car from 19 real parts — chassis, carburetor, alternator, driveshaft — and learn what every one of them does.">
+<meta property="og:image" content="https://kreeda.games/assets/garage-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Garage — Kreeda">
+<meta name="twitter:description" content="Build a car from 19 real parts — chassis, carburetor, alternator, driveshaft — and learn what every one of them does.">
+<meta name="twitter:image" content="https://kreeda.games/assets/garage-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Garage","description":"Build a car from 19 real parts — chassis, carburetor, alternator, driveshaft — and learn what every one of them does.","url":"https://kreeda.games/garage/","image":"https://kreeda.games/assets/garage-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Educational","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#131824; --panel2:#0f1420; --line:#232b3b;
+    --ink:#e8edf4; --dim:#8b96a8; --accent:#ffb03a; --accent2:#21e6ff;
+    --good:#3fdd8d; --bad:#ff5d6e;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{
+    margin:0; padding:0; width:100%; height:100%; overflow:hidden;
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    user-select:none; -webkit-user-select:none;
+  }
+  button{ font:inherit; color:inherit; }
+
+  #app{ position:relative; width:100%; height:100%; display:flex; flex-direction:column; }
+
+  /* ------- HUD ------- */
+  #hud{
+    flex:none; display:flex; align-items:center; gap:10px;
+    padding:calc(6px + env(safe-area-inset-top)) 12px 6px; min-height:44px;
+  }
+  #hud .brand{ font-weight:800; letter-spacing:.4px; font-size:15px; color:var(--accent); text-decoration:none; white-space:nowrap; }
+  #hud .brand small{ color:var(--dim); font-weight:600; margin-right:6px; }
+  #progressWrap{ flex:1; display:flex; align-items:center; gap:8px; min-width:0; }
+  #progressBar{ flex:1; height:8px; border-radius:99px; background:var(--panel); overflow:hidden; border:1px solid var(--line); }
+  #progressFill{ height:100%; width:0%; background:linear-gradient(90deg,var(--accent),#ffd07a); border-radius:99px; transition:width .35s ease; }
+  #progressText{ font-size:12px; color:var(--dim); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .hudstat{ font-size:12.5px; color:var(--dim); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .hudstat b{ color:var(--ink); font-weight:700; }
+  .iconbtn{
+    flex:none; width:34px; height:34px; border-radius:9px; border:1px solid var(--line);
+    background:var(--panel); color:var(--ink); font-size:15px; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .iconbtn:active{ transform:scale(.94); }
+
+  /* ------- stage ------- */
+  #stageWrap{ position:relative; flex:1; min-height:0; }
+  #stage{ position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+
+  /* slots: dashed silhouettes shown only while a part is in hand */
+  #slots .slot{ display:none; }
+  #slots.showing .slot.open{ display:block; }
+  .slot .sil{ fill:none; stroke:#6f7d94; stroke-width:2; stroke-dasharray:7 6; opacity:.75; }
+  .slot .hit{ fill:#ffffff; opacity:0; }
+  .slot.hint .sil{ stroke:var(--accent2); opacity:1; animation:slotPulse 1s ease-in-out infinite; }
+  .slot.reject .sil{ stroke:var(--bad); opacity:1; }
+  .slot.reject{ animation:shake .34s linear; }
+  @keyframes slotPulse{ 0%,100%{ stroke-opacity:.55; } 50%{ stroke-opacity:1; } }
+  @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+  #parts .part{ display:none; }
+  #parts .part.placed{ display:block; animation:pop .38s cubic-bezier(.34,1.56,.64,1); transform-box:fill-box; transform-origin:center; }
+  @keyframes pop{ 0%{ transform:scale(.72); opacity:.2; } 100%{ transform:scale(1); opacity:1; } }
+  #parts.dimOthers .part{ opacity:.18; transition:opacity .25s; }
+  #parts.dimOthers .part.spot{ opacity:1; }
+  .part.spot .glowring{ display:block; }
+  .glowring{ display:none; fill:none; stroke:var(--accent2); stroke-width:3; opacity:.9; animation:slotPulse 1s ease-in-out infinite; }
+
+  /* car drive-off */
+  #carRoot.driveoff{ animation:driveoff 2.6s cubic-bezier(.45,.05,.85,.5) forwards; }
+  @keyframes driveoff{ 0%{ transform:translateX(0); } 18%{ transform:translateX(-14px); } 100%{ transform:translateX(1250px); } }
+  .wheelspin{ animation:wheelspin 0.5s linear infinite; transform-box:fill-box; transform-origin:center; }
+  @keyframes wheelspin{ to{ transform:rotate(360deg); } }
+
+  /* ------- tray ------- */
+  #tray{
+    flex:none; display:flex; gap:8px; align-items:stretch;
+    padding:8px 10px calc(10px + env(safe-area-inset-bottom));
+    overflow-x:auto; overflow-y:hidden; scrollbar-width:none;
+    background:linear-gradient(180deg, rgba(15,20,32,0), var(--panel2) 30%);
+    border-top:1px solid var(--line); min-height:104px;
+  }
+  #tray::-webkit-scrollbar{ display:none; }
+  .card{
+    flex:none; width:96px; border-radius:12px; border:1px solid var(--line);
+    background:var(--panel); padding:6px 6px 5px; text-align:center; cursor:grab;
+    display:flex; flex-direction:column; gap:4px; position:relative;
+    touch-action:pan-x;   /* horizontal swipe scrolls the tray; a vertical pull starts a drag */
+  }
+  .card svg{ width:100%; height:52px; display:block; pointer-events:none; }
+  .card .nm{ font-size:11px; font-weight:600; color:var(--ink); line-height:1.15; pointer-events:none; }
+  .card.locked{ opacity:.38; cursor:not-allowed; }
+  .card.locked::after{
+    content:"🔒"; position:absolute; top:5px; right:7px; font-size:12px; opacity:.9;
+  }
+  .card.done{ display:none; }
+  .card.selected{ border-color:var(--accent); box-shadow:0 0 0 2px rgba(255,176,58,.35); }
+  .card.dragging{ opacity:.35; }
+
+  #ghost{
+    position:fixed; left:0; top:0; z-index:60; pointer-events:none; display:none;
+    width:120px; height:80px; filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));
+  }
+  #ghost svg{ width:100%; height:100%; }
+
+  /* ------- fact card ------- */
+  #fact{
+    position:absolute; left:50%; bottom:12px; transform:translate(-50%,20px);
+    width:min(520px, calc(100% - 24px)); z-index:30;
+    background:linear-gradient(180deg,#1a2233,#131a29); border:1px solid #2c3a52; border-radius:14px;
+    padding:12px 40px 12px 14px; display:flex; gap:12px; align-items:center;
+    opacity:0; pointer-events:none; transition:opacity .3s, transform .3s;
+    box-shadow:0 10px 30px rgba(0,0,0,.5);
+  }
+  #fact.show{ opacity:1; transform:translate(-50%,0); pointer-events:auto; }
+  #fact .fic{ flex:none; width:64px; height:52px; }
+  #fact .fic svg{ width:100%; height:100%; }
+  #fact h3{ margin:0 0 3px; font-size:14px; color:var(--accent); }
+  #fact p{ margin:0; font-size:12.5px; line-height:1.45; color:#cdd6e4; }
+  #fact .x{ position:absolute; top:6px; right:6px; width:26px; height:26px; border:none; background:none; color:var(--dim); font-size:15px; cursor:pointer; }
+
+  /* toast for locked parts */
+  #toast{
+    position:absolute; left:50%; top:14px; transform:translateX(-50%); z-index:31;
+    background:#1c2434; border:1px solid var(--line); color:var(--ink);
+    font-size:13px; padding:8px 14px; border-radius:99px; opacity:0; transition:opacity .25s;
+    pointer-events:none; white-space:nowrap; max-width:92%; text-overflow:ellipsis; overflow:hidden;
+  }
+  #toast.show{ opacity:1; }
+
+  /* ------- overlays (title / result / help / quiz result) ------- */
+  .overlay{
+    position:fixed; inset:0; z-index:40; display:none;
+    align-items:center; justify-content:center; padding:18px;
+    background:rgba(6,9,15,.82); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  }
+  .overlay.show{ display:flex; }
+  .sheet{
+    width:min(460px,100%); max-height:100%; overflow-y:auto;
+    background:linear-gradient(180deg,#161d2c,#10151f); border:1px solid #2a3348;
+    border-radius:18px; padding:22px 20px; text-align:center;
+    box-shadow:0 18px 50px rgba(0,0,0,.6);
+  }
+  .sheet h1{ margin:0 0 2px; font-size:30px; letter-spacing:1px; color:var(--accent); font-weight:800; }
+  .sheet h2{ margin:0 0 10px; font-size:20px; color:var(--ink); }
+  .sheet .sub{ margin:0 0 14px; font-size:13.5px; color:var(--dim); line-height:1.5; }
+  .btn{
+    display:block; width:100%; margin:8px 0 0; padding:12px 16px; border-radius:12px;
+    border:1px solid #2e3a54; background:#1b2437; color:var(--ink);
+    font-size:15px; font-weight:700; cursor:pointer;
+  }
+  .btn.primary{ background:linear-gradient(180deg,#ffb03a,#f08c1a); border-color:#c97a15; color:#221503; }
+  .btn:active{ transform:scale(.98); }
+  .bests{ margin-top:12px; font-size:12px; color:var(--dim); }
+  .statgrid{ display:flex; gap:10px; justify-content:center; margin:12px 0 4px; }
+  .stat{ flex:1; max-width:120px; background:#101724; border:1px solid var(--line); border-radius:12px; padding:10px 6px; }
+  .stat b{ display:block; font-size:20px; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .stat span{ font-size:11px; color:var(--dim); }
+  .rank{ font-size:17px; font-weight:800; color:var(--accent2); margin:6px 0 0; }
+
+  /* ------- quiz panel ------- */
+  #quizBar{
+    position:absolute; left:50%; top:10px; transform:translateX(-50%); z-index:22;
+    width:min(560px, calc(100% - 20px)); display:none;
+    background:#141b2a; border:1px solid var(--line); border-radius:12px;
+    padding:9px 14px; text-align:center; font-size:14px; line-height:1.4;
+  }
+  #quizBar.show{ display:block; }
+  #quizBar .qn{ color:var(--dim); font-size:11px; display:block; margin-bottom:2px; }
+  #quizOpts{
+    flex:none; display:none; grid-template-columns:1fr 1fr; gap:8px;
+    padding:10px 12px calc(12px + env(safe-area-inset-bottom));
+    background:var(--panel2); border-top:1px solid var(--line);
+  }
+  #quizOpts.show{ display:grid; }
+  #quizOpts button{
+    padding:12px 8px; border-radius:11px; border:1px solid var(--line); background:var(--panel);
+    font-size:14px; font-weight:600; cursor:pointer;
+  }
+  #quizOpts button.correct{ background:#153526; border-color:var(--good); color:var(--good); }
+  #quizOpts button.wrong{ background:#391b22; border-color:var(--bad); color:var(--bad); }
+  #quizOpts .tapmsg{ grid-column:1 / -1; text-align:center; color:var(--dim); font-size:13px; padding:10px 0; }
+
+  #menuBtn{
+    position:absolute; top:10px; left:10px; z-index:22; display:none;
+    padding:8px 14px; border-radius:99px; border:1px solid var(--line); background:rgba(19,24,36,.88);
+    color:var(--ink); font-size:13px; font-weight:600; cursor:pointer;
+  }
+  #menuBtn.show{ display:block; }
+
+  @media (min-width:760px){
+    #tray{ flex-wrap:wrap; overflow:visible; justify-content:center; max-height:32vh; overflow-y:auto; }
+    .card{ width:104px; }
+  }
+  /* portrait phones: the car is a wide scene, so give it just the height it
+     needs and spend the rest on a card grid instead of one cramped strip */
+  @media (orientation:portrait) and (max-width:700px){
+    #stageWrap{ flex:none; height:max(58vw, 240px); }
+    #tray{ flex:1; flex-wrap:wrap; overflow-y:auto; align-content:flex-start; justify-content:center; }
+    .card{ width:calc(25% - 8px); min-width:82px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="hud">
+    <a class="brand" href="../index.html"><small>‹</small>GARAGE</a>
+    <div id="progressWrap">
+      <div id="progressBar"><div id="progressFill"></div></div>
+      <span id="progressText">0 / 19</span>
+    </div>
+    <span class="hudstat" id="hudTime"><b>0:00</b></span>
+    <span class="hudstat" id="hudMiss" title="wrong placements">✕ <b>0</b></span>
+    <button class="iconbtn" id="soundBtn" aria-label="Toggle sound">🔊</button>
+    <button class="iconbtn" id="helpBtn" aria-label="Help">?</button>
+  </header>
+
+  <div id="stageWrap">
+    <svg id="stage" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0d1220"/><stop offset="0.8" stop-color="#0a0e18"/>
+        </linearGradient>
+        <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#161c29"/><stop offset="1" stop-color="#0c101a"/>
+        </linearGradient>
+        <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#aab6c4"/><stop offset="1" stop-color="#77828f"/>
+        </linearGradient>
+        <linearGradient id="steelDark" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8b97a6"/><stop offset="1" stop-color="#5a6572"/>
+        </linearGradient>
+        <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="3" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- garage backdrop -->
+      <rect width="1000" height="560" fill="url(#bgGrad)"/>
+      <g opacity="0.5">
+        <rect x="60" y="60" width="150" height="90" rx="6" fill="none" stroke="#1d2536" stroke-width="2"/>
+        <line x1="80" y1="84" x2="190" y2="84" stroke="#1d2536" stroke-width="2"/>
+        <line x1="80" y1="106" x2="190" y2="106" stroke="#1d2536" stroke-width="2"/>
+        <line x1="80" y1="128" x2="160" y2="128" stroke="#1d2536" stroke-width="2"/>
+        <rect x="820" y="70" width="110" height="80" rx="6" fill="none" stroke="#1d2536" stroke-width="2"/>
+        <circle cx="855" cy="100" r="14" fill="none" stroke="#1d2536" stroke-width="2"/>
+        <circle cx="898" cy="118" r="9" fill="none" stroke="#1d2536" stroke-width="2"/>
+      </g>
+      <rect x="0" y="470" width="1000" height="90" fill="url(#floorGrad)"/>
+      <line x1="0" y1="470" x2="1000" y2="470" stroke="#242e42" stroke-width="2"/>
+      <g stroke="#141b29" stroke-width="1.5">
+        <line x1="120" y1="560" x2="180" y2="470"/><line x1="400" y1="560" x2="420" y2="470"/>
+        <line x1="640" y1="560" x2="620" y2="470"/><line x1="920" y1="560" x2="860" y2="470"/>
+      </g>
+
+      <!-- the car: parts render here in fixed z-order; slots above them -->
+      <g id="carRoot">
+        <g id="parts"></g>
+      </g>
+      <g id="slots"></g>
+    </svg>
+
+    <div id="toast" role="status"></div>
+    <div id="fact" role="dialog" aria-live="polite">
+      <div class="fic"></div>
+      <div><h3></h3><p></p></div>
+      <button class="x" aria-label="Dismiss">✕</button>
+    </div>
+    <div id="quizBar"><span class="qn"></span><span class="qq"></span></div>
+    <button id="menuBtn">☰ Menu</button>
+
+    <!-- title -->
+    <div class="overlay show" id="ovTitle">
+      <div class="sheet">
+        <h1>GARAGE</h1>
+        <p class="sub"><b>Nineteen real parts. One car.</b><br>
+          Drag each part from the tray to where it belongs — chassis, engine, carburetor,
+          alternator, driveshaft and the rest. Every correct fit teaches you what the part does.
+          Some parts stay locked until what they bolt to is in place, just like a real assembly line.</p>
+        <button class="btn primary" id="btnBuild">🔧 Build the car</button>
+        <button class="btn" id="btnQuiz">🎓 Part quiz</button>
+        <div class="bests" id="bestsLine"></div>
+      </div>
+    </div>
+
+    <!-- build result -->
+    <div class="overlay" id="ovDone">
+      <div class="sheet">
+        <h2>🏁 She runs!</h2>
+        <p class="sub">All nineteen parts in their right places.</p>
+        <div class="statgrid">
+          <div class="stat"><b id="doneTime">0:00</b><span>time</span></div>
+          <div class="stat"><b id="doneMiss">0</b><span>wrong tries</span></div>
+        </div>
+        <div class="rank" id="doneRank"></div>
+        <button class="btn primary" id="btnDoneQuiz">🎓 Take the part quiz</button>
+        <button class="btn" id="btnInspect">🔍 Inspect the car</button>
+        <button class="btn" id="btnRebuild">🔧 Build again</button>
+      </div>
+    </div>
+
+    <!-- quiz result -->
+    <div class="overlay" id="ovQuizDone">
+      <div class="sheet">
+        <h2>🎓 Quiz over</h2>
+        <div class="statgrid">
+          <div class="stat"><b id="quizScore">0/10</b><span>correct</span></div>
+        </div>
+        <div class="rank" id="quizRank"></div>
+        <button class="btn primary" id="btnQuizAgain">Try again</button>
+        <button class="btn" id="btnQuizMenu">Menu</button>
+      </div>
+    </div>
+
+    <!-- help -->
+    <div class="overlay" id="ovHelp">
+      <div class="sheet" style="text-align:left">
+        <h2 style="text-align:center">How to play</h2>
+        <p class="sub">
+          🔧 <b>Drag</b> a part from the tray onto the car — or <b>tap</b> a part, then tap where it goes.
+          Dashed outlines show every open position; work out which is whose.<br><br>
+          🔒 A locked part needs another part fitted first — the tray tells you which.<br><br>
+          ✕ A wrong drop counts as a mistake. Miss the same part twice and its true home starts pulsing.<br><br>
+          🎓 Once the car is built, take the quiz: name the glowing part, or tap the part that does the job described.
+        </p>
+        <button class="btn primary" id="btnHelpClose">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tray"></div>
+  <div id="quizOpts"></div>
+</div>
+<div id="ghost"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* =============================== PART DATA ===================================
+   Each part is drawn ONCE, as inline SVG in world coordinates (viewBox 1000×560).
+   The same markup renders in three places: placed on the car, as the tray icon
+   (via a per-part viewBox crop), and as the drag ghost. `hits` are the drop
+   zones (also quiz tap targets); parts fitted at two locations (wheels, brakes,
+   suspension, seats, doors, glass) list one rect per location and place both
+   at once — the lesson is what the part IS, not fitting four identical tyres.
+   `deps` is the assembly graph that sequences the build. Array order is z-order. */
+var PARTS = [
+  { id:'chassis', name:'Chassis', deps:[],
+    icon:[118,382,774,52],
+    hits:[[128,388,744,42]],
+    blurb:'The skeleton of the car. Every other part bolts to the chassis — it carries the weight and keeps the car rigid over bumps and through corners.',
+    q:'every other part bolts onto',
+    art:'<rect x="135" y="398" width="730" height="16" rx="7" fill="url(#steelDark)" stroke="#3c4552" stroke-width="2"/>'+
+        '<rect x="150" y="414" width="18" height="10" rx="2" fill="#4a5461"/><rect x="330" y="414" width="18" height="10" rx="2" fill="#4a5461"/>'+
+        '<rect x="510" y="414" width="18" height="10" rx="2" fill="#4a5461"/><rect x="700" y="414" width="18" height="10" rx="2" fill="#4a5461"/>'+
+        '<rect x="838" y="414" width="18" height="10" rx="2" fill="#4a5461"/>'+
+        '<circle cx="180" cy="406" r="2.6" fill="#2c333d"/><circle cx="420" cy="406" r="2.6" fill="#2c333d"/>'+
+        '<circle cx="600" cy="406" r="2.6" fill="#2c333d"/><circle cx="820" cy="406" r="2.6" fill="#2c333d"/>' },
+
+  { id:'fueltank', name:'Fuel tank', deps:['chassis'],
+    icon:[592,340,148,66],
+    hits:[[596,346,132,58]],
+    blurb:'Holds the fuel at the safe end of the car, away from the hot engine bay. An electric pump pushes it forward through fuel lines to the engine.',
+    q:'stores the petrol, away from the hot engine bay',
+    art:'<rect x="602" y="352" width="120" height="46" rx="14" fill="url(#steelDark)" stroke="#3c4552" stroke-width="2"/>'+
+        '<line x1="632" y1="352" x2="632" y2="398" stroke="#3c4552" stroke-width="2.5"/>'+
+        '<line x1="692" y1="352" x2="692" y2="398" stroke="#3c4552" stroke-width="2.5"/>'+
+        '<path d="M718 356 Q 734 348 736 336" fill="none" stroke="#5a6572" stroke-width="5" stroke-linecap="round"/>'+
+        '<text x="662" y="380" font-size="13" font-weight="700" fill="#39404b" text-anchor="middle" font-family="sans-serif">FUEL</text>' },
+
+  { id:'driveshaft', name:'Driveshaft', deps:['gearbox'],
+    icon:[438,360,310,46],
+    hits:[[440,366,306,38]],
+    blurb:'A spinning steel shaft carrying power from the gearbox back to the driven axle — with universal joints at each end so it can keep turning while the suspension moves.',
+    q:'carries power from the gearbox back to the rear axle',
+    art:'<line x1="452" y1="380" x2="736" y2="394" stroke="url(#steel)" stroke-width="9" stroke-linecap="round"/>'+
+        '<line x1="452" y1="380" x2="736" y2="394" stroke="#3c4552" stroke-width="1" opacity="0.6"/>'+
+        '<rect x="444" y="370" width="14" height="20" rx="4" fill="#77828f" stroke="#3c4552" stroke-width="1.5"/>'+
+        '<rect x="730" y="384" width="14" height="20" rx="4" fill="#77828f" stroke="#3c4552" stroke-width="1.5"/>'+
+        '<circle cx="594" cy="387" r="7" fill="#8b97a6" stroke="#3c4552" stroke-width="1.5"/>' },
+
+  { id:'exhaust', name:'Exhaust & muffler', deps:['engine'],
+    icon:[548,408,150,44],
+    hits:[[552,412,124,40]],
+    blurb:'Pipes burnt gases away from the cylinders; the muffler’s internal chambers bounce the sound waves against each other to cancel the roar. In modern cars a catalytic converter also cleans the gases on the way through.',
+    q:'quiets the burnt gases leaving the engine',
+    art:'<path d="M287 402 Q 296 430 330 431 L 560 432" fill="none" stroke="#6a7582" stroke-width="7" stroke-linecap="round"/>'+
+        '<rect x="558" y="419" width="104" height="27" rx="13" fill="url(#steel)" stroke="#3c4552" stroke-width="2"/>'+
+        '<line x1="586" y1="419" x2="586" y2="446" stroke="#3c4552" stroke-width="1.6" opacity="0.7"/>'+
+        '<line x1="634" y1="419" x2="634" y2="446" stroke="#3c4552" stroke-width="1.6" opacity="0.7"/>'+
+        '<path d="M662 432 L 872 432" fill="none" stroke="#6a7582" stroke-width="6" stroke-linecap="round"/>'+
+        '<path d="M862 432 l14 -5 l0 10 z" fill="#6a7582"/>' },
+
+  { id:'gearbox', name:'Gearbox', deps:['engine'],
+    icon:[346,330,112,82],
+    hits:[[350,336,105,72]],
+    blurb:'Engines only make good power spinning fast; wheels need force at low speed. The gearbox trades speed for torque through meshed gears so the car can pull away, climb, and cruise.',
+    q:'trades engine speed for pulling force through its gears',
+    art:'<path d="M357 342 L400 350 L446 360 Q452 361 452 368 L452 388 Q452 394 446 395 L364 404 Q357 404 357 397 Z" fill="url(#steelDark)" stroke="#3c4552" stroke-width="2"/>'+
+        '<line x1="380" y1="346" x2="380" y2="402" stroke="#3c4552" stroke-width="1.8" opacity="0.7"/>'+
+        '<line x1="402" y1="351" x2="402" y2="400" stroke="#3c4552" stroke-width="1.8" opacity="0.7"/>'+
+        '<line x1="424" y1="356" x2="424" y2="398" stroke="#3c4552" stroke-width="1.8" opacity="0.7"/>'+
+        '<circle cx="452" cy="378" r="6" fill="#8b97a6" stroke="#3c4552" stroke-width="1.5"/>' },
+
+  { id:'suspension', name:'Suspension', deps:['chassis'],
+    icon:[216,330,68,74],
+    hits:[[220,334,60,66],[720,334,60,66]],
+    blurb:'Coil springs let each wheel ride over bumps while the body stays level, and the shock absorbers (dampers) turn the bounce into heat so the car doesn’t pogo down the road.',
+    q:'soaks up the bumps so the body rides level',
+    art:(function(){
+      function spring(x){
+        var d='M'+x+' 338';
+        for(var i=0;i<5;i++){ d+=' L'+(x-13)+' '+(344+i*11)+' L'+(x+13)+' '+(349+i*11); }
+        d+=' L'+x+' 398';
+        return '<path d="'+d+'" fill="none" stroke="#c8a23a" stroke-width="5" stroke-linecap="round"/>'+
+               '<line x1="'+(x+22)+'" y1="340" x2="'+(x+22)+'" y2="396" stroke="#5a6572" stroke-width="6" stroke-linecap="round"/>'+
+               '<line x1="'+(x+22)+'" y1="340" x2="'+(x+22)+'" y2="368" stroke="#8b97a6" stroke-width="9" stroke-linecap="round"/>';
+      }
+      return spring(244)+spring(744);
+    })() },
+
+  { id:'engine', name:'Engine block', deps:['chassis'],
+    icon:[176,296,128,118],
+    hits:[[180,300,120,110]],
+    blurb:'The heart. A fuel-air mix burns inside its cylinders; the expanding gas shoves pistons down, and the pistons spin the crankshaft — combustion becomes rotation.',
+    q:'burns fuel in its cylinders to spin the crankshaft',
+    art:'<rect x="190" y="306" width="100" height="16" rx="4" fill="url(#steel)" stroke="#3c4552" stroke-width="2"/>'+
+        '<line x1="202" y1="308" x2="202" y2="320" stroke="#3c4552" stroke-width="2"/>'+
+        '<line x1="216" y1="308" x2="216" y2="320" stroke="#3c4552" stroke-width="2"/>'+
+        '<line x1="230" y1="308" x2="230" y2="320" stroke="#3c4552" stroke-width="2"/>'+
+        '<line x1="244" y1="308" x2="244" y2="320" stroke="#3c4552" stroke-width="2"/>'+
+        '<line x1="258" y1="308" x2="258" y2="320" stroke="#3c4552" stroke-width="2"/>'+
+        '<line x1="272" y1="308" x2="272" y2="320" stroke="#3c4552" stroke-width="2"/>'+
+        '<rect x="185" y="322" width="110" height="70" rx="6" fill="url(#steelDark)" stroke="#3c4552" stroke-width="2"/>'+
+        '<circle cx="207" cy="338" r="3" fill="#2c333d"/><circle cx="240" cy="338" r="3" fill="#2c333d"/><circle cx="273" cy="338" r="3" fill="#2c333d"/>'+
+        '<rect x="196" y="350" width="88" height="26" rx="4" fill="none" stroke="#4a5461" stroke-width="2"/>'+
+        '<path d="M200 392 Q 202 406 224 406 L 258 406 Q 278 406 282 392 Z" fill="#5a6572" stroke="#3c4552" stroke-width="2"/>'+
+        '<circle cx="290" cy="380" r="8" fill="#8b97a6" stroke="#3c4552" stroke-width="2"/>' },
+
+  { id:'alternator', name:'Alternator', deps:['engine'],
+    icon:[296,346,54,54],
+    hits:[[302,352,42,42]],
+    blurb:'A belt off the engine spins the alternator to generate electricity while you drive — recharging the battery and running the lights, wipers and electronics.',
+    q:'generates electricity from a belt while the engine runs',
+    art:'<path d="M290 372 Q 306 364 322 366 M290 388 Q 306 384 322 380" fill="none" stroke="#2c333d" stroke-width="3"/>'+
+        '<circle cx="322" cy="373" r="16" fill="url(#steel)" stroke="#3c4552" stroke-width="2"/>'+
+        '<circle cx="322" cy="373" r="6" fill="#5a6572" stroke="#3c4552" stroke-width="1.5"/>'+
+        '<line x1="311" y1="362" x2="333" y2="384" stroke="#3c4552" stroke-width="1.5" opacity="0.7"/>'+
+        '<line x1="333" y1="362" x2="311" y2="384" stroke="#3c4552" stroke-width="1.5" opacity="0.7"/>' },
+
+  { id:'radiator', name:'Radiator', deps:['chassis'],
+    icon:[128,270,50,132],
+    hits:[[134,276,40,122]],
+    blurb:'Burning fuel makes far more heat than the engine can stand. Coolant carries that heat here, and air rushing through the radiator’s thin fins dumps it into the wind.',
+    q:'lets the wind carry away the engine’s heat',
+    art:'<rect x="140" y="282" width="28" height="110" rx="5" fill="#3d4756" stroke="#3c4552" stroke-width="2"/>'+
+        '<line x1="140" y1="296" x2="168" y2="296" stroke="#242c38" stroke-width="2"/>'+
+        '<line x1="140" y1="310" x2="168" y2="310" stroke="#242c38" stroke-width="2"/>'+
+        '<line x1="140" y1="324" x2="168" y2="324" stroke="#242c38" stroke-width="2"/>'+
+        '<line x1="140" y1="338" x2="168" y2="338" stroke="#242c38" stroke-width="2"/>'+
+        '<line x1="140" y1="352" x2="168" y2="352" stroke="#242c38" stroke-width="2"/>'+
+        '<line x1="140" y1="366" x2="168" y2="366" stroke="#242c38" stroke-width="2"/>'+
+        '<line x1="140" y1="380" x2="168" y2="380" stroke="#242c38" stroke-width="2"/>'+
+        '<rect x="146" y="274" width="12" height="8" rx="2" fill="#8b97a6"/>'+
+        '<path d="M168 292 Q 180 292 186 302" fill="none" stroke="#2c333d" stroke-width="5"/>'+
+        '<path d="M168 384 Q 180 388 186 384" fill="none" stroke="#2c333d" stroke-width="5"/>' },
+
+  { id:'battery', name:'Battery', deps:['chassis'],
+    icon:[298,288,64,62],
+    hits:[[302,294,58,52]],
+    blurb:'A box of stored chemistry. Its jolt spins the starter motor to wake the engine, and it runs the lights and electronics when the engine is off.',
+    q:'stores the jolt that starts the engine',
+    art:'<rect x="306" y="302" width="50" height="42" rx="5" fill="#1f2836" stroke="#3c4552" stroke-width="2"/>'+
+        '<rect x="306" y="302" width="50" height="12" rx="5" fill="#2b3648"/>'+
+        '<rect x="312" y="296" width="9" height="8" rx="2" fill="#c8a23a"/>'+
+        '<rect x="341" y="296" width="9" height="8" rx="2" fill="#8b97a6"/>'+
+        '<text x="317" y="336" font-size="13" font-weight="800" fill="#c8a23a" font-family="sans-serif">+</text>'+
+        '<text x="341" y="336" font-size="13" font-weight="800" fill="#8b97a6" font-family="sans-serif">−</text>' },
+
+  { id:'carburetor', name:'Carburetor', deps:['engine'],
+    icon:[212,258,66,54],
+    hits:[[216,262,58,48]],
+    blurb:'Mixes air and fuel in just the right ratio (about 14.7 parts air to 1 of fuel) before it enters the cylinders. Modern cars use electronic fuel injection — the job is exactly the same.',
+    q:'mixes air and fuel before it enters the cylinders',
+    art:'<rect x="231" y="292" width="28" height="14" rx="3" fill="#5a6572" stroke="#3c4552" stroke-width="1.5"/>'+
+        '<rect x="226" y="272" width="38" height="22" rx="5" fill="url(#steel)" stroke="#3c4552" stroke-width="2"/>'+
+        '<circle cx="222" cy="288" r="7" fill="#8b97a6" stroke="#3c4552" stroke-width="1.5"/>'+
+        '<rect x="236" y="266" width="18" height="7" rx="2" fill="#77828f" stroke="#3c4552" stroke-width="1.5"/>'+
+        '<line x1="264" y1="278" x2="272" y2="274" stroke="#3c4552" stroke-width="2.5"/>' },
+
+  { id:'airfilter', name:'Air filter', deps:['carburetor'],
+    icon:[194,236,102,36],
+    hits:[[198,242,94,26]],
+    blurb:'An engine breathes thousands of litres of air a minute. The filter catches the dust and grit that would otherwise sand the cylinders down from the inside.',
+    q:'cleans the air the engine breathes',
+    art:'<rect x="203" y="252" width="84" height="12" rx="6" fill="#5a6572" stroke="#3c4552" stroke-width="2"/>'+
+        '<ellipse cx="245" cy="252" rx="42" ry="8" fill="url(#steel)" stroke="#3c4552" stroke-width="2"/>'+
+        '<line x1="212" y1="256" x2="212" y2="262" stroke="#3c4552" stroke-width="1.5" opacity="0.6"/>'+
+        '<line x1="224" y1="258" x2="224" y2="264" stroke="#3c4552" stroke-width="1.5" opacity="0.6"/>'+
+        '<line x1="266" y1="258" x2="266" y2="264" stroke="#3c4552" stroke-width="1.5" opacity="0.6"/>'+
+        '<line x1="278" y1="256" x2="278" y2="262" stroke="#3c4552" stroke-width="1.5" opacity="0.6"/>'+
+        '<circle cx="245" cy="248" r="4" fill="#8b97a6" stroke="#3c4552" stroke-width="1.5"/>' },
+
+  { id:'brakes', name:'Disc brakes', deps:['suspension'],
+    icon:[212,368,76,76],
+    hits:[[218,374,64,64],[718,374,64,64]],
+    blurb:'Calipers squeeze friction pads against the spinning disc, turning the car’s motion into heat. That’s all braking is — and it’s why hard-worked brakes glow.',
+    q:'squeezes pads against a spinning disc to stop the car',
+    art:(function(){
+      function disc(cx){
+        return '<circle cx="'+cx+'" cy="406" r="27" fill="url(#steel)" stroke="#3c4552" stroke-width="2"/>'+
+               '<circle cx="'+cx+'" cy="406" r="10" fill="#5a6572" stroke="#3c4552" stroke-width="1.5"/>'+
+               '<circle cx="'+cx+'" cy="406" r="20" fill="none" stroke="#3c4552" stroke-width="1" opacity="0.5"/>'+
+               '<path d="M'+(cx+8)+' 382 A 27 27 0 0 1 '+(cx+26)+' 400" fill="none" stroke="#c04252" stroke-width="10" stroke-linecap="round"/>';
+      }
+      return disc(250)+disc(750);
+    })() },
+
+  { id:'wheels', name:'Wheels & tyres', deps:['brakes'],
+    icon:[184,340,132,132],
+    hits:[[190,346,120,120],[690,346,120,120]],
+    blurb:'The only parts that ever touch the road. Everything the engine, brakes and steering do reaches the tarmac through four contact patches, each about the size of your palm.',
+    q:'is the only part that actually touches the road',
+    art:(function(){
+      function wheel(cx){
+        var s='<g class="wheelg" data-cx="'+cx+'">'+
+          '<circle cx="'+cx+'" cy="406" r="60" fill="#171a20" stroke="#30363f" stroke-width="3"/>'+
+          '<circle cx="'+cx+'" cy="406" r="52" fill="none" stroke="#242933" stroke-width="2" stroke-dasharray="8 7"/>'+
+          '<circle cx="'+cx+'" cy="406" r="34" fill="#141821" stroke="#727e8c" stroke-width="3"/>';
+        for(var i=0;i<5;i++){
+          var a=(i*72-90)*Math.PI/180;
+          s+='<line x1="'+cx+'" y1="406" x2="'+(cx+30*Math.cos(a)).toFixed(1)+'" y2="'+(406+30*Math.sin(a)).toFixed(1)+'" stroke="#9aa7b4" stroke-width="7" stroke-linecap="round"/>';
+        }
+        s+='<circle cx="'+cx+'" cy="406" r="9" fill="#b8c2cc" stroke="#3c4552" stroke-width="2"/></g>';
+        return s;
+      }
+      return wheel(250)+wheel(750);
+    })() },
+
+  { id:'body', name:'Body shell', deps:['engine','driveshaft','exhaust','fueltank'],
+    icon:[96,160,800,246],
+    hits:[[110,168,780,226]],
+    blurb:'The body-drop: the painted shell is lowered onto the finished rolling chassis. It smooths the airflow, keeps the weather out — and its crumple zones are designed to fold up in a crash so the passengers don’t.',
+    q:'is lowered over everything at the body-drop',
+    art:'<path id="bodyPath" d="M108 388 L108 330 Q108 280 150 262 L206 252 L330 244 L396 180 Q404 170 424 170 L630 170 Q652 170 662 182 L726 258 L846 278 Q882 284 884 328 L884 388 L818 392 A 69 69 0 0 0 682 392 L318 392 A 69 69 0 0 0 182 392 Z" fill="rgba(120,165,215,0.10)" stroke="#7fa8d0" stroke-width="3" stroke-linejoin="round"/>'+
+        '<path d="M330 244 L726 258" fill="none" stroke="#7fa8d0" stroke-width="1.5" opacity="0.35"/>'+
+        '<g id="headlight"><ellipse cx="118" cy="308" rx="7" ry="10" fill="#39445a" stroke="#7fa8d0" stroke-width="1.5"/></g>'+
+        '<ellipse cx="872" cy="310" rx="6" ry="9" fill="#5a2f3a" stroke="#b06070" stroke-width="1.5"/>'+
+        '<rect x="112" y="346" width="30" height="8" rx="3" fill="none" stroke="#7fa8d0" stroke-width="1.5" opacity="0.6"/>'+
+        '<polygon id="beam" points="112,298 -40,272 -40,342 112,320" fill="#fff4c2" opacity="0" style="pointer-events:none"/>' },
+
+  { id:'seats', name:'Seats', deps:['body'],
+    icon:[446,198,88,160],
+    hits:[[450,204,82,150],[588,204,82,150]],
+    blurb:'More than furniture: the seat mounts and the belt anchors bolted through them are crash structure, engineered to hold you through an impact many times your weight.',
+    q:'holds the driver, and is anchored to survive a crash',
+    art:(function(){
+      function seat(x){
+        return '<rect x="'+x+'" y="330" width="58" height="22" rx="8" fill="#7a4a3a" stroke="#4c2c22" stroke-width="2"/>'+
+               '<rect x="'+(x+44)+'" y="232" width="20" height="104" rx="9" fill="#7a4a3a" stroke="#4c2c22" stroke-width="2" transform="rotate(6 '+(x+54)+' 284)"/>'+
+               '<rect x="'+(x+48)+'" y="210" width="24" height="20" rx="8" fill="#7a4a3a" stroke="#4c2c22" stroke-width="2"/>'+
+               '<line x1="'+(x+8)+'" y1="352" x2="'+(x+8)+'" y2="366" stroke="#4c2c22" stroke-width="4"/>'+
+               '<line x1="'+(x+46)+'" y1="352" x2="'+(x+46)+'" y2="366" stroke="#4c2c22" stroke-width="4"/>';
+      }
+      return seat(454)+seat(592);
+    })() },
+
+  { id:'steering', name:'Steering wheel', deps:['body'],
+    icon:[368,226,64,80],
+    hits:[[372,230,56,72]],
+    blurb:'Your one input to where the car goes. Turning the rim swivels the front wheels through the steering rack — geared right down, so small precise hand motions become wheel angles.',
+    q:'turns the front wheels through the steering rack',
+    art:'<line x1="408" y1="268" x2="380" y2="294" stroke="#5a6572" stroke-width="6" stroke-linecap="round"/>'+
+        '<ellipse cx="410" cy="262" rx="7" ry="24" fill="none" stroke="#2d3644" stroke-width="6" transform="rotate(-12 410 262)"/>'+
+        '<ellipse cx="410" cy="262" rx="7" ry="24" fill="none" stroke="#8b97a6" stroke-width="3" transform="rotate(-12 410 262)"/>' },
+
+  { id:'windshield', name:'Windshield & glass', deps:['body'],
+    icon:[326,172,94,84],
+    hits:[[332,176,82,70],[650,182,76,76]],
+    blurb:'Laminated safety glass: a plastic layer sandwiched between two sheets, so a cracked windshield holds together in one piece instead of raining fragments.',
+    q:'is layered glass that stays whole when it cracks',
+    art:'<polygon points="338,238 398,184 410,184 352,238" fill="rgba(150,220,255,0.30)" stroke="#9fd7f2" stroke-width="2"/>'+
+        '<polygon points="658,190 672,190 716,252 700,252" fill="rgba(150,220,255,0.30)" stroke="#9fd7f2" stroke-width="2"/>' },
+
+  { id:'doors', name:'Doors', deps:['body'],
+    icon:[352,176,166,220],
+    hits:[[356,180,158,214],[518,180,148,214]],
+    blurb:'Steel side-impact beams run inside each door to protect the cabin, and the latches are engineered to stay shut through a crash — a door that flies open is a failed part.',
+    q:'has a steel beam inside it to protect the cabin',
+    art:'<path d="M362 388 L362 278 L406 190 Q410 184 420 184 L508 184 L508 388 Z" fill="rgba(140,170,205,0.13)" stroke="#8fb2d6" stroke-width="2.5" stroke-linejoin="round"/>'+
+        '<path d="M368 274 L500 274" stroke="#8fb2d6" stroke-width="1.5" opacity="0.6"/>'+
+        '<polygon points="372,270 410,194 420,194 420,270" fill="rgba(150,220,255,0.22)" stroke="#9fd7f2" stroke-width="1.5"/>'+
+        '<rect x="472" y="288" width="24" height="7" rx="3.5" fill="#8fb2d6"/>'+
+        '<path d="M516 388 L516 184 L604 184 Q616 184 622 192 L660 252 L660 388 Z" fill="rgba(140,170,205,0.13)" stroke="#8fb2d6" stroke-width="2.5" stroke-linejoin="round"/>'+
+        '<path d="M522 274 L654 274" stroke="#8fb2d6" stroke-width="1.5" opacity="0.6"/>'+
+        '<polygon points="526,270 526,194 598,194 644,270" fill="rgba(150,220,255,0.22)" stroke="#9fd7f2" stroke-width="1.5"/>'+
+        '<rect x="624" y="288" width="24" height="7" rx="3.5" fill="#8fb2d6"/>' }
+];
+
+var byId={}; PARTS.forEach(function(p){ byId[p.id]=p; });
+var TOTAL=PARTS.length;
+
+/* =============================== STATE ====================================== */
+var S = {
+  mode:'title',            // title | build | done | inspect | quiz
+  placed:{},               // id -> true
+  count:0,
+  mistakes:0,
+  startedAt:0, elapsed:0, timerOn:false,
+  misses:{},               // id -> wrong drops on this part (for the hint)
+  selected:null,           // tap-to-place selection
+  quiz:null
+};
+var best={};
+try{ best=JSON.parse(localStorage.getItem('garage.best')||'{}')||{}; }catch(e){ best={}; }
+function saveBest(){ try{ localStorage.setItem('garage.best', JSON.stringify(best)); }catch(e){} }
+
+/* =============================== AUDIO ======================================
+   All synthesized, all behind one mute flag, context created lazily on first
+   gesture (autoplay policy). Nothing here may throw into the game. */
+var sound = (function(){
+  var ctx=null, on=true;
+  try{ on = localStorage.getItem('garage.sound')!=='off'; }catch(e){}
+  function ac(){
+    if(!ctx){ try{ ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+    if(ctx && ctx.state==='suspended'){ try{ ctx.resume(); }catch(e){} }
+    return ctx;
+  }
+  function env(g,t,a,d,v){ g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+a); g.gain.exponentialRampToValueAtTime(0.0001,t+a+d); }
+  function tone(freq,type,a,d,v,when,slide){
+    var c=ac(); if(!c||!on) return;
+    try{
+      var t=c.currentTime+(when||0), o=c.createOscillator(), g=c.createGain();
+      o.type=type; o.frequency.setValueAtTime(freq,t);
+      if(slide) o.frequency.exponentialRampToValueAtTime(slide,t+a+d);
+      env(g,t,a,d,v); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+a+d+0.05);
+    }catch(e){}
+  }
+  function noise(dur,v,when,lp){
+    var c=ac(); if(!c||!on) return;
+    try{
+      var t=c.currentTime+(when||0), n=Math.floor(c.sampleRate*dur), buf=c.createBuffer(1,n,c.sampleRate), d=buf.getChannelData(0);
+      for(var i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
+      var src=c.createBufferSource(); src.buffer=buf;
+      var g=c.createGain(); g.gain.value=v;
+      var f=c.createBiquadFilter(); f.type='lowpass'; f.frequency.value=lp||900;
+      src.connect(f); f.connect(g); g.connect(c.destination); src.start(t);
+    }catch(e){}
+  }
+  return {
+    get on(){ return on; },
+    toggle:function(){ on=!on; try{ localStorage.setItem('garage.sound', on?'on':'off'); }catch(e){} return on; },
+    pick:function(){ tone(660,'triangle',0.006,0.05,0.12); },
+    clunk:function(){ noise(0.08,0.5,0,500); tone(120,'sine',0.004,0.14,0.5); tone(84,'sine',0.004,0.2,0.35,0.02); },
+    chime:function(){ tone(880,'sine',0.01,0.22,0.16); tone(1318.5,'sine',0.01,0.3,0.12,0.09); },
+    buzz:function(){ tone(120,'square',0.005,0.16,0.16); tone(98,'square',0.005,0.14,0.14,0.05); },
+    good:function(){ tone(660,'triangle',0.01,0.15,0.2); tone(880,'triangle',0.01,0.2,0.2,0.1); },
+    fanfare:function(){ [523.3,659.3,784,1046.5].forEach(function(f,i){ tone(f,'triangle',0.01,0.35,0.22,i*0.12); }); },
+    engine:function(){
+      noise(0.5,0.6,0,300);
+      tone(55,'sawtooth',0.3,2.0,0.25,0.15,180);
+      tone(110,'sawtooth',0.3,2.0,0.12,0.15,360);
+      noise(1.6,0.25,0.3,240);
+    }
+  };
+})();
+
+/* =============================== DOM refs =================================== */
+var $=function(id){ return document.getElementById(id); };
+var stage=$('stage'), partsG=$('parts'), slotsG=$('slots'), carRoot=$('carRoot');
+var tray=$('tray'), ghost=$('ghost'), fact=$('fact'), toast=$('toast');
+var quizBar=$('quizBar'), quizOpts=$('quizOpts'), menuBtn=$('menuBtn');
+var SVGNS='http://www.w3.org/2000/svg';
+
+/* Build the SVG groups once: for every part, its placed art (hidden until
+   fitted) and its slot (dashed rects, one per fit location, doubling as drop
+   targets and quiz tap targets). */
+PARTS.forEach(function(p){
+  var g=document.createElementNS(SVGNS,'g');
+  g.setAttribute('class','part'); g.setAttribute('data-id',p.id); g.id='part-'+p.id;
+  var ring=p.hits.map(function(h){
+    return '<rect class="glowring" x="'+(h[0]-4)+'" y="'+(h[1]-4)+'" width="'+(h[2]+8)+'" height="'+(h[3]+8)+'" rx="12"/>';
+  }).join('');
+  g.innerHTML=p.art+ring;
+  partsG.appendChild(g);
+
+  var s=document.createElementNS(SVGNS,'g');
+  s.setAttribute('class','slot'); s.setAttribute('data-id',p.id); s.id='slot-'+p.id;
+  s.innerHTML=p.hits.map(function(h){
+    return '<rect class="sil" x="'+h[0]+'" y="'+h[1]+'" width="'+h[2]+'" height="'+h[3]+'" rx="10"/>'+
+           '<rect class="hit" x="'+(h[0]-14)+'" y="'+(h[1]-14)+'" width="'+(h[2]+28)+'" height="'+(h[3]+28)+'"/>';
+  }).join('');
+  slotsG.appendChild(s);
+});
+
+function iconSVG(p){
+  var b=p.icon;
+  return '<svg viewBox="'+b[0]+' '+b[1]+' '+b[2]+' '+b[3]+'" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'+
+         '<defs><linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#aab6c4"/><stop offset="1" stop-color="#77828f"/></linearGradient>'+
+         '<linearGradient id="steelDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8b97a6"/><stop offset="1" stop-color="#5a6572"/></linearGradient></defs>'+
+         p.art+'</svg>';
+}
+
+/* tray cards, shuffled per run — the scattered garage floor */
+var trayOrder=[];
+function buildTray(){
+  trayOrder=PARTS.slice();
+  for(var i=trayOrder.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)), t=trayOrder[i]; trayOrder[i]=trayOrder[j]; trayOrder[j]=t; }
+  tray.innerHTML='';
+  trayOrder.forEach(function(p){
+    var c=document.createElement('div');
+    c.className='card'; c.dataset.id=p.id;
+    c.innerHTML=iconSVG(p)+'<span class="nm">'+p.name+'</span>';
+    tray.appendChild(c);
+  });
+  refreshTray();
+}
+
+function available(p){ return !S.placed[p.id] && p.deps.every(function(d){ return S.placed[d]; }); }
+
+function refreshTray(){
+  [].forEach.call(tray.children,function(c){
+    var p=byId[c.dataset.id];
+    c.classList.toggle('done', !!S.placed[p.id]);
+    c.classList.toggle('locked', !S.placed[p.id] && !available(p));
+    c.classList.toggle('selected', S.selected===p.id);
+  });
+}
+
+function refreshSlots(){
+  [].forEach.call(slotsG.children,function(s){
+    var p=byId[s.getAttribute('data-id')];
+    s.classList.toggle('open', S.mode==='build' && available(p));
+  });
+}
+
+/* =============================== HUD / feedback ============================= */
+function fmtTime(ms){ var s=Math.floor(ms/1000); return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2); }
+function refreshHud(){
+  $('progressFill').style.width=(S.count/TOTAL*100)+'%';
+  $('progressText').textContent=S.count+' / '+TOTAL;
+  $('hudMiss').innerHTML='✕ <b>'+S.mistakes+'</b>';
+  $('hudTime').innerHTML='<b>'+fmtTime(elapsedNow())+'</b>';
+}
+function elapsedNow(){ return S.timerOn ? S.elapsed+(performance.now()-S.startedAt) : S.elapsed; }
+setInterval(function(){ if(S.timerOn) $('hudTime').innerHTML='<b>'+fmtTime(elapsedNow())+'</b>'; },500);
+
+var toastTimer=null;
+function showToast(msg){
+  toast.textContent=msg; toast.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(function(){ toast.classList.remove('show'); },2200);
+}
+
+var factTimer=null;
+function showFact(p){
+  fact.querySelector('.fic').innerHTML=iconSVG(p);
+  fact.querySelector('h3').textContent=p.name;
+  fact.querySelector('p').textContent=p.blurb;
+  fact.classList.add('show');
+  clearTimeout(factTimer); factTimer=setTimeout(hideFact,7000);
+}
+function hideFact(){ fact.classList.remove('show'); clearTimeout(factTimer); }
+fact.querySelector('.x').addEventListener('click',hideFact);
+
+/* =============================== PLACEMENT ==================================
+   One function places a part, whether it arrived by drag, by tap-to-place, or
+   from the test hook — so a headless probe exercises the real path. */
+function placePart(id){
+  var p=byId[id];
+  if(!p || S.placed[id] || !available(p)) return false;
+  if(!S.timerOn && S.mode==='build'){ S.timerOn=true; S.startedAt=performance.now(); }
+  S.placed[id]=true; S.count++;
+  S.selected=null;
+  var g=$('part-'+id); g.classList.add('placed');
+  var slot=$('slot-'+id); slot.classList.remove('open','hint');
+  sound.clunk();
+  setTimeout(function(){ sound.chime(); },140);
+  showFact(p);
+  refreshTray(); refreshSlots(); refreshHud();
+  if(S.count===TOTAL) setTimeout(finishBuild,650);
+  return true;
+}
+
+function wrongDrop(intendedSlotId,heldId){
+  S.mistakes++;
+  S.misses[heldId]=(S.misses[heldId]||0)+1;
+  sound.buzz();
+  var s=$('slot-'+intendedSlotId);
+  if(s){ s.classList.add('reject'); setTimeout(function(){ s.classList.remove('reject'); },400); }
+  if(S.misses[heldId]>=2){
+    var mine=$('slot-'+heldId); mine.classList.add('hint');
+    setTimeout(function(){ mine.classList.remove('hint'); },3200);
+  }
+  refreshHud();
+}
+
+/* find the nearest open slot to an SVG-space point (padded rects) */
+function slotAt(pt){
+  var bestSlot=null, bestD=Infinity;
+  PARTS.forEach(function(p){
+    if(!(S.mode==='build' && available(p))) return;
+    p.hits.forEach(function(h){
+      var pad=26;
+      if(pt.x>=h[0]-pad && pt.x<=h[0]+h[2]+pad && pt.y>=h[1]-pad && pt.y<=h[1]+h[3]+pad){
+        var cx=h[0]+h[2]/2, cy=h[1]+h[3]/2;
+        var d=Math.hypot(pt.x-cx,pt.y-cy);
+        if(d<bestD){ bestD=d; bestSlot=p.id; }
+      }
+    });
+  });
+  return bestSlot;
+}
+function svgPoint(clientX,clientY){
+  var m=stage.getScreenCTM(); if(!m) return {x:-1,y:-1};
+  var inv=m.inverse();
+  return { x:inv.a*clientX+inv.c*clientY+inv.e, y:inv.b*clientX+inv.d*clientY+inv.f };
+}
+
+/* =============================== DRAG & TAP =================================
+   Cards use touch-action:pan-x — a horizontal swipe scrolls the tray natively
+   (we get pointercancel and stand down); a vertical pull, or any mouse drag,
+   becomes a lift. A press that never moves is a tap: select, then tap a slot. */
+var drag=null; // {id, x0,y0, moved, card}
+tray.addEventListener('pointerdown',function(e){
+  var card=e.target.closest('.card'); if(!card) return;
+  var p=byId[card.dataset.id];
+  if(S.mode!=='build') return;
+  if(S.placed[p.id]) return;
+  if(!available(p)){
+    var missing=p.deps.filter(function(d){ return !S.placed[d]; }).map(function(d){ return byId[d].name; });
+    showToast('🔒 Fit the '+missing.join(' and ')+' first');
+    sound.buzz();
+    return;
+  }
+  drag={ id:p.id, x0:e.clientX, y0:e.clientY, moved:false, card:card };
+  try{ card.setPointerCapture(e.pointerId); }catch(err){}
+});
+tray.addEventListener('pointermove',function(e){
+  if(!drag) return;
+  var dx=e.clientX-drag.x0, dy=e.clientY-drag.y0;
+  if(!drag.moved){
+    if(Math.hypot(dx,dy)<8) return;
+    // horizontal touch swipes belong to the tray scroller
+    if(e.pointerType!=='mouse' && Math.abs(dx)>Math.abs(dy)*1.4){ drag=null; return; }
+    drag.moved=true;
+    drag.card.classList.add('dragging');
+    ghost.innerHTML=iconSVG(byId[drag.id]);
+    ghost.style.display='block';
+    slotsG.classList.add('showing'); refreshSlots();
+    sound.pick();
+  }
+  ghost.style.transform='translate('+(e.clientX-60)+'px,'+(e.clientY-70)+'px)';
+});
+function endDrag(e,cancelled){
+  if(!drag) return;
+  var d=drag; drag=null;
+  d.card.classList.remove('dragging');
+  ghost.style.display='none';
+  if(cancelled){ slotsG.classList.remove('showing'); return; }
+  if(!d.moved){
+    // a tap: toggle selection for tap-to-place
+    S.selected = (S.selected===d.id) ? null : d.id;
+    slotsG.classList.toggle('showing', !!S.selected); refreshSlots();
+    refreshTray();
+    if(S.selected) sound.pick();
+    return;
+  }
+  slotsG.classList.remove('showing');
+  var pt=svgPoint(e.clientX,e.clientY);
+  var hit=slotAt(pt);
+  if(hit===d.id){ placePart(d.id); }
+  else if(hit){ wrongDrop(hit,d.id); }
+  refreshTray();
+}
+tray.addEventListener('pointerup',function(e){ endDrag(e,false); });
+tray.addEventListener('pointercancel',function(e){ endDrag(e,true); });
+
+/* stage taps: tap-to-place in build, part inspection when done, quiz answers */
+stage.addEventListener('pointerup',function(e){
+  var pt=svgPoint(e.clientX,e.clientY);
+  if(S.mode==='build' && S.selected){
+    var hit=slotAt(pt);
+    var held=S.selected;
+    if(hit===held){ slotsG.classList.remove('showing'); placePart(held); }
+    else if(hit){ wrongDrop(hit,held); }
+    else { S.selected=null; slotsG.classList.remove('showing'); refreshTray(); }
+    return;
+  }
+  if(S.mode==='inspect' || S.mode==='done'){
+    var p=partAt(pt);
+    if(p){ showFact(p); sound.pick(); }
+    return;
+  }
+  if(S.mode==='quiz' && S.quiz && S.quiz.await==='tap'){
+    var tapped=partAt(pt);
+    if(tapped) quizAnswerTap(tapped.id);
+  }
+});
+function partAt(pt){
+  var found=null, bestD=Infinity;
+  PARTS.forEach(function(p){
+    if(!S.placed[p.id]) return;
+    p.hits.forEach(function(h){
+      if(pt.x>=h[0]-8 && pt.x<=h[0]+h[2]+8 && pt.y>=h[1]-8 && pt.y<=h[1]+h[3]+8){
+        var area=h[2]*h[3];            // smallest rect wins: the carburetor beats the engine behind it
+        if(area<bestD){ bestD=area; found=p; }
+      }
+    });
+  });
+  return found;
+}
+
+/* =============================== FLOW ======================================= */
+function resetBuild(){
+  S.placed={}; S.count=0; S.mistakes=0; S.misses={}; S.selected=null;
+  S.elapsed=0; S.timerOn=false; S.quiz=null;
+  [].forEach.call(partsG.children,function(g){ g.classList.remove('placed','spot'); });
+  partsG.classList.remove('dimOthers');
+  [].forEach.call(slotsG.children,function(s){ s.classList.remove('hint','reject'); });
+  carRoot.classList.remove('driveoff');
+  [].forEach.call(stage.querySelectorAll('.wheelg'),function(w){ w.classList.remove('wheelspin'); });
+  var beam=$('beam'); if(beam) beam.setAttribute('opacity','0');
+  hideFact();
+  buildTray(); refreshSlots(); refreshHud();
+}
+
+function showOnly(ov){
+  ['ovTitle','ovDone','ovQuizDone','ovHelp'].forEach(function(id){ $(id).classList.remove('show'); });
+  if(ov) $(ov).classList.add('show');
+}
+
+function startBuild(){
+  S.mode='build';
+  resetBuild(); showOnly(null);
+  tray.style.display='flex'; quizOpts.classList.remove('show'); quizBar.classList.remove('show');
+  menuBtn.classList.remove('show');
+}
+
+function rankFor(m){ return m===0?'🏆 Master Mechanic':(m<=3?'🔧 Mechanic':(m<=7?'🔩 Apprentice':'📖 Trainee')); }
+
+function finishBuild(){
+  S.timerOn=false; S.elapsed=elapsedNow()-0; S.mode='done';
+  hideFact();
+  // headlights + engine + drive off
+  var beam=$('beam'); if(beam) beam.setAttribute('opacity','0.5');
+  var hl=$('headlight'); if(hl){ var el=hl.querySelector('ellipse'); if(el) el.setAttribute('fill','#fff4c2'); }
+  sound.engine();
+  setTimeout(function(){ sound.fanfare(); },700);
+  setTimeout(function(){
+    [].forEach.call(stage.querySelectorAll('.wheelg'),function(w){ w.classList.add('wheelspin'); });
+    carRoot.classList.add('driveoff');
+  },900);
+  var t=Math.round(S.elapsed/1000), m=S.mistakes;
+  if(best.time==null || t<best.time) best.time=t;
+  if(best.mistakes==null || m<best.mistakes) best.mistakes=m;
+  saveBest();
+  try{ if(window.bgTrack) window.bgTrack('build_complete',{ seconds:t, mistakes:m }); }catch(e){}
+  setTimeout(function(){
+    // bring the car back for inspection behind the result sheet
+    carRoot.classList.remove('driveoff');
+    [].forEach.call(stage.querySelectorAll('.wheelg'),function(w){ w.classList.remove('wheelspin'); });
+    $('doneTime').textContent=fmtTime(S.elapsed);
+    $('doneMiss').textContent=m;
+    $('doneRank').textContent=rankFor(m);
+    showOnly('ovDone');
+  },3600);
+}
+
+/* =============================== QUIZ =======================================
+   Ten rounds on the complete car, two alternating forms:
+   name-it (a part glows → four names) and find-it (a job → tap the part). */
+var QN=10;
+function startQuiz(){
+  S.mode='quiz';
+  // quiz runs on the finished car whether or not this session built it
+  PARTS.forEach(function(p){ if(!S.placed[p.id]){ S.placed[p.id]=true; S.count++; $('part-'+p.id).classList.add('placed'); } });
+  S.selected=null; slotsG.classList.remove('showing');
+  hideFact(); showOnly(null);
+  tray.style.display='none'; menuBtn.classList.add('show');
+  refreshHud();
+  var pool=PARTS.slice();
+  for(var i=pool.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)), t=pool[i]; pool[i]=pool[j]; pool[j]=t; }
+  S.quiz={ order:pool.slice(0,QN), i:0, score:0, await:null };
+  nextQuestion();
+}
+function nextQuestion(){
+  var q=S.quiz;
+  partsG.classList.remove('dimOthers');
+  [].forEach.call(partsG.children,function(g){ g.classList.remove('spot'); });
+  if(q.i>=q.order.length){ return endQuiz(); }
+  var p=q.order[q.i], form=(q.i%2===0)?'name':'tap';
+  q.current=p; q.await=form;
+  quizBar.classList.add('show');
+  quizBar.querySelector('.qn').textContent='Question '+(q.i+1)+' of '+q.order.length;
+  quizOpts.classList.add('show');
+  if(form==='name'){
+    quizBar.querySelector('.qq').textContent='Which part is glowing?';
+    partsG.classList.add('dimOthers');
+    $('part-'+p.id).classList.add('spot');
+    var opts=[p], others=PARTS.filter(function(x){ return x.id!==p.id; });
+    for(var k=0;k<3;k++){ opts.push(others.splice(Math.floor(Math.random()*others.length),1)[0]); }
+    opts.sort(function(){ return Math.random()-0.5; });
+    quizOpts.innerHTML='';
+    opts.forEach(function(o){
+      var b=document.createElement('button');
+      b.textContent=o.name; b.dataset.id=o.id;
+      b.addEventListener('click',function(){ quizAnswerName(o.id,b); });
+      quizOpts.appendChild(b);
+    });
+  } else {
+    quizBar.querySelector('.qq').textContent='Tap the part that '+p.q+'.';
+    quizOpts.innerHTML='<div class="tapmsg">👆 Tap the part on the car</div>';
+  }
+}
+function quizFeedback(correct,answerId){
+  var q=S.quiz; q.await=null;
+  if(correct){ q.score++; sound.good(); } else { sound.buzz(); }
+  // always show the right part + its fact, so a miss still teaches
+  partsG.classList.add('dimOthers');
+  [].forEach.call(partsG.children,function(g){ g.classList.remove('spot'); });
+  $('part-'+q.current.id).classList.add('spot');
+  showFact(q.current);
+  setTimeout(function(){ hideFact(); q.i++; nextQuestion(); }, correct?1600:2600);
+}
+function quizAnswerName(id,btn){
+  var q=S.quiz; if(!q || q.await!=='name') return;
+  var right=(id===q.current.id);
+  [].forEach.call(quizOpts.children,function(b){
+    if(b.dataset.id===q.current.id) b.classList.add('correct');
+    else if(b===btn && !right) b.classList.add('wrong');
+    b.disabled=true;
+  });
+  quizFeedback(right,id);
+}
+function quizAnswerTap(id){
+  var q=S.quiz; if(!q || q.await!=='tap') return;
+  quizFeedback(id===q.current.id,id);
+}
+function endQuiz(){
+  quizBar.classList.remove('show'); quizOpts.classList.remove('show');
+  partsG.classList.remove('dimOthers');
+  var sc=S.quiz.score;
+  if(best.quiz==null || sc>best.quiz){ best.quiz=sc; saveBest(); }
+  try{ if(window.bgTrack) window.bgTrack('quiz_complete',{ score:sc, of:QN }); }catch(e){}
+  $('quizScore').textContent=sc+'/'+QN;
+  $('quizRank').textContent = sc===QN?'🏆 Master Mechanic':(sc>=8?'🔧 Mechanic':(sc>=5?'🔩 Apprentice':'📖 Trainee'));
+  showOnly('ovQuizDone');
+}
+
+/* =============================== MENUS ====================================== */
+function toTitle(){
+  S.mode='title';
+  quizBar.classList.remove('show'); quizOpts.classList.remove('show');
+  partsG.classList.remove('dimOthers');
+  menuBtn.classList.remove('show');
+  tray.style.display='flex';
+  hideFact();
+  var lines=[];
+  if(best.time!=null) lines.push('Best build '+fmtTime(best.time*1000)+' · '+best.mistakes+' wrong tries');
+  if(best.quiz!=null) lines.push('Best quiz '+best.quiz+'/'+QN);
+  $('bestsLine').textContent=lines.join('  ·  ');
+  showOnly('ovTitle');
+}
+
+$('btnBuild').addEventListener('click',startBuild);
+$('btnQuiz').addEventListener('click',startQuiz);
+$('btnDoneQuiz').addEventListener('click',startQuiz);
+$('btnQuizAgain').addEventListener('click',startQuiz);
+$('btnQuizMenu').addEventListener('click',toTitle);
+$('btnRebuild').addEventListener('click',startBuild);
+$('btnInspect').addEventListener('click',function(){
+  S.mode='inspect'; showOnly(null); menuBtn.classList.add('show');
+  showToast('Tap any part to read about it');
+});
+menuBtn.addEventListener('click',toTitle);
+$('helpBtn').addEventListener('click',function(){ $('ovHelp').classList.add('show'); });
+$('btnHelpClose').addEventListener('click',function(){ $('ovHelp').classList.remove('show'); });
+$('soundBtn').addEventListener('click',function(){ $('soundBtn').textContent = sound.toggle() ? '🔊' : '🔇'; });
+$('soundBtn').textContent = sound.on ? '🔊' : '🔇';
+
+/* boot */
+resetBuild();
+toTitle();
+
+/* test hook — drives the same placement/quiz code paths as a real gesture */
+window.__garage={
+  get state(){ return { mode:S.mode, count:S.count, total:TOTAL, mistakes:S.mistakes, placed:Object.keys(S.placed), quiz:S.quiz && { i:S.quiz.i, score:S.quiz.score, await:S.quiz.await, current:S.quiz.current&&S.quiz.current.id } }; },
+  parts:PARTS.map(function(p){ return { id:p.id, name:p.name, deps:p.deps }; }),
+  startBuild:startBuild, startQuiz:startQuiz, place:placePart,
+  answerName:quizAnswerName, answerTap:quizAnswerTap, reset:function(){ toTitle(); }
+};
+
+})();
+</script>
+<script src="../analytics.js"></script>
+</body>
+</html>

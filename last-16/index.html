@@ -3,7 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Last 16 — World Cup 2026 Arcade Football</title>
+<title>Last 16 — Kreeda</title>
+<meta name="description" content="World Cup Round of 16 — pick a nation, control one star player, and fight through the real bracket.">
+<link rel="canonical" href="https://kreeda.games/last-16/">
+<meta name="theme-color" content="#04140a">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/last-16/">
+<meta property="og:title" content="Last 16 — Kreeda">
+<meta property="og:description" content="World Cup Round of 16 — pick a nation, control one star player, and fight through the real bracket.">
+<meta property="og:image" content="https://kreeda.games/assets/last-16-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Last 16 — Kreeda">
+<meta name="twitter:description" content="World Cup Round of 16 — pick a nation, control one star player, and fight through the real bracket.">
+<meta name="twitter:image" content="https://kreeda.games/assets/last-16-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Last 16","description":"World Cup Round of 16 — pick a nation, control one star player, and fight through the real bracket.","url":"https://kreeda.games/last-16/","image":"https://kreeda.games/assets/last-16-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Sports","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
 <style>
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
   html,body{
@@ -163,7 +187,8 @@
 
   <div id="screen-mode" class="screen hidden">
     <h1 class="title" style="font-size:28px;">CHOOSE MODE</h1>
-    <div class="mode-row">
+    <p class="subtitle" id="modeStats"></p>
+    <div class="mode-row" id="modeButtonsRow">
       <button class="btn" data-mode="tournament">TOURNAMENT</button>
       <button class="btn secondary" data-mode="quick">QUICK MATCH</button>
     </div>
@@ -215,7 +240,7 @@
   <div id="screen-champion" class="screen hidden">
     <h1 class="title" style="font-size:38px;">🏆 CHAMPIONS 🏆</h1>
     <div id="champStats"></div>
-    <div class="mode-row"><button class="btn" id="champMenuBtn">MAIN MENU</button></div>
+    <div class="mode-row"><button class="btn" id="champMenuBtn">MAIN MENU</button><button class="btn secondary" id="champShareBtn">SHARE</button></div>
   </div>
 
   <div id="pauseOverlay" class="overlay hidden">
@@ -1380,6 +1405,90 @@ function renderMatch(match){
   }
 }
 
+/* ---- Kreeda persistence — see /DAILY.md. Copied, not imported: this file stays standalone. ---- */
+const SLUG = 'last-16';
+const LS = { get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+             set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+const FINISH_NAMES = ['Round of 16','Quarter-Finals','Semi-Finals','Runner-up','Champion'];
+
+// last-16.best = furthest tournament finish ever reached: -1 none yet, 0..3 = knocked out in that
+// round (R16/QF/SF/FINAL), 4 = won the whole thing. Monotonic — a bad run afterward can't erase it.
+// -1 is the "never played" sentinel rather than 0, because 0 is itself a real finish (round-of-16
+// exit) — collapsing the two would hide a legitimate result behind "no finishes yet".
+function loadBestFinish(){
+  const raw = LS.get(SLUG+'.best');
+  const v = raw==='' ? -1 : Math.round(+raw);
+  return (Number.isFinite(v) && v>=-1 && v<=4) ? v : -1;
+}
+let bestFinish = loadBestFinish();
+function saveBestFinish(finishIdx){
+  if(finishIdx>bestFinish){ bestFinish=finishIdx; LS.set(SLUG+'.best', String(bestFinish)); return true; }
+  return false;
+}
+
+// last-16.settings = "<lastNation>|<lastPlayerIdx>|<tournamentResumeJSON-or-empty>". The bracket
+// is genuinely structured data (pairs of nations per round), so — same precedent as drift/'s
+// dghost — it rides as a JSON tail after the flat pipe-delimited prefix instead of being flattened.
+function loadSettings(){
+  const parts = LS.get(SLUG+'.settings').split('|');
+  let lastNation = parts[0];
+  if(!NATIONS[lastNation]) lastNation='';
+  let lastPlayerIdx = Math.round(+parts[1]);
+  if(!Number.isFinite(lastPlayerIdx) || lastPlayerIdx<0 || (lastNation && lastPlayerIdx>=NATIONS[lastNation].players.length)) lastPlayerIdx=0;
+  let resume=null;
+  const tail = parts.slice(2).join('|');
+  if(tail){
+    try{
+      const j = JSON.parse(tail);
+      // every field is load-bearing for resume: a stale/hand-edited bracket that doesn't shrink
+      // by half each round, or names an unknown nation, is discarded rather than half-trusted
+      if(j && typeof j.round==='number' && j.round>=0 && j.round<=3 &&
+         Array.isArray(j.bracket) && j.bracket.length===(8>>j.round) &&
+         j.bracket.every(pair=>Array.isArray(pair) && pair.length===2 && NATIONS[pair[0]] && NATIONS[pair[1]]) &&
+         typeof j.humanKey==='string' && NATIONS[j.humanKey] &&
+         j.bracket.some(pair=>pair.includes(j.humanKey))){
+        resume = j;
+      }
+    }catch(e){ resume=null; }
+  }
+  return { lastNation, lastPlayerIdx, resume };
+}
+const Settings = loadSettings();
+function persistSettings(){
+  const tail = Settings.resume ? JSON.stringify(Settings.resume) : '';
+  LS.set(SLUG+'.settings', Settings.lastNation+'|'+Settings.lastPlayerIdx+'|'+tail);
+}
+function saveLastPick(nationKey, playerIdx){
+  Settings.lastNation=nationKey; Settings.lastPlayerIdx=playerIdx; persistSettings();
+}
+function saveTournamentResume(t){
+  Settings.resume = { round:t.round, bracket:t.bracket, humanKey:t.humanKey };
+  persistSettings();
+}
+function clearTournamentResume(){
+  Settings.resume = null; persistSettings();
+}
+
+/* ============================================================ TELEMETRY ============================================================ */
+/* The one call into analytics.js, and deliberately the dumbest possible wrapper: if that file was
+   blocked, never loaded, or is doing nothing because we're on file://, this is a no-op and the game
+   cannot tell. Nothing in here is load-bearing — no return value is read, nothing branches on it. */
+function track(name,params){ try{ if(window.bgTrack) window.bgTrack(name,params); }catch(e){} }
+
+/* A TOURNAMENT RUN IS A SEQUENCE OF MATCHES, not one sitting of play — a single start/end pair over
+   the whole bracket would tell you nothing about where people actually fall. So game_start/game_end
+   fire once PER MATCH (bracket round or quick match alike), and a separate tournament_end fires once
+   when the run itself is over — eliminated or crowned. matchParams() is the shared shape both events
+   carry, built fresh at the moment it's called so it always describes the match just played/starting,
+   never a stale one left over from a previous pick. */
+function matchParams(extra){
+  const p = { mode: App.mode==='tournament'?'tournament':'quick-match',
+              nation: App.humanNationKey, opponent: App.quickOpponentKey, star_idx: App.humanPlayerIdx };
+  if(App.mode==='tournament') p.round = App.tournament.roundNames[App.tournament.round];
+  if(extra) for(const k in extra) p[k]=extra[k];
+  return p;
+}
+
 /* ============================================================ SCREEN / APP STATE ============================================================ */
 const screens = ['title','mode','nation','player','match','result','champion'];
 function showScreen(name){
@@ -1401,7 +1510,40 @@ function startApp(){
 document.getElementById('screen-title').addEventListener('click',()=>{ AudioEngine.init(); goModeSelect(); });
 window.addEventListener('keydown',()=>{ if(!document.getElementById('screen-title').classList.contains('hidden')){ AudioEngine.init(); goModeSelect(); } });
 
-function goModeSelect(){ showScreen('mode'); }
+function goModeSelect(){ renderModeScreen(); showScreen('mode'); }
+// paints best finish / last pick, and (re)creates the RESUME button when a saved bracket exists —
+// this is the whole reason the resume payload gets written mid-tournament: a save nobody sees is dead weight
+function renderModeScreen(){
+  try{
+    const statsEl=document.getElementById('modeStats');
+    statsEl.textContent = bestFinish>=0 ? ('Best finish: '+FINISH_NAMES[bestFinish]) : 'No tournament finishes yet';
+    if(Settings.lastNation) statsEl.textContent += '  ·  Last played: '+NATIONS[Settings.lastNation].name;
+
+    const row=document.getElementById('modeButtonsRow');
+    let resumeBtn=document.getElementById('resumeTournamentBtn');
+    if(Settings.resume){
+      const r=Settings.resume;
+      const roundLabel=['Round of 16','Quarter-Finals','Semi-Finals','Final'][r.round]||'Round of 16';
+      if(!resumeBtn){
+        resumeBtn=document.createElement('button');
+        resumeBtn.id='resumeTournamentBtn'; resumeBtn.className='btn';
+        resumeBtn.addEventListener('click',()=>{
+          const rr=Settings.resume;
+          if(!rr) return;
+          App.mode='tournament';
+          App.tournament={ round:rr.round, roundNames:['R16','QF','SF','FINAL'], bracket:rr.bracket.map(m=>m.slice()), humanKey:rr.humanKey, results:[], eliminated:false };
+          App.humanNationKey=rr.humanKey;
+          App.pickStage='human';
+          startTournamentRound();
+        });
+        row.insertBefore(resumeBtn, row.firstChild);
+      }
+      resumeBtn.textContent = 'RESUME · '+roundLabel+' · '+NATIONS[r.humanKey].code;
+    } else if(resumeBtn){
+      resumeBtn.remove();
+    }
+  }catch(e){}
+}
 document.querySelectorAll('#screen-mode .btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     App.mode = btn.getAttribute('data-mode');
@@ -1481,6 +1623,7 @@ function populatePlayerGrid(){
 
 function startTournamentRound(){
   const t = App.tournament;
+  saveTournamentResume(t);   // checkpoint at the start of every round, including R16 — a bracket is "mid-run" from the first pick on
   const roundName = t.roundNames[t.round];
   const fixture = t.bracket.find(m=>m.includes(t.humanKey));
   const oppKey = fixture[0]===t.humanKey?fixture[1]:fixture[0];
@@ -1492,6 +1635,7 @@ function startTournamentRound(){
 function beginMatchFromSelection(){
   const humanKey = App.humanNationKey;
   const oppKey = App.quickOpponentKey;
+  saveLastPick(humanKey, App.humanPlayerIdx);
   const teamA = makeTeam(humanKey,'left');
   const teamB = makeTeam(oppKey,'right');
   const starIdx = App.humanPlayerIdx;
@@ -1506,6 +1650,8 @@ function beginMatchFromSelection(){
   teamB.aiScale = aiScale;
   const match = newMatch(teamA, teamB, {isKnockout:true, roundLabel});
   App.match = match;
+  match._t0 = performance.now();   // wall-clock mark, not match.clock — a paused/bannered match still spends real seconds
+  track('game_start', matchParams());
   showScreen('match');
   resizePitchCanvas();
   kickoff(match, Math.random()<0.5?teamA:teamB);
@@ -1524,12 +1670,38 @@ function simulateAIMatch(keyA,keyB){
   return { winner, scoreText: drawn?`${wg}-${wg} (pens)`:`${wg}-${lg}` };
 }
 
+function kreedaShare(text, url, btn){
+  try{
+    var full = text + ' ' + url;
+    if (navigator.share) {
+      navigator.share({ text: full }).catch(function(){});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(full).then(function(){
+        kreedaToast(btn, 'Copied!');
+      }).catch(function(){ kreedaToast(btn, full); });
+    } else {
+      kreedaToast(btn, full);
+    }
+  }catch(e){}
+}
+function kreedaToast(anchorEl, msg){
+  try{
+    if(!anchorEl) return;
+    var original = anchorEl.textContent;
+    anchorEl.textContent = msg;
+    setTimeout(function(){ try{ anchorEl.textContent = original; }catch(e){} }, 1500);
+  }catch(e){}
+}
 function onMatchEnded(match){
   document.getElementById('penUI').classList.add('hidden');
   document.getElementById('shotMeterWrap').classList.add('hidden');
   const human = match.humanTeam;
   const opp = human===match.teamA?match.teamB:match.teamA;
   const humanWon = match.winner===human;
+  // every match ends through here — regulation win/loss AND a decided shootout both funnel into
+  // onMatchEnded, so this is the one place a game_end can't be missed regardless of how it finished
+  track('game_end', matchParams({ outcome: humanWon?'win':'loss',
+    duration_s: Math.round((performance.now()-match._t0)/1000), went_to_penalties: match.penalty?1:0 }));
   document.getElementById('resultTitle').textContent = App.mode==='tournament' ? (App.tournament.roundNames[App.tournament.round]+' RESULT') : 'FULL TIME';
   document.getElementById('resultStats').innerHTML = `${match.teamA.name} ${match.teamA.score} - ${match.teamB.score} ${match.teamB.name}` + (match.penalty?` <br>Penalties: ${match.penalty.scoreA} - ${match.penalty.scoreB}`:'');
   const roundListEl = document.getElementById('roundList');
@@ -1541,9 +1713,19 @@ function onMatchEnded(match){
     const t = App.tournament;
     if(!humanWon){
       AudioEngine.miss();
+      if(saveBestFinish(t.round)) document.getElementById('resultStats').innerHTML += '<br><span style="color:#ffd93d;font-weight:800;">New best finish!</span>';
+      clearTournamentResume();
+      // the run itself is over — a THIRD event distinct from the match's own game_end, because "lost
+      // the SF" and "lost the R16" are both one game_end(outcome:'loss') and only round_reached here
+      // tells them apart across a whole bracket
+      track('tournament_end', { outcome:'eliminated', round_reached:t.roundNames[t.round], matches_played:t.round+1, nation:t.humanKey });
+      const roundLabel = ['Round of 16','Quarter-Finals','Semi-Finals','Final'][t.round] || 'Round of 16';
       const btn = document.createElement('button'); btn.className='btn'; btn.textContent='MAIN MENU';
       btn.addEventListener('click',()=>{ resetToTitle(); });
+      const shareBtn = document.createElement('button'); shareBtn.className='btn secondary'; shareBtn.textContent='SHARE';
+      shareBtn.addEventListener('click',()=>{ kreedaShare(`I reached the ${roundLabel} in Last 16 ⚽ — beat me:`, 'https://kreeda.games/last-16/?ref=share', shareBtn); });
       btnWrap.appendChild(btn);
+      btnWrap.appendChild(shareBtn);
       showScreen('result');
       return;
     }
@@ -1560,6 +1742,9 @@ function onMatchEnded(match){
     AudioEngine.roundUp();
     if(t.round>=3){
       // won the final
+      saveBestFinish(4);
+      clearTournamentResume();
+      track('tournament_end', { outcome:'champion', round_reached:'FINAL', matches_played:4, nation:t.humanKey });
       const btn = document.createElement('button'); btn.className='btn'; btn.textContent='CLAIM TROPHY';
       btn.addEventListener('click',()=>{ showChampion(); });
       btnWrap.appendChild(btn);
@@ -1575,11 +1760,14 @@ function onMatchEnded(match){
     }
     showScreen('result');
   } else {
+    const scoreText = `${human.score}-${opp.score}`;
     const btn1 = document.createElement('button'); btn1.className='btn'; btn1.textContent='PLAY AGAIN';
     btn1.addEventListener('click',()=>{ goModeSelect(); });
     const btn2 = document.createElement('button'); btn2.className='btn secondary'; btn2.textContent='MAIN MENU';
     btn2.addEventListener('click',()=>{ resetToTitle(); });
-    btnWrap.appendChild(btn1); btnWrap.appendChild(btn2);
+    const shareBtn = document.createElement('button'); shareBtn.className='btn secondary'; shareBtn.textContent='SHARE';
+    shareBtn.addEventListener('click',()=>{ kreedaShare(`I won ${scoreText} in Last 16 ⚽ — beat me:`, 'https://kreeda.games/last-16/?ref=share', shareBtn); });
+    btnWrap.appendChild(btn1); btnWrap.appendChild(btn2); btnWrap.appendChild(shareBtn);
     showScreen('result');
   }
 }
@@ -1589,17 +1777,35 @@ function showChampion(){
   showScreen('champion');
 }
 document.getElementById('champMenuBtn').addEventListener('click',()=>resetToTitle());
+document.getElementById('champShareBtn').addEventListener('click',()=>{
+  try{
+    kreedaShare('I won the World Cup in Last 16 ⚽ — beat me:', 'https://kreeda.games/last-16/?ref=share', document.getElementById('champShareBtn'));
+  }catch(e){}
+});
 function resetToTitle(){ App.mode=null; App.tournament=null; App.match=null; showScreen('title'); }
+
+/* A match walking away via the pause menu never reaches onMatchEnded — RESTART and MAIN MENU both
+   drop the match object on the floor instead. Without this it's a silent hole in the data: every
+   quit looks identical to a tab just closing, and "how many people bail mid-match" is unanswerable.
+   Guarded on .ended so a match that already finished (result screen showing, pause overlay stale)
+   can't double-report. */
+function abandonMatchIfActive(){
+  if(App.match && !App.match.ended){
+    track('game_end', matchParams({ outcome:'quit',
+      duration_s: Math.round((performance.now()-App.match._t0)/1000), went_to_penalties: App.match.penalty?1:0 }));
+  }
+}
 
 /* ============================================================ PAUSE ============================================================ */
 let paused=false;
 document.getElementById('pauseBtn').addEventListener('click',()=>togglePause());
 document.getElementById('resumeBtn').addEventListener('click',()=>togglePause());
 document.getElementById('restartBtn').addEventListener('click',()=>{
+  abandonMatchIfActive();
   togglePause();
   beginMatchFromSelection();
 });
-document.getElementById('menuBtn').addEventListener('click',()=>{ togglePause(); resetToTitle(); });
+document.getElementById('menuBtn').addEventListener('click',()=>{ abandonMatchIfActive(); togglePause(); resetToTitle(); });
 document.getElementById('muteBtn').addEventListener('click',()=>{
   AudioEngine.muted = !AudioEngine.muted;
   document.getElementById('muteBtn').textContent = AudioEngine.muted?'🔇':'🔊';

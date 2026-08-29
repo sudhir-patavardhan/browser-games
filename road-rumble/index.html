@@ -3,8 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Road Rumble — Kreeda</title>
+<meta name="description" content="A Road Rash-style brawler — race five rivals down a pseudo-3D highway and punch your way past them.">
+<link rel="canonical" href="https://kreeda.games/road-rumble/">
 <meta name="theme-color" content="#4aa3ff">
-<title>Road Rumble</title>
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/road-rumble/">
+<meta property="og:title" content="Road Rumble — Kreeda">
+<meta property="og:description" content="A Road Rash-style brawler — race five rivals down a pseudo-3D highway and punch your way past them.">
+<meta property="og:image" content="https://kreeda.games/assets/road-rumble-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Road Rumble — Kreeda">
+<meta name="twitter:description" content="A Road Rash-style brawler — race five rivals down a pseudo-3D highway and punch your way past them.">
+<meta name="twitter:image" content="https://kreeda.games/assets/road-rumble-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Road Rumble","description":"A Road Rash-style brawler — race five rivals down a pseudo-3D highway and punch your way past them.","url":"https://kreeda.games/road-rumble/","image":"https://kreeda.games/assets/road-rumble-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Racing","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
 <script>
 /* Fail loud: never let an error leave a silent black screen — surface it as visible text. */
 window.addEventListener('error', function(ev){
@@ -55,8 +78,10 @@ window.addEventListener('error', function(ev){
     color:#0c1018; background:linear-gradient(180deg,#ffe38a,#ffb648); padding:2px 8px; border-radius:8px; }
 
   /* touch controls */
-  .touch{ position:fixed; inset:0; z-index:4; pointer-events:none; display:none; }
-  body.touch .touch{ display:block; }
+  /* #touch, not .touch: the body also carries class "touch" on touch devices, and an element
+     selector of .touch would match it too — display:none on body blanks the whole page. */
+  #touch{ position:fixed; inset:0; z-index:4; pointer-events:none; display:none; }
+  body.touch #touch{ display:block; }
   .btn{ position:fixed; pointer-events:auto; border:none; border-radius:50%; touch-action:none;
     display:flex; align-items:center; justify-content:center; font-weight:900; color:#fff;
     text-shadow:0 1px 3px rgba(0,0,0,.35); box-shadow:0 8px 22px rgba(0,0,0,.3);
@@ -147,6 +172,7 @@ window.addEventListener('error', function(ev){
     <div class="rsub" id="finalTime">Time 0:00</div>
     <div class="newbest" id="newBest" style="display:none">NEW BEST FINISH!</div>
     <div style="margin-top:22px"><button class="go" id="againBtn">Ride again</button></div>
+    <div style="margin-top:12px"><button class="go" id="shareBtn" style="background:linear-gradient(180deg,#8ec9ff,#4a90d8); box-shadow:0 8px 0 #2f6aa8; font-size:16px; padding:11px 34px;">Share</button></div>
   </div>
 </div>
 
@@ -284,7 +310,7 @@ function newGame(){
   game={
     position:0, playerX:0, speed:maxSpeed*0.12, steer:0, lean:0, bob:0,
     health:100, club:false, crash:false, crashT:0, spin:0, hurtT:0, punchT:0, punchCd:0, boostFlash:0,
-    rivals, traffic, pickups, elapsed:0, hillOffset:0, skyShift:0,
+    rivals, traffic, pickups, elapsed:0, hillOffset:0, skyShift:0, wipeouts:0,
     finished:false, finishPlace:0, finishOrder:[],
     crashHeadon:0, crashRearend:0, crashBeaten:0, punchesThrown:0, punchesLanded:0, clubGrabbed:false,
     forceThrottle:undefined, forceBrake:undefined, forceSteer:undefined, forcePunch:false
@@ -450,6 +476,35 @@ function crashPlayer(reason){ const g=game; if(g.crash||g.finished) return;
   if(reason==='HEAD-ON') g.crashHeadon++; else if(reason==='REAR-ENDED') g.crashRearend++; else if(reason==='BEATEN DOWN') g.crashBeaten++;
   g.crash=true; g.crashT=1.35; g.crashReason=reason; g.spin=0; g.health=Math.max(0,g.health); sfx.crash(); }
 
+function kreedaShare(text, url, btn){
+  try{
+    var full = text + ' ' + url;
+    if (navigator.share) {
+      navigator.share({ text: full }).catch(function(){});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(full).then(function(){
+        kreedaToast(btn, 'Copied!');
+      }).catch(function(){ kreedaToast(btn, full); });
+    } else {
+      kreedaToast(btn, full);
+    }
+  }catch(e){}
+}
+function kreedaToast(anchorEl, msg){
+  try{
+    if(!anchorEl) return;
+    var original = anchorEl.textContent;
+    anchorEl.textContent = msg;
+    setTimeout(function(){ try{ anchorEl.textContent = original; }catch(e){} }, 1500);
+  }catch(e){}
+}
+
+/* The one call into analytics.js, and deliberately the dumbest possible wrapper: if that file was
+   blocked, never loaded, or is doing nothing because we're on file://, this is a no-op and the game
+   cannot tell. Nothing in here is load-bearing — no return value is read, nothing branches on it. */
+function track(name,params){ try{ if(window.bgTrack) window.bgTrack(name,params); }catch(e){} }
+
+let lastFinishOrd='';
 function liveRank(){ const g=game; let ahead=0; for(const r of g.rivals) if(r.dist>g.position) ahead++; return ahead+1; }
 function finishRacer(who){ const g=game;
   if(who==='player'){ g.finished=true; g.finishOrder.push('player'); g.finishPlace=g.finishOrder.length;
@@ -465,6 +520,7 @@ function endRace(){ const g=game; state='over';
     punches_thrown:g.punchesThrown, punches_landed:g.punchesLanded, club_grabbed:g.clubGrabbed?1:0,
     input: document.body.classList.contains('touch')?'touch':'keyboard' });
   const ord=['1st','2nd','3rd','4th','5th','6th'][place-1]||place+'th';
+  lastFinishOrd=ord;
   document.getElementById('overTitle').textContent = place===1?'YOU WON':'FINISHED';
   document.getElementById('finalPos').textContent = ord;
   const m=Math.floor(g.elapsed/60), s=Math.floor(g.elapsed%60);
@@ -707,6 +763,12 @@ function startGame(){
 }
 document.getElementById('startBtn').onclick=startGame;
 document.getElementById('againBtn').onclick=startGame;
+document.getElementById('shareBtn').addEventListener('click',function(){
+  try{
+    const btn=document.getElementById('shareBtn');
+    kreedaShare('I finished '+lastFinishOrd+' in Road Rumble 🏍️ — beat me:', 'https://kreeda.games/road-rumble/?ref=share', btn);
+  }catch(e){}
+});
 
 /* ============================ test hooks ============================ */
 window.__rumble={

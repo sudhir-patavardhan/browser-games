@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Valence — Kreeda</title>
+<meta name="description" content="A daily chemistry grid. Three criteria down, three across, nine cells, nine guesses — name a chemical element for every square before the guesses run out. Built for high-school chemistry.">
+<link rel="canonical" href="https://kreeda.games/valence/">
+<meta name="theme-color" content="#12303c">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/valence/">
+<meta property="og:title" content="Valence — Kreeda">
+<meta property="og:description" content="A daily chemistry grid. Three criteria down, three across, nine cells, nine guesses — name a chemical element for every square before the guesses run out.">
+<meta property="og:image" content="https://kreeda.games/assets/valence-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Valence — Kreeda">
+<meta name="twitter:description" content="A daily chemistry grid. Three criteria down, three across, nine cells, nine guesses — name a chemical element for every square before the guesses run out.">
+<meta name="twitter:image" content="https://kreeda.games/assets/valence-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Valence","description":"A daily chemistry grid. Three criteria down, three across, nine cells, nine guesses — name a chemical element for every square before the guesses run out.","url":"https://kreeda.games/valence/","image":"https://kreeda.games/assets/valence-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+<style>
+/* ============================ tokens ============================
+   A school laboratory at dusk: slate bench, cold glass, one flame. Every colour lives here once.
+   Light is the base; the two dark blocks below only REDEFINE these same names, so no rule
+   downstream ever needs to know which theme it is painting in. */
+:root{
+  --deep:#12303c;   --mid:#2f6272;    --ground:#cdd9d5;
+  --ink:#12211c;    --ink-dim:#455a51; --rule:rgba(24,46,38,.45);
+  --panel:#f5f3ec;  --panel-2:#e8e5d9; --shade:rgba(10,24,20,.58);
+  --hdbg:#1f3b34;   --head-fg:#eef6f2; --cellbg:#cdd9d5;
+  --fill:#fbf8ef;   --fill-ink:#12211c; --notch:#2f7fbf;
+  --lamp:#ffd166;   --flame:#2f7fbf;
+  /* --ok is measured, not chosen: the success message sits on the pale end of the page gradient
+     (--ground #cdd9d5) at 13px bold, where AA needs 4.5:1. #1f6b46 reached only 4.46. */
+  --ok:#1a6040;     --no:#993118;
+}
+/* The default "system" theme stamps nothing on <html>, so prefers-color-scheme is the only signal.
+   Guarded with :not([data-theme="light"]) so an explicit light choice still wins over the query. */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --deep:#04141a;   --mid:#0c2a33;    --ground:#141f1c;
+    --ink:#e9f2ec;    --ink-dim:#a7bbb1; --rule:rgba(220,235,228,.30);
+    --panel:#1a2522;  --panel-2:#22302c; --shade:rgba(0,0,0,.68);
+    --hdbg:#0b1815;   --head-fg:#dcefe5; --cellbg:#22302c;
+    --fill:#cfe0d7;   --fill-ink:#0d1a16; --notch:#6ec6ff;
+    --lamp:#ffd166;   --flame:#6ec6ff;
+    --ok:#8ed6a4;     --no:#f0a189;
+  }
+}
+:root[data-theme="dark"]{
+  --deep:#04141a;   --mid:#0c2a33;    --ground:#141f1c;
+  --ink:#e9f2ec;    --ink-dim:#a7bbb1; --rule:rgba(220,235,228,.30);
+  --panel:#1a2522;  --panel-2:#22302c; --shade:rgba(0,0,0,.68);
+  --hdbg:#0b1815;   --head-fg:#dcefe5; --cellbg:#22302c;
+  --fill:#cfe0d7;   --fill-ink:#0d1a16; --notch:#6ec6ff;
+  --lamp:#ffd166;   --flame:#6ec6ff;
+  --ok:#8ed6a4;     --no:#f0a189;
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  /* An explicit background is mandatory: a transparent body would borrow the host's theme. */
+  background:
+    radial-gradient(110% 55% at 50% -8%, var(--mid) 0%, transparent 58%),
+    linear-gradient(180deg, var(--deep) 0%, var(--mid) 30%, var(--ground) 100%);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  min-height:100vh;
+  /* overflow-x hidden is NOT the fix for wide content — every wide child scrolls in its own box.
+     This is only a guard so a rounding error can never rock the whole page sideways. */
+  overflow-x:hidden;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{ max-width:560px; margin:0 auto; padding: max(10px, env(safe-area-inset-top)) 12px
+        calc(24px + env(safe-area-inset-bottom)); }
+
+/* ============================ chrome ============================ */
+header.top{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:6px 0 10px; }
+h1{ font-size:26px; font-weight:900; letter-spacing:.5px; margin:0; color:var(--lamp);
+    text-shadow:0 2px 0 rgba(0,0,0,.32); }
+h1 small{ display:block; font-size:11px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase;
+    color:var(--head-fg); opacity:.78; margin-top:2px; text-shadow:none; }
+.datechip{ margin-left:auto; font-size:12px; font-weight:800; color:var(--head-fg);
+    border:1px solid var(--rule); border-radius:999px; padding:4px 10px; background:var(--hdbg); }
+.datechip.arch{ color:var(--lamp); border-color:var(--lamp); }
+
+.scorebar{ display:flex; gap:8px; align-items:stretch; margin:0 0 10px; }
+.stat{ flex:1; background:var(--panel); border:1px solid var(--rule); border-radius:12px;
+  padding:7px 9px; min-width:0; }
+.stat b{ display:block; font-size:19px; font-weight:900; line-height:1.1; }
+.stat span{ display:block; font-size:10px; font-weight:700; letter-spacing:.7px; text-transform:uppercase;
+  color:var(--ink-dim); margin-top:1px; }
+
+/* ============================ the grid ============================
+   4x4: a corner, three column headers, three row headers, nine cells. aspect-ratio keeps it square so
+   the headers never reflow the cells when a longer criterion lands tomorrow. */
+.gridwrap{ overflow-x:auto; }                 /* the one place a narrow phone may pan, not the page */
+#grid{
+  display:grid; grid-template-columns:74px repeat(3,1fr); grid-template-rows:58px repeat(3,1fr);
+  gap:5px; width:min(94vw,420px); margin:0 auto; aspect-ratio:1;
+}
+@media (min-width:560px){ #grid{ width:min(94vw,480px); grid-template-columns:96px repeat(3,1fr);
+  grid-template-rows:66px repeat(3,1fr); } }
+.corner{ display:flex; align-items:center; justify-content:center; }
+.corner svg{ width:100%; height:100%; opacity:.9; }
+.hd{
+  background:var(--hdbg); border:1px solid var(--rule); border-radius:10px;
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  font-size:11px; line-height:1.15; font-weight:800; letter-spacing:.2px;
+  color:var(--head-fg); padding:4px 3px; cursor:pointer; overflow:hidden;
+  min-width:0; hyphens:auto; overflow-wrap:anywhere;
+}
+.hd:focus-visible{ outline:3px solid var(--lamp); outline-offset:2px; }
+.cell{
+  position:relative; background:var(--cellbg);
+  border:1px solid var(--rule); border-radius:10px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+  padding:6px 4px; cursor:pointer; min-width:0; overflow:hidden;
+  font-size:12px; font-weight:700; color:var(--ink);
+  transition:background .18s ease, transform .12s ease;
+}
+.cell:focus-visible{ outline:3px solid var(--lamp); outline-offset:2px; }
+.cell .plus{ font-size:22px; font-weight:400; color:var(--ink-dim); }
+/* A filled cell is a name written on a clean label. The corner notch is the point: state is never
+   colour-only, so a colour-blind player still reads "filled" from the geometry. */
+.cell.on{ background:var(--fill); color:var(--fill-ink); cursor:default; }
+.cell.on::after{
+  content:''; position:absolute; top:0; right:0; width:0; height:0;
+  border-top:14px solid var(--notch); border-left:14px solid transparent;
+  border-top-right-radius:9px;
+}
+.cell .sy{ font-size:20px; font-weight:900; line-height:1; letter-spacing:.5px; color:var(--fill-ink); }
+.cell .nm{ font-size:11px; font-weight:700; line-height:1.15; margin-top:2px; overflow-wrap:anywhere;
+  color:var(--fill-ink); }
+.cell .wt{ position:absolute; left:4px; bottom:3px; font-size:9px; font-weight:800; color:#3b544a; }
+.cell .zz{ position:absolute; left:4px; top:3px; font-size:9px; font-weight:800; color:#3b544a; }
+.cell .hint{
+  position:absolute; right:3px; bottom:1px; font-size:11px; font-weight:800; line-height:1;
+  color:var(--ink-dim); padding:4px 5px; border:0; background:none; cursor:pointer;
+}
+.cell.on .hint{ display:none; }
+@media (prefers-reduced-motion:no-preference){
+  .cell.lay{ animation:lay .34s ease; }
+  @keyframes lay{ 0%{ transform:scale(.9); } 60%{ transform:scale(1.04); } 100%{ transform:scale(1); } }
+}
+
+.msg{ min-height:34px; margin:10px auto 0; max-width:min(94vw,480px); font-size:13px; font-weight:700;
+  line-height:1.35; text-align:center; color:var(--ink); }
+.msg .yes{ color:var(--ok); } .msg .nope{ color:var(--no); }
+
+.tools{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:12px 0 6px; }
+button.btn{
+  font:inherit; font-size:13px; font-weight:800; letter-spacing:.2px;
+  background:var(--panel); color:var(--ink); border:1px solid var(--rule);
+  border-radius:11px; padding:10px 14px; min-height:44px; cursor:pointer;
+}
+button.btn:focus-visible{ outline:3px solid var(--lamp); outline-offset:2px; }
+button.btn.primary{ background:var(--hdbg); color:var(--head-fg); border-color:rgba(0,0,0,.3); }
+button.btn[aria-pressed="true"]{ background:var(--lamp); color:#12211c; }
+
+/* --ink rather than --ink-dim: this sits over the pale end of the ground gradient, where the dim
+   token only reaches about 3.7:1 and small text needs 4.5. */
+footer.foot{ margin:18px auto 0; max-width:min(94vw,480px); font-size:11px; line-height:1.6;
+  color:var(--ink); text-align:center; }
+footer.foot a{ color:var(--ink); }
+
+/* ============================ bottom sheet ============================
+   A text field inside a 100px cell loses a fight with the mobile keyboard every time, so the input
+   lives in a sheet pinned to the bottom and re-anchored off visualViewport when the keyboard opens. */
+.scrim{ position:fixed; inset:0; background:var(--shade); opacity:0; pointer-events:none;
+  transition:opacity .18s ease; z-index:40; }
+.scrim.show{ opacity:1; pointer-events:auto; }
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:50;
+  background:var(--panel); border-top:1px solid var(--rule);
+  border-radius:18px 18px 0 0; padding:14px 14px calc(14px + env(safe-area-inset-bottom));
+  transform:translateY(110%); transition:transform .22s ease;
+  max-height:88vh; overflow-y:auto;
+}
+.sheet.show{ transform:translateY(0); }
+@media (min-width:560px){
+  .sheet{ left:50%; right:auto; bottom:auto; top:50%; width:min(94vw,460px);
+    transform:translate(-50%,-40%) scale(.96); opacity:0; border-radius:18px; border:1px solid var(--rule); }
+  .sheet.show{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+}
+@media (prefers-reduced-motion:reduce){
+  .sheet,.scrim{ transition:none; }
+}
+.sheet h2{ font-size:13px; margin:0 0 8px; font-weight:800; letter-spacing:.3px; color:var(--ink-dim);
+  text-transform:uppercase; }
+.crit{ font-size:15px; font-weight:800; line-height:1.35; margin:0 0 2px; }
+.crit em{ font-style:normal; color:var(--ink-dim); font-size:12px; font-weight:800; letter-spacing:1px;
+  text-transform:uppercase; display:inline-block; min-width:56px; }
+.sheetmeta{ font-size:12px; color:var(--ink-dim); font-weight:700; margin:9px 0 6px; }
+.sheet input[type=text]{
+  width:100%; font:inherit; font-size:16px; font-weight:700;  /* 16px or iOS zooms the page on focus */
+  padding:12px 12px; border-radius:11px; border:1px solid var(--rule);
+  background:var(--panel-2); color:var(--ink); min-height:48px;
+}
+.sheet input[type=text]:focus{ outline:3px solid var(--lamp); outline-offset:1px; }
+.ta{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:5px; }
+.ta li button{ width:100%; text-align:left; font:inherit; font-size:14px; font-weight:700;
+  padding:10px 12px; min-height:44px; border-radius:10px; border:1px solid var(--rule);
+  background:var(--panel-2); color:var(--ink); cursor:pointer; }
+.ta li button small{ display:block; font-size:11px; font-weight:600; color:var(--ink-dim); }
+.disamb{ margin:9px 0 0; font-size:13px; font-weight:700; }
+.disamb .row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.disamb .row button{ font:inherit; font-size:13px; font-weight:800; padding:9px 11px; min-height:44px;
+  border-radius:10px; border:1px solid var(--rule); background:var(--lamp); color:#12211c; cursor:pointer; }
+.sheetmsg{ min-height:20px; font-size:13px; font-weight:700; margin-top:9px; line-height:1.4; }
+.sheetbtns{ display:flex; gap:8px; margin-top:11px; }
+.sheetbtns .btn{ flex:1; }
+
+/* ============================ reveal ============================ */
+.reveal{ position:fixed; inset:0; z-index:60; background:var(--panel); overflow-y:auto;
+  display:none; padding: max(14px, env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom)); }
+.reveal.show{ display:block; }
+.reveal .inner{ max-width:620px; margin:0 auto; }
+.reveal h2{ font-size:22px; margin:2px 0 4px; font-weight:900; }
+.reveal h3{ font-size:13px; margin:20px 0 6px; font-weight:900; line-height:1.35;
+  padding-bottom:5px; border-bottom:1px solid var(--rule); }
+.reveal p{ font-size:13px; line-height:1.55; margin:8px 0; }
+.reveal .note{ font-size:12px; color:var(--ink-dim); line-height:1.55; }
+.ans{ list-style:none; margin:0; padding:0; }
+.ans li{ font-size:12.5px; line-height:1.45; padding:5px 0; border-bottom:1px dashed var(--rule); }
+.ans li b{ font-size:13px; }
+.ans li.mine{ background:var(--lamp); color:#12211c; border-radius:8px; padding-left:7px; padding-right:7px; }
+.ans li.mine .g, .ans li.mine .w{ color:#2b3a24; }
+.ans li .g{ display:block; color:var(--ink-dim); }
+.ans li .w{ font-weight:800; color:var(--ok); }
+.sharebox{ width:100%; font:inherit; font-size:13px; line-height:1.5; font-family:ui-monospace,SFMono-Regular,
+  Menlo,Consolas,monospace; padding:10px; border-radius:11px; border:1px solid var(--rule);
+  background:var(--panel-2); color:var(--ink); resize:none; }
+.sr{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0);
+  white-space:nowrap; border:0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>Valence<small>Kreeda · Daily</small></h1>
+    <span class="datechip" id="datechip"></span>
+  </header>
+
+  <div class="scorebar">
+    <div class="stat"><b id="sCells">0/9</b><span>Filled</span></div>
+    <div class="stat"><b id="sGuess">9</b><span>Guesses left</span></div>
+    <div class="stat"><b id="sWeight">0</b><span>Weight</span></div>
+    <div class="stat"><b id="sStreak">0</b><span>Streak</span></div>
+  </div>
+
+  <div class="gridwrap">
+    <div id="grid" role="grid" aria-label="Today's chemistry grid, three criteria down and three across"></div>
+  </div>
+
+  <p class="msg" id="msg" role="status" aria-live="polite"></p>
+
+  <div class="tools">
+    <button class="btn" type="button" id="bHow">How to play</button>
+    <button class="btn" type="button" id="bSound" aria-pressed="true">Sound on</button>
+    <button class="btn" type="button" id="bType" aria-pressed="true">Typeahead on</button>
+    <button class="btn" type="button" id="bTheme">Theme: auto</button>
+    <button class="btn primary" type="button" id="bReveal" hidden>See every answer</button>
+  </div>
+
+  <footer class="foot">
+    <span id="asof"></span><br>
+    Element data are established facts, compiled by hand from public references.
+    No images, no logos — <a href="../">Kreeda</a>
+  </footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <h2 id="sheetTitle">Name an element</h2>
+  <p class="crit"><em>Row</em> <span id="critRow"></span></p>
+  <p class="crit"><em>Column</em> <span id="critCol"></span></p>
+  <p class="sheetmeta" id="sheetMeta"></p>
+  <label class="sr" for="guess">Type an element name or its symbol</label>
+  <input type="text" id="guess" autocapitalize="words" autocorrect="off" autocomplete="off"
+         spellcheck="false" inputmode="text" enterkeyhint="go" placeholder="e.g. Fe or iron">
+  <div class="disamb" id="disamb" hidden></div>
+  <ul class="ta" id="ta"></ul>
+  <p class="sheetmsg" id="sheetMsg" role="status" aria-live="polite"></p>
+  <div class="sheetbtns">
+    <button class="btn" type="button" id="bCancel">Cancel</button>
+    <button class="btn primary" type="button" id="bSubmit">Submit</button>
+  </div>
+</section>
+
+<section class="reveal" id="reveal" role="dialog" aria-modal="true" aria-labelledby="revTitle" hidden>
+  <div class="inner" id="revInner"></div>
+</section>
+
+<!-- analytics.js first, not last: the game script below calls track('grid_start', ...) synchronously
+     during boot. Loaded after that point this tag would still be fetching when the call happens, and
+     the event vanishes silently — window.bgTrack undefined, which track() swallows by design. This
+     was measured, not guessed: grid_start never once reached the log until the tag moved up. -->
+<script src="../analytics.js"></script>
+<script>
+'use strict';
+/* ============================================================================================
+   VALENCE — a daily chemistry grid.  One file, no build, no network, no images.  Opens off a disk.
+
+   The dataset rule, borrowed from Maidan (CRICKET_GRID.md §3.1) and just as load-bearing here:
+
+     EVERY CRITERION IS A STABLE FACT — a classification, a count, an etymology, a physical state.
+     Never a ranking, never a "most" or "highest" or "best".
+
+   Chemistry makes that easy in a way sport does not: an element's group, block, period, symbol and
+   room-temperature state do not change. Where a classification is genuinely CONTESTED between
+   syllabuses — is zinc a transition metal, is polonium a metalloid, is lanthanum in the d-block —
+   Valence does not take a side and does not build a criterion on it. It asks about the d-block
+   instead, which every syllabus draws in the same place. See the reveal panel's conventions note.
+
+   Where a fact could not be confirmed against a public reference, the element is simply left OUT of
+   that tag. An incomplete dataset only ever REJECTS a correct answer, and says so. A wrong one would
+   also ACCEPT an incorrect one, and the player could not tell which failure they were looking at.
+   ============================================================================================ */
+
+/* ---- Kreeda daily contract — see /DAILY.md. Copied, not imported: the game stays one file. ---- */
+const SLUG='valence';
+function dayKey(d){ d=d||new Date(); const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function prevDayKey(k){ const a=k.split('-'), t=new Date(+a[0],+a[1]-1,+a[2]);
+  t.setDate(t.getDate()-1); return dayKey(t); }
+function daySeed(k){ let h=5381; for(let i=0;i<k.length;i++) h=(h*33 ^ k.charCodeAt(i))|0; return h>>>0; }
+function mulberry32(a){ return function(){ a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a);
+  t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+
+const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+
+/* a day-stamped value: returns 0 unless the stamp is today */
+function loadToday(key){ const s=LS.get(key), i=s.indexOf('|');
+  return (i<0 || s.slice(0,i)!==dayKey()) ? 0 : (+s.slice(i+1)||0); }
+function saveToday(key,v){ LS.set(key, dayKey()+'|'+Math.round(v)); }
+
+/* consecutive-days counter against one key. Same day = no change; yesterday = +1; older = reset to 1. */
+function bumpStreak(key){
+  const s=LS.get(key), i=s.indexOf('|'), last=i<0?'':s.slice(0,i), n=i<0?0:(+s.slice(i+1)||0);
+  const today=dayKey(), count = last===today ? (n||1) : (last===prevDayKey(today) ? n+1 : 1);
+  LS.set(key, today+'|'+count); return count;
+}
+
+/* call once when a DAILY run is completed — not on every game over, not in practice mode */
+function dailyDone(){
+  const today=dayKey(), k='kreeda.daily.'+today;
+  const had=LS.get(k).split(',').filter(Boolean);
+  if(!had.includes(SLUG)) LS.set(k, had.concat(SLUG).join(','));
+  bumpStreak(SLUG+'.streak');
+  return bumpStreak('kreeda.streak');            // site-wide, and the number worth showing
+}
+
+/* ============================ name normalisation ============================
+   RAMAYANA_GRID.md §3.1's architecture decision, unchanged: the runtime normaliser is deliberately
+   small and conservative, and ambiguity is absorbed by a hand-curated `al` list on each element.
+   Every blanket transformation fires on EVERY name in the roster, so each one is a collision risk;
+   every alias fires on exactly one element, so it is free. When in doubt, write an alias.
+
+   DEVIATION FROM THE SPEC, and why. Setu's and Maidan's pipeline folds Sanskrit orthography —
+   aspirates, sibilants, schwa deletion, w→v. Those folds are pure collision risk on a roster of
+   element names and buy nothing: `th`→`t` would turn thorium, thallium and thulium into torium,
+   tallium and tulium for no gain. What element names DO need is the four spelling splits every
+   chemistry class meets, and each is handled by one blanket rule that is provably safe across the
+   whole roster (checked by the boot self-test below):
+
+     ph → f       sulphur / sulfur, and phosphorus consistently either way
+     ae,oe → e    caesium / cesium, and the older spellings of a handful of others
+     ium$ → um    aluminium / aluminum  (uniform: sodium→sodum, calcium→calcum, and so on)
+     doubled letters collapse   beryllium/berylium, gallium/galium, and the commonest typo class
+
+   Step 2, NFD-then-strip-combining-marks, is kept verbatim from the spec: it costs one line and
+   folds any diacritic a player's keyboard might produce. */
+function norm(s){
+  if(!s) return '';
+  s = s.normalize('NFD').replace(/[\u0300-\u036F]/g, '');   // decompose, drop every combining mark
+  s = s.toLowerCase();
+  s = s.replace(/[^a-z]/g, '');                             // letters only: spaces, digits, hyphens go
+  s = s.replace(/ph/g, 'f');                                // sulphur → sulfur
+  s = s.replace(/ae/g, 'e').replace(/oe/g, 'e');            // caesium → cesium
+  s = s.replace(/ium$/, 'um');                              // aluminium → aluminum
+  s = s.replace(/(.)\1+/g, '$1');                           // beryllium → berylium
+  return s;
+}
+/* SYMBOLS GET THEIR OWN LOOKUP AND IT IS EXACT ONLY. This is the single most important decision in
+   the matcher. Symbols are one or two letters; norm() is built for words and would eat them (it
+   collapses doubled letters and rewrites endings). Worse, at one or two characters ANY fuzzy
+   tolerance makes the whole periodic table mutually reachable — N would resolve to Ne, C to Ca,
+   S to Si. So: a one- or two-letter input is matched against the symbol table EXACTLY or not at all.
+   It never falls through to the fuzzy scan. Tested explicitly in the audit self-test. */
+function symKey(s){ return (s||'').normalize('NFD').replace(/[\u0300-\u036F]/g,'')
+  .replace(/[^A-Za-z]/g,'').toLowerCase(); }
+
+/* A LIGHTER fold, for the typeahead only. norm() is deliberately lossy — it rewrites endings and
+   collapses doubles — so a prefix typed by a player can disappear inside it. Prefix matching needs
+   the letters as typed, minus case and diacritics. Nothing here ever touches validation, so its
+   looseness cannot let a wrong answer through. */
+function soft(s){ return (s||'').normalize('NFD').replace(/[\u0300-\u036F]/g,'').toLowerCase().replace(/[^a-z]/g,''); }
+
+/* Damerau–Levenshtein, bounded. At ~300 keys a full scan is a fraction of a millisecond and an
+   index would be more code and one more thing to get wrong. */
+function dl(a,b,cap){
+  const n=a.length, m=b.length;
+  if(Math.abs(n-m)>cap) return cap+1;
+  let prev2=null, prev=new Array(m+1), cur=new Array(m+1);
+  for(let j=0;j<=m;j++) prev[j]=j;
+  for(let i=1;i<=n;i++){
+    cur[0]=i; let best=cur[0];
+    for(let j=1;j<=m;j++){
+      const c = a.charCodeAt(i-1)===b.charCodeAt(j-1) ? 0 : 1;
+      let v = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+c);
+      if(i>1 && j>1 && a.charCodeAt(i-1)===b.charCodeAt(j-2) && a.charCodeAt(i-2)===b.charCodeAt(j-1))
+        v = Math.min(v, prev2[j-2]+1);
+      cur[j]=v; if(v<best) best=v;
+    }
+    if(best>cap) return cap+1;
+    prev2=prev; prev=cur; cur=new Array(m+1);
+  }
+  return prev[m];
+}
+/* Thresholds by key length, per RAMAYANA_GRID.md §3.4. Note the floor: nothing shorter than five
+   characters gets ANY tolerance, which together with the exact-only symbol path is what keeps short
+   inputs from resolving to the wrong element. */
+function fuzzCap(k){ return k.length<=4 ? 0 : (k.length<=7 ? 1 : 2); }
+
+/* ============================================================================================
+   THE ROSTER — every element from hydrogen to plutonium, Z = 1 to 94
+   ============================================================================================
+   Z 1–86 is the range a high-school syllabus actually walks through. The roster runs to 94 because
+   thorium, uranium and plutonium have genuine curriculum presence — radioactivity, fission, nuclear
+   power — and stopping at radon would leave the actinides represented by nothing anybody has heard
+   of. Elements 95 and above are omitted: they are laboratory curiosities at this level, and padding
+   the roster with names no student could be expected to produce would make cells harder without
+   making them more interesting.
+
+   Schema:
+     z     atomic number. Also the stable id — saves store the SYMBOL, which never changes.
+     sy    symbol, exactly as IUPAC writes it
+     nm    canonical English name (IUPAC spelling: aluminium, sulfur, caesium)
+     cat   family. One per element, so this is a SINGLE-VALUED axis:
+             alkali | alkaline | dblock | posttrans | metalloid | nonmetal | halogen | noble
+             | lanth | act
+     blk   s | p | d | f
+     pr    period, 1..7
+     gp    IUPAC group 1..18; 0 for the f-block series members that sit outside the numbered groups
+     mm    metal | nonmetal | metalloid | ''   ('' = deliberately unclassified, see astatine)
+     st    solid | liquid | gas | ''           ('' = never measured in bulk; astatine and francium)
+     fa    fame 1..5. Drives Weight (= 6 - fa) and the "every cell has a famous answer" rule.
+     tg    property tags:
+             di    exists as a diatomic molecule as the free element
+             rad   has no stable isotope
+             mag   ferromagnetic at 25 °C
+             symx  symbol is not derived from its English name
+             place named after a place
+             anc   one of the seven metals of antiquity
+             air   occurs free in the Earth's atmosphere
+             body  among the eleven most abundant elements in the human body
+             crust among the eight most abundant elements in the Earth's crust
+     gl    one line for the reveal panel. The reveal panel is the point; a player who fills two
+           cells should still leave having read something true.
+     al    hand-written aliases: spelling variants, and the Latin names the symbols come from.
+   ============================================================================================ */
+const E=[
+{z:1,sy:'H',nm:'Hydrogen',cat:'nonmetal',blk:'s',pr:1,gp:1,mm:'nonmetal',st:'gas',fa:5,tg:['di','body'],
+ gl:'The lightest element and about nine in ten of all atoms in the universe; burns in oxygen to give water.',al:[]},
+{z:2,sy:'He',nm:'Helium',cat:'noble',blk:'s',pr:1,gp:18,mm:'nonmetal',st:'gas',fa:5,tg:['air'],
+ gl:'Found in the Sun’s spectrum before it was found on Earth; fills balloons and cools MRI magnets.',al:[]},
+{z:3,sy:'Li',nm:'Lithium',cat:'alkali',blk:'s',pr:2,gp:1,mm:'metal',st:'solid',fa:4,tg:[],
+ gl:'The lightest metal, soft enough to cut with a knife; the working element of rechargeable batteries.',al:[]},
+{z:4,sy:'Be',nm:'Beryllium',cat:'alkaline',blk:'s',pr:2,gp:2,mm:'metal',st:'solid',fa:3,tg:[],
+ gl:'A light, very stiff metal; emerald and aquamarine are coloured forms of beryl, its chief ore.',al:[]},
+{z:5,sy:'B',nm:'Boron',cat:'metalloid',blk:'p',pr:2,gp:13,mm:'metalloid',st:'solid',fa:4,tg:[],
+ gl:'A metalloid met as borax and boric acid; borosilicate glass resists thermal shock.',al:[]},
+{z:6,sy:'C',nm:'Carbon',cat:'nonmetal',blk:'p',pr:2,gp:14,mm:'nonmetal',st:'solid',fa:5,tg:['body'],
+ gl:'Forms diamond, graphite and graphene, and is the backbone of every organic molecule.',al:[]},
+{z:7,sy:'N',nm:'Nitrogen',cat:'nonmetal',blk:'p',pr:2,gp:15,mm:'nonmetal',st:'gas',fa:5,tg:['di','air','body'],
+ gl:'78% of dry air; its triple bond makes N₂ very unreactive, which is why the Haber process needs a catalyst.',al:[]},
+{z:8,sy:'O',nm:'Oxygen',cat:'nonmetal',blk:'p',pr:2,gp:16,mm:'nonmetal',st:'gas',fa:5,tg:['di','air','body','crust'],
+ gl:'About 21% of air and the most abundant element in the Earth’s crust; needed for respiration and burning.',al:[]},
+{z:9,sy:'F',nm:'Fluorine',cat:'halogen',blk:'p',pr:2,gp:17,mm:'nonmetal',st:'gas',fa:4,tg:['di'],
+ gl:'The most electronegative element and the most reactive non-metal; added to toothpaste as fluoride.',al:[]},
+{z:10,sy:'Ne',nm:'Neon',cat:'noble',blk:'p',pr:2,gp:18,mm:'nonmetal',st:'gas',fa:4,tg:['air'],
+ gl:'A noble gas that glows orange-red in a discharge tube — the original neon sign.',al:[]},
+{z:11,sy:'Na',nm:'Sodium',cat:'alkali',blk:'s',pr:3,gp:1,mm:'metal',st:'solid',fa:5,tg:['symx','body','crust'],
+ gl:'Symbol from the Latin natrium; fizzes across water, burns bright yellow, and is half of table salt.',al:['natrium']},
+{z:12,sy:'Mg',nm:'Magnesium',cat:'alkaline',blk:'s',pr:3,gp:2,mm:'metal',st:'solid',fa:5,tg:['place','body','crust'],
+ gl:'Burns with a brilliant white flame and sits at the centre of every chlorophyll molecule. Named after Magnesia in Greece.',al:[]},
+{z:13,sy:'Al',nm:'Aluminium',cat:'posttrans',blk:'p',pr:3,gp:13,mm:'metal',st:'solid',fa:5,tg:['crust'],
+ gl:'The commonest metal in the crust; won from bauxite by electrolysis and protected by a tough oxide skin.',al:['aluminum']},
+{z:14,sy:'Si',nm:'Silicon',cat:'metalloid',blk:'p',pr:3,gp:14,mm:'metalloid',st:'solid',fa:5,tg:['crust'],
+ gl:'Second most abundant element in the crust; the semiconductor of every microchip, and the basis of sand and quartz.',al:[]},
+{z:15,sy:'P',nm:'Phosphorus',cat:'nonmetal',blk:'p',pr:3,gp:15,mm:'nonmetal',st:'solid',fa:5,tg:['body'],
+ gl:'White and red allotropes; essential to DNA, ATP and bone, and the striking surface of a matchbox.',al:['phosphorous']},
+{z:16,sy:'S',nm:'Sulfur',cat:'nonmetal',blk:'p',pr:3,gp:16,mm:'nonmetal',st:'solid',fa:5,tg:['body'],
+ gl:'A yellow brittle solid that burns with a blue flame to sulfur dioxide; the raw material of sulfuric acid.',al:['sulphur','brimstone']},
+{z:17,sy:'Cl',nm:'Chlorine',cat:'halogen',blk:'p',pr:3,gp:17,mm:'nonmetal',st:'gas',fa:5,tg:['di','body'],
+ gl:'A green-yellow toxic gas used to disinfect water; the other half of table salt.',al:[]},
+{z:18,sy:'Ar',nm:'Argon',cat:'noble',blk:'p',pr:3,gp:18,mm:'nonmetal',st:'gas',fa:4,tg:['air'],
+ gl:'Nearly 1% of air, the commonest noble gas on Earth; fills lamps and shields welds from oxygen.',al:[]},
+{z:19,sy:'K',nm:'Potassium',cat:'alkali',blk:'s',pr:4,gp:1,mm:'metal',st:'solid',fa:5,tg:['symx','body','crust'],
+ gl:'Symbol from the Latin kalium; skitters and burns lilac on water, and carries nerve impulses.',al:['kalium']},
+{z:20,sy:'Ca',nm:'Calcium',cat:'alkaline',blk:'s',pr:4,gp:2,mm:'metal',st:'solid',fa:5,tg:['body','crust'],
+ gl:'The metal of limestone, chalk, bone and teeth; its hydroxide solution is limewater.',al:[]},
+{z:21,sy:'Sc',nm:'Scandium',cat:'dblock',blk:'d',pr:4,gp:3,mm:'metal',st:'solid',fa:2,tg:['place'],
+ gl:'A light d-block metal named after Scandinavia; Mendeleev predicted it and called it eka-boron.',al:[]},
+{z:22,sy:'Ti',nm:'Titanium',cat:'dblock',blk:'d',pr:4,gp:4,mm:'metal',st:'solid',fa:4,tg:[],
+ gl:'As strong as steel and far lighter, and it barely corrodes; titanium dioxide is the white in paint.',al:[]},
+{z:23,sy:'V',nm:'Vanadium',cat:'dblock',blk:'d',pr:4,gp:5,mm:'metal',st:'solid',fa:3,tg:[],
+ gl:'Its ions are vividly coloured in four different oxidation states; alloyed into tool steels.',al:[]},
+{z:24,sy:'Cr',nm:'Chromium',cat:'dblock',blk:'d',pr:4,gp:6,mm:'metal',st:'solid',fa:4,tg:[],
+ gl:'Gives stainless steel its corrosion resistance and rubies their red; its compounds are brightly coloured.',al:[]},
+{z:25,sy:'Mn',nm:'Manganese',cat:'dblock',blk:'d',pr:4,gp:7,mm:'metal',st:'solid',fa:4,tg:[],
+ gl:'Potassium manganate(VII) is the deep purple oxidising agent of the school laboratory; added to steel for hardness.',al:[]},
+{z:26,sy:'Fe',nm:'Iron',cat:'dblock',blk:'d',pr:4,gp:8,mm:'metal',st:'solid',fa:5,tg:['mag','symx','anc','crust'],
+ gl:'Symbol from the Latin ferrum; smelted from haematite in the blast furnace, magnetic, and carried in haemoglobin.',al:['ferrum']},
+{z:27,sy:'Co',nm:'Cobalt',cat:'dblock',blk:'d',pr:4,gp:9,mm:'metal',st:'solid',fa:3,tg:['mag'],
+ gl:'Ferromagnetic; its compounds give glass a deep blue, and it sits at the centre of vitamin B12.',al:[]},
+{z:28,sy:'Ni',nm:'Nickel',cat:'dblock',blk:'d',pr:4,gp:10,mm:'metal',st:'solid',fa:4,tg:['mag'],
+ gl:'Ferromagnetic; alloyed into stainless steel and coins, and the catalyst that hardens vegetable oils.',al:[]},
+{z:29,sy:'Cu',nm:'Copper',cat:'dblock',blk:'d',pr:4,gp:11,mm:'metal',st:'solid',fa:5,tg:['symx','place','anc'],
+ gl:'Symbol from the Latin cuprum, itself from Cyprus; an excellent conductor, and bronze with tin added.',al:['cuprum']},
+{z:30,sy:'Zn',nm:'Zinc',cat:'dblock',blk:'d',pr:4,gp:12,mm:'metal',st:'solid',fa:5,tg:[],
+ gl:'Galvanises steel by sacrificing itself to corrosion; the negative electrode of a simple cell.',al:[]},
+{z:31,sy:'Ga',nm:'Gallium',cat:'posttrans',blk:'p',pr:4,gp:13,mm:'metal',st:'solid',fa:2,tg:['place'],
+ gl:'Melts in a warm hand at about 30 °C; named after Gallia, the Latin name for France, and used in LEDs.',al:[]},
+{z:32,sy:'Ge',nm:'Germanium',cat:'metalloid',blk:'p',pr:4,gp:14,mm:'metalloid',st:'solid',fa:2,tg:['place'],
+ gl:'A semiconducting metalloid named after Germany; Mendeleev predicted it as eka-silicon.',al:[]},
+{z:33,sy:'As',nm:'Arsenic',cat:'metalloid',blk:'p',pr:4,gp:15,mm:'metalloid',st:'solid',fa:3,tg:[],
+ gl:'A metalloid whose compounds are notoriously poisonous; doped into semiconductors as gallium arsenide.',al:[]},
+{z:34,sy:'Se',nm:'Selenium',cat:'nonmetal',blk:'p',pr:4,gp:16,mm:'nonmetal',st:'solid',fa:3,tg:[],
+ gl:'Conducts better in the light than in the dark, which is what made photocopying possible; a trace nutrient.',al:[]},
+{z:35,sy:'Br',nm:'Bromine',cat:'halogen',blk:'p',pr:4,gp:17,mm:'nonmetal',st:'liquid',fa:4,tg:['di'],
+ gl:'One of only two elements liquid at room temperature: a dense red-brown liquid with a choking vapour.',al:[]},
+{z:36,sy:'Kr',nm:'Krypton',cat:'noble',blk:'p',pr:4,gp:18,mm:'nonmetal',st:'gas',fa:3,tg:['air'],
+ gl:'A noble gas used in high-performance lighting; its name is Greek for hidden.',al:[]},
+{z:37,sy:'Rb',nm:'Rubidium',cat:'alkali',blk:'s',pr:5,gp:1,mm:'metal',st:'solid',fa:2,tg:[],
+ gl:'A soft alkali metal that ignites in air; named for the deep red lines in its spectrum.',al:[]},
+{z:38,sy:'Sr',nm:'Strontium',cat:'alkaline',blk:'s',pr:5,gp:2,mm:'metal',st:'solid',fa:3,tg:['place'],
+ gl:'Burns crimson in fireworks; named after Strontian, the Scottish village whose lead mine held its ore.',al:[]},
+{z:39,sy:'Y',nm:'Yttrium',cat:'dblock',blk:'d',pr:5,gp:3,mm:'metal',st:'solid',fa:2,tg:['place'],
+ gl:'Named after Ytterby in Sweden, the one quarry that gave four elements their names; used in phosphors.',al:[]},
+{z:40,sy:'Zr',nm:'Zirconium',cat:'dblock',blk:'d',pr:5,gp:4,mm:'metal',st:'solid',fa:3,tg:[],
+ gl:'Very corrosion-resistant, so it clads nuclear fuel rods; cubic zirconia imitates diamond.',al:[]},
+{z:41,sy:'Nb',nm:'Niobium',cat:'dblock',blk:'d',pr:5,gp:5,mm:'metal',st:'solid',fa:2,tg:[],
+ gl:'Named after Niobe of Greek myth; used in superconducting magnets and high-strength steels.',al:['columbium']},
+{z:42,sy:'Mo',nm:'Molybdenum',cat:'dblock',blk:'d',pr:5,gp:6,mm:'metal',st:'solid',fa:2,tg:[],
+ gl:'A very high-melting metal used in alloy steels, and part of the enzymes that fix nitrogen.',al:[]},
+{z:43,sy:'Tc',nm:'Technetium',cat:'dblock',blk:'d',pr:5,gp:7,mm:'metal',st:'solid',fa:2,tg:['rad'],
+ gl:'The lightest element with no stable isotope, and the first ever made artificially; used in medical scans.',al:[]},
+{z:44,sy:'Ru',nm:'Ruthenium',cat:'dblock',blk:'d',pr:5,gp:8,mm:'metal',st:'solid',fa:2,tg:['place'],
+ gl:'A hard platinum-group metal named after Ruthenia, the Latin name for Russia.',al:[]},
+{z:45,sy:'Rh',nm:'Rhodium',cat:'dblock',blk:'d',pr:5,gp:9,mm:'metal',st:'solid',fa:2,tg:[],
+ gl:'A platinum-group metal in every catalytic converter; its name comes from the Greek for rose.',al:[]},
+{z:46,sy:'Pd',nm:'Palladium',cat:'dblock',blk:'d',pr:5,gp:10,mm:'metal',st:'solid',fa:2,tg:[],
+ gl:'Soaks up many hundreds of times its own volume of hydrogen; named after the asteroid Pallas.',al:[]},
+{z:47,sy:'Ag',nm:'Silver',cat:'dblock',blk:'d',pr:5,gp:11,mm:'metal',st:'solid',fa:5,tg:['symx','anc'],
+ gl:'Symbol from the Latin argentum; the best electrical conductor of all the elements, and its halides darken in light.',al:['argentum']},
+{z:48,sy:'Cd',nm:'Cadmium',cat:'dblock',blk:'d',pr:5,gp:12,mm:'metal',st:'solid',fa:3,tg:[],
+ gl:'A soft, toxic metal once used for yellow pigments and in nickel-cadmium batteries.',al:[]},
+{z:49,sy:'In',nm:'Indium',cat:'posttrans',blk:'p',pr:5,gp:13,mm:'metal',st:'solid',fa:2,tg:[],
+ gl:'A very soft metal named for the indigo line in its spectrum; indium tin oxide makes touchscreens conduct.',al:[]},
+{z:50,sy:'Sn',nm:'Tin',cat:'posttrans',blk:'p',pr:5,gp:14,mm:'metal',st:'solid',fa:5,tg:['symx','anc'],
+ gl:'Symbol from the Latin stannum; alloyed with copper it is bronze, and with lead it is solder.',al:['stannum']},
+{z:51,sy:'Sb',nm:'Antimony',cat:'metalloid',blk:'p',pr:5,gp:15,mm:'metalloid',st:'solid',fa:3,tg:['symx'],
+ gl:'Symbol from the Latin stibium; a brittle metalloid used in flame retardants, and as stibnite in ancient kohl.',al:['stibium']},
+{z:52,sy:'Te',nm:'Tellurium',cat:'metalloid',blk:'p',pr:5,gp:16,mm:'metalloid',st:'solid',fa:2,tg:[],
+ gl:'A brittle metalloid named after Tellus, the Roman earth goddess; used in thermoelectrics and free-cutting steel.',al:[]},
+{z:53,sy:'I',nm:'Iodine',cat:'halogen',blk:'p',pr:5,gp:17,mm:'nonmetal',st:'solid',fa:5,tg:['di'],
+ gl:'A shiny grey-black solid that sublimes to a violet vapour; turns starch blue-black, and the thyroid needs it.',al:[]},
+{z:54,sy:'Xe',nm:'Xenon',cat:'noble',blk:'p',pr:5,gp:18,mm:'nonmetal',st:'gas',fa:3,tg:['air'],
+ gl:'The noble gas that does form compounds — xenon tetrafluoride was the first; used in very bright lamps.',al:[]},
+{z:55,sy:'Cs',nm:'Caesium',cat:'alkali',blk:'s',pr:6,gp:1,mm:'metal',st:'solid',fa:3,tg:[],
+ gl:'The most reactive metal in ordinary use, and it melts at 28 °C; the caesium atomic clock defines the second.',al:['cesium']},
+{z:56,sy:'Ba',nm:'Barium',cat:'alkaline',blk:'s',pr:6,gp:2,mm:'metal',st:'solid',fa:3,tg:[],
+ gl:'Burns apple-green in a flame test; barium sulfate is the barium meal that shows the gut on an X-ray.',al:[]},
+{z:57,sy:'La',nm:'Lanthanum',cat:'lanth',blk:'f',pr:6,gp:3,mm:'metal',st:'solid',fa:2,tg:[],
+ gl:'The first of the lanthanides and the series’ namesake; used in camera lenses and NiMH batteries.',al:[]},
+{z:58,sy:'Ce',nm:'Cerium',cat:'lanth',blk:'f',pr:6,gp:0,mm:'metal',st:'solid',fa:2,tg:[],
+ gl:'The most abundant lanthanide, and the spark in a lighter flint; named after the asteroid Ceres.',al:[]},
+{z:59,sy:'Pr',nm:'Praseodymium',cat:'lanth',blk:'f',pr:6,gp:0,mm:'metal',st:'solid',fa:1,tg:[],
+ gl:'A lanthanide used in strong magnets and in the green glass of welding goggles.',al:[]},
+{z:60,sy:'Nd',nm:'Neodymium',cat:'lanth',blk:'f',pr:6,gp:0,mm:'metal',st:'solid',fa:2,tg:[],
+ gl:'Neodymium-iron-boron makes the strongest permanent magnets in everyday use.',al:[]},
+{z:61,sy:'Pm',nm:'Promethium',cat:'lanth',blk:'f',pr:6,gp:0,mm:'metal',st:'solid',fa:1,tg:['rad'],
+ gl:'The only lanthanide with no stable isotope; named after Prometheus, who stole fire.',al:[]},
+{z:62,sy:'Sm',nm:'Samarium',cat:'lanth',blk:'f',pr:6,gp:0,mm:'metal',st:'solid',fa:1,tg:[],
+ gl:'Samarium-cobalt magnets keep their strength at temperatures that would ruin a neodymium magnet.',al:[]},
+{z:63,sy:'Eu',nm:'Europium',cat:'lanth',blk:'f',pr:6,gp:0,mm:'metal',st:'solid',fa:2,tg:['place'],
+ gl:'Named after Europe; its compounds gave the red glow of colour television phosphors.',al:[]},
+{z:64,sy:'Gd',nm:'Gadolinium',cat:'lanth',blk:'f',pr:6,gp:0,mm:'metal',st:'solid',fa:2,tg:[],
+ gl:'Injected as a contrast agent for MRI scanning; ferromagnetic, but only below about 19 °C.',al:[]},
+{z:65,sy:'Tb',nm:'Terbium',cat:'lanth',blk:'f',pr:6,gp:0,mm:'metal',st:'solid',fa:1,tg:['place'],
+ gl:'Named after Ytterby in Sweden; used in green phosphors and in alloys that change shape in a magnetic field.',al:[]},
+{z:66,sy:'Dy',nm:'Dysprosium',cat:'lanth',blk:'f',pr:6,gp:0,mm:'metal',st:'solid',fa:1,tg:[],
+ gl:'Added to neodymium magnets so they keep working when hot; its name is Greek for hard to get at.',al:[]},
+{z:67,sy:'Ho',nm:'Holmium',cat:'lanth',blk:'f',pr:6,gp:0,mm:'metal',st:'solid',fa:1,tg:['place'],
+ gl:'Named after Holmia, the Latin name for Stockholm; used in surgical and solid-state lasers.',al:[]},
+{z:68,sy:'Er',nm:'Erbium',cat:'lanth',blk:'f',pr:6,gp:0,mm:'metal',st:'solid',fa:1,tg:['place'],
+ gl:'Named after Ytterby; erbium-doped fibres amplify the light carrying traffic through undersea cables.',al:[]},
+{z:69,sy:'Tm',nm:'Thulium',cat:'lanth',blk:'f',pr:6,gp:0,mm:'metal',st:'solid',fa:1,tg:['place'],
+ gl:'The rarest of the stable lanthanides; named after Thule, the far north of classical geography.',al:[]},
+{z:70,sy:'Yb',nm:'Ytterbium',cat:'lanth',blk:'f',pr:6,gp:0,mm:'metal',st:'solid',fa:1,tg:['place'],
+ gl:'Named after Ytterby; ytterbium optical clocks are among the most accurate instruments ever built.',al:[]},
+{z:71,sy:'Lu',nm:'Lutetium',cat:'lanth',blk:'f',pr:6,gp:0,mm:'metal',st:'solid',fa:1,tg:['place'],
+ gl:'The last of the lanthanides; named after Lutetia, the Roman name for Paris.',al:['lutecium']},
+{z:72,sy:'Hf',nm:'Hafnium',cat:'dblock',blk:'d',pr:6,gp:4,mm:'metal',st:'solid',fa:2,tg:['place'],
+ gl:'Named after Hafnia, the Latin name for Copenhagen; it soaks up neutrons, so it makes reactor control rods.',al:[]},
+{z:73,sy:'Ta',nm:'Tantalum',cat:'dblock',blk:'d',pr:6,gp:5,mm:'metal',st:'solid',fa:2,tg:[],
+ gl:'So unreactive it is used for surgical implants and tiny capacitors; named after Tantalus.',al:[]},
+{z:74,sy:'W',nm:'Tungsten',cat:'dblock',blk:'d',pr:6,gp:6,mm:'metal',st:'solid',fa:4,tg:['symx'],
+ gl:'Symbol from wolfram; the highest melting point of any metal, which is why it was the light-bulb filament.',al:['wolfram']},
+{z:75,sy:'Re',nm:'Rhenium',cat:'dblock',blk:'d',pr:6,gp:7,mm:'metal',st:'solid',fa:2,tg:['place'],
+ gl:'Named after the river Rhine; one of the rarest elements in the crust, and vital to jet-engine alloys.',al:[]},
+{z:76,sy:'Os',nm:'Osmium',cat:'dblock',blk:'d',pr:6,gp:8,mm:'metal',st:'solid',fa:2,tg:[],
+ gl:'The densest naturally occurring element; its name comes from the smell of its volatile oxide.',al:[]},
+{z:77,sy:'Ir',nm:'Iridium',cat:'dblock',blk:'d',pr:6,gp:9,mm:'metal',st:'solid',fa:2,tg:[],
+ gl:'Almost as dense as osmium and hardly corrodes at all; a worldwide iridium layer marks the end of the Cretaceous.',al:[]},
+{z:78,sy:'Pt',nm:'Platinum',cat:'dblock',blk:'d',pr:6,gp:10,mm:'metal',st:'solid',fa:4,tg:[],
+ gl:'A dense, unreactive precious metal; the catalyst in catalytic converters and in many hydrogenations.',al:[]},
+{z:79,sy:'Au',nm:'Gold',cat:'dblock',blk:'d',pr:6,gp:11,mm:'metal',st:'solid',fa:5,tg:['symx','anc'],
+ gl:'Symbol from the Latin aurum; unreactive enough to be found as the native metal, and the most malleable of all.',al:['aurum']},
+{z:80,sy:'Hg',nm:'Mercury',cat:'dblock',blk:'d',pr:6,gp:12,mm:'metal',st:'liquid',fa:5,tg:['symx','anc'],
+ gl:'Symbol from the Latin hydrargyrum, water-silver; the only metal that is liquid at room temperature.',al:['hydrargyrum','quicksilver']},
+{z:81,sy:'Tl',nm:'Thallium',cat:'posttrans',blk:'p',pr:6,gp:13,mm:'metal',st:'solid',fa:2,tg:[],
+ gl:'A soft and very poisonous metal, named for the bright green line in its spectrum.',al:[]},
+{z:82,sy:'Pb',nm:'Lead',cat:'posttrans',blk:'p',pr:6,gp:14,mm:'metal',st:'solid',fa:5,tg:['symx','anc'],
+ gl:'Symbol from the Latin plumbum, the root of plumbing; dense, soft and toxic, and once in pipes, paint and petrol.',al:['plumbum']},
+{z:83,sy:'Bi',nm:'Bismuth',cat:'posttrans',blk:'p',pr:6,gp:15,mm:'metal',st:'solid',fa:3,tg:[],
+ gl:'The heaviest element normally treated as stable; grows brilliantly iridescent stepped crystals.',al:[]},
+{z:84,sy:'Po',nm:'Polonium',cat:'posttrans',blk:'p',pr:6,gp:16,mm:'metal',st:'solid',fa:3,tg:['place','rad'],
+ gl:'Named after Poland by Marie Curie, who discovered it; fiercely radioactive, with no stable isotope.',al:[]},
+{z:85,sy:'At',nm:'Astatine',cat:'halogen',blk:'p',pr:6,gp:17,mm:'',st:'',fa:2,tg:['rad'],
+ gl:'The rarest element in the Earth’s crust; every isotope is short-lived, so nobody has ever seen a weighable piece of it.',al:[]},
+{z:86,sy:'Rn',nm:'Radon',cat:'noble',blk:'p',pr:6,gp:18,mm:'nonmetal',st:'gas',fa:3,tg:['rad'],
+ gl:'A radioactive noble gas made by uranium decaying in rock; it collects in badly ventilated basements.',al:[]},
+{z:87,sy:'Fr',nm:'Francium',cat:'alkali',blk:'s',pr:7,gp:1,mm:'metal',st:'',fa:2,tg:['place','rad'],
+ gl:'Named after France; the rarest naturally occurring alkali metal, and so short-lived it has never been seen in bulk.',al:[]},
+{z:88,sy:'Ra',nm:'Radium',cat:'alkaline',blk:'s',pr:7,gp:2,mm:'metal',st:'solid',fa:4,tg:['rad'],
+ gl:'Isolated by Marie and Pierre Curie from pitchblende; its glow made it a disastrous fad in early luminous paint.',al:[]},
+{z:89,sy:'Ac',nm:'Actinium',cat:'act',blk:'f',pr:7,gp:3,mm:'metal',st:'solid',fa:2,tg:['rad'],
+ gl:'The first of the actinides and the series’ namesake; so radioactive it glows faintly blue in the dark.',al:[]},
+{z:90,sy:'Th',nm:'Thorium',cat:'act',blk:'f',pr:7,gp:0,mm:'metal',st:'solid',fa:3,tg:['rad'],
+ gl:'Named after the Norse god Thor; weakly radioactive, common in monazite sand, and proposed as a reactor fuel.',al:[]},
+{z:91,sy:'Pa',nm:'Protactinium',cat:'act',blk:'f',pr:7,gp:0,mm:'metal',st:'solid',fa:1,tg:['rad'],
+ gl:'A rare actinide whose name records what it does: it decays to actinium.',al:[]},
+{z:92,sy:'U',nm:'Uranium',cat:'act',blk:'f',pr:7,gp:0,mm:'metal',st:'solid',fa:5,tg:['rad'],
+ gl:'Named after the planet Uranus; uranium-235 is the fissile isotope that fuels reactors and weapons.',al:[]},
+{z:93,sy:'Np',nm:'Neptunium',cat:'act',blk:'f',pr:7,gp:0,mm:'metal',st:'solid',fa:2,tg:['rad'],
+ gl:'The first transuranium element ever made; named after Neptune, the planet beyond Uranus.',al:[]},
+{z:94,sy:'Pu',nm:'Plutonium',cat:'act',blk:'f',pr:7,gp:0,mm:'metal',st:'solid',fa:4,tg:['rad'],
+ gl:'Named after Pluto; fissile, the core of the Nagasaki bomb, and the power source of deep-space probes.',al:[]}
+];
+
+/* ============================================================================================
+   THE CRITERION CATALOGUE
+   ============================================================================================
+   Nine families. Every criterion is a predicate over an element, and every predicate is a TAG
+   LOOKUP — never a computation, never a judgement call at runtime. `test` runs exactly once per
+   criterion at boot to build the bitsets, and is never called during play.
+
+   `single` marks a family whose underlying tag is single-valued: an element has exactly one
+   category, one block, one period, one group, one room-temperature state, one atomic number. Two
+   single-valued criteria facing each other across the grid guarantee an empty cell, so the
+   generator rejects that SHAPE before it counts a single candidate (RAMAYANA_GRID.md §2.2). They
+   may sit together on the same axis — rows never intersect rows.
+
+   WHAT IS DELIBERATELY NOT HERE, and why. Three classifications that every implementer reaches for
+   are contested between syllabuses, and a criterion built on a contested fact rejects correct
+   answers from students who were taught the other convention:
+
+     "a transition metal"  — IUPAC's definition excludes zinc, cadmium and mercury (no partly filled
+                             d-subshell in the atom or its ions), and NCERT teaches exactly that;
+                             most GCSE material counts them in. Valence asks about THE D-BLOCK
+                             instead, which every syllabus draws in the same place, and which
+                             includes Zn, Cd and Hg without anybody having to be wrong.
+     "a metalloid"         — shipped, but only with the six that every syllabus agrees on:
+                             B, Si, Ge, As, Sb, Te. Polonium and astatine are left out of it.
+     "liquid at room temperature" — only mercury and bromine qualify, and a criterion with two
+                             members can never satisfy the three-answer floor. It is a fact worth
+                             knowing, so it is in the reveal panel's notes instead of on an axis.
+
+   Two more criteria were written, audited, and then deleted because they are PROVABLY UNREACHABLE
+   under the three-answer floor, not merely rare. Shipping a criterion that can never appear is
+   worse than not having it: it reads as coverage that isn't there.
+
+     "ferromagnetic at 25 °C" — iron, cobalt and nickel, and nothing else. The only criteria that
+                             contain three of them are the d-block, metals, solids and period 4 —
+                             every one of which is a SUPERSET, so every cell it could ever make is
+                             a cell where one of the two criteria added nothing. The fact is in the
+                             reveal panel's notes instead.
+     "group 14"             — carbon, silicon, germanium, tin and lead are so uniform (all p-block,
+                             all solid, all even Z) that every criterion containing three of them
+                             contains all five. Same argument, same outcome. Groups 13, 15 and 16 do
+                             not have this problem and are on the axes.
+     "a lanthanide"         — dead for a different and more interesting reason. The three criteria
+                             that cut the lanthanides into a proper subset of three or more are even
+                             Z, odd Z and "named after a place" — and NOT ONE of the resulting cells
+                             contains an element a school student could reasonably name. The
+                             every-cell-has-a-familiar-answer rule rejects all of them, correctly: a
+                             cell answerable only by terbium, holmium, erbium, thulium, ytterbium or
+                             lutetium is a specialist's cell. THE F-BLOCK criterion carries the same
+                             teaching load and does work, because the actinides beside them include
+                             thorium, uranium and plutonium. All fifteen lanthanides are still in the
+                             roster, still valid answers, and still listed in the reveal panel.
+
+   The audit's reachability pass (see `audit`, and the exhaustive check run before shipping) is what
+   found all three. Every criterion that remains has at least one grid it can legally appear in.
+   ============================================================================================ */
+function has(list,v){ return list.indexOf(v)>=0; }
+const CRITERIA=[
+ /* --- family (SINGLE-valued: one per element) --- */
+ {id:'c-alkali',family:'cat',single:true,tier:'core',label:'An alkali metal (group 1)',short:'Alkali metal',
+  test:e=>e.cat==='alkali'},
+ {id:'c-alkaline',family:'cat',single:true,tier:'core',label:'An alkaline earth metal (group 2)',short:'Alkaline earth',
+  test:e=>e.cat==='alkaline'},
+ {id:'c-halogen',family:'cat',single:true,tier:'core',label:'A halogen (group 17)',short:'Halogen',
+  test:e=>e.cat==='halogen'},
+ {id:'c-noble',family:'cat',single:true,tier:'core',label:'A noble gas (group 18)',short:'Noble gas',
+  test:e=>e.cat==='noble'},
+ {id:'c-metalloid',family:'cat',single:true,tier:'wide',label:'A metalloid',short:'Metalloid',
+  test:e=>e.cat==='metalloid'},
+ {id:'c-act',family:'cat',single:true,tier:'deep',label:'An actinide (the second f-block row)',short:'Actinide',
+  test:e=>e.cat==='act'},
+
+ /* --- block (SINGLE-valued) --- */
+ {id:'b-s',family:'blk',single:true,tier:'wide',label:'In the s-block',short:'s-block',test:e=>e.blk==='s'},
+ {id:'b-p',family:'blk',single:true,tier:'core',label:'In the p-block',short:'p-block',test:e=>e.blk==='p'},
+ {id:'b-d',family:'blk',single:true,tier:'core',label:'In the d-block (groups 3 to 12)',short:'d-block',test:e=>e.blk==='d'},
+ {id:'b-f',family:'blk',single:true,tier:'deep',label:'In the f-block',short:'f-block',test:e=>e.blk==='f'},
+
+ /* --- metal / non-metal (SINGLE-valued) --- */
+ {id:'m-metal',family:'mm',single:true,tier:'core',label:'A metal',short:'Metal',test:e=>e.mm==='metal'},
+ {id:'m-non',family:'mm',single:true,tier:'core',label:'A non-metal',short:'Non-metal',test:e=>e.mm==='nonmetal'},
+
+ /* --- period (SINGLE-valued) --- */
+ {id:'p-2',family:'pr',single:true,tier:'core',label:'In period 2',short:'Period 2',test:e=>e.pr===2},
+ {id:'p-3',family:'pr',single:true,tier:'core',label:'In period 3',short:'Period 3',test:e=>e.pr===3},
+ {id:'p-4',family:'pr',single:true,tier:'core',label:'In period 4',short:'Period 4',test:e=>e.pr===4},
+ {id:'p-5',family:'pr',single:true,tier:'wide',label:'In period 5',short:'Period 5',test:e=>e.pr===5},
+ {id:'p-6',family:'pr',single:true,tier:'wide',label:'In period 6',short:'Period 6',test:e=>e.pr===6},
+ {id:'p-7',family:'pr',single:true,tier:'deep',label:'In period 7',short:'Period 7',test:e=>e.pr===7},
+
+ /* --- group, for the four main groups the other axes do not already name (SINGLE-valued) --- */
+ {id:'g-13',family:'gp',single:true,tier:'deep',label:'In group 13, the boron group',short:'Group 13',test:e=>e.gp===13},
+ {id:'g-15',family:'gp',single:true,tier:'wide',label:'In group 15, the nitrogen group',short:'Group 15',test:e=>e.gp===15},
+ {id:'g-16',family:'gp',single:true,tier:'deep',label:'In group 16, the oxygen group',short:'Group 16',test:e=>e.gp===16},
+
+ /* --- state at room temperature (SINGLE-valued) --- */
+ {id:'s-gas',family:'st',single:true,tier:'core',label:'A gas at room temperature',short:'Gas at 25 °C',
+  test:e=>e.st==='gas'},
+ {id:'s-solid',family:'st',single:true,tier:'core',label:'A solid at room temperature',short:'Solid at 25 °C',
+  test:e=>e.st==='solid'},
+
+ /* --- atomic number (SINGLE-valued within each family) --- */
+ {id:'z-low',family:'zr',single:true,tier:'core',label:'Atomic number 20 or less',short:'Z ≤ 20',test:e=>e.z<=20},
+ {id:'z-high',family:'zr',single:true,tier:'core',label:'Atomic number greater than 50',short:'Z > 50',test:e=>e.z>50},
+ {id:'z-even',family:'par',single:true,tier:'wide',label:'Even atomic number',short:'Even Z',test:e=>e.z%2===0},
+ {id:'z-odd',family:'par',single:true,tier:'wide',label:'Odd atomic number',short:'Odd Z',test:e=>e.z%2===1},
+
+ /* --- properties and history (multi-valued) --- */
+ {id:'t-di',family:'prop',single:false,tier:'core',
+  label:'Exists as a diatomic molecule as the free element',short:'Diatomic',test:e=>has(e.tg,'di')},
+ {id:'t-rad',family:'prop',single:false,tier:'wide',
+  label:'Radioactive: it has no stable isotope',short:'No stable isotope',test:e=>has(e.tg,'rad')},
+ {id:'t-symx',family:'prop',single:false,tier:'core',
+  label:'Its symbol does not come from its English name',short:'Symbol ≠ name',test:e=>has(e.tg,'symx')},
+ {id:'t-one',family:'prop',single:false,tier:'wide',
+  label:'Its symbol is a single letter',short:'One-letter symbol',test:e=>e.sy.length===1},
+ {id:'t-place',family:'prop',single:false,tier:'wide',
+  label:'Named after a place',short:'Named for a place',test:e=>has(e.tg,'place')},
+ {id:'t-anc',family:'prop',single:false,tier:'wide',
+  label:'One of the seven metals of antiquity',short:'Known to antiquity',test:e=>has(e.tg,'anc')},
+ {id:'t-air',family:'prop',single:false,tier:'wide',
+  label:'Occurs as a free element in the air',short:'Free in the air',test:e=>has(e.tg,'air')},
+ {id:'t-body',family:'prop',single:false,tier:'core',
+  label:'Among the eleven most abundant elements in the human body',short:'Abundant in the body',
+  test:e=>has(e.tg,'body')},
+ {id:'t-crust',family:'prop',single:false,tier:'core',
+  label:'Among the eight most abundant elements in the Earth’s crust',short:'Abundant in the crust',
+  test:e=>has(e.tg,'crust')}
+];
+
+/* Weekday ramp (RAMAYANA_GRID.md §4.5). Monday should feel like an invitation; Sunday should feel
+   like the reason you learned the periodic table. Keyed off the local weekday of the dayKey, which
+   is the same everywhere for a given dayKey, so it stays a pure function of the date. */
+function tierPool(key){
+  const a=key.split('-'), wd=new Date(+a[0],+a[1]-1,+a[2]).getDay();   // 0=Sun
+  if(wd===1||wd===2) return {tiers:['core'],maxDeep:0};
+  if(wd===3||wd===4) return {tiers:['core','wide'],maxDeep:0};
+  if(wd===0)         return {tiers:['core','wide','deep'],maxDeep:6};
+  return {tiers:['core','wide','deep'],maxDeep:1};                      // Fri, Sat
+}
+
+/* ============================================================================================
+   BITSETS, LOOKUP AND THE BOOT SELF-TESTS
+   ============================================================================================ */
+const N=E.length, W=Math.ceil(N/32);
+E.forEach((e,i)=>{ e.index=i; });
+
+/* One Uint32Array per criterion. A cell's candidate count is then W ANDs and a popcount, which is
+   why the generator can afford to reject grids aggressively — solvability checking is essentially
+   free, and that is the whole reason a 3x3 daily fits in a static file with no server. */
+const BITS=CRITERIA.map(c=>{
+  const b=new Uint32Array(W);
+  for(let i=0;i<N;i++) if(c.test(E[i])) b[i>>5]|=(1<<(i&31));
+  return b;
+});
+function popcount(x){ x=x-((x>>>1)&0x55555555); x=(x&0x33333333)+((x>>>2)&0x33333333);
+  x=(x+(x>>>4))&0x0f0f0f0f; return (x*0x01010101)>>>24; }
+function andBits(a,b){ const o=new Uint32Array(W); for(let w=0;w<W;w++) o[w]=a[w]&b[w]; return o; }
+function countBits(b){ let n=0; for(let w=0;w<W;w++) n+=popcount(b[w]); return n; }
+function bitMembers(b){ const o=[]; for(let w=0;w<W;w++){ let x=b[w]; while(x){ const t=x&-x;
+  o.push((w<<5)+popcount(t-1)); x^=t; } } return o; }   // ascending index order — stable, not a Set
+function testBit(b,i){ return (b[i>>5]>>>(i&31))&1; }
+
+/* Two lookups, and keeping them separate is the whole matcher.
+     SYMS  symbol -> index. Exact only, and the ONLY route a one- or two-letter input can take.
+     KEYS  every canonical name and every alias, through norm(). Fuzzy fallback allowed. */
+const SYMS=new Map(), KEYS=new Map(), COLLISIONS=[];
+function addKey(k,i){
+  if(!k||k.length<2) return;
+  if(KEYS.has(k) && KEYS.get(k)!==i) COLLISIONS.push(k+' → '+E[KEYS.get(k)].nm+' / '+E[i].nm);
+  else KEYS.set(k,i);
+}
+(function buildKeys(){
+  for(let i=0;i<N;i++){
+    const e=E[i];
+    const s=symKey(e.sy);
+    if(SYMS.has(s)) COLLISIONS.push('symbol '+s+' claimed twice');
+    SYMS.set(s,i);
+    addKey(norm(e.nm),i);
+    for(const a of (e.al||[])) addKey(norm(a),i);
+  }
+})();
+/* The collision assertion (RAMAYANA_GRID.md §3.6). A collision means norm() has folded two distinct
+   elements together, which silently makes one of them unanswerable — the exact class of failure the
+   normaliser's conservatism exists to prevent. Costs nothing, catches everything. */
+if(COLLISIONS.length) console.error('[valence] key collisions:', COLLISIONS);
+(function selfTest(){
+  const bad=[];
+  for(let i=0;i<N;i++) if(KEYS.get(norm(E[i].nm))!==i) bad.push(E[i].nm);
+  if(bad.length) console.error('[valence] canonical names that do not round-trip:', bad);
+  const zs=new Set(); E.forEach(e=>{ if(zs.has(e.z)) console.error('[valence] duplicate Z',e.z); zs.add(e.z); });
+  window.__selfTest={collisions:COLLISIONS,roundTrip:bad};
+})();
+const KEYLIST=[...KEYS.keys()];   // fixed order, built once; never iterated during daily setup
+
+/* The short-input assertion, run after KEYLIST exists so resolve() is fully armed. Every symbol must
+   resolve to ITS OWN element and to nothing else, with no fuzzy tolerance anywhere in sight. If this
+   ever fires, `N` is resolving to neon and the game is quietly lying to players. */
+(function symbolTest(){
+  const bad=[];
+  for(let i=0;i<N;i++){ const r=resolve(E[i].sy); if(r.kind!=='hit'||r.index!==i) bad.push(E[i].sy); }
+  if(bad.length) console.error('[valence] symbols that do not resolve to themselves:', bad);
+  window.__selfTest.symbols=bad;
+})();
+
+/* ============================================================================================
+   SOLVABILITY — two separate requirements, and the second is the one implementations get wrong
+   ============================================================================================
+   (a) every cell has at least THREE valid answers. A one-answer cell is a trivia question wearing a
+       puzzle's clothes, and it is also the cell most likely to be wrong — one data error away from
+       unanswerable, with no redundancy to absorb the mistake.
+   (b) a system of distinct representatives must EXIST. Because each element may be used once,
+       per-cell non-emptiness does NOT imply the grid is solvable: three cells whose only candidates
+       are the same three elements, plus a fourth cell that also needs one of them, is an unsolvable
+       grid in which every cell individually looks fine. So: a perfect bipartite matching of size 9,
+       by Kuhn's augmenting paths. Do not skip it, do not approximate it, and do not assume that
+       min(n) >= 3 implies it. It does not. */
+function perfectMatching(cands){
+  const matchE=new Int32Array(N).fill(-1);           // element -> cell
+  const seen=new Uint8Array(N);
+  function tryCell(c){
+    for(const p of cands[c]){
+      if(seen[p]) continue;
+      seen[p]=1;
+      if(matchE[p]<0 || tryCell(matchE[p])){ matchE[p]=c; return true; }
+    }
+    return false;
+  }
+  for(let c=0;c<9;c++){ seen.fill(0); if(!tryCell(c)) return false; }
+  return true;
+}
+
+/* Maximum-weight perfect matching over the 9 cells and a bounded candidate pool, by the standard
+   Hungarian algorithm with potentials. Restricting each cell to its twelve rarest candidates can
+   only UNDERSTATE the optimum, never overstate it, so the "heaviest possible" figure shown to the
+   player is always actually achievable. */
+function heaviestMatching(cands){
+  const idx=new Map(), cols=[];
+  for(let c=0;c<9;c++){
+    const sorted=cands[c].slice().sort((a,b)=>{
+      const d=E[a].fa-E[b].fa; return d!==0?d:a-b;      // total comparator: tie-break on index
+    }).slice(0,12);
+    for(const p of sorted) if(!idx.has(p)){ idx.set(p,cols.length); cols.push(p); }
+  }
+  const m=cols.length; if(m<9) return 0;
+  const INF=1e9, cost=[];
+  for(let c=0;c<9;c++){
+    const row=new Array(m).fill(INF);
+    for(const p of cands[c]){ const j=idx.get(p); if(j!==undefined) row[j]=-(6-E[p].fa); }
+    cost.push(row);
+  }
+  const u=new Array(10).fill(0), v=new Array(m+1).fill(0), pcol=new Array(m+1).fill(0), way=new Array(m+1).fill(0);
+  for(let i=1;i<=9;i++){
+    pcol[0]=i; let j0=0;
+    const minv=new Array(m+1).fill(INF), used=new Array(m+1).fill(false);
+    do{
+      used[j0]=true; const i0=pcol[j0]; let delta=INF, j1=0;
+      for(let j=1;j<=m;j++) if(!used[j]){
+        const cur=cost[i0-1][j-1]-u[i0]-v[j];
+        if(cur<minv[j]){ minv[j]=cur; way[j]=j0; }
+        if(minv[j]<delta){ delta=minv[j]; j1=j; }
+      }
+      if(delta>=INF/2) return 0;
+      for(let j=0;j<=m;j++){ if(used[j]){ u[pcol[j]]+=delta; v[j]-=delta; } else minv[j]-=delta; }
+      j0=j1;
+    } while(pcol[j0]!==0);
+    do{ const j1=way[j0]; pcol[j0]=pcol[j1]; j0=j1; } while(j0);
+  }
+  let total=0;
+  for(let j=1;j<=m;j++) if(pcol[j]) total += -cost[pcol[j]-1][j-1];
+  return total;
+}
+
+/* ============================================================================================
+   GENERATING THE DAY'S GRID
+   ============================================================================================
+   EVERYTHING below draws from ONE mulberry32(daySeed(dayKey())) stream, in a fixed order. A stray
+   Math.random() here desynchronises players worldwide and there is no way to detect it from inside
+   the game. The criterion catalogue and the element table are ARRAYS with a fixed order; nothing in
+   daily setup ever iterates a Set, a Map or Object.keys(). */
+const FALLBACK=[
+  {rows:['c-alkali','c-halogen','c-noble'],  cols:['p-2','p-3','p-4']},
+  {rows:['b-p','b-d','m-non'],               cols:['z-low','z-high','p-4']},
+  {rows:['p-2','p-3','p-4'],                 cols:['m-metal','m-non','t-body']},
+  {rows:['m-metal','m-non','b-d'],           cols:['p-4','z-low','z-high']},
+  {rows:['t-symx','t-di','t-crust'],         cols:['z-low','z-high','m-metal']},
+  {rows:['z-low','z-high','p-4'],            cols:['b-p','b-d','s-solid']}
+];
+function critIndex(id){ for(let i=0;i<CRITERIA.length;i++) if(CRITERIA[i].id===id) return i; return -1; }
+
+function axisRuleOK(rows,cols){
+  // Two criteria drawn from the same SINGLE-VALUED family must never sit on opposite axes: one cell
+  // would be empty by construction. Same axis is fine — rows never intersect rows.
+  for(const r of rows) for(const c of cols){
+    const R=CRITERIA[r], C=CRITERIA[c];
+    if(R.single && C.single && R.family===C.family) return false;
+  }
+  return true;
+}
+function buildCells(rows,cols){
+  const cells=[];
+  for(let i=0;i<3;i++) for(let j=0;j<3;j++) cells.push(andBits(BITS[rows[i]],BITS[cols[j]]));
+  return cells;
+}
+function gradeGrid(rows,cols){
+  if(!axisRuleOK(rows,cols)) return null;
+  const cells=buildCells(rows,cols), counts=cells.map(countBits);
+  if(Math.min.apply(null,counts)<3) return null;              // the three-answer floor
+  if(Math.max.apply(null,counts)>32) return null;             // a 68-answer cell is not a question
+  const sum=counts.reduce((a,b)=>a+b,0);
+  if(sum<30||sum>150) return null;                            // breadth band: neither collapsed nor a blur
+  /* The redundancy budget. If a cell's candidate set is exactly its row's or exactly its column's,
+     one of the two criteria added nothing — "an alkali metal" x "a metal" is a cell that only ever
+     asked one question. Chemistry makes these unavoidable (every alkali metal IS a metal, every
+     halogen IS in the p-block), so this is a budget rather than a ban: two such cells are a quirk of
+     the day, three or more and the grid has stopped being a grid. */
+  const rowN=rows.map(r=>countBits(BITS[r])), colN=cols.map(c=>countBits(BITS[c]));
+  let dull=0;
+  for(let i=0;i<3;i++) for(let j=0;j<3;j++){
+    const n=counts[i*3+j];
+    if(n===rowN[i] || n===colN[j]) dull++;
+  }
+  if(dull>2) return null;
+  const cands=cells.map(bitMembers);
+  /* Every cell must contain at least one answer with fame >= 3. No cell is ever solvable only by
+     somebody who has memorised the lanthanides, and this does more for perceived fairness than
+     anything else in the generator. */
+  for(const list of cands) if(!list.some(i=>E[i].fa>=3)) return null;
+  if(!perfectMatching(cands)) return null;
+  return {rows,cols,cells,counts,cands,sum};
+}
+/* Is criterion `c` a legal partner for every one of `rows` on the opposite axis? Two tests, both
+   cheap, and together they are what makes the generator converge:
+     - the single-valued-family rule (RAMAYANA_GRID.md §2.2), and
+     - the three-answer floor, checked pairwise BEFORE the column is committed to.
+   Chemistry is unusually hostile to blind rejection sampling here. Half the interesting criteria
+   name small families — five halogens, six noble gases, seven diatomic elements — and three of those
+   drawn onto one axis produce a grid with one-element cells almost every time. Drawing the rows and
+   then drawing the columns from the criteria ALREADY COMPATIBLE with those rows turns a 0.14%
+   hit rate into a near-certain one, and it costs nothing in determinism: the compatible list is
+   built by walking `pool` in fixed index order, and every draw still comes from the one seeded
+   stream in a fixed sequence. */
+function compatible(c,rows){
+  const C=CRITERIA[c];
+  for(const r of rows){
+    const R=CRITERIA[r];
+    if(r===c) return false;
+    if(R.single && C.single && R.family===C.family) return false;
+    const n=countBits(andBits(BITS[r],BITS[c]));
+    if(n<3 || n>32) return false;
+  }
+  return true;
+}
+function makeGrid(key){
+  const rng=mulberry32(daySeed(key));
+  const ramp=tierPool(key);
+  const pool=[];
+  for(let i=0;i<CRITERIA.length;i++) if(ramp.tiers.indexOf(CRITERIA[i].tier)>=0) pool.push(i);
+  const drawFrom=(list,exclude)=>{
+    // rejection sampling against an ARRAY in fixed index order. Never shuffles a Set.
+    if(list.length<=exclude.length) return -1;
+    for(let guard=0;guard<400;guard++){
+      const c=list[Math.floor(rng()*list.length)];
+      if(exclude.indexOf(c)<0) return c;
+    }
+    return -1;
+  };
+  for(let attempt=0;attempt<400;attempt++){
+    const rows=[];
+    let ok=true;
+    for(let k=0;k<3;k++){ const c=drawFrom(pool,rows); if(c<0){ ok=false; break; } rows.push(c); }
+    if(!ok) continue;
+    const compat=[];
+    for(const c of pool) if(compatible(c,rows)) compat.push(c);
+    if(compat.length<3) continue;
+    const cols=[];
+    for(let k=0;k<3;k++){ const c=drawFrom(compat,cols); if(c<0){ ok=false; break; } cols.push(c); }
+    if(!ok) continue;
+    let deep=0; for(const c of rows.concat(cols)) if(CRITERIA[c].tier==='deep') deep++;
+    if(deep>ramp.maxDeep) continue;
+    const g=gradeGrid(rows,cols);
+    if(g){ g.fallback=false; g.attempt=attempt; return g; }
+  }
+  /* The fallbacks exist so a data edit that accidentally narrows the roster can never produce a day
+     with no puzzle. If the audit ever reports one being used, that is a bug to fix in the data. */
+  const fb=FALLBACK[daySeed(key)%FALLBACK.length];
+  const g=gradeGrid(fb.rows.map(critIndex),fb.cols.map(critIndex));
+  if(g){ g.fallback=true; return g; }
+  const g2={rows:fb.rows.map(critIndex),cols:fb.cols.map(critIndex)};
+  g2.cells=buildCells(g2.rows,g2.cols); g2.counts=g2.cells.map(countBits);
+  g2.cands=g2.cells.map(bitMembers); g2.sum=g2.counts.reduce((a,b)=>a+b,0); g2.fallback=true;
+  return g2;
+}
+
+/* ============================================================================================
+   STATE AND STORAGE
+   ============================================================================================
+   Flat pipe-delimited strings per /DAILY.md, every read and write in try/catch — localStorage throws
+   outright in Safari private mode and on some file:// origins, and a game that cannot save must
+   still play. Corrupt values fall back to defaults; nothing here is allowed to break boot. */
+const params=new URLSearchParams(location.search);
+const ARCHIVE=/^\d{4}-\d{2}-\d{2}$/.test(params.get('date')||'') ? params.get('date') : '';
+const KEY=ARCHIVE||dayKey();
+const LIVE=!ARCHIVE;                                    // archive days write nothing and share no streak
+
+const S={ cells:new Array(9).fill(-1), guesses:0, done:false, dirty:new Array(9).fill(0), open:-1 };
+let GRID=null, settings={snd:1,type:1,theme:'auto'};
+
+function loadSettings(){
+  try{
+    const raw=LS.get(SLUG+'.settings');
+    raw.split(';').forEach(kv=>{ const i=kv.indexOf('='); if(i<0) return;
+      const k=kv.slice(0,i), v=kv.slice(i+1);
+      /* Only '1' and '0' are accepted. Anything else is corruption, and corruption must fall back to
+         the DEFAULT, not to zero — a garbled settings row should never silently mute the game. */
+      if(k==='snd'&&(v==='1'||v==='0')) settings.snd = +v;
+      else if(k==='type'&&(v==='1'||v==='0')) settings.type = +v;
+      else if(k==='theme'&&['auto','light','dark'].indexOf(v)>=0) settings.theme=v; });
+  }catch(e){}                                            // any garbage at all: keep the defaults
+}
+function saveSettings(){ LS.set(SLUG+'.settings','snd='+settings.snd+';type='+settings.type+';theme='+settings.theme); }
+function loadState(){
+  if(!LIVE) return;
+  try{
+    const raw=LS.get(SLUG+'.state'); if(!raw) return;
+    const a=raw.split('|');
+    if(a[0]!==KEY) return;                               // a day-stamped value from another day is worth zero
+    const syms=(a[1]||'').split(',');
+    for(let i=0;i<9;i++){
+      const sy=syms[i]; if(!sy) continue;
+      const j=SYMS.has(symKey(sy)) ? SYMS.get(symKey(sy)) : -1;
+      if(j>=0 && GRID && testBit(GRID.cells[i],j)) S.cells[i]=j;   // ignore anything the grid disagrees with
+    }
+    S.guesses=Math.max(0,Math.min(9,+a[2]||0));
+    S.done=a[3]==='1';
+    const d=a[4]||''; for(let i=0;i<9;i++) S.dirty[i] = d.charAt(i)==='1'?1:0;
+  }catch(e){ S.cells=new Array(9).fill(-1); S.guesses=0; S.done=false; S.dirty=new Array(9).fill(0); }
+}
+function saveState(){
+  if(!LIVE) return;
+  const syms=S.cells.map(i=>i<0?'':E[i].sy).join(',');
+  LS.set(SLUG+'.state', KEY+'|'+syms+'|'+S.guesses+'|'+(S.done?1:0)+'|'+S.dirty.join(''));
+}
+function filled(){ let n=0; for(const c of S.cells) if(c>=0) n++; return n; }
+function weight(){ let w=0; for(const c of S.cells) if(c>=0) w+=6-E[c].fa; return w; }
+
+/* ============================================================================================
+   AUDIO — WebAudio oscillators only, no files, because the game must work off a disk
+   ============================================================================================ */
+let AC=null;
+function ac(){ try{ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
+  if(AC.state==='suspended') AC.resume(); return AC; }catch(e){ return null; } }
+function chime(){                                   // correct: two sines a fifth apart, like struck glass
+  if(!settings.snd) return; const c=ac(); if(!c) return;
+  const t=c.currentTime;
+  [[784,0],[1176,0.045]].forEach(([f,d])=>{
+    const o=c.createOscillator(), g=c.createGain();
+    o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t+d); g.gain.exponentialRampToValueAtTime(0.15,t+d+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+d+0.34);
+    o.connect(g).connect(c.destination); o.start(t+d); o.stop(t+d+0.36);
+  });
+}
+function dull(){                                    // wrong: one damped low tone. No buzzer.
+  if(!settings.snd) return; const c=ac(); if(!c) return;
+  const t=c.currentTime, o=c.createOscillator(), g=c.createGain();
+  o.type='triangle'; o.frequency.setValueAtTime(155,t); o.frequency.linearRampToValueAtTime(112,t+0.18);
+  g.gain.setValueAtTime(0.13,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+  o.connect(g).connect(c.destination); o.start(t); o.stop(t+0.21);
+}
+function fanfare(){                                 // 9/9: a rising arpeggio, ~0.8s. Sober, not a jackpot.
+  if(!settings.snd) return; const c=ac(); if(!c) return;
+  const t=c.currentTime;
+  [523,659,784,1047].forEach((f,i)=>{
+    const o=c.createOscillator(), g=c.createGain();
+    o.type='sine'; o.frequency.value=f;
+    const d=i*0.13;
+    g.gain.setValueAtTime(0.0001,t+d); g.gain.exponentialRampToValueAtTime(0.13,t+d+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+d+0.42);
+    o.connect(g).connect(c.destination); o.start(t+d); o.stop(t+d+0.44);
+  });
+}
+
+/* ============================================================================================
+   RENDER
+   ============================================================================================ */
+const $=id=>document.getElementById(id);
+function critOf(i,isRow){ return CRITERIA[isRow?GRID.rows[i]:GRID.cols[i]]; }
+function cellLabel(k){
+  const r=critOf(Math.floor(k/3),true), c=critOf(k%3,false);
+  const who=S.cells[k]>=0 ? 'Filled with '+E[S.cells[k]].nm+'.' : 'Empty.';
+  return 'Row: '+r.label+'. Column: '+c.label+'. '+who;
+}
+function buildGrid(){
+  const g=$('grid'); g.innerHTML='';
+  const corner=document.createElement('div'); corner.className='corner'; corner.setAttribute('role','presentation');
+  /* The one piece of ornament in the game: a drawn atom — nucleus and two electron shells. It is a
+     diagram, not an illustration, which is why it is inline SVG and not an image file. */
+  corner.innerHTML='<svg viewBox="0 0 60 60" aria-hidden="true">'+
+    '<ellipse cx="30" cy="30" rx="24" ry="10" fill="none" stroke="var(--head-fg)" stroke-width="2" opacity=".8"/>'+
+    '<ellipse cx="30" cy="30" rx="24" ry="10" fill="none" stroke="var(--lamp)" stroke-width="2" opacity=".9"'+
+    ' transform="rotate(60 30 30)"/>'+
+    '<ellipse cx="30" cy="30" rx="24" ry="10" fill="none" stroke="var(--head-fg)" stroke-width="2" opacity=".55"'+
+    ' transform="rotate(120 30 30)"/>'+
+    '<circle cx="30" cy="30" r="5" fill="var(--lamp)"/></svg>';
+  g.appendChild(corner);
+  for(let j=0;j<3;j++){
+    const h=document.createElement('div'); h.className='hd'; h.textContent=critOf(j,false).short;
+    h.tabIndex=0; h.setAttribute('role','columnheader'); h.title=critOf(j,false).label;
+    h.addEventListener('click',()=>say(critOf(j,false).label));
+    h.addEventListener('keydown',ev=>{ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); say(critOf(j,false).label); } });
+    g.appendChild(h);
+  }
+  for(let i=0;i<3;i++){
+    const h=document.createElement('div'); h.className='hd'; h.textContent=critOf(i,true).short;
+    h.tabIndex=0; h.setAttribute('role','rowheader'); h.title=critOf(i,true).label;
+    h.addEventListener('click',()=>say(critOf(i,true).label));
+    h.addEventListener('keydown',ev=>{ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); say(critOf(i,true).label); } });
+    g.appendChild(h);
+    for(let j=0;j<3;j++){
+      const k=i*3+j;
+      const cell=document.createElement('div');
+      cell.className='cell'; cell.id='cell'+k; cell.tabIndex=0;
+      cell.setAttribute('role','gridcell');
+      cell.setAttribute('aria-rowindex',String(i+1)); cell.setAttribute('aria-colindex',String(j+1));
+      cell.addEventListener('click',ev=>{ if(ev.target.classList.contains('hint')) return; openCell(k); });
+      cell.addEventListener('keydown',ev=>onCellKey(ev,k));
+      g.appendChild(cell);
+    }
+  }
+  paint();
+}
+function onCellKey(ev,k){
+  const i=Math.floor(k/3), j=k%3;
+  let t=-1;
+  if(ev.key==='ArrowRight') t=i*3+((j+1)%3);
+  else if(ev.key==='ArrowLeft') t=i*3+((j+2)%3);
+  else if(ev.key==='ArrowDown') t=((i+1)%3)*3+j;
+  else if(ev.key==='ArrowUp') t=((i+2)%3)*3+j;
+  else if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); openCell(k); return; }
+  if(t>=0){ ev.preventDefault(); const el=$('cell'+t); if(el) el.focus(); }
+}
+function paint(){
+  for(let k=0;k<9;k++){
+    const el=$('cell'+k); if(!el) continue;
+    const e=S.cells[k]>=0?E[S.cells[k]]:null;
+    el.classList.toggle('on',!!e);
+    el.setAttribute('aria-label',cellLabel(k));
+    el.innerHTML='';
+    if(e){
+      const z=document.createElement('span'); z.className='zz'; z.textContent=String(e.z);
+      const sy=document.createElement('span'); sy.className='sy'; sy.textContent=e.sy;
+      const nm=document.createElement('span'); nm.className='nm'; nm.textContent=e.nm;
+      const wt=document.createElement('span'); wt.className='wt'; wt.textContent=String(6-e.fa);
+      el.appendChild(z); el.appendChild(sy); el.appendChild(nm); el.appendChild(wt);
+    }else{
+      const p=document.createElement('span'); p.className='plus'; p.textContent='+';
+      const b=document.createElement('button'); b.className='hint'; b.type='button';
+      b.setAttribute('aria-label','How many elements fit this cell'); b.innerHTML='&#9432;';
+      b.addEventListener('click',ev=>{ ev.stopPropagation();
+        say(GRID.counts[k]+' element'+(GRID.counts[k]===1?'':'s')+' in the roster fit that cell.'); });
+      el.appendChild(p); el.appendChild(b);
+    }
+  }
+  $('sCells').textContent=filled()+'/9';
+  $('sGuess').textContent=String(9-S.guesses);
+  $('sWeight').textContent=String(weight());
+  $('bReveal').hidden=!S.done;
+}
+function say(t,cls){ const m=$('msg'); m.innerHTML=''; const s=document.createElement('span');
+  if(cls) s.className=cls; s.textContent=t; m.appendChild(s); }
+
+/* ============================================================================================
+   THE SHEET, THE TYPEAHEAD AND RESOLUTION
+   ============================================================================================ */
+function openCell(k){
+  if(S.done || S.cells[k]>=0) return;
+  S.open=k;
+  $('critRow').textContent=critOf(Math.floor(k/3),true).label;
+  $('critCol').textContent=critOf(k%3,false).label;
+  $('sheetMeta').textContent=(9-S.guesses)+' guess'+(9-S.guesses===1?'':'es')+' left · '+
+    GRID.counts[k]+' elements fit this cell';
+  $('guess').value=''; $('sheetMsg').textContent=''; $('disamb').hidden=true; $('ta').innerHTML='';
+  $('sheet').hidden=false; $('scrim').classList.add('show');
+  requestAnimationFrame(()=>{ $('sheet').classList.add('show'); $('guess').focus(); });
+}
+function closeSheet(){
+  S.open=-1;
+  $('sheet').classList.remove('show'); $('scrim').classList.remove('show');
+  setTimeout(()=>{ if(S.open<0) $('sheet').hidden=true; },220);
+}
+
+const CATNAME={alkali:'Alkali metal',alkaline:'Alkaline earth metal',dblock:'d-block metal',
+  posttrans:'Post-transition metal',metalloid:'Metalloid',nonmetal:'Non-metal',halogen:'Halogen',
+  noble:'Noble gas',lanth:'Lanthanide',act:'Actinide'};
+
+/* THE TRAP IN THE TYPEAHEAD, stated where an editor will see it:
+   the suggestion list is drawn from the ENTIRE roster and is NEVER filtered by what is valid for the
+   open cell. Filtering it would hand over the answer. It looks like a kindness and it is a spoiler.
+   If anybody ever writes E.filter(validForCell) in here, the game is broken. */
+function typeahead(){
+  const box=$('ta'); box.innerHTML='';
+  if(!settings.type) return;
+  const q=soft($('guess').value);
+  if(q.length<1) return;
+  /* Four ranks, in this order, because a player who types `ca` almost always means calcium and
+     should not have to scroll past carbon to reach it: an exact symbol beats a name prefix beats a
+     symbol prefix beats a substring. Within a rank, ties break on atomic number, which is a total
+     order and therefore stable. */
+  const rank=[[],[],[],[]], seen=new Set();
+  for(let i=0;i<N;i++){
+    const e=E[i], k=soft(e.nm), sk=soft(e.sy);
+    if(sk===q) rank[0].push(i);
+    else if(k.indexOf(q)===0) rank[1].push(i);
+    else if(sk.indexOf(q)===0 || (e.al||[]).some(a=>soft(a).indexOf(q)===0)) rank[2].push(i);
+    else if(k.indexOf(q)>=0) rank[3].push(i);
+  }
+  const out=rank[0].concat(rank[1],rank[2],rank[3])
+    .filter(i=>{ if(seen.has(i)) return false; seen.add(i); return true; }).slice(0,6);
+  for(const i of out){
+    const li=document.createElement('li'), b=document.createElement('button');
+    b.type='button';
+    b.appendChild(document.createTextNode(E[i].sy+' · '+E[i].nm));
+    const sm=document.createElement('small');
+    sm.textContent=CATNAME[E[i].cat]+' · Z '+E[i].z+' · period '+E[i].pr;
+    b.appendChild(sm);
+    b.addEventListener('click',()=>{ $('guess').value=E[i].nm; box.innerHTML=''; commit(i); });
+    li.appendChild(b); box.appendChild(li);
+  }
+}
+
+/* Resolution. Returns {kind:'hit'|'none'|'ambiguous', index?, options?}.
+
+   THE SHORT-INPUT RULE, which is the one thing this matcher exists to get right. Element symbols are
+   one or two letters. At that length ANY fuzzy tolerance makes the periodic table mutually reachable
+   — N would be one edit from Ne, Na, Nb, Nd, Ni, No and Np — so a one- or two-letter input is looked
+   up in the symbol table EXACTLY and nowhere else. It never falls through to the fuzzy scan, and it
+   never resolves to a longer symbol. `N` is nitrogen or it is nothing.
+
+   Beyond two letters we are matching words, and the RAMAYANA_GRID.md §3.4 rule applies unchanged:
+   two candidates within the fuzzy threshold must NEVER resolve silently. Prompt instead. */
+function resolve(text){
+  const raw=(text||'').trim();
+  const s=symKey(raw);
+  if(s.length===0) return {kind:'none',tooShort:true};
+  if(s.length<=2){
+    if(SYMS.has(s)) return {kind:'hit',index:SYMS.get(s)};
+    if(s.length===1) return {kind:'none',tooShort:true};   // mid-typing a name: say nothing, cost nothing
+    return {kind:'none',shortMiss:true};
+  }
+  const k=norm(raw);
+  if(k.length<2) return {kind:'none',tooShort:true};
+  if(KEYS.has(k)) return {kind:'hit',index:KEYS.get(k)};
+  const cap=fuzzCap(k), hits=[];
+  for(const key of KEYLIST){
+    if(Math.abs(key.length-k.length)>cap) continue;
+    if(dl(k,key,cap)<=cap){ const i=KEYS.get(key); if(hits.indexOf(i)<0) hits.push(i); }
+  }
+  if(hits.length===1) return {kind:'hit',index:hits[0]};
+  if(hits.length>1) return {kind:'ambiguous',options:hits.slice(0,6)};
+  return {kind:'none'};
+}
+
+/* Five outcomes, and ONLY ONE of them costs a guess. A typo, an unknown name and a repeat are the
+   three things a sincere player does most often; charging for any of them turns a puzzle into a
+   punishment, and it is the single most common way this genre gets ruined. */
+function submit(){
+  if(S.open<0) return;
+  const raw=$('guess').value.trim();
+  const r=resolve(raw);
+  $('disamb').hidden=true;
+  if(r.kind==='none'){
+    if(r.tooShort) return;                              // mid-typo: ignore silently, cost nothing
+    if(r.shortMiss){
+      sheetMsg('“'+raw+'” is not the symbol of any element from hydrogen to plutonium. Two letters '+
+               'are read as a symbol and never guessed at — write the name in full if you meant one. '+
+               'No guess spent.');
+      return;
+    }
+    sheetMsg('Valence doesn’t know that name. The roster is all '+N+' elements from hydrogen (1) to '+
+             'plutonium (94), by name or by symbol. No guess spent.');
+    return;
+  }
+  if(r.kind==='ambiguous'){ showDisamb(r.options); return; }
+  commit(r.index);
+}
+function showDisamb(options){
+  const d=$('disamb'); d.innerHTML='';
+  const p=document.createElement('p'); p.style.margin='0';
+  p.textContent='Which one? (This costs no guess.)'; d.appendChild(p);
+  const row=document.createElement('div'); row.className='row';
+  for(const i of options){
+    const b=document.createElement('button'); b.type='button'; b.textContent=E[i].sy+' · '+E[i].nm;
+    b.addEventListener('click',()=>{ d.hidden=true; commit(i); });
+    row.appendChild(b);
+  }
+  d.appendChild(row); d.hidden=false;
+  sheetMsg('');
+}
+function sheetMsg(t,cls){ const m=$('sheetMsg'); m.innerHTML='';
+  const s=document.createElement('span'); if(cls) s.className=cls; s.textContent=t; m.appendChild(s); }
+
+function commit(i){
+  const k=S.open; if(k<0) return;
+  const e=E[i];
+  const already=S.cells.indexOf(i);
+  if(already>=0){
+    sheetMsg(e.nm+' is already placed — row '+(Math.floor(already/3)+1)+', column '+(already%3+1)+
+             '. Each element can only be used once. No guess spent.');
+    return;
+  }
+  const r=critOf(Math.floor(k/3),true), c=critOf(k%3,false);
+  const rOK=r.test(e), cOK=c.test(e);
+  if(rOK&&cOK){
+    S.cells[k]=i; $('guess').value='';
+    chime();
+    closeSheet(); paint();
+    const el=$('cell'+k); if(el){ el.classList.add('lay'); setTimeout(()=>el.classList.remove('lay'),380); }
+    say(e.sy+' · '+e.nm+' — '+r.label+' ✓ · '+c.label+' ✓','yes');
+    saveState();
+    if(filled()===9) endGrid(true);
+    return;
+  }
+  /* Outcome (d) says WHICH HALF failed. It teaches, it makes a wrong guess feel like it bought
+     something, and it cannot reveal an answer: it tells the player facts about the element THEY
+     named, not about any element they didn't. */
+  S.guesses++; S.dirty[k]=1; dull();
+  const line=e.sy+' · '+e.nm+' — '+r.label+' '+(rOK?'✓':'✗')+' · '+c.label+' '+(cOK?'✓':'✗');
+  sheetMsg(line,'nope'); say(line,'nope');
+  paint(); saveState();
+  if(S.guesses>=9){ closeSheet(); endGrid(false); }
+}
+
+/* ============================================================================================
+   THE END OF A GRID, THE REVEAL PANEL AND SHARING
+   ============================================================================================ */
+let siteStreak=0, heaviest=0;
+function endGrid(perfect){
+  if(S.done) return;
+  S.done=true; saveState(); paint();
+  if(perfect) fanfare();
+  if(LIVE){
+    /* dailyDone() is called when the grid ENDS, either way — 9/9 or out of guesses. A streak that
+       required a perfect grid would break for everybody in the first week and then mean nothing.
+       Showing up is the feat the streak pays for. */
+    const w=weight();
+    if(w>loadToday(SLUG+'.dbest')) saveToday(SLUG+'.dbest',w);
+    siteStreak=dailyDone();
+    $('sStreak').textContent=String(siteStreak);
+  }
+  track('grid_end',{filled:filled(),guesses:S.guesses,weight:weight(),heaviest:heaviest,
+                    mode:LIVE?'daily':'archive',typeahead:settings.type});
+  say(perfect ? 'Nine of nine. The whole shelf.'
+             : filled()+' of nine filled. Every answer is below.');
+  setTimeout(showReveal, perfect?900:400);
+}
+function esc(t){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+function elemLine(e){
+  const bits=[CATNAME[e.cat],'period '+e.pr,e.blk+'-block'];
+  if(e.st) bits.push(e.st+' at 25 °C');
+  if(has(e.tg,'rad')) bits.push('radioactive');
+  return bits.join(' · ');
+}
+function showReveal(){
+  const R=$('revInner');
+  const parts=[];
+  parts.push('<h2 id="revTitle">'+filled()+' of nine</h2>');
+  parts.push('<p><b>Weight '+weight()+'</b> of a possible '+heaviest+' · '+S.guesses+
+             ' of nine guesses spent'+(settings.type?'':' · recall')+'.</p>');
+  parts.push('<textarea class="sharebox" id="shareTxt" rows="7" readonly aria-label="Your result, ready to copy"></textarea>');
+  parts.push('<div class="tools"><button class="btn primary" type="button" id="bCopy">Copy result</button>'+
+             '<button class="btn" type="button" id="bClose">Back to the grid</button></div>');
+  parts.push('<p class="note">Every element in the roster that fits each cell, most familiar first. '+
+             'Yours is highlighted. This list is the point of the game — a grid you filled twice over '+
+             'and a grid you failed completely show you exactly the same chemistry.</p>');
+  for(let k=0;k<9;k++){
+    const r=critOf(Math.floor(k/3),true), c=critOf(k%3,false);
+    parts.push('<h3>'+esc(r.label)+' &nbsp;×&nbsp; '+esc(c.label)+
+               ' <span style="font-weight:600;opacity:.7">('+GRID.counts[k]+')</span></h3>');
+    const list=GRID.cands[k].slice().sort((a,b)=>{
+      const d=E[b].fa-E[a].fa; return d!==0?d:a-b;   // total comparator, tie-break on index
+    });
+    parts.push('<ul class="ans">');
+    for(const i of list){
+      const e=E[i], mine=S.cells[k]===i;
+      parts.push('<li'+(mine?' class="mine"':'')+'><b>'+esc(e.sy)+' · '+esc(e.nm)+'</b> — '+
+        esc(elemLine(e))+' <span class="w">weight '+(6-e.fa)+'</span>'+
+        '<span class="g">'+esc(e.gl)+'</span></li>');
+    }
+    parts.push('</ul>');
+  }
+  parts.push('<h3>Conventions this grid uses</h3>');
+  parts.push('<p class="note">Where syllabuses disagree, Valence does not take a side — it asks a '+
+    'different question instead. <b>“Transition metal” is never a criterion</b>, because IUPAC and '+
+    'NCERT exclude zinc, cadmium and mercury while much GCSE material includes them; the grid asks '+
+    'about the <b>d-block</b>, which everybody draws in the same place, and which contains all three. '+
+    '<b>Metalloid</b> means the six that every syllabus agrees on — boron, silicon, germanium, '+
+    'arsenic, antimony, tellurium. Polonium is treated as a metal and <b>astatine is left '+
+    'unclassified</b>, because nobody has ever had enough of it to measure. Lanthanum through '+
+    'lutetium are the lanthanides and are counted as f-block; actinium through plutonium likewise. '+
+    'Room temperature means 25 °C.</p>');
+  parts.push('<p class="note"><b>Two elements are liquid at room temperature</b> — mercury and '+
+    'bromine — which is a fact worth knowing and a criterion that could never work: a cell needs at '+
+    'least three possible answers, so a two-member axis can never appear. <b>Ferromagnetic at 25 °C</b> '+
+    'means iron, cobalt and nickel. Gadolinium is ferromagnetic too, but only below about 19 °C, so '+
+    'it does not qualify at room temperature. <b>Radioactive</b> here means “has no stable isotope”: '+
+    'technetium, promethium, and everything from polonium upward. Bismuth is counted as stable, which '+
+    'is how every school table treats it, though it does in fact decay with a half-life around a '+
+    'billion times the age of the universe.</p>');
+  parts.push('<p class="note"><b>Weight is not rarity scoring.</b> The Immaculate Grid’s rarity is a '+
+    '<i>social</i> measurement — it tells you how few of the other players thought of your answer, '+
+    'and knowing that requires a server counting everybody. Valence has no server and never phones '+
+    'home. Its Weight is an <i>editorial</i> measurement: a number assigned to each element when the '+
+    'dataset was written, reflecting roughly how well known it is to somebody in school. Naming '+
+    'thulium is worth five; naming oxygen is worth one. It is the same on day one as on day one '+
+    'thousand, and it works on a plane. It can never surprise you by revealing that everybody else '+
+    'also thought of tungsten.</p>');
+  parts.push('<p class="note">Where a property could not be confirmed against a public reference, the '+
+    'element was left out of that tag rather than guessed into it. That makes this dataset '+
+    '<i>incomplete</i> in places rather than <i>wrong</i>: an incomplete tag can only reject a '+
+    'correct answer, and it says so; a wrong one would also accept an incorrect answer, and you '+
+    'could not tell which had happened. Something looks off? Corrections are welcome — '+
+    '<a href="../">kreeda.games</a></p>');
+  R.innerHTML=parts.join('');
+  $('shareTxt').value=shareText();
+  $('bCopy').addEventListener('click',doCopy);
+  $('bClose').addEventListener('click',closeReveal);
+  $('reveal').hidden=false; $('reveal').classList.add('show'); $('reveal').scrollTop=0;
+  $('revTitle').setAttribute('tabindex','-1'); $('revTitle').focus();
+}
+function closeReveal(){ $('reveal').classList.remove('show'); $('reveal').hidden=true;
+  const el=$('cell0'); if(el) el.focus(); }
+
+/* The share grid encodes, per cell, exactly two bits: solved or not, and cleanly or not. It encodes
+   nothing about WHICH element was named. The criteria are not secret — every player worldwide sees
+   the identical six the moment they open the page — so revealing which cells somebody found tells a
+   reader nothing they could not already see.
+   THEREFORE: Weight is never encoded per cell. A per-cell weight glyph would leak — telling a reader
+   that your answer to a three-answer cell was a weight-5 name narrows their search to one element.
+   Weight appears only as a single total on the score line, where it is not attributable to any cell.
+   This is the one way this format could be broken and it is exactly the kind of thing that looks
+   like a nice idea in review. It isn't. */
+function shareText(){
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const a=KEY.split('-'), head='Kreeda · Valence · '+(+a[2])+' '+MON[+a[1]-1];
+  let rows='';
+  for(let i=0;i<3;i++){
+    for(let j=0;j<3;j++){
+      const k=i*3+j;
+      rows += S.cells[k]<0 ? '⬜' : (S.dirty[k] ? '🟨' : '🟩');
+    }
+    rows+='\n';
+  }
+  let score=filled()+'/9 · weight '+weight();
+  if(!settings.type) score+=' · recall';
+  if(LIVE && siteStreak>=2) score+=' · streak '+siteStreak+' 🔥';
+  if(!LIVE) score+=' · archive';
+  return head+'\n'+rows+score+'\nkreeda.games/valence/';
+}
+function doCopy(){
+  const t=shareText(), b=$('bCopy');
+  const ok=()=>{ b.textContent='Copied'; setTimeout(()=>b.textContent='Copy result',1400); };
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok,fallback); }
+    else fallback();
+  }catch(e){ fallback(); }
+  function fallback(){
+    const ta=$('shareTxt'); ta.focus(); ta.select();
+    try{ document.execCommand('copy'); ok(); }catch(e){ b.textContent='Select and copy'; }
+  }
+}
+
+/* The one call into analytics.js, and deliberately the dumbest possible wrapper: if that file was
+   blocked, never loaded, or is doing nothing because we are on file://, this is a no-op and the game
+   cannot tell. Nothing in here is load-bearing. */
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+
+/* ============================================================================================
+   BOOT
+   ============================================================================================ */
+function applyTheme(){
+  const el=document.documentElement;
+  if(settings.theme==='auto') el.removeAttribute('data-theme'); else el.setAttribute('data-theme',settings.theme);
+  $('bTheme').textContent='Theme: '+settings.theme;
+}
+function boot(){
+  loadSettings(); applyTheme();
+  GRID=makeGrid(KEY);
+  heaviest=heaviestMatching(GRID.cands);
+  loadState();
+  buildGrid();
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const a=KEY.split('-');
+  $('datechip').textContent=(ARCHIVE?'Archive · ':'')+(+a[2])+' '+MON[+a[1]-1]+' '+a[0];
+  if(ARCHIVE) $('datechip').classList.add('arch');
+  $('asof').textContent='All '+N+' elements from hydrogen to plutonium. Answer by name or by symbol.';
+  siteStreak=LIVE ? (LS.get('kreeda.streak').split('|')[0]===dayKey() ? (+LS.get('kreeda.streak').split('|')[1]||0) : 0) : 0;
+  $('sStreak').textContent=String(siteStreak);
+  $('bSound').setAttribute('aria-pressed',settings.snd?'true':'false');
+  $('bSound').textContent='Sound '+(settings.snd?'on':'off');
+  $('bType').setAttribute('aria-pressed',settings.type?'true':'false');
+  $('bType').textContent='Typeahead '+(settings.type?'on':'off');
+  if(S.done){ say(filled()+' of nine filled today. Tap “See every answer”.'); }
+  else if(filled()>0) say('Picking up where you left off.');
+  else say('Tap a square. Name an element that fits both its row and its column — Fe or iron, either way.');
+  paint();
+
+  $('guess').addEventListener('input',typeahead);
+  $('guess').addEventListener('keydown',ev=>{ if(ev.key==='Enter'){ ev.preventDefault(); submit(); } });
+  $('bSubmit').addEventListener('click',submit);
+  $('bCancel').addEventListener('click',closeSheet);
+  $('scrim').addEventListener('click',closeSheet);
+  document.addEventListener('keydown',ev=>{ if(ev.key==='Escape'){ if(!$('reveal').hidden){ closeReveal(); }
+      else closeSheet(); } });
+  $('bReveal').addEventListener('click',showReveal);
+  $('bSound').addEventListener('click',()=>{ settings.snd=settings.snd?0:1; saveSettings();
+    $('bSound').setAttribute('aria-pressed',settings.snd?'true':'false');
+    $('bSound').textContent='Sound '+(settings.snd?'on':'off'); if(settings.snd) chime(); });
+  $('bType').addEventListener('click',()=>{ settings.type=settings.type?0:1; saveSettings();
+    $('bType').setAttribute('aria-pressed',settings.type?'true':'false');
+    $('bType').textContent='Typeahead '+(settings.type?'on':'off'); typeahead(); });
+  $('bTheme').addEventListener('click',()=>{ settings.theme = settings.theme==='auto'?'light':
+    (settings.theme==='light'?'dark':'auto'); saveSettings(); applyTheme(); });
+  $('bHow').addEventListener('click',()=>say('Nine cells, nine guesses. Type a name or a symbol — '+
+    'iron, Fe or fe all work. Each element can be used only once. Unknown names, ambiguous names and '+
+    'repeats are free: only a real element that does not fit costs a guess. Weight rewards the less '+
+    'obvious answer, and the reveal panel lists every answer whatever your score.'));
+  /* Keep the sheet above the on-screen keyboard. visualViewport is the only honest source for this;
+     100vh lies on iOS the moment the keyboard opens. */
+  if(window.visualViewport){
+    const fit=()=>{ const vv=window.visualViewport;
+      const lift=Math.max(0, window.innerHeight-(vv.height+vv.offsetTop));
+      $('sheet').style.setProperty('bottom', (window.innerWidth<560? lift+'px' : ''));
+    };
+    window.visualViewport.addEventListener('resize',fit);
+    window.visualViewport.addEventListener('scroll',fit);
+  }
+  track('grid_start',{mode:LIVE?'daily':'archive',fallback:GRID.fallback?1:0,heaviest:heaviest});
+}
+
+/* ============================================================================================
+   AUDIT — dev only, not linked from anywhere. ?audit=N generates the next N days and reports.
+   Run it before any data change ships: it is the only way to actually KNOW difficulty is even, as
+   opposed to intending that it be. `?date=YYYY-MM-DD` renders any other day, writing nothing.
+   ============================================================================================ */
+function audit(n){
+  const out={days:n,fallbacks:[],minCell:1e9,maxCell:0,sumMin:1e9,sumMax:0,noMatch:[],lowCell:[],
+             critUse:{},worst:null};
+  let k=dayKey(), totalMin=0;
+  for(let d=0;d<n;d++){
+    const g=makeGrid(k);
+    if(g.fallback) out.fallbacks.push(k);
+    const mn=Math.min.apply(null,g.counts), mx=Math.max.apply(null,g.counts);
+    if(mn<out.minCell){ out.minCell=mn; out.worst=k; }
+    if(mx>out.maxCell) out.maxCell=mx;
+    out.sumMin=Math.min(out.sumMin,g.sum); out.sumMax=Math.max(out.sumMax,g.sum);
+    totalMin+=mn;
+    if(mn<3) out.lowCell.push(k+':'+mn);
+    if(!perfectMatching(g.cands)) out.noMatch.push(k);
+    for(const c of g.rows.concat(g.cols)){ const id=CRITERIA[c].id; out.critUse[id]=(out.critUse[id]||0)+1; }
+    const a=k.split('-'), t=new Date(+a[0],+a[1]-1,+a[2]); t.setDate(t.getDate()+1); k=dayKey(t);
+  }
+  out.meanMin=+(totalMin/n).toFixed(2);
+  out.ok = out.fallbacks.length===0 && out.lowCell.length===0 && out.noMatch.length===0;
+  console.log('[valence audit]', JSON.stringify(out));
+  window.__audit=out;
+  return out;
+}
+try{ boot(); }catch(e){ console.error('[valence] boot failed',e); }
+if(params.get('audit')) audit(Math.max(1,Math.min(2000,+params.get('audit')||365)));
+</script>
+</body>
+</html>

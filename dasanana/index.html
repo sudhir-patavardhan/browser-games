@@ -3,7 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Daśānana — a Rāmāyaṇa Astra-Duel</title>
+<title>Daśānana — Kreeda</title>
+<meta name="description" content="A Rāmāyaṇa astra-duel — counter Rāvaṇa's divine missiles, chant to restore your tejas, loose the Brahmāstra.">
+<link rel="canonical" href="https://kreeda.games/dasanana/">
+<meta name="theme-color" content="#8ed4ff">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/dasanana/">
+<meta property="og:title" content="Daśānana — Kreeda">
+<meta property="og:description" content="A Rāmāyaṇa astra-duel — counter Rāvaṇa's divine missiles, chant to restore your tejas, loose the Brahmāstra.">
+<meta property="og:image" content="https://kreeda.games/assets/dasanana-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Daśānana — Kreeda">
+<meta name="twitter:description" content="A Rāmāyaṇa astra-duel — counter Rāvaṇa's divine missiles, chant to restore your tejas, loose the Brahmāstra.">
+<meta name="twitter:image" content="https://kreeda.games/assets/dasanana-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Daśānana","description":"A Rāmāyaṇa astra-duel — counter Rāvaṇa's divine missiles, chant to restore your tejas, loose the Brahmāstra.","url":"https://kreeda.games/dasanana/","image":"https://kreeda.games/assets/dasanana-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Action","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
 <style>
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
   html,body{
@@ -145,6 +169,7 @@
 
   <div id="screen-mode" class="screen hidden">
     <h1 class="title" style="font-size:26px;">CHOOSE YOUR PATH</h1>
+    <p class="subtitle" id="modeStats" style="margin-top:2px;"></p>
     <div class="choice-grid">
       <div class="panel choice-card" data-start="story"><h3>Story</h3><p>Khara's ambush → Indrajit → Rāvaṇa. Learn astra-vidyā as Rāma did.</p></div>
       <div class="panel choice-card" data-start="duel-easy"><h3>Duel — Sādhaka</h3><p>Long invocations, gentle chant timing.</p></div>
@@ -209,6 +234,7 @@
     <div class="row">
       <button class="btn" id="endPrimaryBtn">CONTINUE</button>
       <button class="btn secondary" id="endMenuBtn">MAIN MENU</button>
+      <button class="btn secondary" id="endShareBtn" style="display:none;">SHARE</button>
     </div>
   </div>
 
@@ -1302,6 +1328,29 @@ function drawFinale(b){
   }
 }
 
+/* ================================================================ TELEMETRY ================================================================ */
+/* The one call into analytics.js, and deliberately the dumbest possible wrapper: if that file was
+   blocked, never loaded, or is doing nothing because we are on file://, this is a no-op and the game
+   cannot tell. Nothing in here is load-bearing. */
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+/* story vs duel (with difficulty) IS the configuration space, and `stage` (which boss) is what makes
+   "how far did they get" answerable across many plays without ever naming a move, an astra chosen, or
+   anything the player typed. storyIdx is read live rather than frozen on b: it never changes mid-battle
+   (only between battles, before the next startBattle), so there is no staleness risk here the way
+   Ennead's live `settings` had. */
+function battleParams(b){
+  return { mode: storyIdx>=0?'story':'duel', difficulty:b.diffKey, stage:b.enemy.key };
+}
+/* game_end's shape, shared by a real ending (win/loss) and a deliberate walkaway (quit) so both report
+   the same fields. heads_defeated is a count, never which astra or head; duration_s is wall-clock since
+   this attempt's game_start, rounded — a raw float per battle is a high-cardinality dimension. */
+function endParams(b, outcome){
+  const p=battleParams(b);
+  p.outcome=outcome; p.heads_defeated=b.headsDestroyed;
+  p.duration_s = b.startedAt ? Math.round((Date.now()-b.startedAt)/1000) : 0;
+  return p;
+}
+
 /* ================================================================ BATTLE ================================================================ */
 function newBattle(cfgKey, difficulty){
   const cfg=BATTLES[cfgKey];
@@ -1321,6 +1370,58 @@ function newBattle(cfgKey, difficulty){
 let battle=null;
 let storyIdx=-1;                                   // -1 = not story mode
 const STORY_ORDER=['khara','indrajit','ravana'];
+
+/* ---- Kreeda persistence — see /DAILY.md. Copied, not imported: this file stays standalone. ---- */
+const SLUG = 'dasanana';
+const LS = { get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+             set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+const DIFF_NAMES = { easy:'Sādhaka', normal:'Vīra', hard:'Mahāvīra' };
+
+// dasanana.best = furthest story-mode stage reached: -1 none, 0..2 = index into STORY_ORDER the
+// player has entered, STORY_ORDER.length (3) = Rāvaṇa defeated in story mode (the story is complete).
+// It's a high-water mark, not a save — reaching a stage banks it even if that fight is then lost.
+function loadStoryBest(){
+  const raw = LS.get(SLUG+'.best');
+  const v = raw==='' ? -1 : Math.round(+raw);
+  return (Number.isFinite(v) && v>=-1 && v<=STORY_ORDER.length) ? v : -1;
+}
+let storyBest = loadStoryBest();
+function saveStoryBest(idx){
+  if(idx>storyBest){ storyBest=idx; LS.set(SLUG+'.best', String(storyBest)); return true; }
+  return false;
+}
+
+// dasanana.settings = "<bestDuelHeads>|<lastDuelDifficulty>". Duel mode always fights Rāvaṇa (10
+// heads) at a chosen difficulty outside the story arc, so its "survival" is heads felled, 0..10.
+function loadSettings(){
+  const parts = LS.get(SLUG+'.settings').split('|');
+  let duelBest = Math.round(+parts[0]);
+  if(!Number.isFinite(duelBest) || duelBest<0 || duelBest>10) duelBest=0;
+  let lastDiff = parts[1];
+  if(!DIFF_NAMES[lastDiff]) lastDiff='';
+  return { duelBest, lastDiff };
+}
+const settings = loadSettings();
+function saveSettings(){ LS.set(SLUG+'.settings', settings.duelBest+'|'+settings.lastDiff); }
+// returns true when this run set a new duel-survival record — only pure duel (storyIdx===-1) counts
+function recordDuelResult(b){
+  if(storyIdx!==-1) return false;
+  const heads=b.headsDestroyed;
+  if(heads>settings.duelBest){ settings.duelBest=heads; saveSettings(); return true; }
+  return false;
+}
+function updateModeScreenStats(){
+  try{
+    const el=document.getElementById('modeStats');
+    if(!el) return;
+    const storyText = storyBest<0 ? 'not begun'
+      : storyBest>=STORY_ORDER.length ? 'Rāvaṇa defeated — story complete'
+      : 'reached '+BATTLES[STORY_ORDER[storyBest]].name;
+    const duelText = settings.duelBest>0 ? (settings.duelBest+'/10 heads') : 'not attempted';
+    const lastText = settings.lastDiff ? ('  ·  Last duel: '+DIFF_NAMES[settings.lastDiff]) : '';
+    el.textContent = 'Story best: '+storyText+'  ·  Duel survival: '+duelText+lastText;
+  }catch(e){}
+}
 
 /* ---------------- Rāvaṇa AI: weighted selection, adaptive + escalating ---------------- */
 function pickAstra(b){
@@ -1567,6 +1668,10 @@ function finishFinale(b){
 /* ---------------- win / loss ---------------- */
 function battleWon(b){
   b.over=true; b.result='victory'; b.phase='over';
+  track('game_end', endParams(b,'win'));
+  let newBest=false;
+  if(storyIdx>=0 && b.enemy.key==='ravana') newBest = saveStoryBest(STORY_ORDER.length);   // story completed
+  if(storyIdx===-1) newBest = recordDuelResult(b);                                          // pure duel: full 10-head clear
   AudioEngine.stopDrone(); AudioEngine.conch();
   setTimeout(()=>{
     const isRavana=b.enemy.key==='ravana';
@@ -1575,23 +1680,50 @@ function battleWon(b){
     document.getElementById('endIast').textContent= isRavana?'Dharma protects those who protect it.':'The way to Laṅkā is open.';
     document.getElementById('endStats').innerHTML =
       `${b.enemy.name} is defeated.<br>Tejas remaining: <b>${Math.round(b.tejas)}</b> · Ślokas chanted: <b>${b.slokas}</b>` +
-      (isRavana?'<br><br>The arrow returns to Rāma’s quiver.':'');
+      (isRavana?'<br><br>The arrow returns to Rāma’s quiver.':'') +
+      (newBest?'<br><span style="color:#b8600a;font-weight:800;">New best!</span>':'');
     const btn=document.getElementById('endPrimaryBtn');
     if(storyIdx>=0 && storyIdx<STORY_ORDER.length-1){ btn.textContent='NEXT BATTLE'; }
     else { btn.textContent='PLAY AGAIN'; }
+    try{
+      const shareBtn=document.getElementById('endShareBtn');
+      if(shareBtn){
+        if(isRavana){
+          shareBtn.style.display='';
+          shareBtn.textContent='SHARE';
+          shareBtn.onpointerdown=function(e){
+            try{
+              e.stopPropagation();
+              const text='I defeated Rāvaṇa in Daśānana 🏹 — beat me:';
+              const url=location.origin + location.pathname + '?ref=share';
+              kreedaShare(text, url, shareBtn);
+            }catch(e){}
+          };
+        } else {
+          shareBtn.style.display='none';
+        }
+      }
+    }catch(e){}
     document.getElementById('endOverlay').classList.remove('hidden');
   }, b.enemy.key==='ravana'?2600:1200);
 }
 function battleLost(b){
   b.over=true; b.result='defeat'; b.phase='over';
+  track('game_end', endParams(b,'loss'));
+  const newBest = storyIdx===-1 ? recordDuelResult(b) : false;
   AudioEngine.stopDrone();
   AudioEngine.tone(220,0.5,'sawtooth',0.12); AudioEngine.tone(180,0.6,'sawtooth',0.12,0.3); AudioEngine.tone(140,0.9,'sawtooth',0.12,0.6);
   setTimeout(()=>{
     document.getElementById('endTitle').textContent='RĀMA FALLS';
     document.getElementById('endSans').textContent='Rise again';
     document.getElementById('endIast').textContent='The heroes of the epic fall — and rise.';
-    document.getElementById('endStats').innerHTML=`Heads felled: <b>${b.headsDestroyed}</b> / ${b.enemy.heads}<br>The heroes of the epic fall — and rise.`;
+    document.getElementById('endStats').innerHTML=`Heads felled: <b>${b.headsDestroyed}</b> / ${b.enemy.heads}<br>The heroes of the epic fall — and rise.` +
+      (newBest?'<br><span style="color:#b8600a;font-weight:800;">New best survival!</span>':'');
     document.getElementById('endPrimaryBtn').textContent='RISE AGAIN';
+    try{
+      const shareBtn=document.getElementById('endShareBtn');
+      if(shareBtn) shareBtn.style.display='none';
+    }catch(e){}
     document.getElementById('endOverlay').classList.remove('hidden');
   },1100);
 }
@@ -1985,6 +2117,7 @@ function setupInput(){
 /* ================================================================ SCREENS ================================================================ */
 function showScreen(name){
   ['title','mode','battle'].forEach(s=>document.getElementById('screen-'+s).classList.toggle('hidden', s!==name));
+  if(name==='mode') updateModeScreenStats();
 }
 function toMode(){ showScreen('mode'); }
 document.getElementById('screen-title').addEventListener('pointerdown',()=>{ AudioEngine.init(); toMode(); });
@@ -1994,7 +2127,12 @@ document.querySelectorAll('.choice-card[data-start]').forEach(card=>{
     AudioEngine.init();
     const mode=card.getAttribute('data-start');
     if(mode==='story'){ storyIdx=0; startBattleWithLore(STORY_ORDER[0],'normal'); }
-    else { storyIdx=-1; startBattleWithLore('ravana', mode.split('-')[1]); }
+    else {
+      storyIdx=-1;
+      const diff=mode.split('-')[1];
+      settings.lastDiff=diff; saveSettings();
+      startBattleWithLore('ravana', diff);
+    }
   });
 });
 function startBattleWithLore(cfgKey, diff){
@@ -2011,6 +2149,11 @@ function startBattleWithLore(cfgKey, diff){
 function startBattle(cfgKey, diff){
   battle=newBattle(cfgKey,diff);
   battle._diffKey=diff;
+  battle.startedAt=Date.now();
+  if(storyIdx>=0) saveStoryBest(storyIdx);   // "furthest reached" banks the moment the battle begins, win or lose
+  // recorded at the start, same as Drift's run_start, so a battle abandoned by closing the tab (no
+  // matching game_end) still counts as a battle that was begun rather than vanishing entirely
+  track('game_start', battleParams(battle));
   showScreen('battle');
   resizeCanvas();
   updateHud(battle);
@@ -2033,19 +2176,52 @@ function toggleMute(){
 }
 document.getElementById('pauseBtn').addEventListener('pointerdown',togglePause);
 document.getElementById('resumeBtn').addEventListener('pointerdown',togglePause);
-document.getElementById('restartBtn').addEventListener('pointerdown',()=>{ togglePause(); startBattle(battle.enemy.key, battle._diffKey); });
-document.getElementById('menuBtn').addEventListener('pointerdown',()=>{ togglePause(); battle=null; AudioEngine.stopDrone(); showScreen('mode'); });
+document.getElementById('restartBtn').addEventListener('pointerdown',()=>{
+  togglePause();
+  if(battle && !battle.over) track('game_end', endParams(battle,'quit'));   // walked away mid-fight
+  startBattle(battle.enemy.key, battle._diffKey);
+});
+document.getElementById('menuBtn').addEventListener('pointerdown',()=>{
+  togglePause();
+  if(battle && !battle.over) track('game_end', endParams(battle,'quit'));   // walked away mid-fight
+  battle=null; AudioEngine.stopDrone(); showScreen('mode');
+});
 document.getElementById('muteBtn').addEventListener('pointerdown',toggleMute);
 document.getElementById('endMenuBtn').addEventListener('pointerdown',()=>{
   document.getElementById('endOverlay').classList.add('hidden');
   battle=null; AudioEngine.stopDrone(); showScreen('mode');
 });
+function kreedaShare(text, url, btn){
+  try{
+    var full = text + ' ' + url;
+    if (navigator.share) {
+      navigator.share({ text: full }).catch(function(){});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(full).then(function(){
+        kreedaToast(btn, 'Copied!');
+      }).catch(function(){ kreedaToast(btn, full); });
+    } else {
+      kreedaToast(btn, full);
+    }
+  }catch(e){}
+}
+function kreedaToast(anchorEl, msg){
+  try{
+    if(!anchorEl) return;
+    const prev = anchorEl.textContent;
+    anchorEl.textContent = msg.length>18 ? 'Copied!' : msg;
+    setTimeout(()=>{ try{ anchorEl.textContent = prev; }catch(e){} }, 1500);
+  }catch(e){}
+}
 document.getElementById('endPrimaryBtn').addEventListener('pointerdown',()=>{
   document.getElementById('endOverlay').classList.add('hidden');
   if(battle && battle.result==='defeat'){
-    // rise again: same battle, heads preserved, tejas restored to 50
+    // rise again: same battle, heads preserved, tejas restored to 50 — a fresh playthrough segment as
+    // far as telemetry is concerned, since battleLost() already closed the one that just ended
     const b=battle;
     b.over=false; b.result=null; b.tejas=50; b.phase='idle'; b.phaseT=0; b.idleDur=3;
+    b.startedAt=Date.now();
+    track('game_start', battleParams(b));
     updateHud(b); AudioEngine.startDrone('battle'); AudioEngine.conch();
     showBanner('Rāma rises','The duel resumes.',1800);
     return;

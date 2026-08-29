@@ -3,7 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Blackjack • Browser Games</title>
+    <title>Blackjack — Kreeda</title>
+    <meta name="description" content="Casino blackjack on green felt — bet the chips, split, double, and take your 3:2 on a natural.">
+    <link rel="canonical" href="https://kreeda.games/blackjack/">
+    <meta name="theme-color" content="#05140a">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Kreeda">
+    <meta property="og:url" content="https://kreeda.games/blackjack/">
+    <meta property="og:title" content="Blackjack — Kreeda">
+    <meta property="og:description" content="Casino blackjack on green felt — bet the chips, split, double, and take your 3:2 on a natural.">
+    <meta property="og:image" content="https://kreeda.games/assets/blackjack-og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Blackjack — Kreeda">
+    <meta name="twitter:description" content="Casino blackjack on green felt — bet the chips, split, double, and take your 3:2 on a natural.">
+    <meta name="twitter:image" content="https://kreeda.games/assets/blackjack-og.png">
+
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="../favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="../icon-180.png">
+
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"VideoGame","name":"Blackjack","description":"Casino blackjack on green felt — bet the chips, split, double, and take your 3:2 on a natural.","url":"https://kreeda.games/blackjack/","image":"https://kreeda.games/assets/blackjack-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Card","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;700&display=swap');
 
@@ -78,6 +102,8 @@
             flex: none;
         }
         .balance #bal-amount { color: var(--gold); }
+        /* best-bankroll readout — small enough to sit inside the same pill without competing with the live number */
+        .balance .best-inline { font-size: 0.68rem; font-weight: 600; color: rgba(234,251,238,0.6); margin-left: 6px; white-space: nowrap; }
 
         /* ---------- Table ---------- */
         .table-wrap {
@@ -377,6 +403,7 @@
         .btn-deal  { background: linear-gradient(180deg, #f6dd6e, #e0b52e); color: #3a2a00; }
         .btn-hit   { background: linear-gradient(180deg, #ef5350, #c62828); color: #fff; }
         .btn-stand { background: linear-gradient(180deg, #546274, #37414f); color: #fff; }
+        .btn-share { background: linear-gradient(180deg, #34d16f, #128a3f); color: #04240f; }
 
         footer {
             text-align: center;
@@ -397,7 +424,7 @@
             <span class="pip-mark">♠</span>
             <h1>Blackjack</h1>
         </div>
-        <div class="balance"><span class="chip-icon"></span>$<span id="bal-amount">1000</span></div>
+        <div class="balance"><span class="chip-icon"></span>$<span id="bal-amount">1000</span><span class="best-inline" id="best-inline"></span></div>
     </header>
 
     <div class="table-wrap">
@@ -431,12 +458,49 @@
             <button class="btn-deal" id="deal-btn">DEAL</button>
             <button class="btn-hit" id="hit-btn" disabled style="display:none;">HIT</button>
             <button class="btn-stand" id="stand-btn" disabled style="display:none;">STAND</button>
+            <button class="btn-share" id="share-btn" style="display:none;">SHARE</button>
         </div>
     </div>
 
     <footer>Single deck • Dealer stands on 17 • Blackjack pays 3:2</footer>
 
     <script>
+        /* ---- Kreeda persistence — see /DAILY.md. Copied, not imported: this file stays standalone. ---- */
+        const SLUG = 'blackjack';
+        const LS = { get: k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } },
+                     set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+        const STAKE = 1000; // fresh-stake amount handed out when the bankroll can't cover even the $5 chip
+
+        // settings payload is "<bankroll>|<lastBetChip>" — plain ints, pipe-delimited per the site's contract.
+        // Both fields are read back as attacker-grade garbage: NaN, negatives, and an unknown chip value
+        // all have to fall back to sane defaults instead of leaking into game state.
+        function loadSave() {
+            const raw = LS.get(SLUG + '.settings');
+            if (!raw) return { bal: STAKE, bet: 25 };   // no save yet — +'' coerces to 0, which would otherwise read as a real $0 bankroll
+            const parts = raw.split('|');
+            let bal = Math.round(+parts[0]);
+            if (!Number.isFinite(bal) || bal < 0 || bal > 1e9) bal = STAKE;
+            let bet = Math.round(+parts[1]);
+            if (![5, 25, 100].includes(bet)) bet = 25;
+            return { bal, bet };
+        }
+        function loadBest() {
+            const v = Math.round(+LS.get(SLUG + '.best'));
+            return (Number.isFinite(v) && v >= 0 && v <= 1e9) ? v : 0;
+        }
+        // called from updateBalance() so every place the bankroll changes also checkpoints it —
+        // deal, hit/bust, and every round's payout all funnel through that one function.
+        function persistState() {
+            LS.set(SLUG + '.settings', Math.round(balance) + '|' + currentBet);
+            if (balance > best) {
+                best = balance;
+                LS.set(SLUG + '.best', best);
+            }
+            const el = document.getElementById('best-inline');
+            if (el) el.textContent = best > 0 ? ('· best $' + best) : '';
+        }
+
         const suits = ['♥', '♦', '♣', '♠'];
         const ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 
@@ -453,10 +517,41 @@
             '10': [[28,10],[72,10],[50,29],[28,37],[72,37],[28,63],[72,63],[50,71],[28,90],[72,90]],
         };
 
+        /* Analytics must never be able to break a game. bgTrack is itself wrapped and swallows everything,
+           but the guard is repeated here so a game opened from the file system — where analytics.js injects
+           nothing at all — reaches a no-op rather than an undefined. */
+        function track(name, params) { try { if (window.bgTrack) window.bgTrack(name, params); } catch (e) {} }
+        /* Blackjack has no single round to bracket — a SESSION is a run of hands played back to back on
+           one bankroll, and that is the unit game_start/game_end report on. Nothing fires per hand: a
+           per-hand event is high-frequency and tells you little that the session totals don't already
+           say, and it would swamp every other game's counts in the same property.
+           A session ends one of two ways — the bankroll actually running dry (bust_out, caught in
+           dealInitial's own restock branch) or the player leaving before that happens (quit, caught on
+           the tab going away, the same 'hidden' signal analytics.js trusts for its own flush). `mode` is
+           the bet size the session opened at — the one bounded, meaningful axis a bankroll run has here. */
+        const analytics = { started: false, ended: false, t0: 0, hands: 0, startBalance: 0, mode: '' };
+        function markStarted() {
+            if (analytics.started && !analytics.ended) return;   // already mid-session — this is just the next hand
+            analytics.started = true; analytics.ended = false; analytics.t0 = Date.now();
+            analytics.hands = 0; analytics.startBalance = balance; analytics.mode = 'bet_' + currentBet;
+            track('game_start', { mode: analytics.mode });
+        }
+        function markEnded(outcome) {
+            if (!analytics.started || analytics.ended) return;
+            analytics.ended = true;
+            track('game_end', {
+                mode: analytics.mode, outcome, hands: analytics.hands,
+                duration_s: Math.round((Date.now() - analytics.t0) / 1000),
+                bankroll_delta: Math.round(balance - analytics.startBalance)
+            });
+        }
+
         let deck = [];
         let playerHand = [], dealerHand = [];
-        let balance = 1000;
-        let currentBet = 25;
+        const saved = loadSave();
+        let balance = saved.bal;
+        let currentBet = saved.bet;
+        let best = loadBest();
         let gameOver = true;
 
         function createDeck() {
@@ -566,6 +661,7 @@
 
         function updateBalance() {
             document.getElementById('bal-amount').textContent = balance;
+            persistState();
         }
 
         let msgTimer;
@@ -588,6 +684,7 @@
             document.getElementById('deal-btn').style.display  = inRound ? 'none' : 'block';
             document.getElementById('hit-btn').style.display   = inRound ? 'block' : 'none';
             document.getElementById('stand-btn').style.display = inRound ? 'block' : 'none';
+            if (inRound) { try{ document.getElementById('share-btn').style.display = 'none'; }catch(e){} }
             document.getElementById('hit-btn').disabled   = !inRound;
             document.getElementById('stand-btn').disabled = !inRound;
             document.getElementById('deal-btn').disabled  = inRound;
@@ -596,9 +693,20 @@
 
         function dealInitial() {
             if (!gameOver) return;
+            // a $0 table is a dead end, not a difficulty spike — restock and let the message land
+            // before the next click actually deals, rather than flashing it for one frame.
+            if (balance < 5) {
+                markEnded('bust_out');   // the run that got the bankroll here is over; the restock starts a new one
+                balance = STAKE;
+                updateBalance();
+                showMessage('Fresh stake — $' + STAKE, '#f4d35e');
+                return;
+            }
             if (balance < currentBet) { showMessage('Not enough chips!', '#ff6b6b'); return; }
 
             hideMessage();
+            markStarted();   // first real deal of a session — a no-op for every hand after the first
+            analytics.hands++;
             createDeck();
             playerHand = [deck.pop(), deck.pop()];
             dealerHand = [deck.pop(), deck.pop()];
@@ -678,6 +786,12 @@
 
             if (winnings > 0) { balance += winnings; updateBalance(); }
 
+            try{
+                const shareBtn = document.getElementById('share-btn');
+                shareBtn.style.display = 'block';
+                shareBtn.textContent = 'SHARE';
+            }catch(e){}
+
             setTimeout(() => setControls(false), 900);
         }
 
@@ -685,6 +799,14 @@
         document.getElementById('deal-btn').addEventListener('click', dealInitial);
         document.getElementById('hit-btn').addEventListener('click', hit);
         document.getElementById('stand-btn').addEventListener('click', stand);
+        document.getElementById('share-btn').addEventListener('click', function(){
+            try{
+                const btn = this;
+                const text = "I'm up to " + balance + " chips in Blackjack ♠️ — beat me:";
+                const url = 'https://kreeda.games/blackjack/?ref=share';
+                kreedaShare(text, url, btn);
+            }catch(e){}
+        });
 
         document.querySelectorAll('.chip').forEach(chip => {
             chip.addEventListener('click', () => {
@@ -693,6 +815,7 @@
                 document.getElementById('bet-amount').textContent = currentBet;
                 document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
                 chip.classList.add('active');
+                persistState();
             });
         });
 
@@ -704,9 +827,53 @@
             if (k === 's') stand();
         });
 
+        /* A session here is a bankroll arc — a run of hands on one stake — so the only real ends are
+           busting out and leaving.
+
+           `visibilitychange`→`hidden` is deliberately NOT one of them, even though it is the more
+           reliable signal to send on. It fires on every tab switch and app switch, and markStarted()
+           reopens a session once markEnded() has closed one, so hanging the end on it would split a
+           single sitting into one session per glance at another tab — each one short, and nearly all
+           of them labelled `quit`. That does not lose data, which would be recoverable; it fabricates
+           it, in exactly the two dimensions (session count and quit rate) anyone would look at first.
+
+           So this reports on pagehide only. Some real departures go unreported — mobile browsers can
+           skip it when the tab is discarded — and an undercount of ends is the honest failure here. */
+        addEventListener('pagehide', function(){ try{ markEnded('quit'); }catch(e){} });
+
         setControls(false);
+        // reflect the restored bet in the chip row before the first paint, so the UI never shows
+        // the HTML's hardcoded $25 default for a frame if a different chip was saved
+        document.getElementById('bet-amount').textContent = currentBet;
+        document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', parseInt(c.dataset.value) === currentBet));
         updateBalance();
         showMessage('Place your bet', '#f4d35e');
+
+        function kreedaShare(text, url, btn){
+            try{
+                var full = text + ' ' + url;
+                if (navigator.share) {
+                    navigator.share({ text: full }).catch(function(){});
+                } else if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(full).then(function(){
+                        kreedaToast(btn, 'Copied!');
+                    }).catch(function(){ kreedaToast(btn, full); });
+                } else {
+                    kreedaToast(btn, full);
+                }
+            }catch(e){}
+        }
+        function kreedaToast(anchorEl, msg){
+            try{
+                if(!anchorEl) return;
+                var original = anchorEl.textContent;
+                anchorEl.textContent = msg.length > 24 ? 'Copied!' : msg;
+                clearTimeout(anchorEl._kreedaToastTimer);
+                anchorEl._kreedaToastTimer = setTimeout(function(){
+                    anchorEl.textContent = original;
+                }, 1500);
+            }catch(e){}
+        }
     </script>
 <script src="../analytics.js"></script>
 </body>

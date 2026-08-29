@@ -3,7 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Chroma Blocks</title>
+<title>Chroma Blocks — Kreeda</title>
+<meta name="description" content="Neon falling blocks — hold queue, ghost piece, combo flashes and a soundtrack it makes up as it goes.">
+<link rel="canonical" href="https://kreeda.games/chroma-blocks/">
+<meta name="theme-color" content="#05050a">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/chroma-blocks/">
+<meta property="og:title" content="Chroma Blocks — Kreeda">
+<meta property="og:description" content="Neon falling blocks — hold queue, ghost piece, combo flashes and a soundtrack it makes up as it goes.">
+<meta property="og:image" content="https://kreeda.games/assets/chroma-blocks-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Chroma Blocks — Kreeda">
+<meta name="twitter:description" content="Neon falling blocks — hold queue, ghost piece, combo flashes and a soundtrack it makes up as it goes.">
+<meta name="twitter:image" content="https://kreeda.games/assets/chroma-blocks-og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Chroma Blocks","description":"Neon falling blocks — hold queue, ghost piece, combo flashes and a soundtrack it makes up as it goes.","url":"https://kreeda.games/chroma-blocks/","image":"https://kreeda.games/assets/chroma-blocks-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
 <style>
   :root{
     --i-color:#21e6ff; --o-color:#ffd93d; --t-color:#a239ff;
@@ -85,6 +109,23 @@
     padding:10px 26px; border-radius:24px; font-size:14px; cursor:pointer;
   }
   #restartBtn:active{ transform:scale(0.95); }
+  #shareBtn{
+    background: linear-gradient(90deg,#5CFF6E,#21e6ff);
+    border:none; color:#0a0a12; font-weight:800; letter-spacing:1px;
+    padding:10px 26px; border-radius:24px; font-size:14px; cursor:pointer;
+    margin-left:10px;
+  }
+  #shareBtn:active{ transform:scale(0.95); }
+  #gameOverScreen .btnRow{ display:flex; gap:0; align-items:center; justify-content:center; }
+  .modeRow{ display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; }
+  .modeBtn{
+    background: linear-gradient(90deg,#ffd93d,#ff9a2e);
+    border:none; color:#0a0a12; font-weight:800; letter-spacing:1px;
+    padding:10px 22px; border-radius:24px; font-size:13px; cursor:pointer;
+  }
+  .modeBtn.alt{ background:var(--glass-bg); border:1px solid var(--glass-border); color:#f2f2f7; }
+  .modeBtn:active{ transform:scale(0.95); }
+  .daily-meta{ font-size:11px; letter-spacing:0.5px; opacity:0.8; min-height:14px; }
   #popupLayer{ position:absolute; inset:0; pointer-events:none; z-index:6; overflow:hidden; }
   .popup{
     position:absolute; left:50%; top:42%; transform:translate(-50%,-50%);
@@ -156,18 +197,26 @@
       <div id="startScreen" class="overlay">
         <h1 class="title">CHROMA BLOCKS</h1>
         <p class="subtitle">A radiant falling-blocks game</p>
+        <div class="modeRow">
+          <button id="dailyBtn" class="modeBtn">TODAY’S BAG</button>
+          <button id="endlessBtn" class="modeBtn alt">ENDLESS</button>
+        </div>
+        <div id="dailyMeta" class="daily-meta"></div>
         <div class="controls-summary">
           ← → move &nbsp;·&nbsp; ↓ soft drop &nbsp;·&nbsp; Space hard drop<br>
           Z/X or ↑ rotate &nbsp;·&nbsp; C hold &nbsp;·&nbsp; P pause &nbsp;·&nbsp; R restart<br>
           Touch: on-screen buttons, swipe down = hard drop
         </div>
-        <p class="blink">Press any key or tap to start</p>
+        <p class="blink">Press any key or tap for endless</p>
       </div>
       <div id="pauseScreen" class="overlay hidden"><h2>PAUSED</h2><p class="subtitle">Press P to resume</p></div>
       <div id="gameOverScreen" class="overlay hidden">
         <h2>GAME OVER</h2>
         <div id="finalStats"></div>
-        <button id="restartBtn">RESTART</button>
+        <div class="btnRow">
+          <button id="restartBtn">RESTART</button>
+          <button id="shareBtn">SHARE</button>
+        </div>
       </div>
     </div>
     <div id="touchControls">
@@ -291,6 +340,73 @@ function trimShape(shape){
 }
 function randInt(n){ return Math.floor(Math.random()*n); }
 
+/* ---- Kreeda daily contract — see /DAILY.md. Copied, not imported: the game stays one file. ----
+   The daily is a FIXED PIECE SEQUENCE. Everyone in the world gets the same bag order today, which is the
+   only thing that makes two scores comparable without a server. Endless keeps drawing from Math.random
+   and keeps its own best, because a sequence you can learn must never inflate the endless number. */
+const SLUG='chroma-blocks';
+function dayKey(d){ d=d||new Date(); const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function prevDayKey(k){ const a=k.split('-'), t=new Date(+a[0],+a[1]-1,+a[2]);
+  t.setDate(t.getDate()-1); return dayKey(t); }
+function daySeed(k){ let h=5381; for(let i=0;i<k.length;i++) h=(h*33 ^ k.charCodeAt(i))|0; return h>>>0; }
+function mulberry32(a){ return function(){ a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a);
+  t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+
+/* localStorage throws outright in Safari private mode and on some file:// origins. A game that cannot
+   save must still play, so every read returns '' and every write is a no-op rather than an exception. */
+const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+
+/* a day-stamped value: yesterday's daily best is worth ZERO, not stale-but-usable — it was set on a
+   different bag, so displaying or migrating it would be a lie. Stale rows are ignored, not deleted. */
+function loadToday(key){ const s=LS.get(key), i=s.indexOf('|');
+  return (i<0 || s.slice(0,i)!==dayKey()) ? 0 : (+s.slice(i+1)||0); }
+function saveToday(key,v){ LS.set(key, dayKey()+'|'+Math.round(v)); }
+/* NaN-proof: a corrupt row parses to 0 and simply reads as "no best yet" instead of poisoning the compare. */
+function loadBest(){ return +LS.get(SLUG+'.best')||0; }
+function saveBest(v){ LS.set(SLUG+'.best', String(Math.round(v))); }
+
+/* consecutive-days counter. Same day = no change; yesterday = +1; older = reset to 1. */
+function bumpStreak(key){
+  const s=LS.get(key), i=s.indexOf('|'), last=i<0?'':s.slice(0,i), n=i<0?0:(+s.slice(i+1)||0);
+  const today=dayKey(), count = last===today ? (n||1) : (last===prevDayKey(today) ? n+1 : 1);
+  LS.set(key, today+'|'+count); return count;
+}
+function siteStreak(){ const s=LS.get('kreeda.streak'), i=s.indexOf('|');
+  return (i<0 || s.slice(0,i)!==dayKey()) ? 0 : (+s.slice(i+1)||0); }
+
+/* called ONCE when a daily run completes — never on an endless game over, or the streak becomes a
+   participation trophy for a mode that has no shared challenge to participate in. */
+function dailyDone(){
+  const today=dayKey(), k='kreeda.daily.'+today;
+  const had=LS.get(k).split(',').filter(Boolean);
+  if(!had.includes(SLUG)) LS.set(k, had.concat(SLUG).join(','));
+  bumpStreak(SLUG+'.streak');
+  return bumpStreak('kreeda.streak');
+}
+
+/* THE SHARE GRID encodes the SHAPE OF THE RUN and nothing else: one square per BAND lines cleared,
+   coloured by the biggest clear that landed in that band. It must never encode the piece sequence —
+   a reader who could reconstruct today's bag from a paste has been handed the answer, which is the one
+   thing the grid is forbidden to do. A clear that straddles a boundary colours both bands, so every
+   square that exists has a clear behind it. ⬛ only ever appears for a run that cleared nothing. */
+const BAND=4, GRID_W=5, GRID_MAX=60;
+const BAND_SQ=['⬛','⬜','🟦','🟨','🟪'];   // index = biggest clear in that band: none/single/double/triple/quad
+function shareGrid(bands, lines){
+  const n=Math.min(Math.max(Math.ceil(lines/BAND),1), GRID_MAX);
+  let out='';
+  for(let i=0;i<n;i++){ out+=BAND_SQ[bands[i]||0]; if((i+1)%GRID_W===0 && i<n-1) out+='\n'; }
+  return out;
+}
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function shareDate(){ const d=new Date(); return d.getDate()+' '+MONTHS[d.getMonth()]; }
+
+/* Analytics must never be able to break a game. bgTrack is itself wrapped and swallows everything,
+   but the guard is repeated here so a game opened from the file system — where analytics.js injects
+   nothing at all — reaches a no-op rather than an undefined. */
+function track(name,params){ try{ if(window.bgTrack) window.bgTrack(name,params); }catch(e){} }
+
 /* ============================== AUDIO ============================== */
 const AudioEngine = {
   ctx: null,
@@ -333,13 +449,20 @@ const AudioEngine = {
 };
 
 /* ============================== BAG RANDOMIZER ============================== */
-function createBag(){
+/* The ONLY randomness that shapes a run. Everything else that rolls dice in this file — particle hues,
+   background drift, screen shake — is decoration drawn from Math.random and is deliberately left there:
+   it never touches the board, so two players on the same daily still get the same board even though
+   their sparks differ. Pass an rng to make the sequence reproducible; omit it for endless.
+   Fisher-Yates draws exactly one number per swap, so the draw order is fixed and a seeded bag replays
+   byte-for-byte. Do not "optimise" this into a sort() — comparator call order is not specified. */
+function createBag(rng){
+  const rnd = rng || Math.random;
   let bag = [];
   return function next(){
     if(bag.length === 0){
       bag = PIECE_TYPES.slice();
       for(let i=bag.length-1;i>0;i--){
-        const j = randInt(i+1);
+        const j = Math.floor(rnd()*(i+1));
         [bag[i],bag[j]] = [bag[j],bag[i]];
       }
     }
@@ -696,7 +819,12 @@ function setupInput(game){
   window.addEventListener('keydown', (e)=>{
     if(e.repeat) return;
     AudioEngine.init();
-    if(game.state === 'start'){ game.start(); return; }
+    /* any-key-to-start is endless, but not when the key is being used to press a mode button: keydown
+       lands before click, so without this Enter on TODAY'S BAG would boot endless and then daily. */
+    if(game.state === 'start'){
+      if(e.target && e.target.classList && e.target.classList.contains('modeBtn')) return;
+      game.start(false); return;
+    }
     const action = KEY_ACTIONS[e.key];
     if(!action) return;
     e.preventDefault();
@@ -756,6 +884,27 @@ function setupInput(game){
   document.getElementById('restartBtn').addEventListener('click', ()=>{
     game.handleAction('restart');
   });
+  /* Endless shares a sentence; the daily shares a block grid. The grid only means anything when the reader
+     played the same bag, so it is not offered for a run nobody else can have played. */
+  document.getElementById('shareBtn').addEventListener('click', function(){
+    try{
+      const btn = this;
+      const score = btn.dataset.score || game.score || 0;
+      const url = 'https://kreeda.games/chroma-blocks/';
+      if(btn.dataset.mode === 'daily'){
+        /* the grid's last line is the bare host — schemeless, per the contract, because chat clients
+           linkify it anyway and a visible https:// costs a line of width the squares want. */
+        const lines = +btn.dataset.lines || 0, streak = +btn.dataset.streak || 0;
+        const text = 'Kreeda · Chroma Blocks · ' + shareDate() + '\n'
+          + btn.dataset.grid + '\n'
+          + lines + ' lines · ' + score + ' pts' + (streak >= 2 ? ' · streak ' + streak + ' 🔥' : '') + '\n'
+          + 'kreeda.games/chroma-blocks/';
+        kreedaShare(text, '', btn);
+      } else {
+        kreedaShare('I scored ' + score + ' in Chroma Blocks 🧩 — beat me:', url + '?ref=share', btn);
+      }
+    }catch(e){}
+  });
 
   // swipe + tap on the board
   let touchStartX=0, touchStartY=0, touchStartTime=0;
@@ -777,10 +926,33 @@ function setupInput(game){
     }
   }, {passive:true});
 
+  /* Two doors, and the daily is its own. stopPropagation matters: the overlay behind these buttons is
+     itself a tap-to-start-endless target, so without it every tap on TODAY'S BAG would fire endless too. */
+  document.getElementById('dailyBtn').addEventListener('click', (e)=>{
+    e.stopPropagation(); AudioEngine.init(); game.start(true);
+  });
+  document.getElementById('endlessBtn').addEventListener('click', (e)=>{
+    e.stopPropagation(); AudioEngine.init(); game.start(false);
+  });
   document.getElementById('startScreen').addEventListener('click', ()=>{
     AudioEngine.init();
-    if(game.state === 'start') game.start();
+    if(game.state === 'start') game.start(false);
   });
+}
+
+/* The start card's daily line. Read fresh each time it is shown, not cached at boot: a tab left open
+   overnight would otherwise keep advertising yesterday's best against today's bag. */
+function renderDailyMeta(){
+  try{
+    const el = document.getElementById('dailyMeta');
+    if(!el) return;
+    const db = loadToday(SLUG+'.dbest'), st = siteStreak(), b = loadBest();
+    const bits = [];
+    bits.push(db ? 'Today’s best ' + db : 'Today’s bag not played yet');
+    if(st >= 2) bits.push('streak ' + st + ' 🔥');
+    if(b) bits.push('endless best ' + b);
+    el.textContent = bits.join(' · ');
+  }catch(e){}
 }
 
 function updateDAS(game, dt){
@@ -802,11 +974,34 @@ function updateDAS(game, dt){
 class Game {
   constructor(){
     this.board = new Board();
-    this.nextBag = createBag();
+    this.dailyMode = false;
+    this._anaStarted = false; this._anaEnded = false; this._anaT0 = 0;
     this.reset();
   }
+  /* game_start/game_end bracket ONE run, from the mode button that actually drops the first piece — not
+     the page load that shows the start card — to however it stops: topping out, or the player bailing
+     to a restart mid-run. `markEnded` is the single funnel both endings go through, and its own started/
+     ended flags are what keep a restart from reporting a run that already reported topped_out. */
+  markStarted(){
+    this._anaStarted = true; this._anaEnded = false; this._anaT0 = Date.now();
+    track('game_start', { mode: this.dailyMode ? 'daily' : 'endless' });
+  }
+  markEnded(outcome){
+    if(!this._anaStarted || this._anaEnded) return;
+    this._anaEnded = true;
+    track('game_end', {
+      mode: this.dailyMode ? 'daily' : 'endless', outcome,
+      duration_s: Math.round((Date.now()-this._anaT0)/1000),
+      score: Math.round(this.score), lines: this.lines, level: this.level
+    });
+  }
+  /* The bag is rebuilt HERE, not in the constructor. A daily retry has to replay the day's sequence from
+     the first piece — if the bag stream survived a restart, your second attempt would start mid-sequence
+     and you'd be playing a different problem from everyone on their first. Endless just gets a fresh shuffle. */
   reset(){
     this.board.reset();
+    this.nextBag = createBag(this.dailyMode ? mulberry32(daySeed(dayKey())) : null);
+    this.bands = [];          // biggest clear per BAND lines — the share grid, accumulated as you play
     this.state = 'start';
     this.score = 0;
     this.level = 1;
@@ -827,22 +1022,23 @@ class Game {
     renderNextQueue(this.nextQueue);
     this.setOverlay('start');
   }
-  start(){
+  start(daily){
+    this.markEnded('quit');   // abandoning a run in progress for a fresh one IS a quit; a no-op otherwise
+    this.dailyMode = daily === true;
     this.reset();
     this.state = 'playing';
     this.setOverlay(null);
     this.spawnPiece();
+    this.markStarted();
   }
   restartFromGameOver(){
-    this.reset();
-    this.state = 'playing';
-    this.setOverlay(null);
-    this.spawnPiece();
+    this.start(this.dailyMode);   // R replays the mode you died in, never silently drops you into the other one
   }
   setOverlay(which){
     document.getElementById('startScreen').classList.toggle('hidden', which!=='start');
     document.getElementById('pauseScreen').classList.toggle('hidden', which!=='pause');
     document.getElementById('gameOverScreen').classList.toggle('hidden', which!=='gameover');
+    if(which==='start') renderDailyMeta();
   }
   updateHud(){
     document.getElementById('scoreVal').textContent = this.score;
@@ -867,9 +1063,40 @@ class Game {
     this.state = 'gameover';
     this.piece = null;
     AudioEngine.gameOver();
+    this.markEnded('topped_out');
+    /* Two ledgers that never touch. A daily run settles against today's row only; an endless run against
+       the all-time number. Cross-crediting either way would make the daily's learnable sequence the
+       fastest route to a big endless score, which is exactly the corruption the split exists to prevent. */
+    let isBest, streak = 0;
+    if(this.dailyMode){
+      const prev = loadToday(SLUG+'.dbest');
+      isBest = this.score > prev;
+      if(isBest) saveToday(SLUG+'.dbest', this.score);
+      streak = dailyDone();   // once per completed daily run; same-day repeats are a no-op by contract
+    } else {
+      const prev = loadBest();
+      isBest = this.score > prev;
+      if(isBest) saveBest(this.score);
+    }
+    const ledger = this.dailyMode
+      ? `Today’s best: <b>${loadToday(SLUG+'.dbest')}</b> · resets at midnight`
+      : `Best: <b>${loadBest()}</b>`;
     document.getElementById('finalStats').innerHTML =
-      `Score: <b>${this.score}</b><br>Level: <b>${this.level}</b><br>Lines: <b>${this.lines}</b>`;
+      (this.dailyMode ? `<b style="color:#ffd93d">TODAY’S BAG</b><br>` : '') +
+      `Score: <b>${this.score}</b><br>Level: <b>${this.level}</b><br>Lines: <b>${this.lines}</b><br>` +
+      ledger + (isBest ? `<br><b style="color:#5CFF6E">NEW ${this.dailyMode?'DAILY ':''}BEST!</b>` : '');
     this.setOverlay('gameover');
+    try{
+      /* The share payload is frozen here: the button fires long after this scope is gone, and by then a
+         restart may already have zeroed the board. */
+      const shareBtn = document.getElementById('shareBtn');
+      shareBtn.dataset.mode = this.dailyMode ? 'daily' : 'endless';
+      shareBtn.dataset.score = this.score;
+      shareBtn.dataset.lines = this.lines;
+      shareBtn.dataset.grid = this.dailyMode ? shareGrid(this.bands, this.lines) : '';
+      shareBtn.dataset.streak = String(streak || siteStreak());
+      shareBtn.textContent = 'SHARE';
+    }catch(e){}
   }
   handleAction(action){
     if(action === 'mute'){
@@ -982,6 +1209,11 @@ class Game {
     const count = rows.length;
     this.board.clearRows(rows);
     this.score += SCORE_TABLE[count] * this.level;
+    /* Paint the grid BEFORE the line total moves, so a clear lands in the band it started in. A quad that
+       straddles a boundary colours both bands — otherwise the second band would have no clear behind it
+       and the grid would show a hole where the biggest moment of the run actually was. */
+    { const from=Math.floor(this.lines/BAND), to=Math.floor((this.lines+count-1)/BAND);
+      for(let b=from;b<=to;b++) this.bands[b]=Math.max(this.bands[b]||0, count); }
     this.lines += count;
     this.updateHud();
     AudioEngine.clear(count);
@@ -1042,6 +1274,20 @@ class Game {
 /* ============================== MAIN LOOP ============================== */
 const game = new Game();
 setupInput(game);
+renderDailyMeta();
+
+/* test hooks — the determinism check needs to read the day's sequence without playing it out */
+window.__chroma = {
+  get game(){ return game; },
+  get state(){ return game.state; },
+  start(){ game.start(false); },
+  startDaily(){ game.start(true); },
+  daily:{ key:dayKey, seed:daySeed, best:()=>loadToday(SLUG+'.dbest'), endless:loadBest,
+          streak:siteStreak, grid:shareGrid },
+  /* the day's bag, drawn from a fresh stream so probing it can never disturb the live game's */
+  sequence(n){ const bag=createBag(mulberry32(daySeed(dayKey()))), a=[];
+               for(let i=0;i<(n||35);i++) a.push(bag()); return a.join(''); }
+};
 
 function resizeAll(){
   resizeBg();
@@ -1073,6 +1319,34 @@ function loop(now){
   renderBoard(game);
 }
 requestAnimationFrame(loop);
+
+function kreedaShare(text, url, btn){
+  try{
+    /* The block grid already carries its own last line, so an empty url must not leave a trailing space —
+       some clients strip a trailing blank line and some don't, and the paste should look identical either way. */
+    var full = url ? (text + ' ' + url) : text;
+    if (navigator.share) {
+      navigator.share({ text: full }).catch(function(){});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(full).then(function(){
+        kreedaToast(btn, 'Copied!');
+      }).catch(function(){ kreedaToast(btn, full); });
+    } else {
+      kreedaToast(btn, full);
+    }
+  }catch(e){}
+}
+function kreedaToast(anchorEl, msg){
+  try{
+    if(!anchorEl) return;
+    var original = anchorEl.textContent;
+    anchorEl.textContent = msg.length > 24 ? 'Copied!' : msg;
+    clearTimeout(anchorEl._kreedaToastTimer);
+    anchorEl._kreedaToastTimer = setTimeout(function(){
+      anchorEl.textContent = original;
+    }, 1500);
+  }catch(e){}
+}
 
 })();
 </script>

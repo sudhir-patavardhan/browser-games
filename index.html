@@ -24,6 +24,7 @@
 <meta name="twitter:image" content="https://kreeda.games/og.png">
 
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 
@@ -82,10 +83,16 @@
   .wrap{ max-width:1160px; margin:0 auto; padding:0 var(--pad) 40px; }
 
   /* ---- hero ---------------------------------------------------------------- */
-  .hero{ padding:20px 0 4px; }
+  /* Measured, not guessed. The old hero — headline, paragraph, four trust pills —
+     ate 288px of an 844px phone; with a 314px card that left exactly ONE game visible
+     on open, which is the whole reason this page was redesigned. An arcade's landing
+     page is not an argument to be read: people arrived to play, and every pixel spent
+     explaining that is a pixel not spent showing them a game. So the pitch is one line
+     and the trust copy is a single thin row rather than four wrapping pills. */
+  .hero{ padding:12px 0 2px; }
   h1{
-    margin:0 0 10px; font-weight:900; letter-spacing:-.5px; line-height:1.06;
-    font-size:clamp(30px, 8.2vw, 56px); max-width:16ch;
+    margin:0; font-weight:900; letter-spacing:-.4px; line-height:1.12;
+    font-size:clamp(20px, 5.2vw, 38px); max-width:24ch;
   }
   h1 em{
     font-style:normal;
@@ -95,20 +102,23 @@
     animation:shift 9s linear infinite;
   }
   @keyframes shift{ to{ background-position:220% 0; } }
-  .sub{ margin:0 0 16px; color:var(--ink-dim); font-size:clamp(15px,3.9vw,18px); line-height:1.5; max-width:52ch; }
-  .trust{ display:flex; flex-wrap:wrap; gap:8px; margin:0; padding:0; list-style:none; }
-  .trust li{
-    font-size:12.5px; font-weight:600; color:var(--ink-dim);
-    border:1px solid var(--line); border-radius:999px; padding:7px 12px;
-    display:flex; align-items:center; gap:6px;
+  /* One row, no borders, no wrap. The bar's own trust line is hidden under 480px, so
+     without this a phone would carry no free/no-signup signal at all — it is the thing
+     that makes a stranger tap, and it costs 18px instead of 68. */
+  .trust{
+    display:flex; gap:0 14px; margin:7px 0 0; padding:0; list-style:none;
+    font-size:12px; color:var(--ink-dim); white-space:nowrap;
+    overflow-x:auto; scrollbar-width:none;
   }
-  .trust svg{ width:13px; height:13px; flex:none; color:var(--accent); }
+  .trust::-webkit-scrollbar{ display:none; }
+  .trust li{ display:flex; align-items:center; gap:5px; flex:none; }
+  .trust svg{ width:11px; height:11px; flex:none; color:var(--accent); }
 
   /* ---- filter chips -------------------------------------------------------- */
   .filters{
     position:sticky; top:var(--barh, 48px); z-index:15;
     display:flex; gap:8px; overflow-x:auto; scrollbar-width:none;
-    margin:24px calc(var(--pad) * -1) 18px; padding:10px var(--pad);
+    margin:14px calc(var(--pad) * -1) 12px; padding:8px var(--pad);
     -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity;
     border-bottom:1px solid transparent;
     transition:background .2s ease, border-color .2s ease;
@@ -119,22 +129,38 @@
   .filters::-webkit-scrollbar{ display:none; }
   .chip{
     flex:none; scroll-snap-align:start;
-    font:inherit; font-size:14px; font-weight:600; color:var(--ink-dim);
+    font:inherit; font-size:13px; font-weight:600; color:var(--ink-dim);
     background:var(--surface); border:1px solid var(--line); border-radius:999px;
-    padding:0 16px; height:40px; cursor:pointer; white-space:nowrap;
+    padding:0 13px; height:34px; cursor:pointer; white-space:nowrap;
     transition:color .15s, background .15s, border-color .15s;
   }
   .chip:hover{ color:var(--ink); border-color:var(--line-strong); }
-  .chip[aria-pressed="true"]{ background:var(--ink); color:#0b0b12; border-color:var(--ink); }
 
-  /* ---- grid ---------------------------------------------------------------- */
-  .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(250px,1fr)); gap:14px; }
-  @media (min-width:760px){ .grid{ gap:18px; } }
+  /* ---- rails ---------------------------------------------------------------- */
+  /* Netflix-style shelves. The grid this replaces argued that thirteen games didn't
+     need rails — at eighteen, with a whole new category that means something ("these
+     five need a second person"), the categories earn their rows. Each rail bleeds off
+     both edges (same trick as the daily lane) so a half-cut card advertises the
+     sideways scroll, and cards keep a fixed width instead of grid-stretching. */
+  .rails{ display:flex; flex-direction:column; gap:26px; }
+  .rail{ scroll-margin-top:calc(var(--barh, 48px) + 56px); }
+  .rail-head{ display:flex; align-items:baseline; gap:10px; margin:0 2px 9px; }
+  .rail-head h2{ margin:0; font-size:16px; font-weight:800; letter-spacing:-.2px; }
+  .rail-note{ margin-left:auto; font-size:11.5px; color:#7f7f92; white-space:nowrap; }
+  .rail-row{
+    display:flex; gap:10px; overflow-x:auto; scrollbar-width:none;
+    margin:0 calc(var(--pad) * -1); padding:2px var(--pad) 4px;
+    -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity;
+  }
+  .rail-row::-webkit-scrollbar{ display:none; }
+  .rail-row .card{ flex:none; width:168px; scroll-snap-align:start; }
+  @media (min-width:560px){ .rail-row .card{ width:240px; } .rail-row{ gap:14px; } }
+  @media (min-width:760px){ .rail-row{ gap:18px; } }
 
   .card{
     position:relative; display:flex; flex-direction:column;
-    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
-    padding:10px 10px 14px; overflow:hidden;
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:7px 7px 9px; overflow:hidden;
     transition:transform .16s ease, border-color .16s ease, background .16s ease;
   }
   @media (hover:hover){
@@ -153,19 +179,27 @@
   }
   .thumb svg{ display:block; width:100%; height:100%; }
 
-  .card .top{ display:flex; align-items:baseline; gap:8px; margin:12px 2px 0; }
-  .card h2{ margin:0; font-size:18px; font-weight:800; letter-spacing:-.2px; }
+  .card .top{ display:flex; align-items:baseline; gap:6px; margin:8px 3px 0; }
+  .card h2{ margin:0; font-size:15px; font-weight:800; letter-spacing:-.2px; }
   .tag{
-    margin-left:auto; flex:none; font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase;
-    color:var(--ink-dim); border:1px solid var(--line); border-radius:999px; padding:3px 8px;
+    margin-left:auto; flex:none; font-size:9.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
+    color:var(--ink-dim); border:1px solid var(--line); border-radius:999px; padding:2px 6px;
   }
-  .card p{
-    margin:6px 2px 0; font-size:13.5px; line-height:1.45; color:var(--ink-dim);
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  /* The blurb and the Play button are both cut on phones. Nobody reads two lines of
+     prose about thirteen games while deciding which to tap — the art and the name do
+     that work — and the whole card is already a link, so a Play button inside it is
+     40px of chrome that adds no affordance. Both return above 560px, where the space
+     is free. */
+  .card p{ display:none; margin:5px 3px 0; font-size:13px; line-height:1.42; color:var(--ink-dim); }
+  @media (min-width:560px){
+    .card p{
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    }
   }
   /* margin-top:auto — grid stretches every card in a row to the tallest one, so
      the action row sits on the bottom edge instead of leaving a dead gap under it. */
-  .foot{ display:flex; align-items:center; gap:10px; margin:12px 2px 0; margin-top:auto; padding-top:12px; }
+  .foot{ display:none; align-items:center; gap:10px; margin:12px 2px 0; margin-top:auto; padding-top:12px; }
+  @media (min-width:560px){ .foot{ display:flex; } }
   .meta{ font-size:12px; color:#7f7f92; }
   .play{
     margin-left:auto; flex:none; display:flex; align-items:center; gap:5px;
@@ -176,24 +210,93 @@
   .play svg{ width:11px; height:11px; }
 
   /* featured card — the one thing a paid visitor sees without scrolling */
-  .card.featured{ padding:12px 12px 16px; border-color:rgba(92,255,110,.28); }
-  .card.featured h2{ font-size:24px; }
+  .card.featured{ border-color:rgba(92,255,110,.28); }
+  .card.featured h2{ font-size:15px; }
+  @media (min-width:560px){ .card.featured{ padding:12px 12px 16px; } .card.featured h2{ font-size:24px; } }
   .card.featured p{ font-size:14.5px; -webkit-line-clamp:3; }
   .card.featured .play{ background:var(--accent); color:#08110a; border-color:var(--accent); font-size:14px; padding:10px 18px; }
   .badge{
-    position:absolute; top:22px; left:22px; z-index:2;
-    font-size:11px; font-weight:800; letter-spacing:.7px; text-transform:uppercase;
-    background:var(--accent); color:#08110a; border-radius:999px; padding:4px 9px;
+    position:absolute; top:14px; left:14px; z-index:2;
+    font-size:9.5px; font-weight:800; letter-spacing:.5px; text-transform:uppercase;
+    background:var(--accent); color:#08110a; border-radius:999px; padding:3px 7px;
     box-shadow:0 2px 10px rgba(0,0,0,.35);
   }
-  @media (min-width:760px){
-    /* Twice the width would otherwise mean twice the thumbnail height and a row
-       that towers over its neighbours — so the art gets a wider crop instead. */
-    .card.featured{ grid-column:span 2; }
-    .card.featured .thumb{ aspect-ratio:16/5; }
+  @media (min-width:560px){
+    /* The featured card is now the full-width billboard above the rails, so its art
+       gets a wider crop the moment the viewport can afford one — at 8:3 a 1160px
+       billboard would be 435px of thumbnail and push every rail off the fold. */
+    .card.featured .thumb{ aspect-ratio:4/1; }
   }
 
-  .empty{ display:none; color:var(--ink-dim); padding:28px 2px; font-size:15px; }
+
+  /* ---- daily lane ---------------------------------------------------------- */
+  /* The one horizontal rail on the page, and the only place a rail earns its keep.
+     Netflix scrolls sideways because it has thousands of titles and hiding some is
+     unavoidable; this site has thirteen games and wants every one findable, so the
+     grid below stays a grid. What makes the dailies different is that they EXPIRE —
+     a set that changes at midnight is a different kind of object from a game that is
+     always there, and a rail says so at a glance.
+
+     Unlike the strip this replaces, it ships in the markup and is always visible. The
+     old one was written entirely from localStorage, so a first-time visitor — most of
+     the traffic — never learned the dailies existed at all. The loop cannot advertise
+     itself only to people already inside it. Storage now only decorates: streak, and
+     which of today's grids are already done. */
+  .lane{ margin:4px 0 0; }
+  .lane-head{ display:flex; align-items:center; gap:9px; margin:0 2px 8px; }
+  .lane-head h2{ margin:0; font-size:14px; font-weight:800; letter-spacing:-.1px; }
+  .lane-note{ margin-left:auto; font-size:11.5px; color:#7f7f92; }
+  .streak{
+    display:inline-flex; align-items:center; gap:4px; flex:none;
+    font-size:12px; font-weight:800; letter-spacing:-.1px;
+    color:var(--accent); background:rgba(92,255,110,.10);
+    border:1px solid rgba(92,255,110,.30); border-radius:999px; padding:2px 9px 2px 7px;
+  }
+  .streak svg{ width:10px; height:12px; flex:none; }
+
+  /* Bleeds to both edges so a half-cut third tile is visible at 360px — the standard
+     signal that a rail scrolls. A rail whose contents fit exactly looks like a dead end. */
+  .lane-row{
+    display:flex; gap:9px; overflow-x:auto; scrollbar-width:none;
+    margin:0 calc(var(--pad) * -1); padding:0 var(--pad) 2px;
+    -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity;
+  }
+  .lane-row::-webkit-scrollbar{ display:none; }
+  .tile{
+    flex:none; scroll-snap-align:start; position:relative;
+    width:152px; display:flex; flex-direction:column; gap:2px;
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:9px 11px 10px; overflow:hidden;
+    transition:border-color .15s, background .15s, transform .15s;
+  }
+  /* The subject's own colour, set per tile — the only thing distinguishing three
+     otherwise identical grids at a glance. */
+  .tile::before{
+    content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--hue);
+  }
+  .tile-name{ font-size:14.5px; font-weight:800; letter-spacing:-.15px; }
+  .tile-sub{ font-size:11.5px; color:var(--ink-dim); }
+  .tile-state{ margin-top:5px; font-size:11.5px; font-weight:700; color:var(--accent); display:flex; align-items:center; gap:4px; }
+  .tile-state svg{ width:10px; height:10px; flex:none; }
+  .tile.done .tile-state{ color:#7f7f92; }
+  .tile:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  @media (hover:hover){ .tile:hover{ border-color:var(--line-strong); background:var(--surface-2); transform:translateY(-2px); } }
+
+  /* Per-card daily state — a corner pill floated over the art, mirroring .badge on
+     the opposite side so the featured card can carry both without them colliding.
+     Offsets track each card's own padding (10px / 12px) so the pill sits a uniform
+     10px inside the thumbnail either way. */
+  .dstat{
+    position:absolute; top:20px; right:20px; z-index:2;
+    display:inline-flex; align-items:center; gap:5px; white-space:nowrap;
+    font-size:11px; font-weight:800; letter-spacing:.3px;
+    color:var(--ink); background:rgba(7,7,13,.82);
+    border:1px solid var(--line-strong); border-radius:999px; padding:4px 9px;
+    box-shadow:0 2px 10px rgba(0,0,0,.35);
+  }
+  .dstat svg{ width:10px; height:10px; flex:none; display:block; }
+  .dstat.done{ color:var(--accent); border-color:rgba(92,255,110,.45); }
+  .card.featured .dstat{ top:22px; right:22px; }
 
   /* ---- footer -------------------------------------------------------------- */
   footer{
@@ -226,27 +329,50 @@
 <div class="wrap">
 
   <header class="hero">
-    <h1>Games that start the second you <em>tap</em>.</h1>
-    <p class="sub">Eleven hand-built games that run straight in your browser — phone or laptop. Nothing to install, no account, no waiting.</p>
+    <h1>Twenty games that start the second you <em>tap</em>.</h1>
     <ul class="trust">
-      <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>Free to play</li>
+      <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>Free</li>
       <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>No sign-up</li>
-      <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>Built for touch</li>
-      <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>Loads in a second</li>
+      <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>No download</li>
+      <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>Works offline</li>
     </ul>
   </header>
 
+  <!-- Today's grids. Ships filled, unlike the storage-built strip it replaces: a
+       first-time visitor is most of the traffic and never saw that one, so the daily
+       loop advertised itself only to players already in it. Script only decorates —
+       the streak pill, and which of these are already done today. -->
+  <section class="lane" aria-label="Today&rsquo;s grids">
+    <div class="lane-head">
+      <h2>Today&rsquo;s grids</h2>
+      <span class="lane-note" id="laneNote">New set at midnight</span>
+    </div>
+    <div class="lane-row">
+      <a class="tile" href="valence/index.html" data-daily="valence" style="--hue:#22c3a6">
+        <span class="tile-name">Valence</span><span class="tile-sub">Chemistry</span>
+        <span class="tile-state"><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg>Play today&rsquo;s</span>
+      </a>
+      <a class="tile" href="quanta/index.html" data-daily="quanta" style="--hue:#9a8df0">
+        <span class="tile-name">Quanta</span><span class="tile-sub">Physics</span>
+        <span class="tile-state"><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg>Play today&rsquo;s</span>
+      </a>
+      <a class="tile" href="radian/index.html" data-daily="radian" style="--hue:#4fcfae">
+        <span class="tile-name">Radian</span><span class="tile-sub">Trigonometry</span>
+        <span class="tile-state"><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg>Play today&rsquo;s</span>
+      </a>
+    </div>
+  </section>
+
   <span id="sentinel" aria-hidden="true"></span>
-  <nav class="filters" id="filters" aria-label="Filter games by kind">
-    <button class="chip" data-cat="all" aria-pressed="true">All 11</button>
-    <button class="chip" data-cat="racing" aria-pressed="false">Racing</button>
-    <button class="chip" data-cat="sports" aria-pressed="false">Sports</button>
-    <button class="chip" data-cat="board" aria-pressed="false">Board &amp; cards</button>
-    <button class="chip" data-cat="puzzle" aria-pressed="false">Puzzle</button>
-    <button class="chip" data-cat="action" aria-pressed="false">Action</button>
+  <nav class="filters" id="filters" aria-label="Jump to a category">
+    <button class="chip" data-rail="rail-together">Play together</button>
+    <button class="chip" data-rail="rail-study">Study grids</button>
+    <button class="chip" data-rail="rail-versus">Head to head</button>
+    <button class="chip" data-rail="rail-solo">Solo arcade</button>
+    <button class="chip" data-rail="rail-sports">Sports &amp; racing</button>
   </nav>
 
-  <main class="grid" id="grid">
+  <main class="rails" id="rails">
 
     <a class="card featured" href="drift/index.html" data-game="drift" data-cat="racing">
       <span class="badge">Start here</span>
@@ -273,36 +399,343 @@
       <span class="foot"><span class="meta">Solo &middot; One-thumb touch or keyboard</span><span class="play">Play now <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
 
-    <a class="card" href="drift-mp/index.html" data-game="drift-mp" data-cat="racing">
-      <span class="badge">New · Multiplayer</span>
+    <!-- ============ rails ============
+         The grid became Netflix-style category rails when the Together games landed: with
+         eighteen games, one undifferentiated grid stopped being scannable, and the categories
+         are now real — five games that need two people are a different shelf from a solo
+         drifting run. Every game appears in exactly ONE rail (gen-sitemap.js reads data-game
+         and does not want duplicates), and each rail bleeds off both edges so a half-cut card
+         signals sideways scroll, same trick as the daily lane above. -->
+
+    <section class="rail" id="rail-together" aria-label="Games to play together">
+      <div class="rail-head">
+        <h2>Play together</h2>
+        <span class="rail-note">New &middot; Two people, one phone</span>
+      </div>
+      <div class="rail-row">
+
+        <a class="card" href="sync/index.html" data-game="sync" data-cat="together">
+          <span class="thumb">
+            <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two overlapping speech bubbles with a matching tick">
+              <defs>
+                <linearGradient id="sy-bg" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#241a3f"/><stop offset="1" stop-color="#120d20"/>
+                </linearGradient>
+              </defs>
+              <rect width="320" height="120" fill="url(#sy-bg)"/>
+              <g opacity="0.35" stroke-linecap="round">
+                <path d="M18 96 q14 -26 28 0 q14 26 28 0 q14 -26 28 0" fill="none" stroke="#7c5cff" stroke-width="3"/>
+                <path d="M218 24 q14 -18 28 0 q14 18 28 0" fill="none" stroke="#ff6b9d" stroke-width="3"/>
+              </g>
+              <g>
+                <rect x="62" y="24" width="120" height="62" rx="20" fill="#7c5cff"/>
+                <path d="M86 86 l-8 16 l22 -12 z" fill="#7c5cff"/>
+                <rect x="138" y="34" width="120" height="62" rx="20" fill="#ff6b9d"/>
+                <path d="M234 96 l8 16 l-22 -12 z" fill="#ff6b9d"/>
+                <rect x="138" y="34" width="44" height="52" rx="18" fill="#f4ecff" opacity="0.92"/>
+                <path d="M148 61 l8 8 l16 -16" fill="none" stroke="#3c2b7a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+              <g fill="#efe6ff" opacity="0.85">
+                <circle cx="88" cy="55" r="4.5"/><circle cx="104" cy="55" r="4.5"/><circle cx="120" cy="55" r="4.5"/>
+              </g>
+              <g fill="#ffe1ec" opacity="0.85">
+                <circle cx="204" cy="65" r="4.5"/><circle cx="220" cy="65" r="4.5"/><circle cx="236" cy="65" r="4.5"/>
+              </g>
+            </svg>
+          </span>
+          <span class="top"><h2>Sync</h2><span class="tag">Duo quiz</span></span>
+          <p>Answer for yourself, predict your partner — ten questions on one phone. The reveal shows who really knows whom.</p>
+          <span class="foot"><span class="meta">2 players &middot; One phone</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+        </a>
+
+        <a class="card" href="windows/index.html" data-game="windows" data-cat="together">
+          <span class="thumb">
+            <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A four-pane window with light falling through it">
+              <defs>
+                <linearGradient id="wi-bg" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#26221c"/><stop offset="1" stop-color="#121110"/>
+                </linearGradient>
+                <linearGradient id="wi-light" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#ffb020" stop-opacity="0.5"/><stop offset="1" stop-color="#ffb020" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <rect width="320" height="120" fill="url(#wi-bg)"/>
+              <path d="M96 8 L300 120 L96 120 Z" fill="url(#wi-light)"/>
+              <g transform="translate(112,12)">
+                <rect x="-8" y="-8" width="112" height="112" rx="10" fill="#0d0c0b" stroke="#4a4438" stroke-width="3"/>
+                <rect x="0" y="0" width="46" height="46" rx="4" fill="#2bb3a3"/>
+                <rect x="50" y="0" width="46" height="46" rx="4" fill="#ffb020"/>
+                <rect x="0" y="50" width="46" height="46" rx="4" fill="#17635b"/>
+                <rect x="50" y="50" width="46" height="46" rx="4" fill="#242019"/>
+                <g stroke="#0d0c0b" stroke-width="3.4" stroke-linecap="round" opacity="0.85">
+                  <line x1="8" y1="14" x2="34" y2="14"/><line x1="8" y1="24" x2="26" y2="24"/><line x1="8" y1="34" x2="30" y2="34"/>
+                </g>
+                <g stroke="#7a5410" stroke-width="3.4" stroke-linecap="round" opacity="0.9">
+                  <line x1="58" y1="14" x2="86" y2="14"/><line x1="58" y1="24" x2="78" y2="24"/>
+                </g>
+                <g stroke="#0b3a34" stroke-width="3.4" stroke-linecap="round">
+                  <line x1="8" y1="64" x2="30" y2="64"/><line x1="8" y1="74" x2="36" y2="74"/>
+                </g>
+                <text x="73" y="78" font-family="ui-sans-serif,system-ui,sans-serif" font-size="20" font-weight="800" fill="#57503f" text-anchor="middle">?</text>
+              </g>
+              <g fill="#e8dfc8" font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" font-weight="700" opacity="0.8">
+                <text x="24" y="34">warm</text><text x="30" y="58">stubborn</text><text x="22" y="82">funny</text>
+                <text x="248" y="40">guarded</text><text x="256" y="66">dreamy</text><text x="250" y="92">loyal</text>
+              </g>
+            </svg>
+          </span>
+          <span class="top"><h2>Windows</h2><span class="tag">Traits</span></span>
+          <p>Pick six words for yourself and six for them. The window shows what you agree on — and your blind spots.</p>
+          <span class="foot"><span class="meta">2 players &middot; One phone</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+        </a>
+
+        <a class="card" href="auction/index.html" data-game="auction" data-cat="together">
+          <span class="thumb">
+            <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gold coin stacks and a gavel on green felt">
+              <defs>
+                <radialGradient id="au-felt" cx="50%" cy="30%" r="90%">
+                  <stop offset="0" stop-color="#1b4a34"/><stop offset="1" stop-color="#0a2318"/>
+                </radialGradient>
+              </defs>
+              <rect width="320" height="120" fill="url(#au-felt)"/>
+              <ellipse cx="160" cy="112" rx="150" ry="16" fill="#000" opacity="0.25"/>
+              <g stroke="#8a6a1c" stroke-width="1.4">
+                <g fill="#f4c95d">
+                  <ellipse cx="70" cy="100" rx="26" ry="8"/><ellipse cx="70" cy="91" rx="26" ry="8"/>
+                  <ellipse cx="70" cy="82" rx="26" ry="8"/><ellipse cx="70" cy="73" rx="26" ry="8"/>
+                  <ellipse cx="70" cy="64" rx="26" ry="8"/>
+                </g>
+                <g fill="#f4c95d">
+                  <ellipse cx="134" cy="100" rx="22" ry="7"/><ellipse cx="134" cy="92" rx="22" ry="7"/>
+                  <ellipse cx="134" cy="84" rx="22" ry="7"/>
+                </g>
+                <g fill="#f4c95d"><ellipse cx="188" cy="100" rx="18" ry="6"/></g>
+              </g>
+              <g fill="#fbe6ae" font-family="ui-sans-serif,system-ui,sans-serif" font-size="10" font-weight="800" text-anchor="middle" opacity="0.9">
+                <text x="70" y="67">100</text>
+              </g>
+              <g transform="translate(244,44) rotate(-24)">
+                <rect x="-10" y="6" width="20" height="44" rx="6" fill="#8a5a2b"/>
+                <rect x="-34" y="-16" width="68" height="26" rx="9" fill="#a9713a"/>
+                <rect x="-34" y="-16" width="68" height="9" rx="4.5" fill="#c08a4d"/>
+              </g>
+              <ellipse cx="252" cy="102" rx="34" ry="7" fill="#6f4322"/>
+              <g stroke="#f4c95d" stroke-width="2.4" stroke-linecap="round" opacity="0.8">
+                <line x1="284" y1="26" x2="294" y2="16"/><line x1="292" y1="34" x2="304" y2="30"/><line x1="276" y1="20" x2="280" y2="8"/>
+              </g>
+            </svg>
+          </span>
+          <span class="top"><h2>The Auction</h2><span class="tag">Values</span></span>
+          <p>100 coins, ten things people want from life — and you can't fund them all. See where your maps line up.</p>
+          <span class="foot"><span class="meta">2 players &middot; One phone</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+        </a>
+
+        <a class="card" href="fathom/index.html" data-game="fathom" data-cat="together">
+          <span class="thumb">
+            <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two overlapping circles sinking into deep water">
+              <defs>
+                <linearGradient id="fa-sea" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#1668a8"/><stop offset="0.45" stop-color="#0a2540"/><stop offset="1" stop-color="#03101d"/>
+                </linearGradient>
+              </defs>
+              <rect width="320" height="120" fill="url(#fa-sea)"/>
+              <path d="M0 14 q20 -7 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" fill="none" stroke="#9fd4ff" stroke-width="2.5" opacity="0.7"/>
+              <g stroke="#3f7fb3" stroke-width="1.2" opacity="0.5">
+                <line x1="18" y1="44" x2="46" y2="44"/><line x1="18" y1="72" x2="40" y2="72"/><line x1="18" y1="100" x2="46" y2="100"/>
+              </g>
+              <g font-family="ui-sans-serif,system-ui,sans-serif" font-size="9.5" font-weight="700" fill="#7db4dd" opacity="0.8">
+                <text x="52" y="47">-10m</text><text x="46" y="75">-40m</text><text x="52" y="103">-90m</text>
+              </g>
+              <g fill="none" stroke-width="4">
+                <circle cx="176" cy="52" r="21" stroke="#4aa8ff" opacity="0.9"/>
+                <circle cx="204" cy="60" r="21" stroke="#41e0c8" opacity="0.9"/>
+              </g>
+              <g fill="none" stroke-width="3" opacity="0.55">
+                <circle cx="216" cy="88" r="13" stroke="#4aa8ff"/>
+                <circle cx="228" cy="92" r="13" stroke="#41e0c8"/>
+              </g>
+              <g fill="#bfe4ff" opacity="0.75">
+                <circle cx="158" cy="30" r="3"/><circle cx="150" cy="20" r="2"/><circle cx="238" cy="70" r="2.5"/>
+                <circle cx="246" cy="58" r="2"/><circle cx="286" cy="40" r="2.5"/><circle cx="292" cy="28" r="2"/>
+              </g>
+            </svg>
+          </span>
+          <span class="top"><h2>Fathom</h2><span class="tag">Deep talk</span></span>
+          <p>A guided dive through three depths of questions, answered out loud — then measure how much closer you surfaced.</p>
+          <span class="foot"><span class="meta">2 players &middot; One phone</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+        </a>
+
+        <a class="card" href="split/index.html" data-game="split" data-cat="together">
+          <span class="thumb">
+            <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A screen torn in two, red versus blue, with score chips">
+              <defs>
+                <linearGradient id="sp-red" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#a8232e"/><stop offset="1" stop-color="#5c101a"/>
+                </linearGradient>
+                <linearGradient id="sp-blue" x1="1" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#274b80"/><stop offset="1" stop-color="#101f3a"/>
+                </linearGradient>
+              </defs>
+              <rect width="320" height="120" fill="#0b0b10"/>
+              <path d="M0 0 H172 L148 34 L176 62 L152 90 L172 120 H0 Z" fill="url(#sp-red)"/>
+              <path d="M320 0 H180 L156 34 L184 62 L160 90 L180 120 H320 Z" fill="url(#sp-blue)"/>
+              <path d="M176 0 L152 34 L180 62 L156 90 L176 120" fill="none" stroke="#f2ecdf" stroke-width="3.5" stroke-linejoin="round"/>
+              <g stroke="#ffd9dd" stroke-width="6" stroke-linecap="round" fill="none">
+                <path d="M52 62 h52 m0 0 l-14 -13 m14 13 l-14 13"/>
+              </g>
+              <g stroke="#cfe0ff" stroke-width="6" stroke-linecap="round" fill="none">
+                <path d="M268 62 h-52 m0 0 l14 -13 m-14 13 l14 13"/>
+              </g>
+              <g font-family="ui-sans-serif,system-ui,sans-serif" font-weight="800" text-anchor="middle">
+                <circle cx="68" cy="24" r="13" fill="#ffd9dd"/>
+                <text x="68" y="29" font-size="14" fill="#5c101a">3</text>
+                <circle cx="252" cy="24" r="13" fill="#cfe0ff"/>
+                <text x="252" y="29" font-size="14" fill="#101f3a">5</text>
+              </g>
+            </svg>
+          </span>
+          <span class="top"><h2>Split</h2><span class="tag">Trust</span></span>
+          <p>Share or take, ten hidden rounds. The score says who won — the pattern says who you both are.</p>
+          <span class="foot"><span class="meta">2 players &middot; One phone</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+        </a>
+
+      </div>
+    </section>
+
+    <section class="rail" id="rail-study" aria-label="Daily study grids">
+      <div class="rail-head">
+        <h2>Daily study grids</h2>
+        <span class="rail-note">One grid a day, three subjects</span>
+      </div>
+      <div class="rail-row">
+
+    <a class="card" href="valence/index.html" data-game="valence" data-cat="study">
+      <span class="badge">New &middot; Daily</span>
       <span class="thumb">
-        <svg viewBox="0 0 320 120" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three cars drifting the same sunlit road together">
-          <rect width="320" height="120" fill="#79c665"/>
-          <path d="M92 120 C 96 70, 150 60, 210 40 L 300 8 L 320 20 L 244 56 C 190 80, 150 86, 148 120 Z" fill="#adb3bd"/>
-          <path d="M92 120 C 96 70, 150 60, 210 40 L 300 8" fill="none" stroke="#f6f8fb" stroke-width="3.5"/>
-          <path d="M148 120 C 150 86, 190 80, 244 56 L 320 20" fill="none" stroke="#f6f8fb" stroke-width="3.5"/>
-          <path d="M120 120 C 124 74, 172 70, 226 48 L 306 14" fill="none" stroke="#ffd24a" stroke-width="4" stroke-dasharray="12 12"/>
-          <path d="M150 108 C 158 92, 176 88, 190 80" fill="none" stroke="rgba(40,42,48,.34)" stroke-width="5" stroke-linecap="round"/>
-          <g transform="translate(178,78) rotate(38)">
-            <rect x="-12" y="-22" width="24" height="44" rx="8" fill="#ff5a2f"/>
-            <rect x="-2.5" y="-19" width="5" height="38" fill="rgba(255,255,255,.85)"/>
-            <rect x="-8" y="-8" width="16" height="16" rx="4" fill="#1f2c3a"/>
-            <circle cx="-8" cy="-19" r="2.4" fill="#fff3c4"/><circle cx="8" cy="-19" r="2.4" fill="#fff3c4"/>
+        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Nine periodic-table tiles showing element symbols">
+          <defs>
+            <linearGradient id="va-bg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#123a52"/><stop offset="1" stop-color="#071a28"/>
+            </linearGradient>
+          </defs>
+          <rect width="320" height="120" fill="url(#va-bg)"/>
+          <g font-family="ui-sans-serif,system-ui,sans-serif" font-weight="700" text-anchor="middle">
+            <g fill="#1d5674">
+              <rect x="24" y="14" width="30" height="30" rx="5"/><rect x="60" y="14" width="30" height="30" rx="5"/><rect x="96" y="14" width="30" height="30" rx="5"/>
+              <rect x="24" y="50" width="30" height="30" rx="5"/><rect x="60" y="50" width="30" height="30" rx="5"/><rect x="96" y="50" width="30" height="30" rx="5"/>
+              <rect x="24" y="86" width="30" height="30" rx="5"/><rect x="60" y="86" width="30" height="30" rx="5"/><rect x="96" y="86" width="30" height="30" rx="5"/>
+            </g>
+            <g fill="#22c3a6">
+              <rect x="60" y="14" width="30" height="30" rx="5"/><rect x="24" y="50" width="30" height="30" rx="5"/><rect x="96" y="86" width="30" height="30" rx="5"/>
+            </g>
+            <g font-size="14" fill="#bfe4f2">
+              <text x="39" y="34">H</text><text x="111" y="34">O</text>
+              <text x="75" y="70">Fe</text><text x="111" y="70">Ne</text>
+              <text x="39" y="106">Cu</text><text x="75" y="106">Ar</text>
+            </g>
+            <g font-size="14" fill="#05231d">
+              <text x="75" y="34">Na</text><text x="39" y="70">C</text><text x="111" y="106">Au</text>
+            </g>
           </g>
-          <g transform="translate(232,50) rotate(30)" opacity="0.85">
-            <rect x="-10" y="-19" width="20" height="38" rx="7" fill="#2f8fff"/>
-            <rect x="-7" y="-7" width="14" height="14" rx="4" fill="rgba(255,255,255,.7)"/>
+          <g stroke="#4fd6bb" stroke-width="2.2" fill="none" opacity="0.75">
+            <circle cx="222" cy="60" r="9" fill="#4fd6bb" stroke="none"/>
+            <ellipse cx="222" cy="60" rx="46" ry="19"/>
+            <ellipse cx="222" cy="60" rx="46" ry="19" transform="rotate(60 222 60)"/>
+            <ellipse cx="222" cy="60" rx="46" ry="19" transform="rotate(120 222 60)"/>
           </g>
-          <g transform="translate(130,96) rotate(46)" opacity="0.85">
-            <rect x="-10" y="-19" width="20" height="38" rx="7" fill="#9f5bff"/>
-            <rect x="-7" y="-7" width="14" height="14" rx="4" fill="rgba(255,255,255,.7)"/>
+          <g fill="#ffd24a">
+            <circle cx="268" cy="60" r="4"/><circle cx="199" cy="21" r="4"/><circle cx="199" cy="99" r="4"/>
           </g>
         </svg>
       </span>
-      <span class="top"><h2>Drift MP</h2><span class="tag">Racing</span></span>
-      <p>Drift, raced live. Host a room, share a four-letter code, and up to eight friends drive the same seeded road from their own phones — rival cars beside you as holograms, a live scoreboard, and a grid clock that waits for nobody.</p>
-      <span class="foot"><span class="meta">2&ndash;8 players &middot; Peer-to-peer, no server</span><span class="play">Play now <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+      <span class="top"><h2>Valence</h2><span class="tag">Chemistry</span></span>
+      <p>Nine cells, and every one wants an element that fits both its row and its column. Answer with the name or the symbol &mdash; and whatever you score, the reveal shows every element that would have worked.</p>
+      <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
+
+    <a class="card" href="quanta/index.html" data-game="quanta" data-cat="study">
+      <span class="badge">New &middot; Daily</span>
+      <span class="thumb">
+        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A projectile arc with velocity vectors over a faint grid">
+          <defs>
+            <linearGradient id="qu-bg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#241a4d"/><stop offset="1" stop-color="#0c0820"/>
+            </linearGradient>
+          </defs>
+          <rect width="320" height="120" fill="url(#qu-bg)"/>
+          <g stroke="#6b5ec8" stroke-width="1" opacity="0.28">
+            <line x1="0" y1="30" x2="320" y2="30"/><line x1="0" y1="60" x2="320" y2="60"/><line x1="0" y1="90" x2="320" y2="90"/>
+            <line x1="80" y1="0" x2="80" y2="120"/><line x1="160" y1="0" x2="160" y2="120"/><line x1="240" y1="0" x2="240" y2="120"/>
+          </g>
+          <path d="M20 108 Q 120 4 220 108" fill="none" stroke="#ffd24a" stroke-width="3" stroke-dasharray="7 6" opacity="0.9"/>
+          <g stroke="#4ad9ff" stroke-width="3" stroke-linecap="round">
+            <line x1="20" y1="108" x2="58" y2="72"/><path d="M58 72 l-2 11 l11 -2 z" fill="#4ad9ff" stroke="none"/>
+            <line x1="120" y1="30" x2="164" y2="30"/><path d="M164 30 l-9 -6 l0 12 z" fill="#4ad9ff" stroke="none"/>
+          </g>
+          <g stroke="#ff6b8a" stroke-width="3" stroke-linecap="round">
+            <line x1="120" y1="30" x2="120" y2="70"/><path d="M120 70 l-6 -9 l12 0 z" fill="#ff6b8a" stroke="none"/>
+          </g>
+          <circle cx="120" cy="30" r="7" fill="#ffd24a"/>
+          <g font-family="ui-sans-serif,system-ui,sans-serif" font-size="13" font-weight="700" fill="#cfd6ff">
+            <text x="172" y="26">v</text><text x="130" y="66">g</text>
+          </g>
+          <g fill="#eef0ff" opacity="0.14">
+            <rect x="250" y="16" width="20" height="20" rx="4"/><rect x="274" y="16" width="20" height="20" rx="4"/>
+            <rect x="250" y="40" width="20" height="20" rx="4"/><rect x="274" y="40" width="20" height="20" rx="4"/>
+          </g>
+        </svg>
+      </span>
+      <span class="top"><h2>Quanta</h2><span class="tag">Physics</span></span>
+      <p>Vector or scalar, base unit or derived, which branch it belongs to &mdash; nine cells of physical quantities, and a reveal that gives you the SI unit for every answer you missed.</p>
+      <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+    </a>
+
+    <a class="card" href="radian/index.html" data-game="radian" data-cat="study">
+      <span class="badge">New &middot; Daily</span>
+      <span class="thumb">
+        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A unit circle with a swept angle beside a sine wave">
+          <defs>
+            <linearGradient id="ra-bg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#0f3b34"/><stop offset="1" stop-color="#05201c"/>
+            </linearGradient>
+          </defs>
+          <rect width="320" height="120" fill="url(#ra-bg)"/>
+          <g transform="translate(66,60)">
+            <circle r="44" fill="none" stroke="#3fbfa0" stroke-width="2.4" opacity="0.85"/>
+            <line x1="-52" y1="0" x2="52" y2="0" stroke="#2b8570" stroke-width="1.6"/>
+            <line x1="0" y1="-52" x2="0" y2="52" stroke="#2b8570" stroke-width="1.6"/>
+            <path d="M22 0 A 22 22 0 0 0 11 -19" fill="none" stroke="#ffd24a" stroke-width="2.6"/>
+            <line x1="0" y1="0" x2="22" y2="-38" stroke="#ffd24a" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="22" cy="-38" r="5" fill="#ffd24a"/>
+            <line x1="22" y1="-38" x2="22" y2="0" stroke="#ff6b8a" stroke-width="2" stroke-dasharray="4 3"/>
+          </g>
+          <path d="M132 60 Q 150 14 168 60 T 204 60 T 240 60 T 276 60" fill="none" stroke="#7fe6c8" stroke-width="3" opacity="0.9"/>
+          <line x1="128" y1="60" x2="288" y2="60" stroke="#2b8570" stroke-width="1.6"/>
+          <g font-family="ui-sans-serif,system-ui,sans-serif" font-size="13" font-weight="700" fill="#bff0e0">
+            <text x="86" y="36">&#952;</text>
+          </g>
+          <g fill="#dff7ee" opacity="0.13">
+            <rect x="246" y="82" width="18" height="18" rx="4"/><rect x="268" y="82" width="18" height="18" rx="4"/>
+            <rect x="290" y="82" width="18" height="18" rx="4"/>
+          </g>
+        </svg>
+      </span>
+      <span class="top"><h2>Radian</h2><span class="tag">Trigonometry</span></span>
+      <p>Quadrants, signs, reference angles and exact values. Answer in degrees or radians &mdash; 30, 30&deg; and &pi;/6 are all the same angle, and the reveal shows every one in both.</p>
+      <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+    </a>
+
+
+
+      </div>
+    </section>
+
+    <section class="rail" id="rail-versus" aria-label="Head-to-head games">
+      <div class="rail-head">
+        <h2>Head to head</h2>
+        <span class="rail-note">Beat the AI or pass the phone</span>
+      </div>
+      <div class="rail-row">
 
     <a class="card" href="carrom/index.html" data-game="carrom" data-cat="board">
       <span class="thumb">
@@ -373,6 +806,129 @@
       <span class="top"><h2>Break Room</h2><span class="tag">Pool</span></span>
       <p>8-ball with real physics — spin, fouls, ball-in-hand, and an AI that punishes a loose safety.</p>
       <span class="foot"><span class="meta">vs AI &middot; 2-player</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+    </a>
+
+    <a class="card" href="ennead/index.html" data-game="ennead" data-cat="board">
+      <span class="thumb">
+        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A nested tic-tac-toe board with X and O marks">
+          <defs>
+            <linearGradient id="en-bg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#232a52"/><stop offset="1" stop-color="#0d1122"/>
+            </linearGradient>
+          </defs>
+          <rect width="320" height="120" fill="url(#en-bg)"/>
+          <g stroke="#6b76a8" stroke-width="3" stroke-linecap="round" opacity="0.85">
+            <line x1="144.7" y1="16" x2="144.7" y2="104"/><line x1="175.3" y1="16" x2="175.3" y2="104"/>
+            <line x1="116" y1="44.7" x2="204" y2="44.7"/><line x1="116" y1="75.3" x2="204" y2="75.3"/>
+          </g>
+          <g stroke="#e8543f" stroke-width="6" stroke-linecap="round">
+            <line x1="121" y1="21" x2="137.5" y2="37.5"/><line x1="137.5" y1="21" x2="121" y2="37.5"/>
+            <line x1="182.5" y1="82.5" x2="199" y2="99"/><line x1="199" y1="82.5" x2="182.5" y2="99"/>
+          </g>
+          <g stroke="#2f8fd8" stroke-width="6" fill="none">
+            <circle cx="190.7" cy="29.3" r="10"/><circle cx="129.3" cy="90.7" r="10"/>
+          </g>
+          <g stroke="#8b95c8" stroke-width="1.4" opacity="0.9">
+            <line x1="154.9" y1="46.7" x2="154.9" y2="73.3"/><line x1="165.1" y1="46.7" x2="165.1" y2="73.3"/>
+            <line x1="146.7" y1="54.9" x2="173.3" y2="54.9"/><line x1="146.7" y1="65.1" x2="173.3" y2="65.1"/>
+          </g>
+          <g stroke="#e8543f" stroke-width="2.4" stroke-linecap="round">
+            <line x1="148.5" y1="48.5" x2="153.3" y2="53.3"/><line x1="153.3" y1="48.5" x2="148.5" y2="53.3"/>
+          </g>
+          <rect x="114" y="14" width="92" height="92" rx="8" fill="none" stroke="#6b76a8" stroke-width="2" opacity="0.5"/>
+        </svg>
+      </span>
+      <span class="top"><h2>Ennead</h2><span class="tag">Strategy</span></span>
+      <p>Tic-tac-toe taken seriously — 3&times;3 up to 9&times;9 gomoku, plus Ultimate's nine nested boards.</p>
+      <span class="foot"><span class="meta">vs AI &middot; 2-player</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+    </a>
+
+      </div>
+    </section>
+
+    <section class="rail" id="rail-solo" aria-label="Solo arcade games">
+      <div class="rail-head">
+        <h2>Solo arcade</h2>
+        <span class="rail-note">One player, endless retries</span>
+      </div>
+      <div class="rail-row">
+
+    <a class="card" href="apogee/index.html" data-game="apogee" data-cat="builder">
+      <span class="thumb">
+        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A rocket being assembled on a launch pad, parts floating alongside">
+          <defs>
+            <linearGradient id="ap-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#3f8fd4"/><stop offset="1" stop-color="#9cd1f2"/>
+            </linearGradient>
+          </defs>
+          <rect width="320" height="120" fill="url(#ap-sky)"/>
+          <circle cx="286" cy="22" r="13" fill="#fff8d8"/>
+          <circle cx="286" cy="22" r="18" fill="#ffd95e" opacity="0.35"/>
+          <g fill="#ffffff" opacity="0.8">
+            <ellipse cx="58" cy="26" rx="20" ry="7"/><ellipse cx="74" cy="21" rx="13" ry="6"/>
+            <ellipse cx="238" cy="58" rx="16" ry="6"/>
+          </g>
+          <rect y="106" width="320" height="14" fill="#4d9e4f"/>
+          <rect x="118" y="100" width="84" height="6" rx="2" fill="#5b6672"/>
+          <g transform="translate(160,0)">
+            <path d="M0 30 C7 37 10 46 11 54 L-11 54 C-10 46 -7 37 0 30 Z" fill="#e8483a"/>
+            <rect x="-11" y="54" width="22" height="34" rx="3" fill="#f2f5f8" stroke="#b8c4d0"/>
+            <rect x="-11" y="62" width="22" height="6" fill="#4a90d9"/>
+            <path d="M-11 76 L-24 100 L-11 94 Z" fill="#e8483a"/>
+            <path d="M11 76 L24 100 L11 94 Z" fill="#e8483a"/>
+            <path d="M-7 88 L7 88 L10 100 L-10 100 Z" fill="#8a95a3"/>
+            <path d="M-5 100 Q0 114 5 100 Z" fill="#ffb63c"/>
+          </g>
+          <g transform="translate(74,64) rotate(-14)">
+            <path d="M0 0 C7 7 10 16 11 24 L-11 24 C-10 16 -7 7 0 0 Z" fill="#d9e2ec"/>
+            <circle cx="0" cy="14" r="5" fill="#173a5e" stroke="#7fb2e0" stroke-width="2"/>
+          </g>
+          <g transform="translate(246,86) rotate(12)">
+            <path d="M0 -14 C0 -20 4 -24 8 -24 C12 -24 16 -20 16 -14 L16 14 L0 14 Z" fill="#f2b632"/>
+            <rect x="0" y="-4" width="16" height="5" fill="#e8483a"/>
+          </g>
+          <path d="M92 70 Q120 56 142 52" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="5 6" stroke-linecap="round" opacity="0.85"/>
+          <path d="M232 80 Q206 84 182 82" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="5 6" stroke-linecap="round" opacity="0.85"/>
+        </svg>
+      </span>
+      <span class="badge">New</span>
+      <span class="top"><h2>Apogee</h2><span class="tag">Educational</span></span>
+      <p>Build a rocket from twelve real parts — every one fitted teaches what it does. Launch through max-Q and the atmosphere&rsquo;s layers, read your gravity and drag losses in the mission log, and pass the 100&nbsp;km K&aacute;rm&aacute;n line into space.</p>
+      <span class="foot"><span class="meta">Solo &middot; Build, learn &amp; launch</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+    </a>
+
+    <a class="card" href="garage/index.html" data-game="garage" data-cat="study">
+      <span class="badge">New &middot; Educational</span>
+      <span class="thumb">
+        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A cutaway car with an engine part being dragged toward a dashed slot">
+          <defs>
+            <linearGradient id="gr-bg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#141b2b"/><stop offset="1" stop-color="#0a0e18"/>
+            </linearGradient>
+          </defs>
+          <rect width="320" height="120" fill="url(#gr-bg)"/>
+          <line x1="0" y1="101" x2="320" y2="101" stroke="#232b3b" stroke-width="2"/>
+          <path d="M46 92 L46 72 Q46 56 64 52 L96 47 L128 22 Q131 18 138 18 L206 18 Q213 18 216 22 L244 47 L282 52 Q296 55 296 70 L296 92 L272 93 A17 17 0 0 0 238 93 L106 93 A17 17 0 0 0 72 93 Z" fill="rgba(120,165,215,0.12)" stroke="#7fa8d0" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M128 47 L244 52" stroke="#7fa8d0" stroke-width="1" opacity="0.4"/>
+          <circle cx="89" cy="93" r="15" fill="#171a20" stroke="#727e8c" stroke-width="2.5"/>
+          <circle cx="89" cy="93" r="5" fill="#9aa7b4"/>
+          <circle cx="255" cy="93" r="15" fill="#171a20" stroke="#727e8c" stroke-width="2.5"/>
+          <circle cx="255" cy="93" r="5" fill="#9aa7b4"/>
+          <rect x="58" y="62" width="26" height="22" rx="3" fill="#8b97a6" stroke="#3c4552" stroke-width="1.5"/>
+          <rect x="61" y="56" width="20" height="7" rx="2" fill="#aab6c4" stroke="#3c4552" stroke-width="1.2"/>
+          <path d="M158 78 h20 v-16 q0 -4 -4 -4 h-4 q-4 0 -6 4 l-6 12 z" fill="#7a4a3a" opacity="0.9"/>
+          <rect x="196" y="60" width="30" height="20" rx="4" fill="none" stroke="#21e6ff" stroke-width="2" stroke-dasharray="5 4"/>
+          <g transform="translate(236 26) rotate(8)">
+            <rect x="0" y="6" width="24" height="16" rx="3" fill="#8b97a6" stroke="#3c4552" stroke-width="1.5"/>
+            <rect x="5" y="0" width="14" height="7" rx="2" fill="#77828f" stroke="#3c4552" stroke-width="1.2"/>
+          </g>
+          <path d="M240 46 Q 228 56 222 58" fill="none" stroke="#21e6ff" stroke-width="2" stroke-dasharray="3 4" opacity="0.8"/>
+          <path d="M224 54 l-5 5 l7 1 z" fill="#21e6ff" opacity="0.8"/>
+        </svg>
+      </span>
+      <span class="top"><h2>Garage</h2><span class="tag">Educational</span></span>
+      <p>Build a car from 19 real parts &mdash; chassis, carburetor, alternator, driveshaft &mdash; and learn what every one does.</p>
+      <span class="foot"><span class="meta">Solo &middot; Learn &amp; quiz</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
 
     <a class="card" href="chroma-blocks/index.html" data-game="chroma-blocks" data-cat="puzzle">
@@ -479,6 +1035,76 @@
       <span class="foot"><span class="meta">Solo &middot; Built for one hand</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
 
+    <a class="card" href="dasanana/index.html" data-game="dasanana" data-cat="action">
+      <span class="thumb">
+        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A drawn bow with a flaming arrow">
+          <defs>
+            <linearGradient id="da-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2a1540"/><stop offset="0.55" stop-color="#7a2b52"/><stop offset="1" stop-color="#ff7a3a"/>
+            </linearGradient>
+            <radialGradient id="da-sun" cx="50%" cy="50%" r="50%">
+              <stop offset="0" stop-color="#ffe9a8"/><stop offset="1" stop-color="#ff7a3a" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="da-flame" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#ffe98a"/><stop offset="0.5" stop-color="#ff9a3d"/><stop offset="1" stop-color="#ff4d2e"/>
+            </linearGradient>
+            <filter id="da-glow" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="2.2" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <rect width="320" height="120" fill="url(#da-sky)"/>
+          <circle cx="232" cy="104" r="66" fill="url(#da-sun)"/>
+          <g fill="#170b20" opacity="0.8">
+            <path d="M262 120 Q300 82 320 96 L320 120 Z"/>
+            <g>
+              <circle cx="286" cy="82" r="5"/><circle cx="297" cy="78" r="5"/><circle cx="308" cy="76" r="5"/>
+              <circle cx="319" cy="76" r="5"/><circle cx="292" cy="88" r="5"/><circle cx="303" cy="85" r="5"/>
+              <circle cx="314" cy="83" r="5"/>
+            </g>
+          </g>
+          <g fill="none" stroke="#e8b25a" stroke-linecap="round">
+            <path d="M170 16 C 191 22, 200 33, 198 47 C 197 56, 183 55, 176 60 C 183 65, 197 64, 198 73 C 200 87, 191 98, 170 104" stroke-width="8"/>
+          </g>
+          <g fill="#e8b25a">
+            <ellipse cx="168" cy="12" rx="4.5" ry="7.5" transform="rotate(28 168 12)"/>
+            <ellipse cx="168" cy="108" rx="4.5" ry="7.5" transform="rotate(-28 168 108)"/>
+          </g>
+          <line x1="177" y1="51" x2="177" y2="69" stroke="#a9713a" stroke-width="8" stroke-linecap="round"/>
+          <path d="M169 15 L118 60 L169 105" fill="none" stroke="#fff0c4" stroke-width="1.6" stroke-opacity="0.9"/>
+          <g>
+            <line x1="118" y1="60" x2="252" y2="60" stroke="#6f4322" stroke-width="3.4" stroke-linecap="round"/>
+            <g fill="#ff6a4d">
+              <path d="M146 59 C 137 55, 129 50, 123 47 C 128 53, 133 58, 144 61 Z"/>
+              <path d="M144 61 C 135 65, 128 69, 122 72 C 128 66, 134 63, 146 60 Z"/>
+            </g>
+            <g stroke="#ffb199" stroke-width="1.4" stroke-linecap="round">
+              <line x1="129" y1="54" x2="137" y2="60"/><line x1="128" y1="66" x2="136" y2="60"/>
+            </g>
+            <path d="M244 49 L272 60 L244 71 L252 60 Z" fill="#ffd27a" stroke="#a9713a" stroke-width="1" stroke-linejoin="round"/>
+          </g>
+          <g filter="url(#da-glow)">
+            <path d="M262 60 C 279 43, 305 49, 314 60 C 305 71, 279 77, 262 60 Z" fill="url(#da-flame)"/>
+            <path d="M268 60 C 281 49, 297 53, 306 60 C 297 67, 281 71, 268 60 Z" fill="#ffe98a"/>
+            <path d="M308 60 C 314 53, 317 54, 318 50 C 318 58, 314 64, 308 60 Z" fill="#ff9a3d"/>
+          </g>
+        </svg>
+      </span>
+      <span class="top"><h2>Da&#347;&#257;nana</h2><span class="tag">Mythic</span></span>
+      <p>A R&#257;m&#257;ya&#7751;a astra-duel. Counter R&#257;va&#7751;a's divine missiles, chant to restore your tejas, loose the Brahm&#257;stra.</p>
+      <span class="foot"><span class="meta">Solo &middot; Story mode</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+    </a>
+
+      </div>
+    </section>
+
+    <section class="rail" id="rail-sports" aria-label="Sports and racing games">
+      <div class="rail-head">
+        <h2>Sports &amp; racing</h2>
+        <span class="rail-note">Stadium, highway, fairway</span>
+      </div>
+      <div class="rail-row">
+
     <a class="card" href="last-16/index.html" data-game="last-16" data-cat="sports">
       <span class="thumb">
         <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Soccer ball on a pitch">
@@ -579,154 +1205,57 @@
       <span class="foot"><span class="meta">Solo &middot; Best on a laptop</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
 
-    <a class="card" href="deadpoint/index.html" data-game="deadpoint" data-cat="action">
-      <span class="thumb">
-        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A climber on a rock wall at golden hour">
-          <defs>
-            <linearGradient id="dp-sky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#243357"/><stop offset="0.55" stop-color="#7d5c74"/><stop offset="1" stop-color="#e39a5c"/>
-            </linearGradient>
-            <radialGradient id="dp-sun" cx="50%" cy="50%" r="50%">
-              <stop offset="0" stop-color="#fff0c8"/><stop offset="1" stop-color="#ffdc96" stop-opacity="0"/>
-            </radialGradient>
-          </defs>
-          <rect width="320" height="120" fill="url(#dp-sky)"/>
-          <circle cx="52" cy="34" r="46" fill="url(#dp-sun)"/>
-          <path d="M150 0 L320 0 L320 120 L172 120 Q150 70 150 0 Z" fill="#9c7a58"/>
-          <path d="M150 0 Q168 60 176 120 L150 120 Z" fill="#7c5f45" opacity="0.7"/>
-          <g stroke="#4a3524" stroke-width="1.4" fill="none" opacity="0.5">
-            <path d="M210 4 l8 22 -6 20 10 26"/><path d="M280 10 l-6 28 8 24"/>
-          </g>
-          <g stroke="#20140c" stroke-width="1">
-            <ellipse cx="212" cy="30" rx="9" ry="7" fill="#8fd18a"/>
-            <path d="M244 58 a10 10 0 0 1 20 0 z" fill="#c98bff"/>
-            <rect x="286" y="74" width="18" height="7" rx="2" fill="#e6b45a"/>
-            <ellipse cx="212" cy="96" rx="9" ry="7" fill="#8fd18a"/>
-          </g>
-          <g stroke-linecap="round" fill="none">
-            <g stroke="#3a4a63" stroke-width="6">
-              <path d="M226 86 L214 100 L206 96"/><path d="M226 86 L240 102 L250 100"/>
-            </g>
-            <line x1="226" y1="56" x2="226" y2="86" stroke="#c85a3c" stroke-width="11"/>
-            <path d="M226 58 L232 44 L212 30" stroke="#d98a52" stroke-width="5"/>
-            <path d="M226 58 L216 74 L212 96" stroke="#d98a52" stroke-width="5"/>
-          </g>
-          <circle cx="226" cy="46" r="7" fill="#e8c9a0"/>
-          <circle cx="254" cy="52" r="13" fill="none" stroke="#8fffaa" stroke-width="2.5" opacity="0.9"/>
-        </svg>
-      </span>
-      <span class="top"><h2>Deadpoint</h2><span class="tag">Climbing</span></span>
-      <p>Rock climbing about the commit. Latch the hold, fight the barn-door, and beat the pump clock.</p>
-      <span class="foot"><span class="meta">Solo &middot; Six grades, V0&ndash;V5</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
-    </a>
 
-    <a class="card" href="ennead/index.html" data-game="ennead" data-cat="puzzle">
-      <span class="thumb">
-        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A nested tic-tac-toe board with X and O marks">
-          <defs>
-            <linearGradient id="en-bg" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#232a52"/><stop offset="1" stop-color="#0d1122"/>
-            </linearGradient>
-          </defs>
-          <rect width="320" height="120" fill="url(#en-bg)"/>
-          <g stroke="#6b76a8" stroke-width="3" stroke-linecap="round" opacity="0.85">
-            <line x1="144.7" y1="16" x2="144.7" y2="104"/><line x1="175.3" y1="16" x2="175.3" y2="104"/>
-            <line x1="116" y1="44.7" x2="204" y2="44.7"/><line x1="116" y1="75.3" x2="204" y2="75.3"/>
-          </g>
-          <g stroke="#e8543f" stroke-width="6" stroke-linecap="round">
-            <line x1="121" y1="21" x2="137.5" y2="37.5"/><line x1="137.5" y1="21" x2="121" y2="37.5"/>
-            <line x1="182.5" y1="82.5" x2="199" y2="99"/><line x1="199" y1="82.5" x2="182.5" y2="99"/>
-          </g>
-          <g stroke="#2f8fd8" stroke-width="6" fill="none">
-            <circle cx="190.7" cy="29.3" r="10"/><circle cx="129.3" cy="90.7" r="10"/>
-          </g>
-          <g stroke="#8b95c8" stroke-width="1.4" opacity="0.9">
-            <line x1="154.9" y1="46.7" x2="154.9" y2="73.3"/><line x1="165.1" y1="46.7" x2="165.1" y2="73.3"/>
-            <line x1="146.7" y1="54.9" x2="173.3" y2="54.9"/><line x1="146.7" y1="65.1" x2="173.3" y2="65.1"/>
-          </g>
-          <g stroke="#e8543f" stroke-width="2.4" stroke-linecap="round">
-            <line x1="148.5" y1="48.5" x2="153.3" y2="53.3"/><line x1="153.3" y1="48.5" x2="148.5" y2="53.3"/>
-          </g>
-          <rect x="114" y="14" width="92" height="92" rx="8" fill="none" stroke="#6b76a8" stroke-width="2" opacity="0.5"/>
-        </svg>
-      </span>
-      <span class="top"><h2>Ennead</h2><span class="tag">Strategy</span></span>
-      <p>Tic-tac-toe taken seriously — 3&times;3 up to 9&times;9 gomoku, plus Ultimate's nine nested boards.</p>
-      <span class="foot"><span class="meta">vs AI &middot; 2-player</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
-    </a>
-
-    <a class="card" href="dasanana/index.html" data-game="dasanana" data-cat="action">
-      <span class="thumb">
-        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A drawn bow with a flaming arrow">
-          <defs>
-            <linearGradient id="da-sky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#2a1540"/><stop offset="0.55" stop-color="#7a2b52"/><stop offset="1" stop-color="#ff7a3a"/>
-            </linearGradient>
-            <radialGradient id="da-sun" cx="50%" cy="50%" r="50%">
-              <stop offset="0" stop-color="#ffe9a8"/><stop offset="1" stop-color="#ff7a3a" stop-opacity="0"/>
-            </radialGradient>
-            <linearGradient id="da-flame" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stop-color="#ffe98a"/><stop offset="0.5" stop-color="#ff9a3d"/><stop offset="1" stop-color="#ff4d2e"/>
-            </linearGradient>
-            <filter id="da-glow" x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="2.2" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-          <rect width="320" height="120" fill="url(#da-sky)"/>
-          <circle cx="232" cy="104" r="66" fill="url(#da-sun)"/>
-          <g fill="#170b20" opacity="0.8">
-            <path d="M262 120 Q300 82 320 96 L320 120 Z"/>
-            <g>
-              <circle cx="286" cy="82" r="5"/><circle cx="297" cy="78" r="5"/><circle cx="308" cy="76" r="5"/>
-              <circle cx="319" cy="76" r="5"/><circle cx="292" cy="88" r="5"/><circle cx="303" cy="85" r="5"/>
-              <circle cx="314" cy="83" r="5"/>
-            </g>
-          </g>
-          <g fill="none" stroke="#e8b25a" stroke-linecap="round">
-            <path d="M170 16 C 191 22, 200 33, 198 47 C 197 56, 183 55, 176 60 C 183 65, 197 64, 198 73 C 200 87, 191 98, 170 104" stroke-width="8"/>
-          </g>
-          <g fill="#e8b25a">
-            <ellipse cx="168" cy="12" rx="4.5" ry="7.5" transform="rotate(28 168 12)"/>
-            <ellipse cx="168" cy="108" rx="4.5" ry="7.5" transform="rotate(-28 168 108)"/>
-          </g>
-          <line x1="177" y1="51" x2="177" y2="69" stroke="#a9713a" stroke-width="8" stroke-linecap="round"/>
-          <path d="M169 15 L118 60 L169 105" fill="none" stroke="#fff0c4" stroke-width="1.6" stroke-opacity="0.9"/>
-          <g>
-            <line x1="118" y1="60" x2="252" y2="60" stroke="#6f4322" stroke-width="3.4" stroke-linecap="round"/>
-            <g fill="#ff6a4d">
-              <path d="M146 59 C 137 55, 129 50, 123 47 C 128 53, 133 58, 144 61 Z"/>
-              <path d="M144 61 C 135 65, 128 69, 122 72 C 128 66, 134 63, 146 60 Z"/>
-            </g>
-            <g stroke="#ffb199" stroke-width="1.4" stroke-linecap="round">
-              <line x1="129" y1="54" x2="137" y2="60"/><line x1="128" y1="66" x2="136" y2="60"/>
-            </g>
-            <path d="M244 49 L272 60 L244 71 L252 60 Z" fill="#ffd27a" stroke="#a9713a" stroke-width="1" stroke-linejoin="round"/>
-          </g>
-          <g filter="url(#da-glow)">
-            <path d="M262 60 C 279 43, 305 49, 314 60 C 305 71, 279 77, 262 60 Z" fill="url(#da-flame)"/>
-            <path d="M268 60 C 281 49, 297 53, 306 60 C 297 67, 281 71, 268 60 Z" fill="#ffe98a"/>
-            <path d="M308 60 C 314 53, 317 54, 318 50 C 318 58, 314 64, 308 60 Z" fill="#ff9a3d"/>
-          </g>
-        </svg>
-      </span>
-      <span class="top"><h2>Da&#347;&#257;nana</h2><span class="tag">Mythic</span></span>
-      <p>A R&#257;m&#257;ya&#7751;a astra-duel. Counter R&#257;va&#7751;a's divine missiles, chant to restore your tejas, loose the Brahm&#257;stra.</p>
-      <span class="foot"><span class="meta">Solo &middot; Story mode</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
-    </a>
+      </div>
+    </section>
 
   </main>
-
-  <p class="empty" id="empty">No games in that category yet.</p>
 
   <footer>
     <span>&copy; Kreeda &middot; Free browser games, no sign-up.</span>
     <span class="spacer"></span>
+    <span id="build-stamp" hidden></span>
     <a href="https://github.com/sudhir-patavardhan/browser-games">Source on GitHub</a>
   </footer>
 </div>
 
 <script src="analytics.js"></script>
+<script>
+/* Service worker registration — same protocol guard as analytics.js and for the same
+   reason: registering on file:// throws (a service worker requires an http/https
+   origin), and this repo is built to be opened straight off disk, so doing nothing
+   there is the correct behavior, not a bug to fix. Registered on `load` rather than
+   immediately so it can never compete with first paint. */
+(function(){
+  if (!('serviceWorker' in navigator)) return;
+  try{
+    if (location.protocol === 'file:') return;
+    addEventListener('load', function(){
+      try{ navigator.serviceWorker.register('/sw.js'); }catch(e){}
+    });
+  }catch(e){}
+})();
+</script>
+<script>
+/* Build stamp — document.lastModified is the Last-Modified header of the HTML
+   actually being rendered, which on GitHub Pages is when this file was last
+   deployed. Because a service-worker cache keeps the original headers, the stamp
+   is honest either way: it names the build you are LOOKING AT, not the newest one
+   on the server — exactly the question "did my change get published?" needs
+   answered. Wrapped in try/catch and hidden-by-default because a stamp must never
+   be able to break the page, and a nonsense date is worse than none. */
+(function(){
+  try{
+    var d = new Date(document.lastModified);
+    if (isNaN(d.getTime())) return;
+    var el = document.getElementById('build-stamp');
+    el.textContent = 'Updated ' + d.toLocaleString(undefined, {
+      day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'
+    });
+    el.hidden = false;
+  }catch(e){}
+})();
+</script>
 <script>
 (function(){
   /* Sticky bar gets its background only once you've scrolled past the top, so the
@@ -756,42 +1285,146 @@
   measure();
   addEventListener('resize', measure, {passive:true});
 
-  /* Category filter. Pure DOM, no re-render — the cards are in the HTML so they
-     are in the crawler's index and on screen before this script runs. */
-  var grid = document.getElementById('grid');
-  var empty = document.getElementById('empty');
+  /* Chips jump to their rail rather than filtering: with every game visible in a
+     shelf there is nothing left to hide, and a jump keeps the chip useful as a table
+     of contents for a page that is now taller than one screen. scroll-margin-top on
+     .rail keeps the rail head clear of the sticky bar + chip strip. */
   var chips = [].slice.call(document.querySelectorAll('.chip'));
-  var cards = [].slice.call(grid.querySelectorAll('.card'));
-
-  function apply(cat){
-    var shown = 0;
-    cards.forEach(function(c){
-      var hit = (cat === 'all' || c.dataset.cat === cat);
-      c.hidden = !hit;
-      if (hit) shown++;
-    });
-    empty.style.display = shown ? 'none' : 'block';
-    chips.forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.cat === cat)); });
-  }
-
   chips.forEach(function(b){
     b.addEventListener('click', function(){
-      apply(b.dataset.cat);
-      if (window.bgTrack) bgTrack('filter_select', { category: b.dataset.cat });
+      var rail = document.getElementById(b.dataset.rail);
+      if (rail) rail.scrollIntoView({ behavior:'smooth', block:'start' });
+      if (window.bgTrack) bgTrack('rail_jump', { rail: b.dataset.rail });
     });
   });
 
   /* Which game did the visit actually turn into? Without this you are paying for
-     traffic you cannot attribute past the landing page. */
-  cards.forEach(function(c, i){
+     traffic you cannot attribute past the landing page. Position is within the
+     card's own rail — "third card on the Together shelf" is the number that tells
+     you whether a shelf's ordering works. */
+  var cards = [].slice.call(document.querySelectorAll('.rails .card'));
+  cards.forEach(function(c){
     c.addEventListener('click', function(){
+      var rail = c.closest ? c.closest('.rail') : null;
+      var row = c.closest ? c.closest('.rail-row') : null;
       if (window.bgTrack) bgTrack('game_click', {
         game_id: c.dataset.game,
         category: c.dataset.cat,
-        position: i + 1,
+        rail: rail ? rail.id.replace(/^rail-/, '') : 'billboard',
+        position: row ? [].indexOf.call(row.children, c) + 1 : 1,
         featured: c.classList.contains('featured') ? 1 : 0
       });
     });
+  });
+})();
+</script>
+
+<script>/* ========================= the daily loop, surfaced =========================
+   Read-only, always. This script never writes a key: the games own that ledger
+   (see /DAILY.md) and a landing page that wrote to it could corrupt a real streak
+   from a page nobody was playing on.
+
+   What changed in the redesign: the lane above ships filled, so this no longer
+   BUILDS anything — it decorates. Three rules survive from the version it replaces
+   and all three are about refusing to overstate what storage says:
+
+   1. A day-stamped value from another day is worth zero, not stale-but-usable.
+      Yesterday's dbest is not today's best; a kreeda.streak stamped any day but
+      today is not a live streak and shows nothing at all.
+   2. Anything unparseable is absent. Garbage never reaches the document.
+   3. Storage is evidence of what a player did, never of what exists. The lane's
+      three grids are in the markup; a junk key cannot add a fourth.                */
+(function(){
+  var lane = document.querySelector('.lane');
+  var grid = document.getElementById('rails');
+  if (!lane || !grid) return;
+
+  function read(k){ try{ return localStorage.getItem(k) || ''; }catch(e){ return ''; } }
+
+  var today = (function(){
+    var d = new Date(), p = function(n){ return String(n).padStart(2,'0'); };
+    return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+  })();
+
+  /* "2026-08-27|1240" -> {day, n}. Rule 2 lives here: a row without a well-formed
+     date is null, and a figure that is not a sane number lands on -1 rather than
+     reaching the page as "NaN" or "undefined". */
+  function stamped(raw){
+    var i = raw.indexOf('|');
+    if (i < 0) return null;
+    var day = raw.slice(0, i);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+    var n = +raw.slice(i + 1);
+    return { day: day, n: (isFinite(n) && n >= 0 && n < 1e15) ? n : -1 };
+  }
+  function num(n){ try{ return Math.round(n).toLocaleString(); }catch(e){ return String(Math.round(n)); } }
+
+  var TICK  = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>';
+  var FLAME = '<svg viewBox="0 0 14 16" fill="currentColor" aria-hidden="true"><path d="M7.7 0c.5 2.8-1.6 4-3.1 5.7-.5-.8-.6-1.7-.6-1.7C2.3 5.5 1 7.4 1 9.5 1 13 3.7 16 7 16s6-3 6-6.5C13 5.9 10.4 3.4 7.7 0zM7 14c-1.5 0-2.6-1.2-2.6-2.7 0-1 .4-1.8 1.4-2.9.2.9.7 1.4.7 1.4 1-1.2 1.5-2 1.4-3.3.9 1.2 1.7 2.4 1.7 3.5C9.6 12.5 8.5 14 7 14z"/></svg>';
+
+  var doneToday = read('kreeda.daily.' + today).split(',');
+
+  /* ---- the lane's own tiles ------------------------------------------------ */
+  var doneCount = 0, total = 0;
+  [].forEach.call(lane.querySelectorAll('[data-daily]'), function(tile){
+    total++;
+    var slug  = tile.getAttribute('data-daily');
+    var best  = stamped(read(slug + '.dbest'));
+    var done  = doneToday.indexOf(slug) >= 0 || (best && best.day === today);
+    var state = tile.querySelector('.tile-state');
+    if (!done || !state) return;
+    doneCount++;
+    tile.classList.add('done');
+    /* Rule 1: only today's row can supply today's figure, so a dbest from any other
+       day shows the tick with no number rather than yesterday's score dressed up as
+       this morning's. */
+    var score = (best && best.day === today && best.n >= 0) ? best.n : -1;
+    state.innerHTML = TICK;
+    state.appendChild(document.createTextNode(score >= 0 ? ('Done · ' + num(score)) : 'Done'));
+  });
+
+  var note = document.getElementById('laneNote');
+  if (note && doneCount) {
+    note.textContent = doneCount >= total ? 'All done · new set at midnight'
+                                          : (doneCount + ' of ' + total + ' done');
+  }
+
+  /* ---- the streak ---------------------------------------------------------- */
+  /* Shown only when stamped today. A streak the player can still save by playing
+     tonight is deliberately NOT advertised here: DAILY.md's "worth zero, not
+     stale-but-usable" rule is unconditional, and the games' own HUDs read it the
+     same way. A landing page claiming a streak the game itself denies is the worse
+     failure of the two. */
+  var s = stamped(read('kreeda.streak'));
+  var streak = (s && s.day === today && s.n > 0) ? s.n : 0;
+  if (streak >= 2) {
+    var pill = document.createElement('span');
+    pill.className = 'streak';
+    pill.innerHTML = FLAME;
+    pill.appendChild(document.createTextNode(num(streak) + '-day streak'));
+    var h = lane.querySelector('.lane-head h2');
+    if (h && h.parentNode) h.parentNode.insertBefore(pill, h.nextSibling);
+  }
+
+  /* ---- per-card state on the grid ------------------------------------------ */
+  /* Storage is the evidence of which games have a daily at all: a card that has ever
+     written <slug>.dbest or <slug>.streak has one, a card that never has does not.
+     A game gaining a daily later lights up here with no edit to this file. The slug
+     set is intersected with cards actually in the document, so a junk key can never
+     paint a badge on nothing. */
+  [].forEach.call(grid.querySelectorAll('.card'), function(card){
+    var slug = card.getAttribute('data-game');
+    if (!slug) return;
+    var best = stamped(read(slug + '.dbest'));
+    var run  = stamped(read(slug + '.streak'));
+    var listed = doneToday.indexOf(slug) >= 0;
+    if (!best && !run && !listed) return;
+    var done = listed || (best && best.day === today);
+    var score = (best && best.day === today && best.n >= 0) ? best.n : -1;
+    var pill = document.createElement('span');
+    pill.className = 'dstat' + (done ? ' done' : '');
+    pill.textContent = done ? (score >= 0 ? ('Daily ' + num(score)) : 'Daily done') : 'Daily ready';
+    card.appendChild(pill);
   });
 })();
 </script>
@@ -807,18 +1440,344 @@
     "@type": "ItemList",
     "name": "Games on Kreeda",
     "itemListElement": [
-      {"@type":"ListItem","position":1,"item":{"@type":"VideoGame","name":"Drift","url":"https://kreeda.games/drift/","genre":"Racing","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
-      {"@type":"ListItem","position":2,"item":{"@type":"VideoGame","name":"Carrom","url":"https://kreeda.games/carrom/","genre":"Board","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
-      {"@type":"ListItem","position":3,"item":{"@type":"VideoGame","name":"Break Room","url":"https://kreeda.games/break-room/","genre":"Sports","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
-      {"@type":"ListItem","position":4,"item":{"@type":"VideoGame","name":"Chroma Blocks","url":"https://kreeda.games/chroma-blocks/","genre":"Puzzle","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
-      {"@type":"ListItem","position":5,"item":{"@type":"VideoGame","name":"Blackjack","url":"https://kreeda.games/blackjack/","genre":"Card","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
-      {"@type":"ListItem","position":6,"item":{"@type":"VideoGame","name":"Last 16","url":"https://kreeda.games/last-16/","genre":"Sports","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
-      {"@type":"ListItem","position":7,"item":{"@type":"VideoGame","name":"Road Rumble","url":"https://kreeda.games/road-rumble/","genre":"Racing","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
-      {"@type":"ListItem","position":8,"item":{"@type":"VideoGame","name":"Fairway Four","url":"https://kreeda.games/fairway-four/","genre":"Sports","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
-      {"@type":"ListItem","position":9,"item":{"@type":"VideoGame","name":"Deadpoint","url":"https://kreeda.games/deadpoint/","genre":"Action","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
-      {"@type":"ListItem","position":10,"item":{"@type":"VideoGame","name":"Ennead","url":"https://kreeda.games/ennead/","genre":"Strategy","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
-      {"@type":"ListItem","position":11,"item":{"@type":"VideoGame","name":"Daśānana","url":"https://kreeda.games/dasanana/","genre":"Action","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
-      {"@type":"ListItem","position":12,"item":{"@type":"VideoGame","name":"Drift MP","url":"https://kreeda.games/drift-mp/","genre":"Racing","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","playMode":"MultiPlayer","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}}
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Drift",
+          "url": "https://kreeda.games/drift/",
+          "genre": "Racing",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Carrom",
+          "url": "https://kreeda.games/carrom/",
+          "genre": "Board",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Break Room",
+          "url": "https://kreeda.games/break-room/",
+          "genre": "Sports",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 4,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Chroma Blocks",
+          "url": "https://kreeda.games/chroma-blocks/",
+          "genre": "Puzzle",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 5,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Blackjack",
+          "url": "https://kreeda.games/blackjack/",
+          "genre": "Card",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 6,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Last 16",
+          "url": "https://kreeda.games/last-16/",
+          "genre": "Sports",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 7,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Road Rumble",
+          "url": "https://kreeda.games/road-rumble/",
+          "genre": "Racing",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 8,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Fairway Four",
+          "url": "https://kreeda.games/fairway-four/",
+          "genre": "Sports",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 9,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Ennead",
+          "url": "https://kreeda.games/ennead/",
+          "genre": "Strategy",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 10,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Daśānana",
+          "url": "https://kreeda.games/dasanana/",
+          "genre": "Action",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 11,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Valence",
+          "url": "https://kreeda.games/valence/",
+          "genre": "Educational",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "playMode": "SinglePlayer",
+          "educationalUse": "Chemistry revision",
+          "typicalAgeRange": "14-18",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 12,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Quanta",
+          "url": "https://kreeda.games/quanta/",
+          "genre": "Educational",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "playMode": "SinglePlayer",
+          "educationalUse": "Physics revision",
+          "typicalAgeRange": "14-18",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 13,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Radian",
+          "url": "https://kreeda.games/radian/",
+          "genre": "Educational",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "playMode": "SinglePlayer",
+          "educationalUse": "Trigonometry revision",
+          "typicalAgeRange": "14-18",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 14,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Sync",
+          "url": "https://kreeda.games/sync/",
+          "genre": "Party",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "playMode": "MultiPlayer",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 15,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Windows",
+          "url": "https://kreeda.games/windows/",
+          "genre": "Party",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "playMode": "MultiPlayer",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 16,
+        "item": {
+          "@type": "VideoGame",
+          "name": "The Auction",
+          "url": "https://kreeda.games/auction/",
+          "genre": "Party",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "playMode": "MultiPlayer",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 17,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Fathom",
+          "url": "https://kreeda.games/fathom/",
+          "genre": "Party",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "playMode": "MultiPlayer",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 18,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Split",
+          "url": "https://kreeda.games/split/",
+          "genre": "Party",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "playMode": "MultiPlayer",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 19,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Garage",
+          "url": "https://kreeda.games/garage/",
+          "genre": "Educational",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "playMode": "SinglePlayer",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      }
     ]
   }
 }

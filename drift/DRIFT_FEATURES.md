@@ -3,7 +3,22 @@
 A running log of features added by the automated improvement loop, newest first. One entry per feature:
 what it is, why it earns its place, and how it's defended.
 
-## The county isn't one county — rain, snow and desert biomes (2026-08-02)
+## The county is one county again — biomes removed (2026-08-05)
+
+**What.** The rain-belt, snow-country and desert biomes (the entry below) are **removed**: the endless
+road is temperate farmland the whole way, in both lenses. The whole zone machinery went with them —
+`bioZone`/`bioMix`/`bioState`, the per-biome palettes and blend helpers, the snow/dust overlays and
+ambient veil, the desert scrub/rock flora and the snow/rain crown dressing.
+
+**What stays.** The **daily rain day** is weather, not a biome, and survives untouched: `seedWet` still
+draws the forecast from the day's seed, `g.wet` still taxes grip 12% and the brakes 15%, soaks the tarmac
+in both views, overcasts the sky, flies the `🌧 WET ROAD` HUD flag, and the RAIN DANCER badge still pays.
+The `weather` suite defends all of it as before.
+
+**Housekeeping.** The `biomes` verify suite is deleted (its subject no longer exists) and the harness
+entry points no longer need a temperate lock — the world simply is temperate. `__drift.bio` is gone.
+
+## The county isn't one county — rain, snow and desert biomes (2026-08-02) — REMOVED 2026-08-05, see above
 
 **What.** The endless road now drives through **four landscapes**: the existing temperate farmland, a
 **rain belt**, **snow country**, and **desert** — in ~5 km zones with ~1 km crossfade borders, all of it a

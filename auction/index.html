@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Auction — Kreeda</title>
+<meta name="description" content="100 coins. Ten things people want from life. You can't fund them all. A two-player pass-the-phone game about what you value — bid in private, reveal together.">
+<link rel="canonical" href="https://kreeda.games/auction/">
+<meta name="theme-color" content="#0e2a1f">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/auction/">
+<meta property="og:title" content="The Auction — Kreeda">
+<meta property="og:description" content="100 coins. Ten things people want from life. You can't fund them all. Bid in private, reveal together.">
+<meta property="og:image" content="https://kreeda.games/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Auction — Kreeda">
+<meta name="twitter:description" content="100 coins. Ten things people want from life. You can't fund them all. Bid in private, reveal together.">
+<meta name="twitter:image" content="https://kreeda.games/og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"The Auction","description":"100 coins. Ten things people want from life. You can't fund them all. A two-player pass-the-phone game about what you value — bid in private, reveal together.","url":"https://kreeda.games/auction/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+<style>
+/* ============================ tokens ============================
+   An auction house after hours: deep felt table, brass lamp, gold coin light. One committed
+   dark aesthetic — the felt IS the identity, so there is no light theme to negotiate with.
+   Every colour lives here once; nothing downstream invents a hex. */
+:root{
+  --felt:#0e2a1f;        /* the table */
+  --felt-deep:#081b13;   /* the room behind it */
+  --felt-edge:#163d2c;
+  --panel:#123526;       /* raised card on the felt */
+  --panel-2:#0d2a1d;
+  --rule:rgba(244,201,93,.22);
+  --gold:#f4c95d;        /* coin light — headings, purses, bar A */
+  --gold-deep:#c99a2e;
+  --ivory:#f4efe2;       /* body ink */
+  --ivory-dim:#b9b39f;   /* secondary ink */
+  --p1:#f4c95d;          /* player 1 is always gold */
+  --p2:#7fd4b0;          /* player 2 is mint — reads on felt, never fights the gold */
+  --good:#8fe3b3;
+  --warn:#f0a35e;
+  --bad:#f08a7a;
+  --shade:rgba(3,12,8,.72);
+  --shadow:0 12px 34px rgba(0,0,0,.45);
+}
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  /* Explicit background is mandatory — a transparent body would borrow the host's theme. */
+  background:
+    radial-gradient(120% 60% at 50% -10%, #1a4530 0%, transparent 60%),
+    linear-gradient(180deg, var(--felt-deep) 0%, var(--felt) 42%, var(--felt-deep) 100%);
+  background-attachment:fixed;
+  color:var(--ivory);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;          /* guard only — nothing wide lives outside its own scroll box */
+  -webkit-text-size-adjust:100%;
+}
+.wrap{
+  max-width:560px; margin:0 auto;
+  padding:max(12px, env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom));
+}
+button{ font-family:inherit; }
+button:focus-visible, input:focus-visible, summary:focus-visible{
+  outline:3px solid var(--gold); outline-offset:2px; border-radius:6px;
+}
+
+/* ============================ chrome ============================ */
+header.top{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0 12px; min-height:40px; }
+.wordmark{ font-size:15px; font-weight:900; letter-spacing:3px; text-transform:uppercase; color:var(--gold); }
+.wordmark small{ display:block; font-size:9px; letter-spacing:2.5px; color:var(--ivory-dim); font-weight:700; }
+.homebtn{
+  background:var(--panel); color:var(--ivory); border:1px solid var(--rule); border-radius:12px;
+  min-width:44px; min-height:44px; padding:8px 12px; font-size:15px; font-weight:700; cursor:pointer;
+}
+.homebtn:active{ transform:translateY(1px); }
+
+/* ============================ shared bits ============================ */
+.card{
+  background:var(--panel); border:1px solid var(--rule); border-radius:18px;
+  padding:18px 16px; box-shadow:var(--shadow);
+}
+.btn{
+  display:block; width:100%; border:none; border-radius:14px; cursor:pointer;
+  padding:15px 18px; font-size:17px; font-weight:800; min-height:52px;
+  background:linear-gradient(180deg, var(--gold) 0%, var(--gold-deep) 100%);
+  color:#241a04; box-shadow:0 4px 0 rgba(0,0,0,.35);
+}
+.btn:active{ transform:translateY(2px); box-shadow:0 2px 0 rgba(0,0,0,.35); }
+.btn:disabled{ opacity:.42; cursor:default; transform:none; box-shadow:0 4px 0 rgba(0,0,0,.35); }
+.btn.ghost{
+  background:transparent; color:var(--ivory); border:1px solid var(--rule); box-shadow:none;
+}
+.btn.ghost:active{ transform:translateY(1px); }
+.btn + .btn{ margin-top:10px; }
+.dim{ color:var(--ivory-dim); }
+.small{ font-size:12.5px; line-height:1.5; }
+
+/* screens swap by full re-render into #stage; the fade is cosmetic, the swap is the privacy
+   mechanism — old inputs leave the DOM synchronously, before the new screen ever paints. */
+#stage{ animation:screenIn .28s ease; }
+@keyframes screenIn{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+
+/* ============================ title ============================ */
+.hero{ text-align:center; padding:14px 0 4px; }
+.hero svg{ width:120px; height:96px; display:block; margin:0 auto 6px; }
+h1.gametitle{
+  margin:0; font-size:40px; font-weight:900; letter-spacing:1px; color:var(--gold);
+  text-shadow:0 3px 0 rgba(0,0,0,.4);
+}
+h1.gametitle small{
+  display:block; font-size:12px; font-weight:700; letter-spacing:4px; text-transform:uppercase;
+  color:var(--ivory-dim); margin-top:4px; text-shadow:none;
+}
+.pitch{ text-align:center; font-size:15.5px; line-height:1.5; margin:10px auto 18px; max-width:420px; color:var(--ivory); }
+.pitch b{ color:var(--gold); }
+.namesrow{ display:flex; gap:10px; margin-bottom:12px; }
+.namefield{ flex:1; min-width:0; }
+.namefield label{
+  display:block; font-size:10.5px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--ivory-dim); margin:0 0 5px 2px;
+}
+.namefield input{
+  width:100%; background:var(--panel-2); color:var(--ivory); border:1px solid var(--rule);
+  border-radius:12px; padding:12px; font-size:16px; font-weight:700; min-height:48px;
+}
+.namefield.f1 input{ border-bottom:3px solid var(--p1); }
+.namefield.f2 input{ border-bottom:3px solid var(--p2); }
+details.how{ margin:14px 0; border:1px solid var(--rule); border-radius:14px; background:var(--panel-2); }
+details.how summary{
+  cursor:pointer; padding:13px 14px; font-weight:800; font-size:14px; list-style:none; min-height:48px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+details.how summary::-webkit-details-marker{ display:none; }
+details.how summary::after{ content:"+"; font-size:20px; color:var(--gold); }
+details.how[open] summary::after{ content:"–"; }
+details.how ul{ margin:0; padding:0 16px 14px 30px; font-size:13.5px; line-height:1.65; color:var(--ivory-dim); }
+.legalese{ text-align:center; margin-top:18px; }
+.legalese p{ margin:4px 0; font-size:11px; color:var(--ivory-dim); opacity:.85; }
+
+/* ============================ hand-off ============================ */
+.handoff{ text-align:center; padding:12vh 0 0; }
+.handoff .passline{ font-size:15px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--ivory-dim); }
+.handoff .who{ font-size:38px; font-weight:900; margin:14px 0 6px; word-break:break-word; }
+.handoff .who.c1{ color:var(--p1); } .handoff .who.c2{ color:var(--p2); }
+.handoff .task{ font-size:15px; color:var(--ivory-dim); margin:0 auto 26px; max-width:340px; line-height:1.5; }
+.handoff .tilt{ margin-top:22px; font-size:13px; color:var(--ivory-dim); }
+.handoff svg{ width:74px; height:74px; margin:0 auto 10px; display:block; opacity:.9; }
+
+/* ============================ bidding ============================ */
+.purse{
+  position:sticky; top:max(8px, env(safe-area-inset-top)); z-index:10;
+  background:linear-gradient(180deg,#17402d,#123526); border:1px solid var(--rule);
+  border-radius:16px; padding:10px 14px; box-shadow:var(--shadow);
+  display:flex; align-items:center; gap:12px; margin-bottom:12px;
+}
+.purse .coin-ic{ width:34px; height:34px; flex:none; }
+.purse .left{ min-width:0; }
+.purse .left b{ display:block; font-size:26px; font-weight:900; color:var(--gold); line-height:1; }
+.purse .left span{ font-size:10.5px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--ivory-dim); }
+.purse .bidder{ margin-left:auto; text-align:right; font-size:12.5px; color:var(--ivory-dim); font-weight:700; }
+.purse .bidder b{ display:block; font-size:15px; }
+.purse .bidder.c1 b{ color:var(--p1); } .purse .bidder.c2 b{ color:var(--p2); }
+.purse.pulse b.amount{ animation:pursePop .25s ease; }
+@keyframes pursePop{ 40%{ transform:scale(1.16); } }
+
+.lot{
+  display:flex; align-items:center; gap:10px;
+  background:var(--panel); border:1px solid var(--rule); border-radius:14px;
+  padding:10px 12px; margin-bottom:9px;
+}
+.lot .info{ flex:1; min-width:0; }
+.lot .info b{ display:block; font-size:15.5px; font-weight:800; }
+.lot .info span{ display:block; font-size:11.5px; color:var(--ivory-dim); line-height:1.35; margin-top:2px; }
+.lot.funded{ border-color:rgba(244,201,93,.55); background:linear-gradient(180deg,#16402c,#123526); }
+.stepper{ display:flex; align-items:center; gap:6px; flex:none; }
+.stepper button{
+  width:44px; height:44px; border-radius:12px; border:1px solid var(--rule);
+  background:var(--panel-2); color:var(--gold); font-size:24px; font-weight:900; cursor:pointer;
+  line-height:1; padding:0; touch-action:none; /* long-press repeat must not trigger scroll/zoom */
+  user-select:none; -webkit-user-select:none;
+}
+.stepper button:active{ background:#0a2015; }
+.stepper button:disabled{ opacity:.3; cursor:default; }
+.stepper .val{
+  width:44px; text-align:center; font-size:19px; font-weight:900; font-variant-numeric:tabular-nums;
+}
+.stepper .val.zero{ color:var(--ivory-dim); opacity:.6; }
+.stepper .val.bump{ animation:valBump .22s ease; }
+@keyframes valBump{ 40%{ transform:scale(1.25); } }
+.bidfoot{ margin-top:14px; }
+.bidfoot .note{ text-align:center; font-size:12.5px; color:var(--ivory-dim); margin:0 0 10px; }
+
+/* lock-in / abandon confirm overlay */
+.scrim{
+  position:fixed; inset:0; background:var(--shade); backdrop-filter:blur(3px);
+  display:flex; align-items:center; justify-content:center; z-index:40; padding:20px;
+  animation:fadeIn .2s ease;
+}
+@keyframes fadeIn{ from{ opacity:0; } }
+.modal{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:20px;
+  max-width:340px; width:100%; box-shadow:var(--shadow); text-align:center; }
+.modal h2{ margin:0 0 8px; font-size:19px; }
+.modal p{ margin:0 0 16px; font-size:14px; color:var(--ivory-dim); line-height:1.5; }
+
+/* ============================ reveal ============================ */
+.stageheading{ text-align:center; margin:6px 0 14px; }
+.stageheading h2{ margin:0; font-size:23px; font-weight:900; color:var(--gold); }
+.stageheading p{ margin:5px 0 0; font-size:13px; color:var(--ivory-dim); }
+.rlot{
+  background:var(--panel); border:1px solid var(--rule); border-radius:14px;
+  padding:12px 14px; margin-bottom:10px; animation:lotIn .4s ease;
+}
+@keyframes lotIn{ from{ opacity:0; transform:translateY(14px); } }
+.rlot .rhead{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:8px; }
+.rlot .rhead b{ font-size:15.5px; }
+.verdict{ font-size:11px; font-weight:800; letter-spacing:.6px; text-transform:uppercase;
+  padding:3px 9px; border-radius:999px; border:1px solid; white-space:nowrap; }
+.verdict.match{ color:var(--good); border-color:var(--good); }
+.verdict.split{ color:var(--bad); border-color:var(--bad); }
+.verdict.near{ color:var(--warn); border-color:var(--warn); }
+.verdict.pass{ color:var(--ivory-dim); border-color:var(--ivory-dim); }
+.bidrow{ display:flex; align-items:center; gap:8px; margin:5px 0; }
+.bidrow .pname{ width:76px; flex:none; font-size:12px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bidrow .pname.c1{ color:var(--p1); } .bidrow .pname.c2{ color:var(--p2); }
+.bidrow .track{ flex:1; height:16px; background:var(--panel-2); border-radius:8px; overflow:hidden; }
+.bidrow .bar{ height:100%; width:0; border-radius:8px; transition:width .7s cubic-bezier(.22,.9,.3,1); }
+.bidrow .bar.b1{ background:linear-gradient(90deg,var(--gold-deep),var(--gold)); }
+.bidrow .bar.b2{ background:linear-gradient(90deg,#3f9c76,var(--p2)); }
+.bidrow .amt{ width:30px; flex:none; text-align:right; font-size:13.5px; font-weight:900; font-variant-numeric:tabular-nums; }
+.rlot .subline{ font-size:12px; color:var(--ivory-dim); margin-top:7px; line-height:1.45; }
+
+/* ============================ results ============================ */
+.meterblock{ margin:14px 0; }
+.meterblock .mlabel{ display:flex; justify-content:space-between; align-items:baseline; font-size:12px;
+  font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--ivory-dim); margin-bottom:6px; }
+.meterblock .mlabel b{ font-size:20px; color:var(--gold); letter-spacing:0; }
+.meter{ height:14px; background:var(--panel-2); border-radius:7px; overflow:hidden; border:1px solid var(--rule); }
+.meter .fill{ height:100%; width:0; background:linear-gradient(90deg,var(--gold-deep),var(--gold));
+  border-radius:7px; transition:width 1.1s cubic-bezier(.22,.9,.3,1); }
+.phrase{ text-align:center; font-size:17px; font-weight:800; margin:10px 0 2px; }
+.phrase-sub{ text-align:center; font-size:13px; color:var(--ivory-dim); margin:0 0 6px; line-height:1.5; }
+.mirror{ margin:14px 0 6px; }
+.mirrow{ display:flex; align-items:center; margin:4px 0; gap:0; }
+.mirrow .side{ flex:1; display:flex; align-items:center; min-width:0; }
+.mirrow .side.l{ justify-content:flex-end; }
+.mirrow .mbar{ height:12px; border-radius:6px; min-width:2px; }
+.mirrow .side.l .mbar{ background:linear-gradient(270deg,var(--gold-deep),var(--gold)); }
+.mirrow .side.r .mbar{ background:linear-gradient(90deg,#3f9c76,var(--p2)); }
+.mirrow .mname{ width:96px; flex:none; text-align:center; font-size:10.5px; font-weight:800;
+  color:var(--ivory-dim); text-transform:uppercase; letter-spacing:.3px; overflow:hidden;
+  white-space:nowrap; text-overflow:ellipsis; }
+.mirlegend{ display:flex; justify-content:space-between; font-size:11.5px; font-weight:800; margin-bottom:6px; padding:0 4px; }
+.mirlegend .n1{ color:var(--p1); } .mirlegend .n2{ color:var(--p2); }
+.callout{ background:var(--panel-2); border:1px solid var(--rule); border-radius:12px; padding:11px 13px;
+  margin:9px 0; font-size:13.5px; line-height:1.5; }
+.callout b{ color:var(--gold); }
+.callout.talk b{ color:var(--warn); }
+.resultdate{ text-align:center; font-size:11.5px; color:var(--ivory-dim); margin:10px 0 2px; }
+.toast{
+  position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+  background:var(--gold); color:#241a04; font-weight:800; font-size:14px; padding:10px 18px;
+  border-radius:999px; box-shadow:var(--shadow); z-index:60; animation:fadeIn .2s ease;
+}
+.copyfallback{ margin-top:10px; }
+.copyfallback textarea{
+  width:100%; height:120px; background:var(--panel-2); color:var(--ivory); border:1px solid var(--rule);
+  border-radius:10px; padding:10px; font-size:12px; font-family:ui-monospace,Menlo,Consolas,monospace;
+}
+
+/* proxy reveal */
+.guessline{ display:flex; align-items:center; gap:8px; font-size:13px; margin:6px 0; flex-wrap:wrap; }
+.guessline .tag{ font-size:10.5px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; padding:2px 7px;
+  border-radius:999px; border:1px solid; white-space:nowrap; }
+.guessline .tag.hit{ color:var(--good); border-color:var(--good); }
+.guessline .tag.close{ color:var(--warn); border-color:var(--warn); }
+.guessline .tag.miss{ color:var(--bad); border-color:var(--bad); }
+.readmeters .mlabel b{ font-size:18px; }
+.readmeters .m2 .fill{ background:linear-gradient(90deg,#3f9c76,var(--p2)); }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:.001ms !important; transition-duration:.001ms !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="wordmark">The Auction<small>Kreeda · Together</small></div>
+    <button class="homebtn" id="homeBtn" aria-label="Home / restart" hidden>⌂</button>
+  </header>
+  <main id="stage"></main>
+</div>
+
+<!-- analytics.js before the game script: track() below calls window.bgTrack synchronously and
+     the guard only swallows the call if bgTrack is honestly absent, not merely late. -->
+<script src="../analytics.js"></script>
+<script>
+"use strict";
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+
+/* ============================ content ============================ */
+const LOTS = [
+  { n:"Freedom",          f:"Answer to no one. Go where the day takes you." },
+  { n:"Security",         f:"The bills are paid and the door locks." },
+  { n:"Adventure",        f:"Unfamiliar places, unscripted days." },
+  { n:"Recognition",      f:"Your name known, your work seen." },
+  { n:"Deep friendships", f:"Two-in-the-morning phone-call people." },
+  { n:"Wealth",           f:"More than enough, with some left over." },
+  { n:"Peace of mind",    f:"A quiet head on the pillow." },
+  { n:"Creative work",    f:"Making things that didn't exist before." },
+  { n:"Family",           f:"The people who are yours, close by." },
+  { n:"Health",           f:"A body that keeps saying yes." },
+];
+const TOTAL = 100, STEP = 5;
+
+/* Alignment phrasing — bands are wide on purpose: the number is a conversation starter,
+   not a grade, so neighbouring pairs should not land in different worlds over 2 points. */
+function alignPhrase(a){
+  if (a >= 75) return { t:"Pulling the same direction",
+    s:"You walked into this auction with nearly the same shopping list." };
+  if (a >= 45) return { t:"Different engines, same car",
+    s:"You fund life differently — but plenty of your coins landed in the same places." };
+  return { t:"Two different maps",
+    s:"You are spending on genuinely different things. That's not a problem — it's material." };
+}
+
+/* ============================ storage (namespaced, never answers) ============================ */
+const LS = {
+  get(k){ try{ return localStorage.getItem("auction."+k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem("auction."+k, v); }catch(e){} },
+};
+function loadNames(){
+  try{
+    const raw = LS.get("names"); if (!raw) return null;
+    const arr = JSON.parse(raw);
+    if (Array.isArray(arr) && arr.length === 2) return arr.map(s => String(s).slice(0,12));
+  }catch(e){}
+  return null;
+}
+
+/* ============================ session state (in memory only — bids are personal) ============ */
+const S = {
+  names: loadNames() || ["Player 1","Player 2"],
+  bids: [null, null],       // bids[i] = player i's own allocation (array of 10)
+  proxy: [null, null],      // proxy[i] = player i's guess of the OTHER player's allocation
+  proxyPlayed: false,
+  completedMainTracked: false,
+  tiltHintShown: false,     // per-session on purpose: storage holds names + plays only
+  gen: 0,                   // screen generation — stale handlers (double-tap races) check this
+};
+
+const stage = document.getElementById("stage");
+const homeBtn = document.getElementById("homeBtn");
+
+/* Every screen render bumps the generation. Handlers created for screen N capture N and bail
+   if the world has moved on — this is the whole defence against double-taps racing a hand-off. */
+function render(html, showHome){
+  S.gen++;
+  stage.innerHTML = html;               // old inputs leave the DOM before anything new paints
+  homeBtn.hidden = !showHome;
+  window.scrollTo(0, 0);
+  return S.gen;
+}
+function on(id, fn){
+  const gen = S.gen, el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener("click", () => { if (S.gen !== gen) return; fn(); });
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ============================ svg motifs ============================ */
+const GAVEL_SVG = `
+<svg viewBox="0 0 120 96" aria-hidden="true">
+  <g fill="none" stroke="#f4c95d" stroke-width="5" stroke-linecap="round">
+    <rect x="30" y="14" width="40" height="22" rx="5" fill="#f4c95d" opacity=".92" transform="rotate(-30 50 25)"/>
+    <line x1="58" y1="38" x2="92" y2="72"/>
+  </g>
+  <g>
+    <ellipse cx="38" cy="82" rx="16" ry="6.5" fill="#c99a2e"/>
+    <ellipse cx="38" cy="78" rx="16" ry="6.5" fill="#f4c95d"/>
+    <ellipse cx="66" cy="86" rx="13" ry="5.5" fill="#c99a2e"/>
+    <ellipse cx="66" cy="82" rx="13" ry="5.5" fill="#f4c95d"/>
+    <ellipse cx="66" cy="82" rx="7" ry="2.6" fill="#c99a2e" opacity=".55"/>
+    <ellipse cx="38" cy="78" rx="9" ry="3.2" fill="#c99a2e" opacity=".55"/>
+  </g>
+</svg>`;
+const COIN_SVG = `
+<svg class="coin-ic" viewBox="0 0 36 36" aria-hidden="true">
+  <circle cx="18" cy="18" r="16" fill="#f4c95d"/>
+  <circle cx="18" cy="18" r="11.5" fill="none" stroke="#c99a2e" stroke-width="2.5"/>
+  <text x="18" y="24" text-anchor="middle" font-size="15" font-weight="900" fill="#7a5a10" font-family="inherit">K</text>
+</svg>`;
+const PASS_SVG = `
+<svg viewBox="0 0 74 74" aria-hidden="true">
+  <g fill="none" stroke="#f4c95d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="26" y="10" width="22" height="40" rx="5"/>
+    <path d="M14 60 q23 12 46 0" opacity=".7"/>
+    <path d="M54 54 l8 5 -8 5" opacity=".7"/>
+  </g>
+</svg>`;
+
+/* ============================ title ============================ */
+function showTitle(){
+  const [a,b] = S.names;
+  render(`
+    <div class="hero">${GAVEL_SVG}
+      <h1 class="gametitle">The Auction<small>values under scarcity</small></h1>
+    </div>
+    <p class="pitch"><b>100 coins.</b> Ten things people want from life. You can't fund them all —
+      so what you bid on says who you are.</p>
+    <div class="card">
+      <div class="namesrow">
+        <div class="namefield f1"><label for="nameA">Player 1</label>
+          <input id="nameA" maxlength="12" autocomplete="off" value="${esc(a)}" aria-label="Player 1 name"></div>
+        <div class="namefield f2"><label for="nameB">Player 2</label>
+          <input id="nameB" maxlength="12" autocomplete="off" value="${esc(b)}" aria-label="Player 2 name"></div>
+      </div>
+      <details class="how">
+        <summary>How it works</summary>
+        <ul>
+          <li>Each of you privately spreads <b>exactly 100 coins</b> across ten lots — freedom, security, family, wealth…</li>
+          <li>Pass the phone between turns. Nothing is shown until both purses are empty.</li>
+          <li>Then the gavel: lots revealed one by one, your bids side by side.</li>
+          <li>Optional round two — bid the way you think <i>they</i> did, and see how well you read each other.</li>
+        </ul>
+      </details>
+      <button class="btn" id="startBtn">Start the auction</button>
+    </div>
+    <div class="legalese">
+      <p>For fun and conversation — a game, not a psychological assessment.</p>
+      <p>Answers stay on this phone and are never uploaded.</p>
+    </div>
+  `, false);
+  on("startBtn", () => {
+    const nA = (document.getElementById("nameA").value.trim() || "Player 1").slice(0,12);
+    const nB = (document.getElementById("nameB").value.trim() || "Player 2").slice(0,12);
+    S.names = [nA, nB];
+    LS.set("names", JSON.stringify(S.names));
+    S.bids = [null,null]; S.proxy = [null,null]; S.proxyPlayed = false; S.completedMainTracked = false;
+    track("game_start", { mode:"main" });
+    showHandoff(0, "main");
+  });
+}
+
+/* ============================ hand-off ============================ */
+function showHandoff(player, mode){
+  const name = S.names[player];
+  const task = mode === "main"
+    ? "You'll spend your own 100 coins — in private."
+    : `You'll spend 100 coins the way you think <b class="${player===0?'':''}">${esc(S.names[1-player])}</b> just did.`;
+  const tilt = S.tiltHintShown ? "" : `<p class="tilt">tilt the phone away 👀</p>`;
+  S.tiltHintShown = true;
+  render(`
+    <div class="handoff">
+      ${PASS_SVG}
+      <p class="passline">Pass the phone to</p>
+      <p class="who c${player+1}">${esc(name)}</p>
+      <p class="task">${task}</p>
+      <button class="btn" id="readyBtn" style="max-width:340px;margin:0 auto;">I'm ${esc(name)} — show me</button>
+      ${tilt}
+    </div>
+  `, true);
+  on("readyBtn", () => showBid(player, mode));
+}
+
+/* ============================ bidding ============================ */
+function showBid(player, mode){
+  const name = S.names[player];
+  const alloc = new Array(LOTS.length).fill(0);
+  const heading = mode === "main"
+    ? `Spend <b>your</b> 100 coins`
+    : `Spend them as <b>${esc(S.names[1-player])}</b> would`;
+  const rows = LOTS.map((lot,i) => `
+    <div class="lot" id="lot${i}">
+      <div class="info"><b>${esc(lot.n)}</b><span>${esc(lot.f)}</span></div>
+      <div class="stepper">
+        <button type="button" id="dec${i}" aria-label="Remove 5 coins from ${esc(lot.n)}" disabled>−</button>
+        <span class="val zero" id="val${i}" aria-live="off">0</span>
+        <button type="button" id="inc${i}" aria-label="Add 5 coins to ${esc(lot.n)}">+</button>
+      </div>
+    </div>`).join("");
+  render(`
+    <div class="purse" id="purse">
+      ${COIN_SVG}
+      <div class="left"><b class="amount" id="purseAmt">${TOTAL}</b><span>coins left</span></div>
+      <div class="bidder c${player+1}"><span>bidding</span><b>${esc(name)}</b></div>
+    </div>
+    <p class="bidfoot note" style="margin:0 0 10px;">${heading} — steps of 5, hold to pour.</p>
+    ${rows}
+    <div class="bidfoot">
+      <p class="note" id="footNote">Empty the purse to lock in.</p>
+      <button class="btn" id="lockBtn" disabled>Lock in bids</button>
+    </div>
+  `, true);
+
+  const gen = S.gen;
+  const purseEl = document.getElementById("purse");
+  const purseAmt = document.getElementById("purseAmt");
+  const lockBtn = document.getElementById("lockBtn");
+  const footNote = document.getElementById("footNote");
+  const spent = () => alloc.reduce((s,v)=>s+v,0);
+
+  function paint(i){
+    const v = document.getElementById("val"+i);
+    v.textContent = alloc[i];
+    v.classList.toggle("zero", alloc[i] === 0);
+    v.classList.remove("bump"); void v.offsetWidth; v.classList.add("bump");
+    document.getElementById("lot"+i).classList.toggle("funded", alloc[i] > 0);
+    const left = TOTAL - spent();
+    purseAmt.textContent = left;
+    purseEl.classList.remove("pulse"); void purseEl.offsetWidth; purseEl.classList.add("pulse");
+    for (let j = 0; j < LOTS.length; j++){
+      document.getElementById("dec"+j).disabled = alloc[j] === 0;
+      document.getElementById("inc"+j).disabled = left === 0;
+    }
+    lockBtn.disabled = left !== 0;
+    footNote.textContent = left === 0 ? "Purse empty — the gavel is ready."
+      : `Empty the purse to lock in — ${left} to go.`;
+  }
+  function step(i, dir){
+    if (S.gen !== gen) return false;
+    const left = TOTAL - spent();
+    if (dir > 0 && left <= 0) return false;
+    if (dir < 0 && alloc[i] <= 0) return false;
+    alloc[i] += dir * Math.min(STEP, dir > 0 ? left : alloc[i]);
+    paint(i);
+    return true;
+  }
+
+  /* Chunky steppers: pointerdown steps once immediately, then repeats while held. The click
+     event still fires after pointerup, so a flag swallows that one echo — but a bare click with
+     no preceding pointerdown (keyboard Enter/Space) must still work. */
+  function wire(btn, i, dir){
+    let timer = null, delay = null, sawPointer = false;
+    const stop = () => { clearTimeout(delay); clearInterval(timer); delay = timer = null; };
+    btn.addEventListener("pointerdown", e => {
+      if (btn.disabled) return;
+      sawPointer = true;
+      e.preventDefault();
+      step(i, dir);
+      delay = setTimeout(() => { timer = setInterval(() => { if (!step(i, dir)) stop(); }, 110); }, 420);
+    });
+    ["pointerup","pointerleave","pointercancel"].forEach(ev => btn.addEventListener(ev, stop));
+    btn.addEventListener("click", () => {
+      if (sawPointer){ sawPointer = false; return; }
+      step(i, dir);
+    });
+  }
+  for (let i = 0; i < LOTS.length; i++){
+    wire(document.getElementById("inc"+i), i, +1);
+    wire(document.getElementById("dec"+i), i, -1);
+  }
+
+  lockBtn.addEventListener("click", () => {
+    if (S.gen !== gen || spent() !== TOTAL) return;
+    confirmModal("Lock in your bids?",
+      "You can't change them once the phone is passed.",
+      "Lock in", () => {
+        if (S.gen !== gen) return;   // a stale confirm must never commit into a moved-on session
+        if (mode === "main") S.bids[player] = alloc.slice();
+        else S.proxy[player] = alloc.slice();
+        advanceAfterBid(player, mode);
+      });
+  });
+}
+
+function advanceAfterBid(player, mode){
+  if (player === 0){ showHandoff(1, mode); return; }
+  // both committed — the reveal is joint, so gather the pair instead of hiding the screen
+  const [a,b] = S.names;
+  render(`
+    <div class="handoff">
+      ${GAVEL_SVG}
+      <p class="passline">Both purses are empty</p>
+      <p class="who" style="font-size:28px;">${esc(a)} <span class="dim" style="font-weight:400;">&amp;</span> ${esc(b)}</p>
+      <p class="task">Put your heads together — the gavel comes down lot by lot.</p>
+      <button class="btn" id="gavelBtn" style="max-width:340px;margin:0 auto;">Start the reveal</button>
+    </div>
+  `, true);
+  on("gavelBtn", () => mode === "main" ? showReveal() : showProxyReveal());
+}
+
+/* ============================ main reveal ============================ */
+function revealOrder(){
+  // combined-spend descending: the room's priorities come down first
+  return LOTS.map((_,i)=>i).sort((x,y) =>
+    (S.bids[0][y]+S.bids[1][y]) - (S.bids[0][x]+S.bids[1][x]) || x - y);
+}
+function lotVerdict(a,b){
+  if (a === 0 && b === 0) return { cls:"pass", label:"Both passed" };
+  const gap = Math.abs(a-b);
+  if (gap <= 10) return { cls:"match", label:"Aligned" };
+  if (gap >= 20) return { cls:"split", label:"Split" };
+  return { cls:"near", label:"Close" };
+}
+function showReveal(){
+  if (!S.bids[0] || !S.bids[1]) { showTitle(); return; }   // dead-end guard: never reveal a half-session
+  const order = revealOrder();
+  let idx = 0;
+  render(`
+    <div class="stageheading"><h2>The gavel comes down</h2>
+      <p>Lots in order of combined spend — tap to reveal each.</p></div>
+    <div id="lots" aria-live="polite"></div>
+    <button class="btn" id="nextBtn">Reveal the first lot</button>
+  `, true);
+  const gen = S.gen;
+  const lotsEl = document.getElementById("lots");
+  const nextBtn = document.getElementById("nextBtn");
+  nextBtn.addEventListener("click", () => {
+    if (S.gen !== gen) return;
+    if (idx >= order.length){ showResults(); return; }
+    // a fast double-tap must not swallow the last lot's reveal on its way to the verdict
+    nextBtn.disabled = true;
+    setTimeout(() => { if (S.gen === gen) nextBtn.disabled = false; }, 350);
+    const i = order[idx];
+    const a = S.bids[0][i], b = S.bids[1][i];
+    const v = lotVerdict(a,b);
+    let sub = "";
+    if (v.cls === "split"){
+      const hi = a > b ? 0 : 1;
+      sub = `<div class="subline"><b style="color:${hi===0?'var(--p1)':'var(--p2)'}">${esc(S.names[hi])}</b> wants this one more — worth asking why.</div>`;
+    } else if (v.cls === "pass"){
+      sub = `<div class="subline">Neither of you spent a coin here. Interesting in its own way.</div>`;
+    }
+    const div = document.createElement("div");
+    div.className = "rlot";
+    div.innerHTML = `
+      <div class="rhead"><b>${esc(LOTS[i].n)}</b><span class="verdict ${v.cls}">${v.label}</span></div>
+      <div class="bidrow"><span class="pname c1">${esc(S.names[0])}</span>
+        <span class="track"><span class="bar b1" data-w="${a}"></span></span><span class="amt">${a}</span></div>
+      <div class="bidrow"><span class="pname c2">${esc(S.names[1])}</span>
+        <span class="track"><span class="bar b2" data-w="${b}"></span></span><span class="amt">${b}</span></div>
+      ${sub}`;
+    lotsEl.prepend(div);
+    // bars start at 0 and grow after a frame so the transition actually runs
+    requestAnimationFrame(() => requestAnimationFrame(() =>
+      div.querySelectorAll(".bar").forEach(bar => { bar.style.width = bar.dataset.w + "%"; })));
+    idx++;
+    nextBtn.textContent = idx >= order.length ? "See the verdict" : `Next lot (${idx} of ${order.length})`;
+  });
+}
+
+/* ============================ analysis ============================ */
+function analysis(){
+  const A = S.bids[0], B = S.bids[1];
+  const sumDiff = A.reduce((s,v,i) => s + Math.abs(v - B[i]), 0);
+  const alignment = Math.round(100 - sumDiff / 2);
+  let topShared = -1, bestMin = -1, bestComb = -1;
+  let topGapIdx = 0, topGap = -1;
+  for (let i = 0; i < LOTS.length; i++){
+    const mn = Math.min(A[i],B[i]), comb = A[i]+B[i], gap = Math.abs(A[i]-B[i]);
+    if (mn > bestMin || (mn === bestMin && comb > bestComb)){ bestMin = mn; bestComb = comb; topShared = i; }
+    if (gap > topGap){ topGap = gap; topGapIdx = i; }
+  }
+  return { alignment, topShared: bestMin > 0 ? topShared : -1, topGapIdx, topGap };
+}
+
+function showResults(){
+  if (!S.bids[0] || !S.bids[1]) { showTitle(); return; }
+  const [nA,nB] = S.names;
+  const R = analysis();
+  const ph = alignPhrase(R.alignment);
+  const mir = LOTS.map((lot,i) => `
+    <div class="mirrow">
+      <div class="side l"><span class="mbar" style="width:${S.bids[0][i]}%"></span></div>
+      <div class="mname">${esc(lot.n)}</div>
+      <div class="side r"><span class="mbar" style="width:${S.bids[1][i]}%"></span></div>
+    </div>`).join("");
+  const sharedLine = R.topShared >= 0
+    ? `<div class="callout">Shared top priority: <b>${esc(LOTS[R.topShared].n)}</b> — you both put real money here.</div>`
+    : `<div class="callout">No lot got real coins from both of you — your money went to different tables entirely.</div>`;
+  const splitLine = R.topGap >= 20
+    ? `<div class="callout talk">Biggest split: <b>${esc(LOTS[R.topGapIdx].n)}</b> — ${esc(nA)} funded it
+        ${S.bids[0][R.topGapIdx]}, ${esc(nB)} put it at ${S.bids[1][R.topGapIdx]}. Ask about that.</div>`
+    : `<div class="callout">No dramatic splits — your biggest gap was only ${R.topGap} coins, on ${esc(LOTS[R.topGapIdx].n)}.</div>`;
+  const proxyBlock = S.proxyPlayed ? proxyResultsHtml() : "";
+  render(`
+    <div class="stageheading"><h2>${esc(nA)} &amp; ${esc(nB)}</h2><p>what the coins said</p></div>
+    <div class="card" aria-live="polite">
+      <div class="meterblock">
+        <div class="mlabel"><span>Alignment</span><b id="alignNum">0</b></div>
+        <div class="meter"><div class="fill" id="alignFill"></div></div>
+      </div>
+      <p class="phrase">${ph.t}</p>
+      <p class="phrase-sub">${ph.s}</p>
+      ${sharedLine}
+      ${splitLine}
+      <div class="mirror">
+        <div class="mirlegend"><span class="n1">${esc(nA)}</span><span class="n2">${esc(nB)}</span></div>
+        ${mir}
+      </div>
+      ${proxyBlock}
+      <p class="resultdate">The Auction · ${new Date().toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"})}</p>
+    </div>
+    ${S.proxyPlayed ? "" : `
+    <div class="card" style="margin-top:12px;">
+      <p class="small" style="margin:0 0 10px;"><b>Round two — Proxy mode.</b> Same lots, but this time you each
+        spend 100 coins the way you think the <i>other</i> one just did. Then we score your read.</p>
+      <button class="btn" id="proxyBtn">Play Proxy mode</button>
+    </div>`}
+    <div style="margin-top:12px;">
+      <button class="btn ghost" id="copyBtn">Copy result</button>
+      <button class="btn ghost" id="againBtn">Play again</button>
+      <button class="btn ghost" id="playersBtn">Change players</button>
+    </div>
+    <div id="copyOut"></div>
+  `, true);
+
+  // meter animates in after paint; the number counts alongside it
+  const gen = S.gen;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (S.gen !== gen) return;
+    document.getElementById("alignFill").style.width = R.alignment + "%";
+    const numEl = document.getElementById("alignNum");
+    const t0 = performance.now();
+    (function tick(t){
+      if (S.gen !== gen) return;
+      const k = Math.min(1, (t - t0) / 1100);
+      numEl.textContent = Math.round(R.alignment * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) requestAnimationFrame(tick);
+    })(t0);
+  }));
+
+  if (!S.completedMainTracked){
+    S.completedMainTracked = true;
+    try{ LS.set("plays", String((parseInt(LS.get("plays"),10) || 0) + 1)); }catch(e){}
+    track("game_complete", { alignment:R.alignment, top_gap:R.topGap, proxy_played:S.proxyPlayed ? 1 : 0 });
+  }
+
+  on("proxyBtn", () => {
+    track("game_start", { mode:"proxy" });
+    showHandoff(0, "proxy");
+  });
+  on("againBtn", () => confirmModal("Fresh auction?", "Same players, empty purses.", "Play again", () => {
+    S.bids = [null,null]; S.proxy = [null,null]; S.proxyPlayed = false; S.completedMainTracked = false;
+    track("game_start", { mode:"main" });
+    showHandoff(0, "main");
+  }));
+  on("playersBtn", showTitle);
+  on("copyBtn", copyResult(R));
+}
+
+/* ============================ proxy scoring & reveal ============================ */
+/* Read accuracy uses the same geometry as alignment: 100 − Σ|guess−actual|/2, so a perfect
+   read is 100 and "spent the coins on entirely different lots" bottoms out at 0. */
+function readScore(guess, actual){
+  return Math.round(100 - guess.reduce((s,v,i) => s + Math.abs(v - actual[i]), 0) / 2);
+}
+function guessTag(gap){
+  if (gap <= 5)  return { cls:"hit",   label:"Nailed it" };
+  if (gap <= 15) return { cls:"close", label:"Close" };
+  return { cls:"miss", label:"Missed" };
+}
+function showProxyReveal(){
+  if (!S.bids[0] || !S.bids[1] || !S.proxy[0] || !S.proxy[1]) { showTitle(); return; }
+  const [nA,nB] = S.names;
+  const order = revealOrder();
+  let idx = 0;
+  render(`
+    <div class="stageheading"><h2>How well do you read each other?</h2>
+      <p>Each guess against the real bid — tap through the lots.</p></div>
+    <div id="lots" aria-live="polite"></div>
+    <button class="btn" id="nextBtn">Reveal the first lot</button>
+  `, true);
+  const gen = S.gen;
+  const lotsEl = document.getElementById("lots");
+  const nextBtn = document.getElementById("nextBtn");
+  nextBtn.addEventListener("click", () => {
+    if (S.gen !== gen) return;
+    if (idx >= order.length){ S.proxyPlayed = true; finishProxy(); return; }
+    nextBtn.disabled = true;
+    setTimeout(() => { if (S.gen === gen) nextBtn.disabled = false; }, 350);
+    const i = order[idx];
+    // proxy[0] is A's guess about B; it scores against B's real bid — and vice versa
+    const gAonB = S.proxy[0][i], realB = S.bids[1][i];
+    const gBonA = S.proxy[1][i], realA = S.bids[0][i];
+    const tA = guessTag(Math.abs(gAonB - realB));
+    const tB = guessTag(Math.abs(gBonA - realA));
+    const div = document.createElement("div");
+    div.className = "rlot";
+    div.innerHTML = `
+      <div class="rhead"><b>${esc(LOTS[i].n)}</b></div>
+      <div class="guessline"><span class="pname c1" style="width:auto;font-weight:800;">${esc(nA)}</span>
+        guessed <b>${gAonB}</b> · ${esc(nB)} bid <b>${realB}</b>
+        <span class="tag ${tA.cls}">${tA.label}</span></div>
+      <div class="guessline"><span class="pname c2" style="width:auto;font-weight:800;">${esc(nB)}</span>
+        guessed <b>${gBonA}</b> · ${esc(nA)} bid <b>${realA}</b>
+        <span class="tag ${tB.cls}">${tB.label}</span></div>`;
+    lotsEl.prepend(div);
+    idx++;
+    nextBtn.textContent = idx >= order.length ? "See both scores" : `Next lot (${idx} of ${order.length})`;
+  });
+}
+function finishProxy(){
+  const R = analysis();
+  // the session's game_complete already fired with proxy_played:0; the proxy round is a second
+  // full auction by the same pair, so it earns its own completion event with the flag set
+  track("game_complete", { alignment:R.alignment, top_gap:R.topGap, proxy_played:1 });
+  showResults();
+}
+function proxyResultsHtml(){
+  const [nA,nB] = S.names;
+  const readA = readScore(S.proxy[0], S.bids[1]);
+  const readB = readScore(S.proxy[1], S.bids[0]);
+  let line;
+  if (Math.abs(readA - readB) <= 5) line = "You read each other about equally well.";
+  else if (readA > readB) line = `${esc(nA)} reads ${esc(nB)} better than ${esc(nB)} reads ${esc(nA)} — for now.`;
+  else line = `${esc(nB)} reads ${esc(nA)} better than ${esc(nA)} reads ${esc(nB)} — for now.`;
+  return `
+    <div class="readmeters">
+      <div class="meterblock">
+        <div class="mlabel"><span>${esc(nA)}'s read of ${esc(nB)}</span><b>${readA}</b></div>
+        <div class="meter"><div class="fill" style="width:${readA}%"></div></div>
+      </div>
+      <div class="meterblock m2">
+        <div class="mlabel"><span>${esc(nB)}'s read of ${esc(nA)}</span><b>${readB}</b></div>
+        <div class="meter"><div class="fill" style="width:${readB}%"></div></div>
+      </div>
+      <p class="phrase-sub" style="margin-top:2px;">${line}</p>
+    </div>`;
+}
+
+/* ============================ copy result ============================ */
+function copyResult(R){
+  return () => {
+    const [nA,nB] = S.names;
+    const ph = alignPhrase(R.alignment);
+    // one glyph per lot in fixed lot order, so two cards from different pairs line up
+    const glyphs = LOTS.map((_,i) => {
+      const a = S.bids[0][i], b = S.bids[1][i];
+      if (a === 0 && b === 0) return "⚫";
+      const gap = Math.abs(a-b);
+      return gap <= 10 ? "🟢" : gap >= 20 ? "🔴" : "🟠";
+    }).join("");
+    const lines = [
+      `The Auction — ${nA} & ${nB}`,
+      `Alignment ${R.alignment} · ${ph.t}`,
+      glyphs,
+      R.topShared >= 0 ? `Top shared: ${LOTS[R.topShared].n}` : `No shared top pick`,
+      `Biggest split: ${LOTS[R.topGapIdx].n} (${S.bids[0][R.topGapIdx]} vs ${S.bids[1][R.topGapIdx]})`,
+    ];
+    if (S.proxyPlayed){
+      lines.push(`Reads: ${nA} ${readScore(S.proxy[0], S.bids[1])} · ${nB} ${readScore(S.proxy[1], S.bids[0])}`);
+    }
+    lines.push("kreeda.games/auction/");
+    const text = lines.join("\n");
+    const out = document.getElementById("copyOut");
+    let ok = false;
+    try{
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(() => toast("Copied"), () => showFallback());
+        ok = true;
+      }
+    }catch(e){}
+    if (!ok) showFallback();
+    function showFallback(){
+      if (!out || out.querySelector("textarea")) return;
+      out.innerHTML = `<div class="copyfallback card" style="margin-top:10px;">
+        <p class="small dim" style="margin:0 0 8px;">Clipboard isn't available here — copy it yourself:</p>
+        <textarea readonly aria-label="Result text to copy"></textarea></div>`;
+      const ta = out.querySelector("textarea");
+      ta.value = text;
+      ta.focus(); ta.select();
+    }
+  };
+}
+function toast(msg){
+  const t = document.createElement("div");
+  t.className = "toast"; t.textContent = msg; t.setAttribute("role","status");
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 1600);
+}
+
+/* ============================ confirm modal (lock-in, abandon, replay) ============================ */
+function confirmModal(title, body, yesLabel, yes){
+  const scrim = document.createElement("div");
+  scrim.className = "scrim";
+  scrim.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+    <h2>${esc(title)}</h2><p>${esc(body)}</p>
+    <button class="btn" id="cmYes">${esc(yesLabel)}</button>
+    <button class="btn ghost" id="cmNo">Go back</button></div>`;
+  document.body.appendChild(scrim);
+  let done = false;   // both buttons and the scrim can race a fast double-tap; first one wins
+  const close = () => { if (!done){ done = true; scrim.remove(); } };
+  scrim.querySelector("#cmYes").addEventListener("click", () => { if (done) return; close(); yes(); });
+  scrim.querySelector("#cmNo").addEventListener("click", close);
+  scrim.addEventListener("click", e => { if (e.target === scrim) close(); });
+  scrim.querySelector("#cmYes").focus();
+}
+
+homeBtn.addEventListener("click", () => {
+  confirmModal("Leave this auction?", "Bids from this session will be discarded.", "Leave", showTitle);
+});
+
+showTitle();
+</script>
+</body>
+</html>
