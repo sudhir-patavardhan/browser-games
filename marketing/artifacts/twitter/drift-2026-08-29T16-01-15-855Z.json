@@ -1,0 +1,29 @@
+{
+  "thread": [
+    {
+      "tweetNumber": 1,
+      "text": "Most browser driving games fake drifting with a lazy `car.friction *= 0.5` handbrake key.\n\nWe built Drift around authentic weight-transfer physics in raw Canvas: tap the brakes to load the front axle, pitch the rear loose, and catch the slide purely with countersteer and throttle.",
+      "mediaNote": "High-framerate gameplay GIF showing a smooth, high-angle weight-transfer slide through a rainy biome transition into a tight corner."
+    },
+    {
+      "tweetNumber": 2,
+      "text": "Because you're piloting an EV, dynamics and energy economy are linked:\n\n• Off-road turf drains your battery 90x faster\n• Regenerative braking tightens your turn radius while harvesting juice back into the pack\n• Need a top-up? Slide straight into rest-area DC fast chargers.",
+      "mediaNote": "Short clip highlighting the telemetry HUD showing battery regen kick in during a braking drift, followed by a quick recharge slide into a charging bay."
+    },
+    {
+      "tweetNumber": 3,
+      "text": "Zero audio files were downloaded for this.\n\nThe entire EV powertrain soundscape is synthesized live via the WebAudio API:\n• Pitch tracks wheel RPM\n• Loudness maps directly to instantaneous |kW| draw\n• Regen braking triggers a procedural reverse-harmonic whine in real time.",
+      "mediaNote": "Video snippet with audio on showcasing the procedural EV motor pitch bending under heavy acceleration vs regenerative braking."
+    },
+    {
+      "tweetNumber": 4,
+      "text": "No build steps. No node_modules. No frameworks.\n\nJust pure vanilla JS, procedural biome generation, deterministic daily seeded ghost racing, and 60fps canvas rendering packed inside a single self-contained HTML file that boots in under 100ms.",
+      "mediaNote": "Screenshot of the clean single-file source code alongside the running game window."
+    },
+    {
+      "tweetNumber": 5,
+      "text": "Take today's ghost line for a spin (works instantly on mobile & desktop, 0 ads, 0 logins):\n\nPlay: https://kreeda.games/drift/index.html\nSource (MIT): https://github.com/sudhir-patavardhan/browser-games",
+      "mediaNote": "Static title card / high-res hero visual of the game with the URL."
+    }
+  ]
+}
