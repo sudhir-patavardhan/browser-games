@@ -1,1 +1,9 @@
 .probe-*.html
+.DS_Store
+*.env
+*.env.*
+.env
+marketing/.env
+node_modules/
+dist/
+
