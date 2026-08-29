@@ -25,7 +25,6 @@ export class VisualStudio {
     // Aesthetic color schemes per game
     const themes = {
       drift: { g1: '#21e6ff', g2: '#a239ff', g3: '#5CFF6E', bg: '#07070d', accent: '#5CFF6E' },
-      'drift-mp': { g1: '#21e6ff', g2: '#3d6bff', g3: '#5CFF6E', bg: '#07070d', accent: '#21e6ff' },
       carrom: { g1: '#ffd23f', g2: '#ff8a1e', g3: '#f3e6c2', bg: '#15181c', accent: '#ffd23f' },
       'break-room': { g1: '#ffd23f', g2: '#ff6b3d', g3: '#2ecc71', bg: '#0d0a08', accent: '#2ecc71' },
       'chroma-blocks': { g1: '#21e6ff', g2: '#ff4d6d', g3: '#a239ff', bg: '#05050a', accent: '#21e6ff' },

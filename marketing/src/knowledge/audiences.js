@@ -13,7 +13,7 @@ export const AUDIENCES = {
       name: 'Web Dev & Engineering Community',
       tone: 'Technical, deep, highlighting zero-dependency, single-file HTML, Canvas/WebGL, procedural WebAudio, WebRTC',
       preferredPlatforms: ['hackernews', 'twitter', 'reddit', 'devto'],
-      bestGames: ['drift', 'drift-mp', 'deadpoint', 'carrom', 'dasanana']
+      bestGames: ['drift', 'ennead', 'deadpoint', 'carrom', 'dasanana']
     },
     indie_gamers: {
       name: 'Indie Game Enthusiasts & Speedrunners',

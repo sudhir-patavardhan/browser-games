@@ -49,30 +49,6 @@ export const GAME_CATALOG = {
       'When you pause this drift game, your EV actually uses auto-park valet to plug into a DC fast charger.'
     ]
   },
-  'drift-mp': {
-    id: 'drift-mp',
-    name: 'Drift MP',
-    genre: 'Real-Time Multiplayer Drifting',
-    url: 'https://kreeda.games/drift-mp/index.html',
-    tagline: '8 players. Same seeded road. Zero server lag.',
-    pitch: 'Live multiplayer drifting over WebRTC DataChannels with PeerJS. Host a room with a 4-letter code and race up to 8 rivals on the same procedural road with local client physics and translucent hologram rivals.',
-    mechanics: [
-      'Peer-to-peer WebRTC Star topology — no backend game server',
-      'Deterministic world generated from a single shared seed',
-      'Zero-latency local physics: rivals rendered as interpolated holograms',
-      'Timed tournament rounds (2, 3, 5 min) with live grid leaderboard'
-    ],
-    technicalHighlights: [
-      'Serverless multiplayer architecture',
-      '12 Hz dead-reckoning pose streaming with angular interpolation',
-      'Degrades gracefully to solo if WebRTC fails'
-    ],
-    targetAudiences: ['friends_groups', 'multiplayer_gamers', 'web_rtc_developers'],
-    viralHooks: [
-      'How to build 8-player real-time racing with NO backend servers.',
-      'Drop a 4-letter link in Discord and instantly race your friends in browser.'
-    ]
-  },
   carrom: {
     id: 'carrom',
     name: 'Carrom',

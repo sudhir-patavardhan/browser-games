@@ -27,9 +27,9 @@ export class CampaignPlanner {
         day: 'Tuesday',
         theme: 'Tech & Architecture Tuesday',
         channel: 'devto',
-        focusGame: 'drift-mp',
+        focusGame: 'ennead',
         options: {},
-        description: 'Deep-dive article on serverless WebRTC multiplayer & single-file architecture'
+        description: 'Deep-dive article on minimax AI with alpha-beta pruning & single-file architecture'
       },
       {
         day: 'Wednesday',

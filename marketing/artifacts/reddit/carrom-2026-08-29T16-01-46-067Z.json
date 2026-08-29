@@ -1,0 +1,6 @@
+{
+  "subreddit": "r/webgames",
+  "title": "[HTML5] Carrom – Classic tabletop carrom board game with rigid disc physics and 3 AI difficulty levels",
+  "bodyMarkdown": "Hey r/webgames,\n\nI built a browser adaptation of **Carrom**, the traditional tabletop strike-and-pocket game popular across South Asia.\n\nPlay here: https://kreeda.games/carrom/index.html\n\n### How it plays:\n* **Slingshot Striker Controls:** Position your striker along the baseline, pull back to set power and angle, and release to flick.\n* **Official Rules:** 9 White pieces, 9 Black pieces, and the Red Queen. Standard queen covering rules and striker pocket foul penalties are active.\n* **Rigid Disc Physics:** Implemented with continuous collision sub-stepping so fast striker shots don't clip through pieces, with mass ratios (2.2x striker mass) and corner pocket suction gravity.\n* **3-Tier AI:** Easy (straight shots only), Medium (aim lines with minor variance), and Hard (calculates ghost-ball lines and restitution-corrected cushion bank shots).\n\nNo accounts, no ads, no installs—just pure vanilla canvas loading instantly.\n\nI'd love feedback on the physics tuning (friction/drag feel) and whether Hard AI is beatable for seasoned carrom players!",
+  "flair": "Developer"
+}
