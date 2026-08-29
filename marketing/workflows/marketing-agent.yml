@@ -44,6 +44,14 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Load All-in-One .env Secret (if configured)
+        if: "${{ secrets.MARKETING_ENV != '' }}"
+        env:
+          ENV_CONTENT: ${{ secrets.MARKETING_ENV }}
+        run: |
+          echo "$ENV_CONTENT" > marketing/.env
+          echo "Loaded marketing/.env from MARKETING_ENV secret."
+
       - name: Execute Marketing Agent
         env:
           # AI Engine
