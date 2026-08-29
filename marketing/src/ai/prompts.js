@@ -111,14 +111,17 @@ Structure:
 6. Play the game & view the source code.
 - Output JSON: { "title": "...", "tags": ["javascript", "webdev", "gamedev", "showdev"], "contentMarkdown": "..." }`,
 
-  opportunityDraft: (post) => `Analyze this social post / user query and draft a personalized, helpful reply introducing the most appropriate Kreeda game:
+  opportunityDraft: (post, catalog = []) => `Analyze this social post / user query and draft a personalized, helpful reply introducing the most appropriate Kreeda game:
 User Post: "${post.content}"
 Platform: "${post.platform}"
 Author: "${post.author}"
 
+You may ONLY recommend one of these actual Kreeda games (use the exact "id" value for recommendedGame — never invent a game that isn't in this list):
+${catalog.map(g => `- id: "${g.id}", name: "${g.name}" — ${g.tagline}`).join('\n')}
+
 Determine:
 1. Relevance score (0-100)
-2. Best matching game from Kreeda
+2. Best matching game id from the list above (if nothing fits well, use "hub")
 3. Natural, friendly reply that directly addresses their question and mentions the game as an instant solution.
 - Output JSON: { "relevanceScore": 85, "recommendedGame": "...", "reasoning": "...", "draftReply": "..." }`
 };

@@ -16,14 +16,19 @@ export class OpportunityScout {
   async evaluateQueries(queries) {
     const results = [];
 
+    const catalogList = Object.values(GAME_CATALOG).map(g => ({ id: g.id, name: g.name, tagline: g.tagline }));
+    const validGameIds = new Set(catalogList.map(g => g.id));
+
     for (const query of queries) {
       console.log(`🔍 Scouting lead on ${query.platform} by ${query.author}: "${query.content.slice(0, 50)}..."`);
-      
+
       const analysis = await this.ai.generate({
-        prompt: PROMPT_TEMPLATES.opportunityDraft(query),
+        prompt: PROMPT_TEMPLATES.opportunityDraft(query, catalogList),
         systemInstruction: SYSTEM_PROMPTS.scoutLeadAnalyst,
         jsonMode: true
       });
+
+      const recommendedGame = validGameIds.has(analysis.recommendedGame) ? analysis.recommendedGame : 'hub';
 
       const lead = {
         id: query.id || `lead-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -33,7 +38,7 @@ export class OpportunityScout {
         sourceUrl: query.url || '',
         queryContent: query.content,
         relevanceScore: analysis.relevanceScore || 75,
-        recommendedGame: analysis.recommendedGame || 'drift',
+        recommendedGame,
         reasoning: analysis.reasoning || '',
         draftReply: analysis.draftReply || '',
         status: (analysis.relevanceScore || 75) >= 70 ? 'qualified' : 'low_relevance'
