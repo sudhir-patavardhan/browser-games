@@ -1,0 +1,438 @@
+[
+  {
+    "id": "plan-monday-1787978202396-0",
+    "status": "draft_published",
+    "channel": "twitter",
+    "gameId": "drift",
+    "scheduledDate": "2026-08-29",
+    "content": {
+      "title": "Kreeda — Instant 0-Dependency Browser Games",
+      "hook": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "body": "We built 12 polished arcade games in pure vanilla JavaScript and WebAudio. Every single game is a self-contained index.html file with zero build tools.\n\nPlay right now on your phone or desktop: https://kreeda.games/",
+      "tags": [
+        "#webdev",
+        "#indiegames",
+        "#javascript",
+        "#gaming"
+      ],
+      "callToAction": "Try it instantly at https://kreeda.games",
+      "score": 9.2
+    },
+    "createdAt": "2026-08-29T04:36:42.396Z",
+    "publishedAt": "2026-08-29T04:36:42.398Z",
+    "publishResult": {
+      "success": true,
+      "channel": "twitter",
+      "mode": "draft",
+      "postId": "sim-tweet-1787978202398",
+      "url": "https://twitter.com/intent/tweet?text=",
+      "publishedAt": "2026-08-29T04:36:42.398Z"
+    },
+    "updatedAt": "2026-08-29T04:36:42.398Z"
+  },
+  {
+    "id": "plan-tuesday-1787978202397-1",
+    "status": "scheduled",
+    "channel": "devto",
+    "gameId": "drift-mp",
+    "scheduledDate": "2026-08-30",
+    "content": {
+      "title": "Kreeda — Instant 0-Dependency Browser Games",
+      "hook": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "body": "We built 12 polished arcade games in pure vanilla JavaScript and WebAudio. Every single game is a self-contained index.html file with zero build tools.\n\nPlay right now on your phone or desktop: https://kreeda.games/",
+      "tags": [
+        "#webdev",
+        "#indiegames",
+        "#javascript",
+        "#gaming"
+      ],
+      "callToAction": "Try it instantly at https://kreeda.games",
+      "score": 9.2
+    },
+    "createdAt": "2026-08-29T04:36:42.397Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-wednesday-1787978202397-2",
+    "status": "scheduled",
+    "channel": "reddit",
+    "gameId": "carrom",
+    "scheduledDate": "2026-08-31",
+    "content": {
+      "title": "Kreeda — Instant 0-Dependency Browser Games",
+      "hook": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "body": "We built 12 polished arcade games in pure vanilla JavaScript and WebAudio. Every single game is a self-contained index.html file with zero build tools.\n\nPlay right now on your phone or desktop: https://kreeda.games/",
+      "tags": [
+        "#webdev",
+        "#indiegames",
+        "#javascript",
+        "#gaming"
+      ],
+      "callToAction": "Try it instantly at https://kreeda.games",
+      "score": 9.2
+    },
+    "createdAt": "2026-08-29T04:36:42.397Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-thursday-1787978202397-3",
+    "status": "scheduled",
+    "channel": "shorts",
+    "gameId": "road-rumble",
+    "scheduledDate": "2026-09-01",
+    "content": {
+      "title": "Kreeda — Instant 0-Dependency Browser Games",
+      "hook": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "body": "We built 12 polished arcade games in pure vanilla JavaScript and WebAudio. Every single game is a self-contained index.html file with zero build tools.\n\nPlay right now on your phone or desktop: https://kreeda.games/",
+      "tags": [
+        "#webdev",
+        "#indiegames",
+        "#javascript",
+        "#gaming"
+      ],
+      "callToAction": "Try it instantly at https://kreeda.games",
+      "score": 9.2
+    },
+    "createdAt": "2026-08-29T04:36:42.397Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-friday-1787978202397-4",
+    "status": "scheduled",
+    "channel": "twitter",
+    "gameId": "drift",
+    "scheduledDate": "2026-09-02",
+    "content": {
+      "title": "Kreeda — Instant 0-Dependency Browser Games",
+      "hook": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "body": "We built 12 polished arcade games in pure vanilla JavaScript and WebAudio. Every single game is a self-contained index.html file with zero build tools.\n\nPlay right now on your phone or desktop: https://kreeda.games/",
+      "tags": [
+        "#webdev",
+        "#indiegames",
+        "#javascript",
+        "#gaming"
+      ],
+      "callToAction": "Try it instantly at https://kreeda.games",
+      "score": 9.2
+    },
+    "createdAt": "2026-08-29T04:36:42.397Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-saturday-1787978202397-5",
+    "status": "scheduled",
+    "channel": "reddit",
+    "gameId": "deadpoint",
+    "scheduledDate": "2026-09-03",
+    "content": {
+      "title": "Kreeda — Instant 0-Dependency Browser Games",
+      "hook": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "body": "We built 12 polished arcade games in pure vanilla JavaScript and WebAudio. Every single game is a self-contained index.html file with zero build tools.\n\nPlay right now on your phone or desktop: https://kreeda.games/",
+      "tags": [
+        "#webdev",
+        "#indiegames",
+        "#javascript",
+        "#gaming"
+      ],
+      "callToAction": "Try it instantly at https://kreeda.games",
+      "score": 9.2
+    },
+    "createdAt": "2026-08-29T04:36:42.397Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-sunday-1787978202397-6",
+    "status": "scheduled",
+    "channel": "twitter",
+    "gameId": "break-room",
+    "scheduledDate": "2026-09-04",
+    "content": {
+      "title": "Kreeda — Instant 0-Dependency Browser Games",
+      "hook": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "body": "We built 12 polished arcade games in pure vanilla JavaScript and WebAudio. Every single game is a self-contained index.html file with zero build tools.\n\nPlay right now on your phone or desktop: https://kreeda.games/",
+      "tags": [
+        "#webdev",
+        "#indiegames",
+        "#javascript",
+        "#gaming"
+      ],
+      "callToAction": "Try it instantly at https://kreeda.games",
+      "score": 9.2
+    },
+    "createdAt": "2026-08-29T04:36:42.397Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-monday-1787978223827-0",
+    "status": "draft_published",
+    "channel": "twitter",
+    "gameId": "drift",
+    "scheduledDate": "2026-08-29",
+    "content": {
+      "title": "Kreeda — Instant 0-Dependency Browser Games",
+      "headline": "Free browser games that start the second you tap",
+      "hook": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "hookText": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "body": "We built 12 polished arcade games in pure vanilla JavaScript and WebAudio. Every single game is a self-contained index.html file with zero build tools.\n\nPlay right now on your phone or desktop: https://kreeda.games/",
+      "bodyMarkdown": "Hey everyone! We built a collection of 12 polished, single-file browser games with 0 dependencies and 0 build tools.\n\nPlay instantly: https://kreeda.games/\nSource: https://github.com/sudhir-patavardhan/browser-games",
+      "contentMarkdown": "# Building 12 Browser Games with Zero Dependencies\n\nEvery game is an index.html file with procedural WebAudio.\n\nPlay: https://kreeda.games/",
+      "tags": [
+        "webdev",
+        "indiegames",
+        "javascript",
+        "gaming"
+      ],
+      "hashtags": [
+        "#webdev",
+        "#indiedev",
+        "#javascript"
+      ],
+      "callToAction": "Try it instantly at https://kreeda.games",
+      "makerComment": "We built Kreeda to revive the era of instant, bloat-free browser games. Check out the source on GitHub: https://github.com/sudhir-patavardhan/browser-games",
+      "draftReply": "Check out Kreeda (https://kreeda.games) — 12 free browser games with 0 ads and instant load time. For racing/drifting, Drift (https://kreeda.games/drift/) has real weight transfer and EV battery mechanics!",
+      "relevanceScore": 92,
+      "recommendedGame": "drift",
+      "reasoning": "User is asking for lightweight web games with fast loading and no popups.",
+      "score": 9.2
+    },
+    "createdAt": "2026-08-29T04:37:03.828Z",
+    "publishedAt": "2026-08-29T05:15:31.377Z",
+    "publishResult": {
+      "success": true,
+      "channel": "twitter",
+      "mode": "draft",
+      "postId": "sim-tweet-1787980531377",
+      "url": "https://twitter.com/intent/tweet?text=Free%20browser%20games%20that%20start%20the%20second%20you%20tap",
+      "publishedAt": "2026-08-29T05:15:31.377Z"
+    },
+    "updatedAt": "2026-08-29T05:15:31.377Z"
+  },
+  {
+    "id": "plan-tuesday-1787978223828-1",
+    "status": "scheduled",
+    "channel": "devto",
+    "gameId": "drift-mp",
+    "scheduledDate": "2026-08-30",
+    "content": {
+      "title": "Kreeda — Instant 0-Dependency Browser Games",
+      "headline": "Free browser games that start the second you tap",
+      "hook": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "hookText": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "body": "We built 12 polished arcade games in pure vanilla JavaScript and WebAudio. Every single game is a self-contained index.html file with zero build tools.\n\nPlay right now on your phone or desktop: https://kreeda.games/",
+      "bodyMarkdown": "Hey everyone! We built a collection of 12 polished, single-file browser games with 0 dependencies and 0 build tools.\n\nPlay instantly: https://kreeda.games/\nSource: https://github.com/sudhir-patavardhan/browser-games",
+      "contentMarkdown": "# Building 12 Browser Games with Zero Dependencies\n\nEvery game is an index.html file with procedural WebAudio.\n\nPlay: https://kreeda.games/",
+      "tags": [
+        "webdev",
+        "indiegames",
+        "javascript",
+        "gaming"
+      ],
+      "hashtags": [
+        "#webdev",
+        "#indiedev",
+        "#javascript"
+      ],
+      "callToAction": "Try it instantly at https://kreeda.games",
+      "makerComment": "We built Kreeda to revive the era of instant, bloat-free browser games. Check out the source on GitHub: https://github.com/sudhir-patavardhan/browser-games",
+      "draftReply": "Check out Kreeda (https://kreeda.games) — 12 free browser games with 0 ads and instant load time. For racing/drifting, Drift (https://kreeda.games/drift/) has real weight transfer and EV battery mechanics!",
+      "relevanceScore": 92,
+      "recommendedGame": "drift",
+      "reasoning": "User is asking for lightweight web games with fast loading and no popups.",
+      "score": 9.2
+    },
+    "createdAt": "2026-08-29T04:37:03.828Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-wednesday-1787978223828-2",
+    "status": "scheduled",
+    "channel": "reddit",
+    "gameId": "carrom",
+    "scheduledDate": "2026-08-31",
+    "content": {
+      "title": "Kreeda — Instant 0-Dependency Browser Games",
+      "headline": "Free browser games that start the second you tap",
+      "hook": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "hookText": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "body": "We built 12 polished arcade games in pure vanilla JavaScript and WebAudio. Every single game is a self-contained index.html file with zero build tools.\n\nPlay right now on your phone or desktop: https://kreeda.games/",
+      "bodyMarkdown": "Hey everyone! We built a collection of 12 polished, single-file browser games with 0 dependencies and 0 build tools.\n\nPlay instantly: https://kreeda.games/\nSource: https://github.com/sudhir-patavardhan/browser-games",
+      "contentMarkdown": "# Building 12 Browser Games with Zero Dependencies\n\nEvery game is an index.html file with procedural WebAudio.\n\nPlay: https://kreeda.games/",
+      "tags": [
+        "webdev",
+        "indiegames",
+        "javascript",
+        "gaming"
+      ],
+      "hashtags": [
+        "#webdev",
+        "#indiedev",
+        "#javascript"
+      ],
+      "callToAction": "Try it instantly at https://kreeda.games",
+      "makerComment": "We built Kreeda to revive the era of instant, bloat-free browser games. Check out the source on GitHub: https://github.com/sudhir-patavardhan/browser-games",
+      "draftReply": "Check out Kreeda (https://kreeda.games) — 12 free browser games with 0 ads and instant load time. For racing/drifting, Drift (https://kreeda.games/drift/) has real weight transfer and EV battery mechanics!",
+      "relevanceScore": 92,
+      "recommendedGame": "drift",
+      "reasoning": "User is asking for lightweight web games with fast loading and no popups.",
+      "score": 9.2
+    },
+    "createdAt": "2026-08-29T04:37:03.828Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-thursday-1787978223828-3",
+    "status": "scheduled",
+    "channel": "shorts",
+    "gameId": "road-rumble",
+    "scheduledDate": "2026-09-01",
+    "content": {
+      "title": "Kreeda — Instant 0-Dependency Browser Games",
+      "headline": "Free browser games that start the second you tap",
+      "hook": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "hookText": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "body": "We built 12 polished arcade games in pure vanilla JavaScript and WebAudio. Every single game is a self-contained index.html file with zero build tools.\n\nPlay right now on your phone or desktop: https://kreeda.games/",
+      "bodyMarkdown": "Hey everyone! We built a collection of 12 polished, single-file browser games with 0 dependencies and 0 build tools.\n\nPlay instantly: https://kreeda.games/\nSource: https://github.com/sudhir-patavardhan/browser-games",
+      "contentMarkdown": "# Building 12 Browser Games with Zero Dependencies\n\nEvery game is an index.html file with procedural WebAudio.\n\nPlay: https://kreeda.games/",
+      "tags": [
+        "webdev",
+        "indiegames",
+        "javascript",
+        "gaming"
+      ],
+      "hashtags": [
+        "#webdev",
+        "#indiedev",
+        "#javascript"
+      ],
+      "callToAction": "Try it instantly at https://kreeda.games",
+      "makerComment": "We built Kreeda to revive the era of instant, bloat-free browser games. Check out the source on GitHub: https://github.com/sudhir-patavardhan/browser-games",
+      "draftReply": "Check out Kreeda (https://kreeda.games) — 12 free browser games with 0 ads and instant load time. For racing/drifting, Drift (https://kreeda.games/drift/) has real weight transfer and EV battery mechanics!",
+      "relevanceScore": 92,
+      "recommendedGame": "drift",
+      "reasoning": "User is asking for lightweight web games with fast loading and no popups.",
+      "score": 9.2
+    },
+    "createdAt": "2026-08-29T04:37:03.828Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-friday-1787978223828-4",
+    "status": "scheduled",
+    "channel": "twitter",
+    "gameId": "drift",
+    "scheduledDate": "2026-09-02",
+    "content": {
+      "title": "Kreeda — Instant 0-Dependency Browser Games",
+      "headline": "Free browser games that start the second you tap",
+      "hook": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "hookText": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "body": "We built 12 polished arcade games in pure vanilla JavaScript and WebAudio. Every single game is a self-contained index.html file with zero build tools.\n\nPlay right now on your phone or desktop: https://kreeda.games/",
+      "bodyMarkdown": "Hey everyone! We built a collection of 12 polished, single-file browser games with 0 dependencies and 0 build tools.\n\nPlay instantly: https://kreeda.games/\nSource: https://github.com/sudhir-patavardhan/browser-games",
+      "contentMarkdown": "# Building 12 Browser Games with Zero Dependencies\n\nEvery game is an index.html file with procedural WebAudio.\n\nPlay: https://kreeda.games/",
+      "tags": [
+        "webdev",
+        "indiegames",
+        "javascript",
+        "gaming"
+      ],
+      "hashtags": [
+        "#webdev",
+        "#indiedev",
+        "#javascript"
+      ],
+      "callToAction": "Try it instantly at https://kreeda.games",
+      "makerComment": "We built Kreeda to revive the era of instant, bloat-free browser games. Check out the source on GitHub: https://github.com/sudhir-patavardhan/browser-games",
+      "draftReply": "Check out Kreeda (https://kreeda.games) — 12 free browser games with 0 ads and instant load time. For racing/drifting, Drift (https://kreeda.games/drift/) has real weight transfer and EV battery mechanics!",
+      "relevanceScore": 92,
+      "recommendedGame": "drift",
+      "reasoning": "User is asking for lightweight web games with fast loading and no popups.",
+      "score": 9.2
+    },
+    "createdAt": "2026-08-29T04:37:03.828Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-saturday-1787978223828-5",
+    "status": "scheduled",
+    "channel": "reddit",
+    "gameId": "deadpoint",
+    "scheduledDate": "2026-09-03",
+    "content": {
+      "title": "Kreeda — Instant 0-Dependency Browser Games",
+      "headline": "Free browser games that start the second you tap",
+      "hook": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "hookText": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "body": "We built 12 polished arcade games in pure vanilla JavaScript and WebAudio. Every single game is a self-contained index.html file with zero build tools.\n\nPlay right now on your phone or desktop: https://kreeda.games/",
+      "bodyMarkdown": "Hey everyone! We built a collection of 12 polished, single-file browser games with 0 dependencies and 0 build tools.\n\nPlay instantly: https://kreeda.games/\nSource: https://github.com/sudhir-patavardhan/browser-games",
+      "contentMarkdown": "# Building 12 Browser Games with Zero Dependencies\n\nEvery game is an index.html file with procedural WebAudio.\n\nPlay: https://kreeda.games/",
+      "tags": [
+        "webdev",
+        "indiegames",
+        "javascript",
+        "gaming"
+      ],
+      "hashtags": [
+        "#webdev",
+        "#indiedev",
+        "#javascript"
+      ],
+      "callToAction": "Try it instantly at https://kreeda.games",
+      "makerComment": "We built Kreeda to revive the era of instant, bloat-free browser games. Check out the source on GitHub: https://github.com/sudhir-patavardhan/browser-games",
+      "draftReply": "Check out Kreeda (https://kreeda.games) — 12 free browser games with 0 ads and instant load time. For racing/drifting, Drift (https://kreeda.games/drift/) has real weight transfer and EV battery mechanics!",
+      "relevanceScore": 92,
+      "recommendedGame": "drift",
+      "reasoning": "User is asking for lightweight web games with fast loading and no popups.",
+      "score": 9.2
+    },
+    "createdAt": "2026-08-29T04:37:03.828Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-sunday-1787978223828-6",
+    "status": "scheduled",
+    "channel": "twitter",
+    "gameId": "break-room",
+    "scheduledDate": "2026-09-04",
+    "content": {
+      "title": "Kreeda — Instant 0-Dependency Browser Games",
+      "headline": "Free browser games that start the second you tap",
+      "hook": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "hookText": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+      "body": "We built 12 polished arcade games in pure vanilla JavaScript and WebAudio. Every single game is a self-contained index.html file with zero build tools.\n\nPlay right now on your phone or desktop: https://kreeda.games/",
+      "bodyMarkdown": "Hey everyone! We built a collection of 12 polished, single-file browser games with 0 dependencies and 0 build tools.\n\nPlay instantly: https://kreeda.games/\nSource: https://github.com/sudhir-patavardhan/browser-games",
+      "contentMarkdown": "# Building 12 Browser Games with Zero Dependencies\n\nEvery game is an index.html file with procedural WebAudio.\n\nPlay: https://kreeda.games/",
+      "tags": [
+        "webdev",
+        "indiegames",
+        "javascript",
+        "gaming"
+      ],
+      "hashtags": [
+        "#webdev",
+        "#indiedev",
+        "#javascript"
+      ],
+      "callToAction": "Try it instantly at https://kreeda.games",
+      "makerComment": "We built Kreeda to revive the era of instant, bloat-free browser games. Check out the source on GitHub: https://github.com/sudhir-patavardhan/browser-games",
+      "draftReply": "Check out Kreeda (https://kreeda.games) — 12 free browser games with 0 ads and instant load time. For racing/drifting, Drift (https://kreeda.games/drift/) has real weight transfer and EV battery mechanics!",
+      "relevanceScore": 92,
+      "recommendedGame": "drift",
+      "reasoning": "User is asking for lightweight web games with fast loading and no popups.",
+      "score": 9.2
+    },
+    "createdAt": "2026-08-29T04:37:03.828Z",
+    "publishedAt": null,
+    "publishResult": null
+  }
+]

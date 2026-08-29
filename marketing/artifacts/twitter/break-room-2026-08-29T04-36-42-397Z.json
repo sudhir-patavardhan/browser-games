@@ -1,0 +1,13 @@
+{
+  "title": "Kreeda — Instant 0-Dependency Browser Games",
+  "hook": "No downloads, no sign-ups, no ads. Games that start the millisecond you tap.",
+  "body": "We built 12 polished arcade games in pure vanilla JavaScript and WebAudio. Every single game is a self-contained index.html file with zero build tools.\n\nPlay right now on your phone or desktop: https://kreeda.games/",
+  "tags": [
+    "#webdev",
+    "#indiegames",
+    "#javascript",
+    "#gaming"
+  ],
+  "callToAction": "Try it instantly at https://kreeda.games",
+  "score": 9.2
+}

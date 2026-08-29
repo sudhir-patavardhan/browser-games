@@ -1,0 +1,54 @@
+[
+  {
+    "id": "reddit-webgames-01",
+    "discoveredAt": "2026-08-29T05:15:31.376Z",
+    "platform": "Reddit (r/webgames)",
+    "author": "u/arcade_seeker",
+    "sourceUrl": "https://reddit.com/r/webgames/comments/sample1",
+    "queryContent": "Anyone know any good arcade racing or drifting web games that do not have 50 popups and load fast on Chrome?",
+    "relevanceScore": 92,
+    "recommendedGame": "drift",
+    "reasoning": "User is asking for lightweight web games with fast loading and no popups.",
+    "draftReply": "Check out Kreeda (https://kreeda.games) — 12 free browser games with 0 ads and instant load time. For racing/drifting, Drift (https://kreeda.games/drift/) has real weight transfer and EV battery mechanics!",
+    "status": "qualified"
+  },
+  {
+    "id": "reddit-climbing-02",
+    "discoveredAt": "2026-08-29T05:15:31.376Z",
+    "platform": "Reddit (r/climbing)",
+    "author": "u/boulder_bro",
+    "sourceUrl": "https://reddit.com/r/climbing/comments/sample2",
+    "queryContent": "Are there any realistic climbing or bouldering browser games that actually simulate flagging and dynos?",
+    "relevanceScore": 92,
+    "recommendedGame": "drift",
+    "reasoning": "User is asking for lightweight web games with fast loading and no popups.",
+    "draftReply": "Check out Kreeda (https://kreeda.games) — 12 free browser games with 0 ads and instant load time. For racing/drifting, Drift (https://kreeda.games/drift/) has real weight transfer and EV battery mechanics!",
+    "status": "qualified"
+  },
+  {
+    "id": "hn-ask-03",
+    "discoveredAt": "2026-08-29T05:15:31.376Z",
+    "platform": "Hacker News",
+    "author": "gamedev_curious",
+    "sourceUrl": "https://news.ycombinator.com/item?id=sample3",
+    "queryContent": "Show me impressive modern web games that don’t use heavy engines or 50MB asset bundles. Love seeing pure Canvas and WebAudio projects.",
+    "relevanceScore": 92,
+    "recommendedGame": "drift",
+    "reasoning": "User is asking for lightweight web games with fast loading and no popups.",
+    "draftReply": "Check out Kreeda (https://kreeda.games) — 12 free browser games with 0 ads and instant load time. For racing/drifting, Drift (https://kreeda.games/drift/) has real weight transfer and EV battery mechanics!",
+    "status": "qualified"
+  },
+  {
+    "id": "twitter-break-04",
+    "discoveredAt": "2026-08-29T05:15:31.376Z",
+    "platform": "Twitter/X",
+    "author": "@casual_coder",
+    "sourceUrl": "https://twitter.com/casual_coder/status/sample4",
+    "queryContent": "Need a quick 3-minute browser game to play during lunch break. No sign up, no tutorial please!",
+    "relevanceScore": 92,
+    "recommendedGame": "drift",
+    "reasoning": "User is asking for lightweight web games with fast loading and no popups.",
+    "draftReply": "Check out Kreeda (https://kreeda.games) — 12 free browser games with 0 ads and instant load time. For racing/drifting, Drift (https://kreeda.games/drift/) has real weight transfer and EV battery mechanics!",
+    "status": "qualified"
+  }
+]

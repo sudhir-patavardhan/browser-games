@@ -1,0 +1,97 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ROOT_DIR = path.resolve(__dirname, '../..');
+const MARKETING_DIR = path.resolve(__dirname, '..');
+
+// Lightweight zero-dependency .env loader
+function loadEnv() {
+  const envPath = path.join(MARKETING_DIR, '.env');
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, 'utf8');
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const idx = trimmed.indexOf('=');
+      if (idx > 0) {
+        const key = trimmed.slice(0, idx).trim();
+        const val = trimmed.slice(idx + 1).trim().replace(/^["']|["']$/g, '');
+        if (!process.env[key]) {
+          process.env[key] = val;
+        }
+      }
+    }
+  }
+}
+
+loadEnv();
+
+export const config = {
+  paths: {
+    root: ROOT_DIR,
+    marketing: MARKETING_DIR,
+    data: path.join(MARKETING_DIR, 'data'),
+    artifacts: path.join(MARKETING_DIR, 'artifacts'),
+    queueFile: path.join(MARKETING_DIR, 'data', 'queue.json'),
+    opportunitiesFile: path.join(MARKETING_DIR, 'data', 'opportunities.json'),
+    telemetryFile: path.join(MARKETING_DIR, 'data', 'telemetry.json'),
+    dashboard: path.join(MARKETING_DIR, 'dashboard')
+  },
+  general: {
+    baseUrl: process.env.BASE_URL || 'https://kreeda.games',
+    repoUrl: process.env.REPO_URL || 'https://github.com/sudhir-patavardhan/browser-games',
+    mode: process.env.MARKETING_MODE || 'draft', // 'draft' | 'live'
+    brandName: 'Kreeda',
+    tagline: 'Free browser games that start the second you tap'
+  },
+  ai: {
+    geminiApiKey: process.env.GEMINI_API_KEY || '',
+    geminiModel: process.env.GEMINI_MODEL || 'gemini-3.7-flash',
+    geminiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models'
+  },
+  platforms: {
+    twitter: {
+      enabled: Boolean(process.env.TWITTER_API_KEY && process.env.TWITTER_ACCESS_TOKEN),
+      apiKey: process.env.TWITTER_API_KEY || '',
+      apiSecret: process.env.TWITTER_API_SECRET || '',
+      accessToken: process.env.TWITTER_ACCESS_TOKEN || '',
+      accessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET || '',
+      bearerToken: process.env.TWITTER_BEARER_TOKEN || ''
+    },
+    reddit: {
+      enabled: Boolean(process.env.REDDIT_CLIENT_ID && process.env.REDDIT_CLIENT_SECRET),
+      clientId: process.env.REDDIT_CLIENT_ID || '',
+      clientSecret: process.env.REDDIT_CLIENT_SECRET || '',
+      username: process.env.REDDIT_USERNAME || '',
+      password: process.env.REDDIT_PASSWORD || '',
+      userAgent: process.env.REDDIT_USER_AGENT || 'KreedaGrowthAgent/1.0'
+    },
+    discord: {
+      enabled: Boolean(process.env.DISCORD_WEBHOOK_URL),
+      webhookUrl: process.env.DISCORD_WEBHOOK_URL || ''
+    },
+    buffer: {
+      enabled: Boolean(process.env.BUFFER_ACCESS_TOKEN),
+      accessToken: process.env.BUFFER_ACCESS_TOKEN || '',
+      profileIds: (process.env.BUFFER_PROFILE_IDS || '').split(',').map(s => s.trim()).filter(Boolean)
+    },
+    genericWebhook: {
+      enabled: Boolean(process.env.GENERIC_WEBHOOK_URL),
+      url: process.env.GENERIC_WEBHOOK_URL || ''
+    },
+    devto: {
+      enabled: Boolean(process.env.DEVTO_API_KEY),
+      apiKey: process.env.DEVTO_API_KEY || ''
+    }
+  }
+};
+
+// Ensure directories exist
+for (const p of [config.paths.data, config.paths.artifacts]) {
+  if (!fs.existsSync(p)) {
+    fs.mkdirSync(p, { recursive: true });
+  }
+}
