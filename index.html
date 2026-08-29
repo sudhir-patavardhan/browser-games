@@ -1214,6 +1214,7 @@
   <footer>
     <span>&copy; Kreeda &middot; Free browser games, no sign-up.</span>
     <span class="spacer"></span>
+    <span id="build-stamp" hidden></span>
     <a href="https://github.com/sudhir-patavardhan/browser-games">Source on GitHub</a>
   </footer>
 </div>
@@ -1232,6 +1233,26 @@
     addEventListener('load', function(){
       try{ navigator.serviceWorker.register('/sw.js'); }catch(e){}
     });
+  }catch(e){}
+})();
+</script>
+<script>
+/* Build stamp — document.lastModified is the Last-Modified header of the HTML
+   actually being rendered, which on GitHub Pages is when this file was last
+   deployed. Because a service-worker cache keeps the original headers, the stamp
+   is honest either way: it names the build you are LOOKING AT, not the newest one
+   on the server — exactly the question "did my change get published?" needs
+   answered. Wrapped in try/catch and hidden-by-default because a stamp must never
+   be able to break the page, and a nonsense date is worse than none. */
+(function(){
+  try{
+    var d = new Date(document.lastModified);
+    if (isNaN(d.getTime())) return;
+    var el = document.getElementById('build-stamp');
+    el.textContent = 'Updated ' + d.toLocaleString(undefined, {
+      day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'
+    });
+    el.hidden = false;
   }catch(e){}
 })();
 </script>
