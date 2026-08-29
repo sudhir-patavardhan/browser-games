@@ -1,8 +1,13 @@
+import { GoogleGenAI } from '@google/genai';
 import { config } from '../config.js';
 
 /**
  * Gemini AI Client for Autonomous Marketing
  * Uses Gemini 3.7 Flash for deep reasoning, creative writing, and opportunity analysis.
+ *
+ * Uses the official @google/genai SDK rather than raw fetch() calls, since AI Studio's
+ * current "auth key" credentials (distinct from legacy static "AIzaSy..." keys) are bound
+ * to a service account and are not accepted via a plain key= query param or header.
  */
 export class GeminiClient {
   constructor(apiKey = config.ai.geminiApiKey, model = config.ai.geminiModel) {
@@ -29,46 +34,17 @@ export class GeminiClient {
     }
 
     try {
-      const url = `${config.ai.geminiEndpoint}/${this.model}:generateContent?key=${this.apiKey}`;
-      
-      const body = {
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: prompt }]
-          }
-        ],
-        generationConfig: {
-          temperature,
-          topP: 0.95,
-          topK: 40
-        }
-      };
+      const ai = new GoogleGenAI({ apiKey: this.apiKey });
 
-      if (systemInstruction) {
-        body.systemInstruction = {
-          parts: [{ text: systemInstruction }]
-        };
-      }
-
-      if (jsonMode) {
-        body.generationConfig.responseMimeType = 'application/json';
-      }
-
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+      const interaction = await ai.interactions.create({
+        model: this.model,
+        input: prompt,
+        ...(systemInstruction ? { system_instruction: systemInstruction } : {}),
+        generation_config: { temperature }
       });
 
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Gemini API error [${res.status}]: ${errText}`);
-      }
+      const text = (interaction.output_text || '').trim();
 
-      const data = await res.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      
       if (jsonMode) {
         try {
           return JSON.parse(text);
