@@ -46,6 +46,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          
+      - name: Install marketing dependencies
+        working-directory: marketing
+        run: npm ci
 
       - name: Load All-in-One .env Secret (if configured)
         if: ${{ env.MARKETING_ENV != '' }}
