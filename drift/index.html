@@ -432,7 +432,7 @@ function newGame(forceSeed){
     scenery:makeScenery(seed),
     zombies:[], splats:[], gibs:[], flecks:[], shots:[],   // the horde, and what's left of it
     zrng:mulberry32(seed^0x2b1e), zNextIdx:0, packLeft:0, gunCd:0, cashRun:0, goreT:0, bountyMulMax:1,
-    vmax:0, zCarKills:0, gunKills:0, buzzes:0, contracts:makeContracts(seed), mod:carMods(),
+    vmax:0, zCarKills:0, gunKills:0, buzzes:0, contracts:makeContracts(seed), contractsDone:0, contractCash:0, mod:carMods(),
     deer:[], drng, deerNext:8000+drng()*8000,   // the county's own wildlife — first crossing 0.8-1.6km out
     deerHits:0, spooks:0,
     traffic:[], trng, trafNext:5000+trng()*5000,   // the far lane finally has an owner — first one 0.5-1.0km out
@@ -689,6 +689,7 @@ function gameOver(reason){
     shamblers:game.zCarKills+game.gunKills, shaves:game.buzzes,
     deer_dodges:game.spooks, deer_hits:game.deerHits,
     close_calls:game.calls, head_ons:game.trafHits,
+    contracts_done:game.contractsDone, contract_cash:Math.round(game.contractCash),
     cash_run:Math.round(game.cashRun), wet:game.wet?1:0 });
   document.getElementById('overReason').textContent=(dailyMode?'TODAY’S ROAD · ':'')+reason;
   document.getElementById('finalScore').textContent=sc.toLocaleString();
@@ -3426,7 +3427,7 @@ function updateContracts(g){
   for(const c of g.contracts){
     if(c.done || c.prog(g)<c.tgt) continue;
     c.done=true;
-    cash+=c.rew; g.cashRun+=c.rew; saveWallet(); cashPop(c.rew);   // banked on the spot, same as a bounty
+    cash+=c.rew; g.cashRun+=c.rew; g.contractsDone++; g.contractCash+=c.rew; saveWallet(); cashPop(c.rew);   // banked on the spot, same as a bounty
     const el=document.getElementById('ctrPop');
     if(el){ el.textContent='CONTRACT PAID · +$'+c.rew;
       el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
@@ -4132,6 +4133,9 @@ function chargeStep(dt){
 function resumeDrive(){
   const g=game; if(!g||state!=='paused') return;
   if(g.parked && g.parked.cost) saveWallet();                        // the receipt is settled before the wheels move
+  // the session ledger, told once, on the way out — whether the tariff/idle-fee curve is punishing shows up here
+  if(g.parked && g.parked.charger) track('charge_session', { kwh:+((g.parked.kwh||0).toFixed(1)),
+    cost:+((g.parked.cost||0).toFixed(2)), idle_bill:+((g.parked.idleBill||0).toFixed(2)), batt_end:Math.round(g.batt*100) });
   const c=g.car, p=g.road.pts[c.idx];
   const lateral=(c.x-p.x)*(-p.ty)+(c.y-p.y)*p.tx;
   const fac=restGeom(c.idx,g.seed);
@@ -4257,6 +4261,7 @@ function toggleDriftView(){ if(!game) return;
   try{ localStorage.setItem('drift.view2',driftView); }catch(e){}
   game.camAngle = Math.atan2(game.car.vy,game.car.vx) || game.car.angle;   // avoid a spin on switch
   setViewButton();
+  track('view_toggle', { view: game.view });
 }
 document.getElementById('viewBtn').onclick=()=>{ toggleDriftView(); };
 addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
@@ -4320,9 +4325,10 @@ function steerInput(){
    means the brake stays free to be the drift trigger: you can't accidentally trail-brake with cruise on. */
 function toggleCruise(){
   const g=game; if(!g || state!=='play') return;
-  if(g.cc){ g.cc=0; return; }
+  if(g.cc){ g.cc=0; track('cruise_toggle', { on:0 }); return; }
   const kmh=Math.max(80, Math.round(g.speed*0.36/10)*10);     // set at the pace you're already doing
   g.cc=clamp(kmh/0.36, 0, VTOP);
+  track('cruise_toggle', { on:1 });
 }
 function cruiseAdjust(g){
   if(!g.cc) return;
@@ -4374,6 +4380,11 @@ document.getElementById('againBtn').onclick=()=>startGame(dailyMode);   // Again
 document.getElementById('pauseBtn').onclick=e=>{ e.stopPropagation(); togglePause(); };
 document.getElementById('resumeBtn').onclick=e=>{ e.stopPropagation(); resumeDrive(); };
 document.getElementById('startPanel').addEventListener('pointerdown',e=>{ if(e.target.id==='startPanel') startGame(false); });
+// what fraction of visitors ever open the shop before their first drive — the over-panel's copy is always
+// inline, not a <details>, so this only exists on the menu
+document.querySelector('#startPanel .more').addEventListener('toggle', e=>{
+  if(e.target.open) track('garage_open', { cash:Math.floor(cash), guns_owned:gunsOwned.length, mods_owned:modsOwned.length });
+});
 renderArmory(); renderShelf();   // the shop is open and the shelf is dusted before the first drive
 
 /* ============================ test hooks ============================ */

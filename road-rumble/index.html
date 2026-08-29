@@ -286,6 +286,7 @@ function newGame(){
     health:100, club:false, crash:false, crashT:0, spin:0, hurtT:0, punchT:0, punchCd:0, boostFlash:0,
     rivals, traffic, pickups, elapsed:0, hillOffset:0, skyShift:0,
     finished:false, finishPlace:0, finishOrder:[],
+    crashHeadon:0, crashRearend:0, crashBeaten:0, punchesThrown:0, punchesLanded:0, clubGrabbed:false,
     forceThrottle:undefined, forceBrake:undefined, forceSteer:undefined, forcePunch:false
   };
 }
@@ -342,6 +343,11 @@ const sfx={ swing(){ blip('square',180,0.09,0.12); }, thud(){ blip('sine',120,0.
   crash(){ noise(0.5,0.4); blip('sawtooth',90,0.4,0.15); }, pickup(){ blip('square',660,0.08,0.14); blip('square',990,0.12,0.12); },
   win(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>blip('triangle',f,0.18,0.14),i*110)); } };
 
+/* ============================ telemetry ============================ */
+/* Same dumbest-possible wrapper as Drift: if analytics.js was blocked, never loaded, or silent on file://,
+   this is a no-op the game cannot tell happened. */
+function track(name,params){ try{ if(window.bgTrack) window.bgTrack(name,params); }catch(e){} }
+
 /* ============================ update ============================ */
 function updatePlayer(dt){
   const g=game, seg=findSeg(g.position+playerZ);
@@ -372,21 +378,21 @@ function updatePlayer(dt){
 
   // punch
   if(punchInput() && g.punchCd<=0){
-    g.punchCd=0.36; g.punchT=0.2; sfx.swing();
+    g.punchCd=0.36; g.punchT=0.2; g.punchesThrown++; sfx.swing();
     const reach=g.club?0.95:0.62, ahead=g.club?1.9*CARLEN:1.4*CARLEN;
     let best=null,bd=1e9;
     for(const r of g.rivals){ if(r.finished||r.down) continue; const dz=r.dist-g.position;
       if(dz<-0.4*CARLEN||dz>ahead) continue; if(Math.abs(r.offset-g.playerX)>reach) continue;
       if(dz<bd){bd=dz;best=r;} }
     if(best){ best.health-=g.club?42:26; best.hitT=0.45; best.speed*=0.9;
-      best.offset+=(best.offset>=g.playerX?1:-1)*0.16; sfx.thud();
+      best.offset+=(best.offset>=g.playerX?1:-1)*0.16; g.punchesLanded++; sfx.thud();
       if(best.health<=0){ best.down=true; best.downT=1.7; best.health=0; } }
   }
   g.position+=g.speed*dt;
 
   // pickups
   for(const p of g.pickups){ if(p.taken) continue; const dz=p.dist-g.position;
-    if(Math.abs(dz)<CARLEN*0.6 && Math.abs(p.offset-g.playerX)<0.45){ p.taken=true; g.club=true; g.boostFlash=0.6; sfx.pickup(); } }
+    if(Math.abs(dz)<CARLEN*0.6 && Math.abs(p.offset-g.playerX)<0.45){ p.taken=true; g.club=true; g.clubGrabbed=true; g.boostFlash=0.6; sfx.pickup(); } }
 
   if(g.position>=trackLength && !g.finished){ finishRacer('player'); }
 }
@@ -440,6 +446,8 @@ function updateTraffic(dt){
   }
 }
 function crashPlayer(reason){ const g=game; if(g.crash||g.finished) return;
+  // which kind of death is commonest tells you what to rebalance: traffic weaving, following too close, or the punch fight
+  if(reason==='HEAD-ON') g.crashHeadon++; else if(reason==='REAR-ENDED') g.crashRearend++; else if(reason==='BEATEN DOWN') g.crashBeaten++;
   g.crash=true; g.crashT=1.35; g.crashReason=reason; g.spin=0; g.health=Math.max(0,g.health); sfx.crash(); }
 
 function liveRank(){ const g=game; let ahead=0; for(const r of g.rivals) if(r.dist>g.position) ahead++; return ahead+1; }
@@ -452,6 +460,10 @@ function endRace(){ const g=game; state='over';
   // any rivals not yet finished rank behind the player by current distance
   const place=g.finishPlace, field=g.rivals.length+1;
   const isBest=(best===0)||place<best; if(isBest){ best=place; try{ localStorage.setItem('rumble.best',best); }catch(e){} }
+  track('race_end', { place, field, elapsed_s:Math.round(g.elapsed), best:isBest?1:0,
+    crash_headon:g.crashHeadon, crash_rearend:g.crashRearend, crash_beaten:g.crashBeaten,
+    punches_thrown:g.punchesThrown, punches_landed:g.punchesLanded, club_grabbed:g.clubGrabbed?1:0,
+    input: document.body.classList.contains('touch')?'touch':'keyboard' });
   const ord=['1st','2nd','3rd','4th','5th','6th'][place-1]||place+'th';
   document.getElementById('overTitle').textContent = place===1?'YOU WON':'FINISHED';
   document.getElementById('finalPos').textContent = ord;
@@ -686,6 +698,7 @@ requestAnimationFrame(frame);
 /* ============================ flow ============================ */
 function startGame(){
   audioInit(); newGame(); state='play'; lastT=performance.now(); acc=0;
+  track('race_start', { input: document.body.classList.contains('touch')?'touch':'keyboard', best_before: best });
   document.getElementById('startPanel').classList.add('hidden');
   document.getElementById('overPanel').classList.add('hidden');
   document.getElementById('hud').style.display='block';

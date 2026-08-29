@@ -1,0 +1,331 @@
+#!/usr/bin/env node
+
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { config } from './src/config.js';
+import { GAME_CATALOG } from './src/knowledge/catalog.js';
+import { ContentGenerator } from './src/generator/contentGenerator.js';
+import { CampaignPlanner } from './src/generator/campaignPlanner.js';
+import { OpportunityScout } from './src/scout/opportunityScout.js';
+import { VisualStudio } from './src/studio/visualStudio.js';
+import { QueueManager } from './src/scheduler/queueManager.js';
+import { AutonomousRunner } from './src/scheduler/autonomousRunner.js';
+import { UniversalPublisher } from './src/publishers/index.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const args = process.argv.slice(2);
+const command = args[0] || 'help';
+
+function parseFlags(argv) {
+  const flags = {};
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg.startsWith('--')) {
+      const key = arg.slice(2);
+      const next = argv[i + 1];
+      if (next && !next.startsWith('--')) {
+        flags[key] = next;
+        i++;
+      } else {
+        flags[key] = true;
+      }
+    }
+  }
+  return flags;
+}
+
+const flags = parseFlags(args.slice(1));
+
+async function main() {
+  switch (command) {
+    case 'help':
+    case '--help':
+    case '-h': {
+      printHelp();
+      break;
+    }
+
+    case 'status': {
+      console.log(`\n======================================================`);
+      console.log(`🎯 KREEDA MARKETING AGENT — PLATFORM STATUS`);
+      console.log(`======================================================`);
+      console.log(`Brand:           ${config.general.brandName}`);
+      console.log(`Base URL:        ${config.general.baseUrl}`);
+      console.log(`Mode:            ${config.general.mode.toUpperCase()}`);
+      console.log(`AI Engine:       ${config.ai.geminiModel} (${config.ai.geminiApiKey ? '✅ Key Present' : '⚠️ Fallback Engine'})`);
+      
+      const pub = new UniversalPublisher();
+      const st = pub.getStatus();
+      console.log(`\n--- Configured Channels ---`);
+      console.log(`Twitter/X API:   ${st.twitter ? '✅ Connected' : '❌ Missing Credentials'}`);
+      console.log(`Reddit API:      ${st.reddit ? '✅ Connected' : '❌ Missing Credentials'}`);
+      console.log(`Discord Webhook: ${st.discord ? '✅ Connected' : '❌ Missing Credentials'}`);
+      console.log(`Dev.to API:      ${st.devto ? '✅ Connected' : '❌ Missing Credentials'}`);
+      console.log(`Universal Hook:  ${st.webhook ? '✅ Connected' : '❌ Missing Credentials'}`);
+      console.log(`======================================================\n`);
+      break;
+    }
+
+    case 'plan': {
+      console.log(`\n📅 Generating 7-day marketing campaign plan...`);
+      const planner = new CampaignPlanner();
+      const plan = await planner.planWeeklyCalendar();
+      
+      const queue = new QueueManager();
+      queue.add(plan.items);
+      
+      console.log(`\n✅ Weekly plan created with ${plan.items.length} scheduled items and added to queue:`);
+      plan.items.forEach(item => {
+        console.log(`  • [${item.scheduledDate}] ${item.dayOfWeek.padEnd(9)} | ${item.channel.toUpperCase().padEnd(10)} | ${item.gameName} — ${item.theme}`);
+      });
+      console.log(`\nRun "node cli.js queue" to review drafts.\n`);
+      break;
+    }
+
+    case 'generate': {
+      const gameId = flags.game || 'drift';
+      const channel = flags.channel || 'twitter';
+      const isThread = Boolean(flags.thread);
+
+      console.log(`\n✨ Generating ${channel.toUpperCase()} content for "${gameId}"...`);
+      const gen = new ContentGenerator();
+      const result = await gen.generate(gameId, channel, { isThread, subreddit: flags.subreddit, angle: flags.angle });
+
+      console.log(`\n================ GENERATED CONTENT ================`);
+      console.log(JSON.stringify(result.content, null, 2));
+      console.log(`===================================================`);
+      console.log(`💾 Saved to artifact: ${result.artifactPath}\n`);
+
+      if (flags.queue) {
+        const queue = new QueueManager();
+        queue.add({
+          channel,
+          gameId,
+          content: result.content,
+          status: 'draft'
+        });
+        console.log(`📥 Added to review queue as draft.`);
+      }
+      break;
+    }
+
+    case 'campaign':
+    case 'generate-campaign': {
+      const gameId = flags.game || 'drift';
+      console.log(`\n🚀 Generating 360° launch campaign for "${gameId}"...`);
+      const gen = new ContentGenerator();
+      const campaign = await gen.generateFullCampaign(gameId);
+      console.log(`\n✅ Generated all deliverables (Twitter thread, Reddit posts, Show HN, Video script, Dev.to article).`);
+      break;
+    }
+
+    case 'scout': {
+      console.log(`\n🔍 Opportunity Scout running on community topics...`);
+      const scout = new OpportunityScout();
+      const leads = await scout.scanSimulatedFeeds();
+      console.log(`\n================ OPPORTUNITY LEADS (${leads.length}) ================`);
+      leads.forEach(lead => {
+        console.log(`\n[Score: ${lead.relevanceScore}/100] [${lead.platform}] by ${lead.author}`);
+        console.log(`Query: "${lead.queryContent}"`);
+        console.log(`Recommended Game: ${lead.recommendedGame}`);
+        console.log(`Draft Reply:\n"${lead.draftReply}"`);
+      });
+      console.log(`\n====================================================\n`);
+      break;
+    }
+
+    case 'studio':
+    case 'visuals': {
+      console.log(`\n🎨 Generating SVG social preview cards for catalog...`);
+      const studio = new VisualStudio();
+      const cards = studio.generateAllCards();
+      console.log(`✅ Generated ${Object.keys(cards).length} cards in ${studio.outputDir}:`);
+      Object.entries(cards).forEach(([game, path]) => {
+        console.log(`  • ${game.padEnd(14)} -> ${path}`);
+      });
+      console.log();
+      break;
+    }
+
+    case 'queue': {
+      const queue = new QueueManager();
+      const items = queue.getAll({ status: flags.status, channel: flags.channel });
+      console.log(`\n📋 CAMPAIGN QUEUE (${items.length} items):`);
+      if (items.length === 0) {
+        console.log(`  Queue is empty. Run "node cli.js plan" to generate a campaign.`);
+      } else {
+        items.forEach(item => {
+          const headline = item.content?.headline || item.content?.title || item.content?.hookText || item.theme || 'Draft Post';
+          console.log(`  [${item.status.toUpperCase().padEnd(9)}] ${item.id} | ${item.scheduledDate} | ${item.channel.padEnd(8)} | ${item.gameId.padEnd(12)} | "${headline.slice(0, 45)}..."`);
+        });
+      }
+      console.log();
+      break;
+    }
+
+    case 'approve': {
+      const id = args[1];
+      if (!id) {
+        console.error('Usage: node cli.js approve <id>');
+        process.exit(1);
+      }
+      const queue = new QueueManager();
+      const updated = queue.approve(id);
+      console.log(`✅ Approved post ${id} for publication on ${updated.scheduledDate}`);
+      break;
+    }
+
+    case 'publish': {
+      const id = args[1];
+      if (!id) {
+        console.error('Usage: node cli.js publish <id> [--live]');
+        process.exit(1);
+      }
+      const queue = new QueueManager();
+      const dryRun = !flags.live;
+      const res = await queue.publish(id, dryRun);
+      console.log(`\nPublish Result:`, JSON.stringify(res.publishResult, null, 2));
+      break;
+    }
+
+    case 'process-due': {
+      const queue = new QueueManager();
+      const dryRun = !flags.live;
+      console.log(`\nProcessing due queue items (${dryRun ? 'DRY-RUN' : 'LIVE'})...`);
+      const results = await queue.processDueQueue(dryRun);
+      console.log(`✅ Processed ${results.length} items.`);
+      break;
+    }
+
+    case 'run-autonomous':
+    case 'auto': {
+      const runner = new AutonomousRunner();
+      if (flags.daemon) {
+        const interval = Number(flags.interval) || 60;
+        runner.startDaemon(interval);
+      } else {
+        await runner.runCycle({ dryRun: !flags.live });
+      }
+      break;
+    }
+
+    case 'dashboard': {
+      startDashboardServer(Number(flags.port) || 3030);
+      break;
+    }
+
+    default:
+      console.error(`Unknown command: ${command}`);
+      printHelp();
+      process.exit(1);
+  }
+}
+
+function printHelp() {
+  console.log(`
+======================================================
+🎮 KREEDA AUTONOMOUS MARKETING AGENT (CLI)
+======================================================
+Usage: node cli.js <command> [options]
+
+Commands:
+  status                     Check status of API credentials & channel connectivity
+  plan                       Generate a complete 7-day marketing campaign plan
+  generate                   Generate content for a specific game and channel
+                             Options: --game <id> --channel <twitter|reddit|hackernews|shorts|devto> [--thread] [--queue]
+  campaign                   Generate a full 360° cross-platform launch campaign for a game
+                             Options: --game <id>
+  scout                      Scout community queries & draft authentic contextual replies
+  studio                     Generate high-res SVG social cards & banners for all 12 games
+  queue                      View items in the campaign queue
+                             Options: [--status draft|scheduled|approved|published]
+  approve <id>               Approve a queued post for publication
+  publish <id>               Publish a post immediately (use --live for actual API post)
+  process-due                Publish all approved posts scheduled for today or earlier
+  run-autonomous             Run one full autonomous marketing cycle (or --daemon --interval 60)
+  dashboard                  Launch local interactive marketing dashboard (default port 3030)
+======================================================
+`);
+}
+
+function startDashboardServer(port = 3030) {
+  const dashboardDir = path.join(__dirname, 'dashboard');
+  const server = http.createServer((req, res) => {
+    let reqPath = req.url.split('?')[0];
+
+    // API routes for Dashboard
+    if (reqPath === '/api/queue') {
+      const queue = new QueueManager();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(queue.getAll()));
+      return;
+    }
+
+    if (reqPath === '/api/opportunities') {
+      let opps = [];
+      if (fs.existsSync(config.paths.opportunitiesFile)) {
+        try { opps = JSON.parse(fs.readFileSync(config.paths.opportunitiesFile, 'utf8')); } catch(e){}
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(opps));
+      return;
+    }
+
+    if (reqPath === '/api/catalog') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(GAME_CATALOG));
+      return;
+    }
+
+    if (reqPath === '/api/status') {
+      const pub = new UniversalPublisher();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ config: config.general, channels: pub.getStatus() }));
+      return;
+    }
+
+    // Static file serving
+    if (reqPath === '/' || reqPath === '/index.html') reqPath = '/index.html';
+    
+    let filePath = path.join(dashboardDir, reqPath);
+    if (!fs.existsSync(filePath) && reqPath.startsWith('/artifacts/')) {
+      filePath = path.join(config.paths.marketing, reqPath);
+    }
+
+    if (!fs.existsSync(filePath)) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('404 Not Found');
+      return;
+    }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeTypes = {
+      '.html': 'text/html',
+      '.js': 'application/javascript',
+      '.css': 'text/css',
+      '.json': 'application/json',
+      '.svg': 'image/svg+xml',
+      '.png': 'image/png'
+    };
+
+    res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'application/octet-stream' });
+    fs.createReadStream(filePath).pipe(res);
+  });
+
+  server.listen(port, () => {
+    console.log(`\n✨ ========================================================`);
+    console.log(`✨ KREEDA MARKETING DASHBOARD RUNNING`);
+    console.log(`👉 Open in browser: http://localhost:${port}`);
+    console.log(`✨ ========================================================\n`);
+  });
+}
+
+main().catch(err => {
+  console.error('Fatal error in CLI:', err);
+  process.exit(1);
+});
