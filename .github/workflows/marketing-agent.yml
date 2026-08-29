@@ -33,6 +33,8 @@ permissions:
 jobs:
   marketing-agent:
     runs-on: ubuntu-latest
+    env:
+      MARKETING_ENV: ${{ secrets.MARKETING_ENV }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -45,11 +47,9 @@ jobs:
           node-version: '22'
 
       - name: Load All-in-One .env Secret (if configured)
-        if: "${{ secrets.MARKETING_ENV != '' }}"
-        env:
-          ENV_CONTENT: ${{ secrets.MARKETING_ENV }}
+        if: ${{ env.MARKETING_ENV != '' }}
         run: |
-          echo "$ENV_CONTENT" > marketing/.env
+          echo "$MARKETING_ENV" > marketing/.env
           echo "Loaded marketing/.env from MARKETING_ENV secret."
 
       - name: Execute Marketing Agent
