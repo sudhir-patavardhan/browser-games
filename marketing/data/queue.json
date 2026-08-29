@@ -170,7 +170,7 @@
   },
   {
     "id": "plan-monday-1787978223827-0",
-    "status": "scheduled",
+    "status": "draft_published",
     "channel": "twitter",
     "gameId": "drift",
     "scheduledDate": "2026-08-29",
@@ -202,8 +202,16 @@
       "score": 9.2
     },
     "createdAt": "2026-08-29T04:37:03.828Z",
-    "publishedAt": null,
-    "publishResult": null
+    "publishedAt": "2026-08-29T05:15:31.377Z",
+    "publishResult": {
+      "success": true,
+      "channel": "twitter",
+      "mode": "draft",
+      "postId": "sim-tweet-1787980531377",
+      "url": "https://twitter.com/intent/tweet?text=Free%20browser%20games%20that%20start%20the%20second%20you%20tap",
+      "publishedAt": "2026-08-29T05:15:31.377Z"
+    },
+    "updatedAt": "2026-08-29T05:15:31.377Z"
   },
   {
     "id": "plan-tuesday-1787978223828-1",

@@ -50,6 +50,12 @@ async function main() {
       break;
     }
 
+    case 'secrets':
+    case 'github-secrets': {
+      printGitHubSecretsGuide();
+      break;
+    }
+
     case 'status': {
       console.log(`\n======================================================`);
       console.log(`🎯 KREEDA MARKETING AGENT — PLATFORM STATUS`);
@@ -224,6 +230,50 @@ async function main() {
       printHelp();
       process.exit(1);
   }
+}
+
+function printGitHubSecretsGuide() {
+  console.log(`
+======================================================
+🔑 GITHUB REPOSITORY SECRETS GUIDE
+======================================================
+To run the marketing agent autonomously in GitHub Actions:
+
+1. Go to your repository on GitHub:
+   https://github.com/sudhir-patavardhan/browser-games/settings/secrets/actions
+
+2. Click "New repository secret" and add the following keys as needed:
+
+  • GEMINI_API_KEY               (Google AI Studio key — Essential)
+  • GEMINI_MODEL                 (Default: gemini-3.7-flash)
+  • MARKETING_MODE               (Set to 'draft' or 'live')
+
+  [Twitter / X API]
+  • TWITTER_API_KEY              (App Consumer Key)
+  • TWITTER_API_SECRET           (App Consumer Secret)
+  • TWITTER_ACCESS_TOKEN         (User Access Token with Read+Write)
+  • TWITTER_ACCESS_TOKEN_SECRET  (User Access Token Secret)
+  • TWITTER_BEARER_TOKEN         (App Bearer Token)
+
+  [Reddit API]
+  • REDDIT_CLIENT_ID             (Reddit Script App Client ID)
+  • REDDIT_CLIENT_SECRET         (Reddit Script App Secret)
+  • REDDIT_USERNAME              (Reddit Username)
+  • REDDIT_PASSWORD              (Reddit Password)
+
+  [Discord Webhook]
+  • DISCORD_WEBHOOK_URL          (Discord Webhook URL for announcements)
+
+  [Dev.to / Technical Blog]
+  • DEVTO_API_KEY                (Dev.to API Key for technical posts)
+
+  [Universal Webhook / Buffer]
+  • GENERIC_WEBHOOK_URL          (Make.com / Zapier / Buffer Webhook URL)
+
+3. Once added, the workflow will automatically execute daily at 9:00 AM UTC
+   via .github/workflows/marketing-agent.yml, or manually from the "Actions" tab.
+======================================================
+`);
 }
 
 function printHelp() {
