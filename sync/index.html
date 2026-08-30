@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sync — Kreeda</title>
-<meta name="description" content="How well do you actually know each other? Two players, one phone: on every card, pick your own answer and the one you think they'd give. Then one page shows everything — similarity, insight, and all ten questions side by side.">
+<meta name="description" content="How well do you actually know each other? Two players, one phone: all ten questions on one page — pick your own answer and the one you think they'd give. Then one page shows everything — similarity, insight, and all ten questions side by side.">
 <link rel="canonical" href="https://kreeda.games/sync/">
 <meta name="theme-color" content="#14101f">
 
@@ -26,7 +26,7 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Sync","description":"How well do you actually know each other? Two players, one phone: on every card, pick your own answer and the one you think they'd give, then reveal everything on one page.","url":"https://kreeda.games/sync/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Sync","description":"How well do you actually know each other? Two players, one phone: all ten questions on one page — pick your own answer and the one you think they'd give, then reveal everything on one page.","url":"https://kreeda.games/sync/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <style>
 /* ============================ tokens ============================
@@ -153,25 +153,45 @@ details.how li b{ color:var(--ink); }
   @keyframes heartbeat{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.03);} }
 }
 
-/* ============================ answering ============================
-   One card per question, both answers on it. The two columns of cells are the whole interface:
-   no mode to be in, no "which step am I on" — the colour says whose answer a cell is. */
-.prog{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-.prog .n{ font-size:12.5px; font-weight:800; color:var(--ink-dim); white-space:nowrap; }
-.dots{ flex:1; display:flex; gap:4px; }
-.dotb{ flex:1; height:30px; background:none; border:0; padding:0; display:flex; align-items:center; }
-.dotb i{ display:block; width:100%; height:8px; border-radius:99px; background:var(--panel-2);
-  transition:background .2s ease, box-shadow .2s ease; }
-.dotb.done i{ background:linear-gradient(90deg, var(--a), var(--b)); }
-.dotb.cur i{ box-shadow:0 0 0 2px var(--gold); }
+/* ============================ answering — one sheet ============================
+   All ten questions on one page, both answers on every one. Beside each option sit two cells —
+   Me and Them — and the whole interface is "tap one in each, all the way down". No modes, no
+   repeated questions, and the page is its own recap: anything can be changed until lock-in. */
+.prog{ position:sticky; top:max(8px, env(safe-area-inset-top)); z-index:5; display:flex; align-items:center;
+  gap:12px; background:var(--panel-2); border:1px solid var(--rule); border-radius:999px; padding:9px 14px;
+  margin-bottom:12px; box-shadow:0 6px 18px rgba(0,0,0,.35); }
+.prog .n{ font-size:13px; font-weight:800; white-space:nowrap; color:var(--ink-dim); }
+.prog .n b{ font-size:16px; color:var(--ink); }
+.bar{ flex:1; height:7px; border-radius:99px; background:var(--panel); overflow:hidden; }
+.bar i{ display:block; height:100%; border-radius:99px; width:0%;
+  background:linear-gradient(90deg, var(--a), var(--b)); transition:width .3s ease; }
 
 .turn{ display:flex; align-items:center; gap:10px; background:var(--panel-2); border:1px solid var(--rule);
   border-radius:13px; padding:10px 12px; margin-bottom:12px; font-size:13px; line-height:1.4; }
 .turn .eye{ font-size:20px; flex:none; }
 .turn b.pa{ color:var(--a-ink); } .turn b.pb{ color:var(--b-ink); }
 
-.qcard{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:16px 14px 10px; }
-.qtext{ font-size:21px; font-weight:900; line-height:1.3; margin:0 0 12px; }
+/* the legend: what the two columns mean, said once at the top in the cells' own colours */
+.explain{ background:var(--panel); border:1px solid var(--rule); border-radius:16px; padding:12px 14px; }
+.explain .row{ display:flex; align-items:center; gap:10px; margin-top:8px; font-size:13.5px; line-height:1.35; }
+.explain .row:first-child{ margin-top:0; }
+.explain .row b.pa{ color:var(--a-ink); } .explain .row b.pb{ color:var(--b-ink); }
+.explain .cell{ width:40px; height:36px; border-radius:10px; }
+.explain .cell svg{ width:18px; height:18px; }
+.explain p{ margin:10px 0 0; font-size:12.5px; color:var(--ink-dim); line-height:1.5; }
+
+.qcard{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:14px 14px 10px;
+  margin-top:10px; scroll-margin-top:calc(72px + env(safe-area-inset-top)); }
+.qcard .qhead{ display:flex; gap:9px; align-items:flex-start; margin-bottom:10px; }
+.qcard .qn{ flex:none; width:24px; height:24px; border-radius:99px; background:var(--panel-2); margin-top:2px;
+  font-size:11.5px; font-weight:900; display:flex; align-items:center; justify-content:center;
+  color:var(--ink-dim); transition:background .2s ease, color .2s ease; }
+.qcard.done .qn{ background:var(--ok-soft); color:var(--ok); box-shadow:inset 0 0 0 1.5px var(--ok); }
+.qtext{ flex:1; font-size:19px; font-weight:900; line-height:1.3; margin:0; }
+@media (prefers-reduced-motion:no-preference){
+  .qcard.flash{ animation:flash .9s ease; }
+  @keyframes flash{ 0%,100%{ box-shadow:none; } 30%{ box-shadow:0 0 0 3px var(--gold); } }
+}
 .colhead{ display:flex; align-items:flex-end; gap:6px; margin-bottom:4px; padding-right:2px; }
 .colhead .sp{ flex:1; }
 .colhead .ch{ width:54px; flex:none; text-align:center; font-size:11px; font-weight:900;
@@ -200,36 +220,10 @@ details.how li b{ color:var(--ink); }
 @media (prefers-reduced-motion:no-preference){
   .cell.nudge{ animation:nudge .45s ease; }
   @keyframes nudge{ 0%,100%{ transform:none; } 30%{ transform:scale(1.12); } 60%{ transform:scale(.96); } }
-  .stepin{ animation:stepin .22s ease; }
-  @keyframes stepin{ from{ opacity:0; transform:translateX(14px);} to{ opacity:1; transform:none;} }
 }
-.hint{ margin:10px 4px 0; font-size:12.5px; color:var(--ink-dim); line-height:1.5; text-align:center; }
-.hint b.pa{ color:var(--a-ink); } .hint b.pb{ color:var(--b-ink); }
-.navrow{ display:flex; gap:10px; margin-top:12px; }
-.navrow .btn{ flex:1; min-height:44px; margin-top:0; }
 
-/* ============================ recap / lock-in ============================ */
-.lock{ text-align:center; padding:10px 4px 6px; }
-.lock .bignum{ font-size:44px; font-weight:900; line-height:1;
-  background:linear-gradient(95deg, var(--a), var(--b)); -webkit-background-clip:text;
-  background-clip:text; color:transparent; }
-.lock h2{ font-size:21px; font-weight:900; margin:6px 0 6px; overflow-wrap:anywhere; }
-.lock p{ font-size:13.5px; color:var(--ink-dim); line-height:1.5; margin:0 0 12px; }
-.rrow-r{ display:flex; align-items:center; gap:10px; width:100%; text-align:left;
-  background:var(--panel); border:1px solid var(--rule); border-radius:13px; padding:10px 12px; margin-top:8px; }
-.rrow-r .num{ flex:none; width:22px; height:22px; border-radius:99px; background:var(--panel-2);
-  font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; color:var(--ink-dim); }
-.rrow-r .body{ flex:1; min-width:0; }
-.rrow-r .rq{ font-size:13.5px; font-weight:800; line-height:1.3; margin-bottom:6px;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.rrow-r .picks{ display:flex; gap:6px; flex-wrap:wrap; }
-.pk{ font-size:12px; font-weight:800; border-radius:999px; padding:4px 9px; line-height:1.3;
-  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.pk.me{ background:var(--a-soft); color:var(--a-ink); box-shadow:inset 0 0 0 1px rgba(124,92,255,.5); }
-.pk.them{ background:var(--b-soft); color:var(--b-ink); box-shadow:inset 0 0 0 1px rgba(255,107,157,.5); }
-.pk.todo{ background:var(--no-soft); color:var(--no); box-shadow:inset 0 0 0 1px rgba(255,140,122,.5); }
-.rrow-r .chev{ color:var(--ink-dim); flex:none; font-size:18px; }
-.lockbar{ position:sticky; bottom:0; padding:14px 0 calc(6px + env(safe-area-inset-bottom));
+/* lock-in rides the bottom of the viewport; it counts down until the sheet is complete */
+.lockbar{ position:sticky; bottom:0; z-index:5; padding:14px 0 calc(6px + env(safe-area-inset-bottom));
   margin-top:6px; background:linear-gradient(180deg, transparent 0%, var(--ground) 38%); }
 .lockbar .btn{ margin-top:0; }
 
@@ -488,7 +482,12 @@ try{ const n=JSON.parse(LS.get('sync.names')||'[]');
    disabled button or a stale generation; it can never advance the state machine twice. */
 const app=document.getElementById('app');
 let GEN=0;
-function show(html){ GEN++; app.innerHTML=html; window.scrollTo(0,0); }
+function show(html){
+  GEN++; app.innerHTML=html;
+  /* an instant scroll also aborts any smooth scroll the previous screen left in flight — without
+     it, a new screen can paint mid-way down the page */
+  try{ window.scrollTo({top:0,left:0,behavior:'instant'}); }catch(e){ window.scrollTo(0,0); }
+}
 function on(id,fn){
   const g=GEN, el=document.getElementById(id);
   if(!el) return;
@@ -539,7 +538,7 @@ let pack='n';
 function title(){
   show(
    '<div class="hero">'+MOTIF+'<h1>SYNC</h1>'
-   +'<p>How well do you actually know each other?<br>Two players. One phone. Ten cards.</p></div>'
+   +'<p>How well do you actually know each other?<br>Two players. One phone. Ten questions, one page.</p></div>'
    +'<div class="card">'
    +'<div class="names2">'
    +'<div class="field pa"><label for="inA">Player 1</label>'
@@ -555,8 +554,8 @@ function title(){
    +'<button class="btn primary" type="button" id="bStart"></button>'
    +'</div>'
    +'<details class="how"><summary>How it works</summary><ul>'
-   +'<li>Every card is one question with <b>two columns</b>: what <b>you</b> would pick, and what <b>they</b> would pick. Tap one in each.</li>'
-   +'<li>Player 1 does all ten, locks in, and passes the phone. Player 2 does the same. Nothing shows until both are done.</li>'
+   +'<li>All ten questions sit on one page. Every question has <b>two columns</b>: <b>Me</b> — your own answer — and <b>them</b> — your guess at what they’ll pick. Tap one in each.</li>'
+   +'<li>Player 1 fills the page, locks in, and passes the phone. Player 2 does the same. Nothing shows until both are done.</li>'
    +'<li>Then everything lands on <b>one page</b>: how alike you are, how well each of you read the other, and all ten questions side by side.</li>'
    +'</ul></details>'
    +'<footer class="foot">For fun and conversation — a game, not a psychological assessment.<br>'
@@ -585,9 +584,9 @@ function title(){
     names=[a,b]; LS.set('sync.names',JSON.stringify(names));
     newSession(pack);
     track('game_start',{pack:pack});
-    /* Player 1 is already holding the phone — no interstitial; the first card carries the
+    /* Player 1 is already holding the phone — no interstitial; the sheet carries the
        "look away" banner instead */
-    question(0,0,false);
+    sheet(0);
   });
 }
 
@@ -601,139 +600,111 @@ function handoff(p){
    '<div class="handoff">'
    +'<div class="pass">Pass the phone to</div>'
    +'<h2 class="'+cls+'">'+esc(nm)+'</h2>'
-   +'<p class="sub">'+esc(S.names[p===0?1:0])+' is done and locked in.<br>Your turn — same ten cards.</p>'
+   +'<p class="sub">'+esc(S.names[p===0?1:0])+' is done and locked in.<br>Your turn — same ten questions, one page.</p>'
    +'<button class="btn primary" type="button" id="bReady">I’m '+esc(nm)+' — show me</button>'
    +'<p class="peek">👀 tilt the phone away while you answer</p>'
    +'</div>'
   );
-  on('bReady',()=>question(p,0,false));
+  on('bReady',()=>sheet(p));
 }
 
-/* ============================ answering ============================
-   One card per question. Two columns of cells beside the options: Me (violet) and Them (rose).
-   Tapping a cell picks that option for that column; once both columns have a pick, the card
-   advances on its own after a short beat. The dots along the top jump to any card, so "Back"
-   is never more than one tap and a change never means re-walking a rail. */
-function question(p,qi,fromRecap){
-  const me=S.names[p], other=S.names[p===0?1:0];
-  const pcls=p===0?'pa':'pb', ocls=p===0?'pb':'pa';
-  const q=S.qs[qi];
-  const mySelf=S.self[p][qi], myPred=S.pred[p][qi];
-  const done=answeredCount(p);
-  const showTurn = qi===0 && done===0 && !fromRecap;
-  show(
-   header(true)
-   +'<div class="prog"><span class="n">'+(qi+1)+' of '+ROUNDS+'</span>'
-   +'<div class="dots" role="group" aria-label="Questions">'
-   +S.qs.map((_,i)=>'<button class="dotb'+(answered(p,i)?' done':'')+(i===qi?' cur':'')+'" type="button" '
-      +'data-i="'+i+'" aria-label="Question '+(i+1)+(answered(p,i)?', answered':'')+'"'
-      +(i===qi?' aria-current="step"':'')+'><i></i></button>').join('')
-   +'</div></div>'
-   +(showTurn
-      ? '<div class="turn"><span class="eye">👀</span><span><b class="'+pcls+'">'+esc(me)+'’s turn.</b> '
-        +esc(other)+', look away — nothing shows until you’ve both locked in.</span></div>'
-      : '')
-   +'<div class="qcard stepin">'
-   +'<p class="qtext">'+esc(q.q)+'</p>'
+/* ============================ answering — one sheet ============================
+   Every question on one page, two columns of cells beside each option: Me (violet) and Them
+   (rose). Tap one in each, all the way down. Finishing a question slides the next one up;
+   anything can be changed until lock-in, so the sheet is its own recap. Player 1 is already
+   holding the phone after Start, so there is no interstitial before this — only before Player 2. */
+function block(p,qi,other){
+  const q=S.qs[qi], mySelf=S.self[p][qi], myPred=S.pred[p][qi];
+  return '<div class="qcard'+(answered(p,qi)?' done':'')+'" id="blk'+qi+'">'
+   +'<div class="qhead"><span class="qn">'+(qi+1)+'</span><p class="qtext">'+esc(q.q)+'</p></div>'
    +'<div class="colhead"><span class="sp"></span>'
-   +'<span class="ch me"><small>I’d say</small>Me</span>'
-   +'<span class="ch them"><small>'+esc(other)+'’d say</small>'+esc(other)+'</span></div>'
+   +'<span class="ch me"><small>my answer</small>Me</span>'
+   +'<span class="ch them"><small>my guess</small>'+esc(other)+'</span></div>'
    +q.o.map((opt,i)=>'<div class="orow'+(mySelf===i&&myPred===i?' both':'')+'" data-i="'+i+'">'
       +'<span class="otext">'+esc(opt)+'</span>'
-      +'<button class="cell me'+(mySelf===i?' on':'')+'" type="button" data-col="me" data-i="'+i+'" '
+      +'<button class="cell me'+(mySelf===i?' on':'')+'" type="button" data-q="'+qi+'" data-col="me" data-i="'+i+'" '
       +'aria-pressed="'+(mySelf===i)+'" aria-label="Me: '+esc(opt)+'">'+TICK+'</button>'
-      +'<button class="cell them'+(myPred===i?' on':'')+'" type="button" data-col="them" data-i="'+i+'" '
-      +'aria-pressed="'+(myPred===i)+'" aria-label="'+esc(other)+': '+esc(opt)+'">'+TICK+'</button>'
+      +'<button class="cell them'+(myPred===i?' on':'')+'" type="button" data-q="'+qi+'" data-col="them" data-i="'+i+'" '
+      +'aria-pressed="'+(myPred===i)+'" aria-label="My guess for '+esc(other)+': '+esc(opt)+'">'+TICK+'</button>'
       +'</div>').join('')
-   +'</div>'
-   +'<p class="hint">Tap one in each column — <b class="'+pcls+'">your</b> answer, and your guess for <b class="'+ocls+'">'+esc(other)+'</b>.</p>'
-   +'<div class="navrow">'
-   +(qi>0||fromRecap?'<button class="btn ghost" type="button" id="bBack">← '+(fromRecap?'Back to list':'Back')+'</button>':'')
-   +(answered(p,qi)?'<button class="btn" type="button" id="bNext">'+(fromRecap?'Done ✓':'Next →')+'</button>':'')
-   +'</div>'
-  );
-  bindHome();
-  const g=GEN;
-  let pending=false;
-  const goOn=()=>{
-    if(fromRecap){ recap(p); return; }
-    const n=nextUnanswered(p,qi);
-    if(n<0) recap(p); else question(p,n,false);
-  };
-  document.querySelectorAll('.cell').forEach(el=>{
-    el.addEventListener('click',()=>{
-      if(g!==GEN||pending) return;                         // stale screen or mid-advance: ignore
-      const i=+el.getAttribute('data-i'), col=el.getAttribute('data-col');
-      (col==='me'?S.self:S.pred)[p][qi]=i;
-      document.querySelectorAll('.cell.'+col).forEach(c=>{
-        const onNow=+c.getAttribute('data-i')===i;
-        c.classList.toggle('on',onNow); c.setAttribute('aria-pressed',String(onNow));
-      });
-      document.querySelectorAll('.orow').forEach(r=>{ const k=+r.getAttribute('data-i');
-        r.classList.toggle('both', S.self[p][qi]===k && S.pred[p][qi]===k); });
-      document.querySelectorAll('.dotb').forEach(d=>d.classList.toggle('done',answered(p,+d.getAttribute('data-i'))));
-      if(answered(p,qi)){
-        /* a beat so the second tick is seen landing before the slide; GEN-guarded so a double
-           tap can't queue two advances */
-        pending=true;
-        setTimeout(()=>{ if(g!==GEN) return; pending=false; goOn(); },420);
-      }
-    });
-  });
-  /* tapping the words themselves isn't a pick — wiggle the empty cells on that row as a nudge */
-  document.querySelectorAll('.otext').forEach(el=>{
-    el.addEventListener('click',()=>{
-      if(g!==GEN) return;
-      el.parentNode.querySelectorAll('.cell:not(.on)').forEach(c=>{
-        c.classList.remove('nudge'); void c.offsetWidth; c.classList.add('nudge'); });
-    });
-  });
-  document.querySelectorAll('.dotb').forEach(el=>{
-    el.addEventListener('click',()=>{
-      if(g!==GEN||pending) return;
-      const i=+el.getAttribute('data-i'); if(i===qi) return;
-      question(p,i,fromRecap);
-    });
-  });
-  on('bBack',()=>{ if(fromRecap) recap(p); else question(p,qi-1,false); });
-  on('bNext',goOn);
+   +'</div>';
 }
 
-/* ============================ recap / lock-in ============================
-   The last screen before the phone changes hands is the useful one: every answer on a list,
-   tap any to change it. Lock in hides everything and moves on — for Player 1 to the hand-off,
-   for Player 2 straight to the one-page reveal. */
-function recap(p){
-  const me=S.names[p], other=S.names[p===0?1:0], done=answeredCount(p);
-  const all=done===ROUNDS;
+function sheet(p){
+  const me=S.names[p], other=S.names[p===0?1:0];
+  const pcls=p===0?'pa':'pb';
   show(
    header(true)
-   +'<div class="lock"><div class="bignum">'+done+'/'+ROUNDS+'</div>'
-   +'<h2>'+(all?'All answered, '+esc(me):esc(me)+', a few cards are still blank')+'</h2>'
-   +'<p>'+(all
-      ? 'Tap any card to change it. '+(p===0
-          ? 'Locking in hides your answers and passes the phone to '+esc(other)+'.'
-          : 'Bring '+esc(other)+' over — locking in opens the reveal for both of you.')
-      : 'Tap a card to finish it.')+'</p></div>'
-   +S.qs.map((q,i)=>{
-      const s=S.self[p][i], g=S.pred[p][i];
-      return '<button class="rrow-r" type="button" data-i="'+i+'">'
-       +'<span class="num">'+(i+1)+'</span><span class="body">'
-       +'<span class="rq">'+esc(q.q)+'</span><span class="picks">'
-       +(s>=0?'<span class="pk me">Me: '+esc(q.o[s])+'</span>':'<span class="pk todo">Me: ?</span>')
-       +(g>=0?'<span class="pk them">'+esc(other)+': '+esc(q.o[g])+'</span>':'<span class="pk todo">'+esc(other)+': ?</span>')
-       +'</span></span><span class="chev" aria-hidden="true">›</span></button>';
-    }).join('')
-   +'<div class="lockbar"><button class="btn primary" type="button" id="bLock"'+(all?'':' disabled')+'>'
-   +(p===0?'Lock in &amp; pass to '+esc(other):'Lock in &amp; reveal together')+'</button></div>'
+   +'<div class="turn"><span class="eye">👀</span><span><b class="'+pcls+'">'+esc(me)+'’s turn.</b> '
+     +esc(other)+', look away — nothing shows until you’ve both locked in.</span></div>'
+   +'<div class="prog"><span class="n"><b id="pn">0</b> of '+ROUNDS+' done</span>'
+   +'<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="'+ROUNDS+'" aria-valuenow="0" id="pbar"><i></i></div></div>'
+   +'<div id="sheet">'
+   +'<div class="explain">'
+   +'<div class="row"><span class="cell me on" aria-hidden="true">'+TICK+'</span>'
+   +'<span><b class="pa">Me</b> — the answer that’s true for you.</span></div>'
+   +'<div class="row"><span class="cell them on" aria-hidden="true">'+TICK+'</span>'
+   +'<span><b class="pb">'+esc(other)+'</b> — your guess at what '+esc(other)+' will pick for themselves.</span></div>'
+   +'<p>Two taps per question, all ten on this page. Change anything until you lock in.</p>'
+   +'</div>'
+   +S.qs.map((q,qi)=>block(p,qi,other)).join('')
+   +'</div>'
+   +'<div class="lockbar"><button class="btn" type="button" id="bLock"></button></div>'
   );
   bindHome();
-  const g=GEN;
-  document.querySelectorAll('.rrow-r').forEach(el=>{
-    el.addEventListener('click',()=>{ if(g!==GEN) return; question(p,+el.getAttribute('data-i'),true); });
+  const g=GEN, lockBtn=document.getElementById('bLock');
+  const reduced=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const scrollTo=el=>el.scrollIntoView({behavior:reduced?'auto':'smooth', block:'start'});
+  const refresh=()=>{
+    const n=answeredCount(p), all=n===ROUNDS;
+    document.getElementById('pn').textContent=n;
+    const bar=document.getElementById('pbar');
+    bar.setAttribute('aria-valuenow',n); bar.firstChild.style.width=(n/ROUNDS*100)+'%';
+    lockBtn.className='btn'+(all?' primary':'');
+    lockBtn.innerHTML=all
+      ? (p===0?'Lock in &amp; pass to '+esc(other):'Lock in &amp; reveal together')
+      : (ROUNDS-n)+' more to go';
+  };
+  refresh();
+  /* one listener on the sheet rather than 80 on the cells; it dies with the sheet's innerHTML */
+  document.getElementById('sheet').addEventListener('click',e=>{
+    if(g!==GEN) return;
+    const cell=e.target.closest('.cell[data-q]');
+    if(cell){
+      const qi=+cell.getAttribute('data-q'), i=+cell.getAttribute('data-i'), col=cell.getAttribute('data-col');
+      const blk=document.getElementById('blk'+qi), wasDone=answered(p,qi);
+      (col==='me'?S.self:S.pred)[p][qi]=i;
+      blk.querySelectorAll('.cell.'+col).forEach(c=>{ const onNow=+c.getAttribute('data-i')===i;
+        c.classList.toggle('on',onNow); c.setAttribute('aria-pressed',String(onNow)); });
+      blk.querySelectorAll('.orow').forEach(r=>{ const k=+r.getAttribute('data-i');
+        r.classList.toggle('both', S.self[p][qi]===k && S.pred[p][qi]===k); });
+      blk.classList.toggle('done',answered(p,qi));
+      refresh();
+      /* finishing a question for the first time slides the next unanswered one up (only if it is
+         further down — a player fixing an earlier answer is left where they are), after a beat so
+         the second tick is seen landing. Nothing scrolls when the sheet completes: the lock bar is
+         sticky and already on screen, and a smooth scroll left in flight would outlive the screen
+         swap when Lock in is tapped quickly. */
+      if(!wasDone && answered(p,qi)){
+        const next=nextUnanswered(p,qi);
+        if(next>qi) setTimeout(()=>{ if(g===GEN) scrollTo(document.getElementById('blk'+next)); },260);
+      }
+      return;
+    }
+    /* tapping the words themselves isn't a pick — wiggle the empty cells on that row as a nudge */
+    const txt=e.target.closest('.otext');
+    if(txt) txt.parentNode.querySelectorAll('.cell:not(.on)').forEach(c=>{
+      c.classList.remove('nudge'); void c.offsetWidth; c.classList.add('nudge'); });
   });
   on('bLock',()=>{
-    if(answeredCount(p)!==ROUNDS) return;
+    const first=nextUnanswered(p,ROUNDS-1);        // wraps, so this is the first blank from the top
+    if(first>=0){
+      const blk=document.getElementById('blk'+first);
+      scrollTo(blk);
+      blk.classList.remove('flash'); void blk.offsetWidth; blk.classList.add('flash');
+      toast((ROUNDS-answeredCount(p))+' still need both columns');
+      return;
+    }
     S.done[p]=true;
     if(S.done[0]&&S.done[1]) results();
     else handoff(p===0?1:0);
@@ -896,7 +867,7 @@ function results(){
       if(q) q.scrollIntoView({behavior:'smooth',block:'start'}); });
   });
   on('bAgain',()=>{ completeSent=false; newSession(S.pack);
-    track('game_start',{pack:S.pack}); question(0,0,false); });
+    track('game_start',{pack:S.pack}); sheet(0); });
   on('bChange',()=>{ completeSent=false; S=null; title(); });
   on('bCopy',()=>{
     const text=shareText(t,pt[0],packName);
