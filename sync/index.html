@@ -77,6 +77,9 @@ button:focus-visible, input:focus-visible, summary:focus-visible{
   text-transform:uppercase; color:var(--ink-dim); }
 .homebtn{ margin-left:auto; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
   min-width:44px; min-height:44px; padding:8px 12px; font-size:13px; font-weight:800; color:var(--ink-dim); }
+.soundbtn{ margin-left:auto; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
+  min-width:44px; min-height:44px; padding:8px 10px; font-size:17px; line-height:1; }
+.soundbtn + .homebtn{ margin-left:0; }
 
 .card{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:18px 16px; }
 .btn{
@@ -188,9 +191,31 @@ details.how li b{ color:var(--ink); }
   color:var(--ink-dim); transition:background .2s ease, color .2s ease; }
 .qcard.done .qn{ background:var(--ok-soft); color:var(--ok); box-shadow:inset 0 0 0 1.5px var(--ok); }
 .qtext{ flex:1; font-size:19px; font-weight:900; line-height:1.3; margin:0; }
+
+/* a finished question swishes off to the left and settles back as one compact row — the question,
+   the two picks as chips, and a "tap to change" hint — while the next one slides in from the right */
+.qcard .picks{ display:none; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 2px 33px; }
+.pk{ font-size:12px; font-weight:800; border-radius:999px; padding:4px 9px; line-height:1.3;
+  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pk.me{ background:var(--a-soft); color:var(--a-ink); box-shadow:inset 0 0 0 1px rgba(124,92,255,.5); }
+.pk.them{ background:var(--b-soft); color:var(--b-ink); box-shadow:inset 0 0 0 1px rgba(255,107,157,.5); }
+.qcard .picks .chg{ margin-left:auto; font-size:10.5px; font-weight:800; color:var(--ink-dim);
+  letter-spacing:.6px; text-transform:uppercase; }
+.qcard.collapsed{ padding:11px 14px 10px; cursor:pointer; }
+.qcard.collapsed .qhead{ margin-bottom:6px; }
+.qcard.collapsed .qtext{ font-size:15px; }
+.qcard.collapsed .colhead, .qcard.collapsed .orow{ display:none; }
+.qcard.collapsed .picks{ display:flex; }
 @media (prefers-reduced-motion:no-preference){
   .qcard.flash{ animation:flash .9s ease; }
   @keyframes flash{ 0%,100%{ box-shadow:none; } 30%{ box-shadow:0 0 0 3px var(--gold); } }
+  .qcard.arrive{ animation:arrive .38s cubic-bezier(.2,.8,.3,1); }
+  @keyframes arrive{ from{ opacity:0; transform:translateX(56px); } }
+  .qcard.settle{ animation:settle .3s ease; }
+  @keyframes settle{ from{ opacity:0; transform:translateY(-6px); } }
+  /* declared last so it wins over a still-running arrive/settle on the same card */
+  .qcard.leaving{ animation:leave .3s cubic-bezier(.5,0,.85,.4) forwards; }
+  @keyframes leave{ to{ opacity:0; transform:translateX(-64px) scale(.96); } }
 }
 .colhead{ display:flex; align-items:flex-end; gap:6px; margin-bottom:4px; padding-right:2px; }
 .colhead .sp{ flex:1; }
@@ -227,16 +252,52 @@ details.how li b{ color:var(--ink); }
   margin-top:6px; background:linear-gradient(180deg, transparent 0%, var(--ground) 38%); }
 .lockbar .btn{ margin-top:0; }
 
-/* ============================ results — one page ============================ */
+/* ============================ results — one page ============================
+   Numbers first. Three rings say how well each of you knows the other and how alike you are, a
+   big one says it in a single figure; the words come after, and there are fewer of them. */
 .results h2{ font-size:15px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
   color:var(--ink-dim); text-align:center; margin:4px 0 2px; }
-.pairtitle{ text-align:center; font-size:32px; font-weight:900; line-height:1.15; margin:2px 0 6px;
-  background:linear-gradient(95deg, var(--a-ink), var(--b)); -webkit-background-clip:text;
-  background-clip:text; color:transparent; }
-.pairsub{ text-align:center; font-size:14px; color:var(--ink-dim); margin:0 0 14px; line-height:1.5; }
 .names{ text-align:center; font-size:14px; font-weight:800; margin:0 0 12px; overflow-wrap:anywhere; }
 .names .na{ color:var(--a-ink); } .names .nb{ color:var(--b-ink); }
 .names .x{ color:var(--ink-dim); font-weight:600; padding:0 6px; }
+
+.info{ text-align:center; padding:16px 10px 16px; }
+.ring{ position:relative; display:inline-flex; flex-direction:column; align-items:center; min-width:0; }
+.ring svg{ width:92px; height:92px; transform:rotate(-90deg); }
+.ring .tr{ fill:none; stroke:var(--panel-2); stroke-width:10; }
+.ring .fl{ fill:none; stroke-width:10; stroke-linecap:round;
+  transition:stroke-dashoffset 1.2s cubic-bezier(.2,.7,.2,1); }
+.ring.ra .fl{ stroke:var(--a); } .ring.rb .fl{ stroke:var(--b); } .ring.rs .fl{ stroke:var(--ok); }
+.ring.big .fl{ stroke:url(#ringGrad); }
+.ring .rv{ position:absolute; top:0; left:0; width:100%; height:92px; display:flex; align-items:center;
+  justify-content:center; font-weight:900; font-size:22px; line-height:1; }
+.ring .rv i{ font-style:normal; font-size:.55em; opacity:.7; margin-left:1px; }
+.ring.ra .rv{ color:var(--a-ink); } .ring.rb .rv{ color:var(--b-ink); } .ring.rs .rv{ color:var(--ok); }
+.ring .rl{ margin-top:5px; font-size:11px; font-weight:800; color:var(--ink-dim); line-height:1.25;
+  overflow-wrap:anywhere; }
+.ring .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+.ring.big{ display:flex; margin:0 auto; }
+.ring.big svg{ width:156px; height:156px; }
+.ring.big .rv{ height:156px; font-size:44px; }
+.ring.big .rl{ font-size:13px; color:var(--ink); margin-top:2px; }
+.rings3{ display:flex; justify-content:space-between; gap:6px; margin-top:14px; }
+.rings3 .ring{ flex:1; }
+.verdict{ margin-top:16px; }
+.verdict b{ display:block; font-size:26px; font-weight:900; line-height:1.15;
+  background:linear-gradient(95deg, var(--a-ink), var(--b)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.verdict span{ display:block; margin-top:4px; font-size:13px; color:var(--ink-dim); line-height:1.45; }
+
+/* at a glance: three one-liners with an icon each, in place of three paragraphs */
+.glance{ margin-top:12px; padding:12px 14px; }
+.gl{ display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-top:1px solid var(--rule);
+  font-size:13.5px; line-height:1.45; }
+.gl:first-child{ border-top:0; padding-top:0; } .gl:last-child{ padding-bottom:0; }
+.gl .gi{ flex:none; width:26px; text-align:center; font-size:18px; line-height:1.15; }
+.gl b{ font-weight:900; }
+.gl .lb{ font-weight:900; letter-spacing:.8px; text-transform:uppercase; font-size:10.5px; margin-right:5px; }
+.gl.best .lb{ color:var(--ok); } .gl.miss .lb{ color:var(--no); } .gl.asym .lb{ color:var(--gold); }
+.scorecard{ margin-top:12px; padding:14px 14px 12px; }
 
 /* scoreboard: three rows of ten squares — the share grid, rendered. Square i is question i. */
 .srow{ display:flex; align-items:center; gap:8px; margin-top:8px; }
@@ -253,16 +314,6 @@ details.how li b{ color:var(--ink); }
   @keyframes pop{ from{ transform:scale(.4); opacity:.3; } to{ transform:none; opacity:1; } }
 }
 .sqhint{ font-size:11px; color:var(--ink-dim); text-align:center; margin:10px 0 0; }
-
-.callout{ margin-top:12px; padding:12px 14px; border-radius:13px; background:var(--panel-2);
-  border:1px solid var(--rule); font-size:13.5px; line-height:1.55; }
-.callout b{ font-weight:900; }
-.callout.best{ border-color:rgba(87,217,163,.4); }
-.callout.miss{ border-color:rgba(255,140,122,.35); }
-.callout .lbl{ display:block; font-size:10.5px; font-weight:900; letter-spacing:1.4px;
-  text-transform:uppercase; margin-bottom:4px; }
-.callout.best .lbl{ color:var(--ok); } .callout.miss .lbl{ color:var(--no); }
-.callout.asym .lbl{ color:var(--gold); }
 
 .sect{ margin:22px 0 8px; }
 .sect h3{ margin:0; font-size:14px; font-weight:900; letter-spacing:1.4px; text-transform:uppercase; }
@@ -290,7 +341,7 @@ details.how li b{ color:var(--ink); }
 .qres .m{ flex:none; width:16px; font-weight:900; text-align:center; }
 .m.hit{ color:var(--ok); } .m.miss{ color:var(--no); }
 @media (prefers-reduced-motion:no-preference){
-  .qres, .callout, .pairtitle, .pairsub{ opacity:0; transform:translateY(10px); animation:rise .4s ease forwards; }
+  .qres, .glance, .scorecard, .verdict{ opacity:0; transform:translateY(10px); animation:rise .4s ease forwards; }
   @keyframes rise{ to{ opacity:1; transform:none; } }
 }
 
@@ -317,7 +368,7 @@ details.how li b{ color:var(--ink); }
 
 @media (prefers-reduced-motion:reduce){
   *{ animation:none !important; transition:none !important; }
-  .qres, .callout, .pairtitle, .pairsub{ opacity:1; transform:none; }
+  .qres, .glance, .scorecard, .verdict{ opacity:1; transform:none; }
 }
 </style>
 </head>
@@ -345,8 +396,8 @@ details.how li b{ color:var(--ink); }
    laid out on a single page — three scores and all ten questions side by side.
 
    Privacy is a design constraint, not a feature flag: answers live in one in-memory session
-   object (S) and NOTHING else. localStorage holds only names and a play counter. Analytics gets
-   counts, never content. A page refresh mid-game loses the round by design — that is cheaper
+   object (S) and NOTHING else. localStorage holds only names, a sound preference and a play
+   counter. Analytics gets counts, never content. A page refresh mid-game loses the round by design — that is cheaper
    than answers ever touching disk.
    ============================================================================================ */
 
@@ -509,11 +560,60 @@ const TICK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5
 function header(showHome){
   return '<header class="top"><span class="wordmark">'+MARK+'<span><b>Sync</b>'
    +'<small>Kreeda · Together</small></span></span>'
-   +(showHome?'<button class="homebtn" type="button" id="bHome" aria-label="Leave game and return to start">Home</button>':'')
+   +(showHome
+      ? '<button class="soundbtn" type="button" id="bSound" aria-pressed="'+SND.on+'" aria-label="Sound">'+(SND.on?'🔊':'🔇')+'</button>'
+        +'<button class="homebtn" type="button" id="bHome" aria-label="Leave game and return to start">Home</button>'
+      : '')
    +'</header>';
 }
 function bindHome(){
   on('bHome',()=>{ openConfirm(()=>{ S=null; title(); }); });
+  const sb=document.getElementById('bSound');
+  if(sb) sb.addEventListener('click',()=>setSound(!SND.on));
+}
+
+/* ============================ sound ============================
+   Two synthesized cues, no audio files: a soft tick on every pick and a swish when a finished
+   question leaves the page. The context is created on the first tap (a user gesture, which iOS
+   requires), and the on/off preference is the only thing besides names and a play count that
+   touches storage. */
+const SND={ ctx:null, noise:null, on:LS.get('sync.sound')!=='0' };
+function audio(){
+  if(!SND.on) return null;
+  if(!SND.ctx){ try{ SND.ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(SND.ctx.state==='suspended'){ try{ SND.ctx.resume(); }catch(e){} }
+  return SND.ctx;
+}
+function tick(){
+  const ac=audio(); if(!ac) return;
+  try{
+    const t=ac.currentTime, o=ac.createOscillator(), g=ac.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(880,t); o.frequency.exponentialRampToValueAtTime(1320,t+0.03);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.09,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t+0.08);
+  }catch(e){}
+}
+function swish(){
+  const ac=audio(); if(!ac) return;
+  try{
+    const dur=0.3, t=ac.currentTime;
+    if(!SND.noise){ const n=Math.floor(ac.sampleRate*0.5), b=ac.createBuffer(1,n,ac.sampleRate), d=b.getChannelData(0);
+      for(let i=0;i<n;i++) d[i]=Math.random()*2-1; SND.noise=b; }
+    const src=ac.createBufferSource(); src.buffer=SND.noise;
+    const f=ac.createBiquadFilter(); f.type='bandpass'; f.Q.value=1.4;      // filtered noise, swept up then down
+    f.frequency.setValueAtTime(500,t); f.frequency.exponentialRampToValueAtTime(3400,t+dur*0.45);
+    f.frequency.exponentialRampToValueAtTime(700,t+dur);
+    const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.32,t+0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(f).connect(g).connect(ac.destination); src.start(t); src.stop(t+dur+0.02);
+  }catch(e){}
+}
+function setSound(on){
+  SND.on=on; LS.set('sync.sound',on?'1':'0');
+  const b=document.getElementById('bSound');
+  if(b){ b.textContent=on?'🔊':'🔇'; b.setAttribute('aria-pressed',String(on)); }
+  if(on) tick();
 }
 
 /* confirm modal — the only way out of a live session other than finishing it */
@@ -556,7 +656,7 @@ function title(){
    +'<details class="how"><summary>How it works</summary><ul>'
    +'<li>All ten questions sit on one page. Every question has <b>two columns</b>: <b>Me</b> — your own answer — and <b>them</b> — your guess at what they’ll pick. Tap one in each.</li>'
    +'<li>Player 1 fills the page, locks in, and passes the phone. Player 2 does the same. Nothing shows until both are done.</li>'
-   +'<li>Then everything lands on <b>one page</b>: how alike you are, how well each of you read the other, and all ten questions side by side.</li>'
+   +'<li>Then everything lands on <b>one page</b>: three rings — how well each of you knows the other, and how alike you are — and all ten questions side by side.</li>'
    +'</ul></details>'
    +'<footer class="foot">For fun and conversation — a game, not a psychological assessment.<br>'
    +'Answers stay on this phone and are never uploaded.<br><a href="../">Kreeda</a></footer>'
@@ -613,10 +713,17 @@ function handoff(p){
    (rose). Tap one in each, all the way down. Finishing a question slides the next one up;
    anything can be changed until lock-in, so the sheet is its own recap. Player 1 is already
    holding the phone after Start, so there is no interstitial before this — only before Player 2. */
+function picksHTML(p,qi,other){
+  const q=S.qs[qi];
+  return '<span class="pk me">Me: '+esc(q.o[S.self[p][qi]])+'</span>'
+   +'<span class="pk them">'+esc(other)+': '+esc(q.o[S.pred[p][qi]])+'</span>'
+   +'<span class="chg">tap to change</span>';
+}
 function block(p,qi,other){
-  const q=S.qs[qi], mySelf=S.self[p][qi], myPred=S.pred[p][qi];
-  return '<div class="qcard'+(answered(p,qi)?' done':'')+'" id="blk'+qi+'">'
+  const q=S.qs[qi], mySelf=S.self[p][qi], myPred=S.pred[p][qi], done=answered(p,qi);
+  return '<div class="qcard'+(done?' done collapsed" role="button" tabindex="0':'')+'" id="blk'+qi+'">'
    +'<div class="qhead"><span class="qn">'+(qi+1)+'</span><p class="qtext">'+esc(q.q)+'</p></div>'
+   +'<div class="picks">'+(done?picksHTML(p,qi,other):'')+'</div>'
    +'<div class="colhead"><span class="sp"></span>'
    +'<span class="ch me"><small>my answer</small>Me</span>'
    +'<span class="ch them"><small>my guess</small>'+esc(other)+'</span></div>'
@@ -666,13 +773,50 @@ function sheet(p){
       : (ROUNDS-n)+' more to go';
   };
   refresh();
+
+  /* A finished question leaves: a swish, a slide off to the left, then it settles back as one
+     compact row (question + two chips) and the next unanswered one slides in from the right —
+     but only if that one is further down; a player fixing an earlier answer is left where they
+     are. Nothing scrolls when the sheet completes: the lock bar is sticky and already on screen,
+     and a smooth scroll left in flight would outlive the screen swap when Lock in is tapped
+     quickly. */
+  const collapse=qi=>{
+    const blk=document.getElementById('blk'+qi);
+    blk.querySelector('.picks').innerHTML=picksHTML(p,qi,other);
+    blk.classList.add('collapsed'); blk.setAttribute('role','button'); blk.setAttribute('tabindex','0');
+  };
+  const expand=blk=>{
+    blk.classList.remove('collapsed','settle'); blk.removeAttribute('role'); blk.removeAttribute('tabindex');
+    blk.classList.remove('arrive'); void blk.offsetWidth; blk.classList.add('arrive');
+    scrollTo(blk);
+  };
+  const depart=qi=>{
+    const blk=document.getElementById('blk'+qi);
+    if(!blk||!answered(p,qi)||blk.classList.contains('collapsed')||blk.classList.contains('leaving')) return;
+    const settle=()=>{
+      if(g!==GEN) return;
+      blk.classList.remove('leaving'); collapse(qi); blk.classList.add('settle');
+      const next=nextUnanswered(p,qi);
+      if(next>qi){ const nb=document.getElementById('blk'+next);
+        nb.classList.remove('arrive'); void nb.offsetWidth; nb.classList.add('arrive'); scrollTo(nb); }
+    };
+    if(reduced){ settle(); return; }
+    swish();
+    blk.classList.remove('arrive','settle');     // a card re-opened for a change may still be arriving
+    blk.classList.add('leaving');
+    let fired=false; const once=()=>{ if(fired) return; fired=true; settle(); };
+    blk.addEventListener('animationend',ev=>{ if(ev.animationName==='leave') once(); });
+    setTimeout(once,450);                        // belt and braces: never leave a card invisible
+  };
+
   /* one listener on the sheet rather than 80 on the cells; it dies with the sheet's innerHTML */
-  document.getElementById('sheet').addEventListener('click',e=>{
+  const sheetEl=document.getElementById('sheet');
+  sheetEl.addEventListener('click',e=>{
     if(g!==GEN) return;
     const cell=e.target.closest('.cell[data-q]');
     if(cell){
       const qi=+cell.getAttribute('data-q'), i=+cell.getAttribute('data-i'), col=cell.getAttribute('data-col');
-      const blk=document.getElementById('blk'+qi), wasDone=answered(p,qi);
+      const blk=document.getElementById('blk'+qi);
       (col==='me'?S.self:S.pred)[p][qi]=i;
       blk.querySelectorAll('.cell.'+col).forEach(c=>{ const onNow=+c.getAttribute('data-i')===i;
         c.classList.toggle('on',onNow); c.setAttribute('aria-pressed',String(onNow)); });
@@ -680,21 +824,23 @@ function sheet(p){
         r.classList.toggle('both', S.self[p][qi]===k && S.pred[p][qi]===k); });
       blk.classList.toggle('done',answered(p,qi));
       refresh();
-      /* finishing a question for the first time slides the next unanswered one up (only if it is
-         further down — a player fixing an earlier answer is left where they are), after a beat so
-         the second tick is seen landing. Nothing scrolls when the sheet completes: the lock bar is
-         sticky and already on screen, and a smooth scroll left in flight would outlive the screen
-         swap when Lock in is tapped quickly. */
-      if(!wasDone && answered(p,qi)){
-        const next=nextUnanswered(p,qi);
-        if(next>qi) setTimeout(()=>{ if(g===GEN) scrollTo(document.getElementById('blk'+next)); },260);
-      }
+      tick();
+      /* both columns set: a beat so the second tick is seen landing, then the question departs */
+      if(answered(p,qi)) setTimeout(()=>{ if(g===GEN) depart(qi); },240);
       return;
     }
+    /* a finished row opens back up for changes */
+    const done=e.target.closest('.qcard.collapsed');
+    if(done){ expand(done); return; }
     /* tapping the words themselves isn't a pick — wiggle the empty cells on that row as a nudge */
     const txt=e.target.closest('.otext');
     if(txt) txt.parentNode.querySelectorAll('.cell:not(.on)').forEach(c=>{
       c.classList.remove('nudge'); void c.offsetWidth; c.classList.add('nudge'); });
+  });
+  sheetEl.addEventListener('keydown',e=>{
+    if(g!==GEN) return;
+    if((e.key==='Enter'||e.key===' ') && e.target.classList && e.target.classList.contains('collapsed')){
+      e.preventDefault(); expand(e.target); }
   });
   on('bLock',()=>{
     const first=nextUnanswered(p,ROUNDS-1);        // wraps, so this is the first blank from the top
@@ -759,28 +905,27 @@ function bestAndMiss(){
   let bHtml=null, mHtml=null;
   if(bScore===3){
     const q=S.qs[best];
-    bHtml='You both knew '+qname(q)+' — “'+esc(q.o[S.self[0][best]])
-     +'”, called correctly from both sides.';
+    bHtml=qname(q)+' — both said “'+esc(q.o[S.self[0][best]])+'”, and both called it.';
   }else if(bScore===2){
     const q=S.qs[best], s=scoreQ(best);
     bHtml=s.same
-      ? 'Same answer, no rehearsal, on '+qname(q)+' — both said “'+esc(q.o[S.self[0][best]])+'”.'
-      : 'Read each other right on '+qname(q)+' — both predictions landed.';
+      ? qname(q)+' — both said “'+esc(q.o[S.self[0][best]])+'”.'
+      : qname(q)+' — both guesses landed.';
   }else if(bScore>=0){
-    bHtml='No clean sweep this round — that’s next game’s material.';
+    bHtml='No clean sweep — next game’s material.';
   }
   if(mScore===0){
     const q=S.qs[miss];
-    mHtml='Total scramble on '+qname(q)+'. '+A+' said “'+esc(q.o[S.self[0][miss]])
-     +'”, '+B+' said “'+esc(q.o[S.self[1][miss]])+'” — and neither prediction landed. Ask about it.';
+    mHtml=qname(q)+' — “'+esc(q.o[S.self[0][miss]])+'” vs “'+esc(q.o[S.self[1][miss]])
+     +'”, both guesses off. Ask about it.';
   }else if(mScore<3){
     const q=S.qs[miss], s=scoreQ(miss);
-    mHtml='Closest to a miss: '+qname(q)
-     +(!s.aHit&&!s.bHit?' — both predictions were off.':
-       !s.aHit?' — '+A+'’s prediction was off.':
-       !s.bHit?' — '+B+'’s prediction was off.':' — different answers, worth a story.');
+    mHtml=qname(q)
+     +(!s.aHit&&!s.bHit?' — both guesses off.':
+       !s.aHit?' — '+A+'’s guess was off.':
+       !s.bHit?' — '+B+'’s guess was off.':' — different answers, worth a story.');
   }else{
-    mHtml='Not a single miss anywhere. Genuinely spooky.';
+    mHtml='Not a single miss. Spooky.';
   }
   return {best:bHtml, miss:mHtml};
 }
@@ -799,11 +944,15 @@ function results(){
   const pt=pairTitle(t), bm=bestAndMiss();
   const d=Math.abs(t.ia-t.ib);
   const asym = d>=2
-    ? (t.ia>t.ib ? A+' reads '+B+' better than '+B+' reads '+A+' — for now.'
-                 : B+' reads '+A+' better than '+A+' reads '+B+' — for now.')
+    ? (t.ia>t.ib ? A+' reads '+B+' better than the other way round — for now.'
+                 : B+' reads '+A+' better than the other way round — for now.')
     : null;
   const packName=PACKS.find(p=>p.id===S.pack).name;
   const today=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+  /* the headline figures: each player's insight as a percentage, the pair's average, and
+     similarity — one number each, no reading required */
+  const pctA=t.ia*100/ROUNDS, pctB=t.ib*100/ROUNDS, pctSim=t.sim*100/ROUNDS,
+        know=Math.round((pctA+pctB)/2);
 
   if(!completeSent){
     completeSent=true;
@@ -820,23 +969,47 @@ function results(){
     return '<div class="sq">'+h+'</div>';
   };
   const mark=(hit,label)=>'<span class="m '+(hit?'hit':'miss')+'" aria-label="'+label+'">'+(hit?'✓':'✗')+'</span>';
+  /* a ring is an SVG circle whose dash offset is animated from "empty" to the score after first
+     paint; the number inside counts up alongside it. The screen-reader text carries the value. */
+  const ring=(pct,cls,label,big)=>{
+    const r=big?70:40, s=2*r+12, c=s/2, C=2*Math.PI*r, v=Math.round(pct);
+    return '<div class="ring '+cls+(big?' big':'')+'"><svg viewBox="0 0 '+s+' '+s+'" aria-hidden="true">'
+     +'<circle class="tr" cx="'+c+'" cy="'+c+'" r="'+r+'"/>'
+     +'<circle class="fl" cx="'+c+'" cy="'+c+'" r="'+r+'" style="stroke-dasharray:'+C.toFixed(1)+';stroke-dashoffset:'+C.toFixed(1)+'" '
+     +'data-off="'+(C*(1-v/100)).toFixed(1)+'"/></svg>'
+     +'<div class="rv" aria-hidden="true"><b data-n="'+v+'">0</b><i>%</i></div>'
+     +'<div class="rl" aria-hidden="true">'+label+'</div>'
+     +'<span class="sr">'+label+': '+v+'%</span></div>';
+  };
 
   show(
    header(false)
+   +'<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>'
+   +'<linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#ff6b9d"/></linearGradient>'
+   +'</defs></svg>'
    +'<div class="results">'
    +'<h2>The verdict</h2>'
-   +'<div class="pairtitle" '+dl(0)+'>'+pt[0]+'</div>'
-   +'<p class="pairsub" '+dl(120)+'>'+pt[1]+'</p>'
-   +'<div class="card">'
    +'<p class="names"><span class="na">'+A+'</span><span class="x">×</span>'
    +'<span class="nb">'+B+'</span><span class="x">·</span><span class="dim">'+packName+' pack</span></p>'
-   +'<div class="srow s-sim"><span class="sl">Same answer</span>'+squares(s=>s.same)+'<span class="sn">'+t.sim+'/'+ROUNDS+'</span></div>'
-   +'<div class="srow s-a"><span class="sl">'+A+' read '+B+'</span>'+squares(s=>s.aHit)+'<span class="sn">'+t.ia+'/'+ROUNDS+'</span></div>'
-   +'<div class="srow s-b"><span class="sl">'+B+' read '+A+'</span>'+squares(s=>s.bHit)+'<span class="sn">'+t.ib+'/'+ROUNDS+'</span></div>'
-   +'<p class="sqhint">One square per question, in order — tap any to jump to it.</p>'
-   +(asym?'<div class="callout asym" '+dl(700)+'><span class="lbl">The asymmetry</span>'+asym+'</div>':'')
-   +(bm.best?'<div class="callout best" '+dl(800)+'><span class="lbl">Best moment</span>'+bm.best+'</div>':'')
-   +(bm.miss?'<div class="callout miss" '+dl(900)+'><span class="lbl">Biggest miss</span>'+bm.miss+'</div>':'')
+   +'<div class="card info">'
+   +ring(know,'rk','know each other',true)
+   +'<div class="rings3">'
+   +ring(pctA,'ra',A+' knows '+B)
+   +ring(pctB,'rb',B+' knows '+A)
+   +ring(pctSim,'rs','Alike')
+   +'</div>'
+   +'<div class="verdict" '+dl(600)+'><b>'+pt[0]+'</b><span>'+pt[1]+'</span></div>'
+   +'</div>'
+   +'<div class="card glance" '+dl(750)+'>'
+   +(asym?'<div class="gl asym"><span class="gi">⚖️</span><span>'+asym+'</span></div>':'')
+   +(bm.best?'<div class="gl best"><span class="gi">✨</span><span><span class="lb">Best</span>'+bm.best+'</span></div>':'')
+   +(bm.miss?'<div class="gl miss"><span class="gi">🌀</span><span><span class="lb">Miss</span>'+bm.miss+'</span></div>':'')
+   +'</div>'
+   +'<div class="card scorecard" '+dl(850)+'>'
+   +'<div class="srow s-sim"><span class="sl">Alike</span>'+squares(s=>s.same)+'<span class="sn">'+t.sim+'/'+ROUNDS+'</span></div>'
+   +'<div class="srow s-a"><span class="sl">'+A+' → '+B+'</span>'+squares(s=>s.aHit)+'<span class="sn">'+t.ia+'/'+ROUNDS+'</span></div>'
+   +'<div class="srow s-b"><span class="sl">'+B+' → '+A+'</span>'+squares(s=>s.bHit)+'<span class="sn">'+t.ib+'/'+ROUNDS+'</span></div>'
+   +'<p class="sqhint">One square per question — tap any to jump to it.</p>'
    +'</div>'
    +'<div class="sect"><h3>All ten, side by side</h3><span>who said what — and who guessed right</span></div>'
    +S.qs.map((q,i)=>{
@@ -861,6 +1034,24 @@ function results(){
    +'<a href="../">Kreeda</a></footer>'
   );
   const g=GEN;
+  /* rings fill and numbers count up after first paint; reduced motion gets the final state at once */
+  const reduced=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(g!==GEN) return;
+    document.querySelectorAll('.ring .fl').forEach(el=>{ el.style.strokeDashoffset=el.getAttribute('data-off'); });
+    const nums=Array.prototype.slice.call(document.querySelectorAll('.ring .rv b'));
+    if(reduced){ nums.forEach(b=>{ b.textContent=b.getAttribute('data-n'); }); return; }
+    const t0=performance.now(), D=1100;
+    /* clock off performance.now(), not the frame timestamp: a tab that was hidden when the
+       results rendered gets odd frame times when it comes back, and this must land on the
+       final figure regardless */
+    (function step(){
+      if(g!==GEN) return;
+      const k=Math.min(1,(performance.now()-t0)/D), e=1-Math.pow(1-k,3);
+      nums.forEach(b=>{ b.textContent=Math.round(+b.getAttribute('data-n')*e); });
+      if(k<1) requestAnimationFrame(step);
+    })();
+  }));
   document.querySelectorAll('.srow .sq button').forEach(el=>{
     el.addEventListener('click',()=>{ if(g!==GEN) return;
       const q=document.getElementById('q'+el.getAttribute('data-q'));
@@ -884,7 +1075,7 @@ function results(){
 function shareText(t,title,packName){
   const row=(fn,y,n)=>{ let s=''; for(let i=0;i<ROUNDS;i++) s+=fn(scoreQ(i))?y:n; return s; };
   return 'Sync · '+S.names[0]+' × '+S.names[1]+' · '+packName+' pack\n'
-   +'“'+title+'”\n'
+   +'“'+title+'” · know each other '+Math.round((t.ia+t.ib)*50/ROUNDS)+'%\n'
    +'Same answers  '+row(s=>s.same,'🟢','⚫')+'  '+t.sim+'/'+ROUNDS+'\n'
    +S.names[0]+'’s insight '+row(s=>s.aHit,'🟣','⚫')+'  '+t.ia+'/'+ROUNDS+'\n'
    +S.names[1]+'’s insight '+row(s=>s.bHit,'🔴','⚫')+'  '+t.ib+'/'+ROUNDS+'\n'
