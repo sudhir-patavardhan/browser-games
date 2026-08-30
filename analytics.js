@@ -40,6 +40,16 @@
 (function(){
   var ID='G-9XV3GF4FT0';
   var XPIXEL='reso2';         // X (Twitter) Ads conversion-tracking pixel id — attributes site visits to ad clicks
+  /* X conversion EVENTS. Each is an id minted in Ads Manager > Events manager (they look like
+     tw-reso2-abcde); an empty string means "not created yet", and nothing is sent for it. Fill these in
+     and the pixel starts reporting the conversions the ad campaigns are optimised on:
+       played_30s  — the visitor actually played: 30 s of active, visible input on a game page. Fired once
+                     per page, from the same clock that produces game_time, so it cannot be gamed by an
+                     open tab.
+       game_start  — a game explicitly started a session (games opt in via bgAnalytics.conversion). */
+  var XEVENTS={ played_30s:'', game_start:'' };
+  var PLAYED_AFTER=30000;     // ms of active play that counts as a real play for X attribution
+  var playedSent=false;
   var LOG=[];                 // what the page believes it reported, oldest first, capped
   var CAP=200;
   var live=false;
@@ -125,6 +135,21 @@
     }catch(e){}
   }
 
+  /* Report a conversion to X by its event NAME (a key of XEVENTS). Silent when the event has no id yet,
+     when the pixel isn't up, or on file:// — and it never throws. Also recorded in LOG, so a test can see
+     what the page tried to convert without any network. */
+  function xConvert(name, params){
+    try{
+      var id=XEVENTS[name];
+      var ev={ name:'x_conversion', params:{ event:String(name), event_id:id||'', game_id:GAME.game_id }, t:Date.now() };
+      LOG.push(ev); if(LOG.length>CAP) LOG.shift();
+      if(!id || localFile() || typeof window.twq!=='function') return;
+      var p={ content_type:'game', content_id:GAME.game_id, content_name:GAME.game_name };
+      if(params) for(var k in params){ try{ if(Object.prototype.hasOwnProperty.call(params,k)) p[k]=params[k]; }catch(e){} }
+      window.twq('event', id, p);
+    }catch(e){}
+  }
+
   /* The only thing a game ever calls. Name and params follow GA4's rules (snake_case, <=40 char names),
      and it returns nothing — a game must never branch on whether analytics worked.
      The game's own params WIN over the identity: the hub's game_click already says which game was clicked,
@@ -179,6 +204,11 @@
       total_seconds:Math.round(active/1000),
       reason:String(reason)
     });
+    // The first time real play crosses the threshold, tell X this visit converted. Once per page.
+    if(!playedSent && active>=PLAYED_AFTER && GAME.game_id!=='home'){
+      playedSent=true;
+      xConvert('played_30s', { value:Math.round(active/1000) });
+    }
   }
 
   function start(){ if(running) return; mark=now(); running=true;
@@ -207,6 +237,9 @@
 
   window.bgAnalytics={
     id:ID,
+    xpixel:XPIXEL,
+    xevents:function(){ var o={}; for(var k in XEVENTS) o[k]=XEVENTS[k]; return o; },
+    conversion:xConvert,                                     // e.g. bgAnalytics.conversion('game_start')
     game:function(){ return { id:GAME.game_id, name:GAME.game_name }; },
     live:function(){ return live; },
     seconds:function(){ accrue(); return Math.round(active/1000); },   // active time on this page so far
