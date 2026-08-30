@@ -47,7 +47,7 @@
                      per page, from the same clock that produces game_time, so it cannot be gamed by an
                      open tab.
        game_start  — a game explicitly started a session (games opt in via bgAnalytics.conversion). */
-  var XEVENTS={ played_30s:'', game_start:'' };
+  var XEVENTS={ played_30s:'tw-reso2-respb', game_start:'' };
   var PLAYED_AFTER=30000;     // ms of active play that counts as a real play for X attribution
   var playedSent=false;
   var LOG=[];                 // what the page believes it reported, oldest first, capped
