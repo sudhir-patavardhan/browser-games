@@ -331,6 +331,10 @@ details.how li{ margin-bottom:6px; }
   *{ animation:none !important; transition:none !important; }
   .flip{ transition:none; }
 }
+/* share: a WhatsApp link in WhatsApp's green */
+.btn.wa{ display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;
+  background:#25D366; color:#052e16; border-color:transparent; }
+.btn.wa svg{ width:20px; height:20px; flex:none; }
 </style>
 </head>
 <body>
@@ -924,6 +928,7 @@ function renderResults(){
       '<button class="btn" id="againBtn">Play again</button>' +
       '<button class="btn" id="playersBtn">Change players</button>' +
     '</div>' +
+    '<a class="btn wa" id="waBtn" href="#" target="_blank" rel="noopener" style="margin-bottom:10px">' + WA_ICON + 'Share on WhatsApp</a>' +
     '<button class="btn ghost" id="copyBtn">Copy result</button>' +
     '<div id="copyHost"></div>'
   );
@@ -935,18 +940,27 @@ function renderResults(){
   });
   $('#playersBtn').addEventListener('click', renderTitle);
   $('#copyBtn').addEventListener('click', () => copyResult(aA, aB));
+  $('#waBtn').addEventListener('click', e => {
+    e.currentTarget.href = waLink(resultText(aA, aB));   // set on the way out so it always carries this game
+    track('share', { via:'whatsapp' });
+  });
 }
-function copyResult(aA, aB){
+const WA_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.8-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.2-.2-.2-.5-.4z"/></svg>';
+function waLink(text){ return 'https://wa.me/?text=' + encodeURIComponent(text); }
+function resultText(aA, aB){
   // Emoji per round: 🟡 mutual share, ⚫ mutual take, 🔻 someone got burned. No answers per
-  // player leave the phone unless the players themselves paste this somewhere.
+  // player leave the phone unless the players themselves paste or send this somewhere.
   const strip = G.log.map(e => {
     const [a,b] = e.c;
     return (a==='S'&&b==='S') ? '🟡' : (a==='T'&&b==='T') ? '⚫' : '🔻';
   }).join('');
-  const text = 'Split — ' + names[0] + ' ' + G.totals[0] + ' · ' + names[1] + ' ' + G.totals[1] + '\n' +
+  return 'Split — ' + names[0] + ' ' + G.totals[0] + ' · ' + names[1] + ' ' + G.totals[1] + '\n' +
     strip + '\n' +
     names[0] + ': ' + aA.name + ' · ' + names[1] + ': ' + aB.name + '\n' +
     'kreeda.games/split';
+}
+function copyResult(aA, aB){
+  const text = resultText(aA, aB);
   let done = false;
   try{
     if(navigator.clipboard && navigator.clipboard.writeText){

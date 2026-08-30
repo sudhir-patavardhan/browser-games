@@ -366,6 +366,12 @@ details.how li b{ color:var(--ink); }
 .confirmbox h3{ margin:0 0 6px; font-size:18px; font-weight:900; }
 .confirmbox p{ margin:0 0 14px; font-size:13.5px; color:var(--ink-dim); line-height:1.5; }
 
+/* share: a WhatsApp link in WhatsApp's green, and a system share sheet where the browser has one */
+.btn.wa{ display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;
+  background:#25D366; color:#052e16; border-color:transparent; box-shadow:0 8px 24px rgba(37,211,102,.25); }
+.btn.wa svg{ width:20px; height:20px; flex:none; }
+.sharehint{ font-size:12px; color:var(--ink-dim); text-align:center; margin:6px 0 0; line-height:1.45; }
+
 @media (prefers-reduced-motion:reduce){
   *{ animation:none !important; transition:none !important; }
   .qres, .glance, .scorecard, .verdict{ opacity:1; transform:none; }
@@ -896,11 +902,13 @@ function qname(q){ return '<b>“'+esc(q.q.replace(/[:…]+\s*$/,''))+'”</b>';
 
 function bestAndMiss(){
   let best=null, bScore=-1, miss=null, mScore=4;
-  for(let i=0;i<ROUNDS;i++){
-    const s=scoreQ(i), pts=(s.same?1:0)+(s.aHit?1:0)+(s.bHit?1:0);
-    if(pts>bScore){ bScore=pts; best=i; }
-    if(pts<mScore){ mScore=pts; miss=i; }
-  }
+  const pts=[];
+  for(let i=0;i<ROUNDS;i++){ const s=scoreQ(i); pts.push((s.same?1:0)+(s.aHit?1:0)+(s.bHit?1:0)); }
+  for(let i=0;i<ROUNDS;i++){ if(pts[i]>bScore){ bScore=pts[i]; best=i; } }
+  /* the miss is picked from the OTHER questions, so a flat scoreline can't name the same question
+     as both the best moment and the biggest miss; if everything scored alike there is no miss */
+  for(let i=0;i<ROUNDS;i++){ if(i!==best && pts[i]<mScore){ mScore=pts[i]; miss=i; } }
+  const flat = miss===null || mScore===bScore;
   const A=esc(S.names[0]), B=esc(S.names[1]);
   let bHtml=null, mHtml=null;
   if(bScore===3){
@@ -914,7 +922,9 @@ function bestAndMiss(){
   }else if(bScore>=0){
     bHtml='No clean sweep — next game’s material.';
   }
-  if(mScore===0){
+  if(flat){
+    mHtml = bScore===3 ? 'Not a single miss. Spooky.' : null;
+  }else if(mScore===0){
     const q=S.qs[miss];
     mHtml=qname(q)+' — “'+esc(q.o[S.self[0][miss]])+'” vs “'+esc(q.o[S.self[1][miss]])
      +'”, both guesses off. Ask about it.';
@@ -1026,8 +1036,11 @@ function results(){
     }).join('')
    +'<p class="datefoot">'+esc(today)+' · kreeda.games/sync</p>'
    +'<button class="btn primary" type="button" id="bAgain">Play again</button>'
+   +'<a class="btn wa" id="bWa" href="#" target="_blank" rel="noopener">'+WA_ICON+'Share on WhatsApp</a>'
+   +'<p class="sharehint">Send it to the other player — you’ll both have a copy.</p>'
    +'<div class="btnrow"><button class="btn" type="button" id="bCopy">Copy result</button>'
-   +'<button class="btn ghost" type="button" id="bChange">Change players</button></div>'
+   +(navigator.share?'<button class="btn" type="button" id="bShare">Share…</button>':'')+'</div>'
+   +'<button class="btn ghost" type="button" id="bChange">Change players</button>'
    +'<div id="shareSlot"></div>'
    +'</div>'
    +'<footer class="foot">Mismatches aren’t wrong answers — they’re the conversation.<br>'
@@ -1060,8 +1073,15 @@ function results(){
   on('bAgain',()=>{ completeSent=false; newSession(S.pack);
     track('game_start',{pack:S.pack}); sheet(0); });
   on('bChange',()=>{ completeSent=false; S=null; title(); });
+  /* the share text is the whole page in words — sharing is the players' own explicit act, so
+     unlike analytics it may carry the answers */
+  const text=shareText(t,pt,bm,asym,packName,today);
+  const wa=document.getElementById('bWa');
+  wa.href=waLink(text);
+  wa.addEventListener('click',()=>track('share',{via:'whatsapp'}));
+  on('bShare',()=>{ track('share',{via:'system'});
+    try{ navigator.share({title:'Sync — '+S.names[0]+' × '+S.names[1], text:text}).catch(()=>{}); }catch(e){} });
   on('bCopy',()=>{
-    const text=shareText(t,pt[0],packName);
     let done=false;
     try{
       if(navigator.clipboard&&navigator.clipboard.writeText){
@@ -1072,14 +1092,41 @@ function results(){
     if(!done) showShareBox(text);   // clipboard is unavailable on file:// — show it to copy by hand
   });
 }
-function shareText(t,title,packName){
-  const row=(fn,y,n)=>{ let s=''; for(let i=0;i<ROUNDS;i++) s+=fn(scoreQ(i))?y:n; return s; };
-  return 'Sync · '+S.names[0]+' × '+S.names[1]+' · '+packName+' pack\n'
-   +'“'+title+'” · know each other '+Math.round((t.ia+t.ib)*50/ROUNDS)+'%\n'
-   +'Same answers  '+row(s=>s.same,'🟢','⚫')+'  '+t.sim+'/'+ROUNDS+'\n'
-   +S.names[0]+'’s insight '+row(s=>s.aHit,'🟣','⚫')+'  '+t.ia+'/'+ROUNDS+'\n'
-   +S.names[1]+'’s insight '+row(s=>s.bHit,'🔴','⚫')+'  '+t.ib+'/'+ROUNDS+'\n'
-   +'kreeda.games/sync';
+/* ============================ share ============================
+   The results page in words, for WhatsApp (its *bold* and _italic_ marks) and the clipboard:
+   the verdict, the four figures with their ten-square strips, the three callouts, and all ten
+   questions with both answers and both guesses. */
+const WA_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.8-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.2-.2-.2-.5-.4z"/></svg>';
+function waLink(text){ return 'https://wa.me/?text='+encodeURIComponent(text); }
+/* the callouts are built as HTML with escaped names; the share text wants them plain */
+function plain(html){ return String(html).replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<')
+  .replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'"); }
+function shareText(t,pt,bm,asym,packName,today){
+  const A=S.names[0], B=S.names[1];
+  const pct=n=>Math.round(n*100/ROUNDS), know=Math.round((t.ia+t.ib)*50/ROUNDS);
+  const row=(fn,y)=>{ let s=''; for(let i=0;i<ROUNDS;i++) s+=fn(scoreQ(i))?y:'⚫'; return s; };
+  const lines=[
+    '*Sync* · '+A+' × '+B+' · '+packName+' pack',
+    '_'+pt[0]+'_ — '+pt[1],
+    '',
+    '🔮 Know each other: *'+know+'%*',
+    '🟣 '+A+' knows '+B+': '+pct(t.ia)+'%  '+row(s=>s.aHit,'🟣'),
+    '🔴 '+B+' knows '+A+': '+pct(t.ib)+'%  '+row(s=>s.bHit,'🔴'),
+    '🟢 Alike: '+pct(t.sim)+'%  '+row(s=>s.same,'🟢'),
+    ''
+  ];
+  if(asym) lines.push('⚖️ '+plain(asym));
+  if(bm.best) lines.push('✨ Best: '+plain(bm.best));
+  if(bm.miss) lines.push('🌀 Miss: '+plain(bm.miss));
+  lines.push('','*All ten*');
+  S.qs.forEach((q,i)=>{
+    const s=scoreQ(i);
+    lines.push((i+1)+'. '+q.q.replace(/[:…]+\s*$/,''));
+    lines.push('   '+A+': '+q.o[S.self[0][i]]+' · guessed '+q.o[S.pred[0][i]]+' for '+B+' '+(s.aHit?'✅':'❌'));
+    lines.push('   '+B+': '+q.o[S.self[1][i]]+' · guessed '+q.o[S.pred[1][i]]+' for '+A+' '+(s.bHit?'✅':'❌'));
+  });
+  lines.push('', today+' · kreeda.games/sync');
+  return lines.join('\n');
 }
 function showShareBox(text){
   const slot=document.getElementById('shareSlot');

@@ -339,6 +339,12 @@ details.how li b{ color:var(--ink); }
 .dialog h3{ margin:0 0 6px; font-size:18px; }
 .dialog p{ margin:0 0 16px; color:var(--ink-dim); font-size:14px; line-height:1.5; }
 
+/* share: a WhatsApp link in WhatsApp's green, and a system share sheet where the browser has one */
+.btn.wa{ display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;
+  background:#25D366; color:#052e16; box-shadow:0 8px 22px rgba(37,211,102,.22); }
+.btn.wa svg{ width:20px; height:20px; flex:none; }
+.sharehint{ font-size:12px; color:var(--ink-dim); text-align:center; margin:8px 0 10px; line-height:1.45; }
+
 @media (prefers-reduced-motion: reduce){
   *{ animation-duration:.001ms !important; animation-delay:0s !important; transition-duration:.001ms !important; }
   .rcard, .win{ opacity:1; transform:none; }
@@ -463,7 +469,12 @@ details.how li b{ color:var(--ink); }
         <button class="btn" id="againBtn">Play again</button>
         <button class="btn ghost" id="changeBtn">Change players</button>
       </div>
-      <button class="btn ghost" id="copyBtn">Copy result</button>
+      <a class="btn wa" id="waBtn" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.8-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.2-.2-.2-.5-.4z"/></svg>Share on WhatsApp</a>
+      <p class="sharehint">Send it to the other player — you’ll both have a copy.</p>
+      <div class="btnrow">
+        <button class="btn ghost" id="copyBtn">Copy result</button>
+        <button class="btn ghost" id="shareBtn" hidden>Share…</button>
+      </div>
     </div>
     <p class="finefoot">Blind spots aren't verdicts — they're where the conversation starts.<br><a href="../">Kreeda</a></p>
   </section>
@@ -1028,17 +1039,59 @@ function finish(){
   }catch(e){}
 }
 
-/* ---- copy result: counts and headline only, never the words themselves ---- */
+/* ============================ share ============================
+   The results page in words, for WhatsApp (its *bold* and _italic_ marks) and the clipboard:
+   the verdict and figures, the glance lines, the temperature, both windows pane by pane, and the
+   three openers. Sharing is the players' own explicit act, so unlike analytics it may carry the
+   words themselves. */
+function waLink(text){ return 'https://wa.me/?text=' + encodeURIComponent(text); }
+/* the insight lines are built as HTML with escaped names; the share text wants them plain */
+function plain(html){ return String(html).replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<')
+  .replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'"); }
 function resultText(){
-  const [WA, WB] = S.windows;
+  const [WA, WB] = S.windows, A = S.names[0], B = S.names[1];
+  const pct = n => Math.round(n*100/PICKS_EACH);
   const clear = Math.round((WA.open.length + WB.open.length)*100/(2*PICKS_EACH));
-  const line = W => `🟩${W.open.length} 🟨${W.blind.length} 🟪${W.hidden.length} ⬛${W.unknown}`;
-  return `Windows — ${S.names[0]} × ${S.names[1]}\n` +
-    `“${pairVerdict()[0]}” · see each other clearly ${clear}%\n` +
-    `${S.names[0]}: ${line(WA)}\n` +
-    `${S.names[1]}: ${line(WB)}\n` +
-    `(open · blind · hidden · unknown)\n` +
-    `https://kreeda.games/windows/`;
+  const v = pairVerdict();
+  const words = l => l.length ? l.join(', ') : '—';
+  const tc = l => { const c = toneCounts(l); return `${c.w} warm · ${c.n} neutral · ${c.s} spiky`; };
+  const lines = [
+    `*Windows* · ${A} × ${B}`,
+    `_${v[0]}_ — ${plain(v[1])}`,
+    '',
+    `🔍 See each other clearly: *${clear}%*`,
+    `🟩 ${B} sees ${A}: ${pct(WA.open.length)}% (${WA.open.length}/6)`,
+    `🟨 ${A} sees ${B}: ${pct(WB.open.length)}% (${WB.open.length}/6)`,
+    `🟪 Alike: ${pct(sharedSelf().length)}%`,
+    ''
+  ];
+  glanceItems().forEach(g => lines.push(g[0] + ' ' + plain(g[1])));
+  lines.push('', '🌡️ *Temperature*');
+  [0,1].forEach(p => {
+    const me = S.names[p], other = S.names[1-p];
+    lines.push(`${me} — by ${me}: ${tc(S.picks[p].self)} · by ${other}: ${tc(S.picks[1-p].other)}`);
+    lines.push('   ' + plain(tempLine(p)));
+  });
+  [0,1].forEach(p => {
+    const W = S.windows[p];
+    lines.push('', `*${S.names[p]}’s window*`,
+      `Open: ${words(W.open)}`, `Blind spot: ${words(W.blind)}`, `Hidden: ${words(W.hidden)}`, `Unknown: ${W.unknown} words`);
+  });
+  lines.push('', '💬 *Talk about it*');
+  talkItems().forEach(t => lines.push('• ' + plain(t)));
+  lines.push('', new Date().toLocaleDateString(undefined,{ year:'numeric', month:'short', day:'numeric' }) + ' · kreeda.games/windows');
+  return lines.join('\n');
+}
+$('waBtn').addEventListener('click', e => {
+  e.currentTarget.href = waLink(resultText());     // set on the way out so it always carries this game
+  track('share', { via:'whatsapp' });
+});
+if(navigator.share){
+  $('shareBtn').hidden = false;
+  $('shareBtn').addEventListener('click', () => {
+    track('share', { via:'system' });
+    try{ navigator.share({ title:`Windows — ${S.names[0]} × ${S.names[1]}`, text:resultText() }).catch(()=>{}); }catch(e){}
+  });
 }
 let toastTimer = null;
 function toast(msg){
