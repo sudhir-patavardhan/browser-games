@@ -254,10 +254,20 @@ async function main() {
         console.log(`Pass --event <tw-<pixel>-xxxxx> (from Ads Manager > Events manager) to send a real conversion.`);
         break;
       }
+      const identifier = (flags.twclid || flags.ip || flags.email || flags.phone)
+        ? {
+            twclid: flags.twclid,
+            ip: flags.ip,
+            userAgent: flags.ip ? (flags.ua || 'KreedaGrowthAgent/1.0 (conversion-test)') : undefined,
+            hashedEmail: flags.email,
+            hashedPhone: flags.phone
+          }
+        : { ip: '127.0.0.1', userAgent: 'KreedaGrowthAgent/1.0 (conversion-test)' }; // API requires at least one identifier
       const res = await client.send({
         eventId: flags.event,
         sourceUrl: flags.url || config.general.baseUrl,
-        conversionId: `cli-test-${Date.now()}`
+        conversionId: `cli-test-${Date.now()}`,
+        identifier
       }, !flags.live);
       console.log(JSON.stringify(res, null, 2));
       break;
@@ -409,6 +419,8 @@ Commands:
   ads-cycle                  review → learn → plan+launch the next campaign [--live]
   ads-conversion-test        Send a test event via the X Conversion API (dry-run unless --live)
                              Options: --event <tw-<pixel>-xxxxx> [--url <page>] [--live]
+                                      [--twclid <id> | --ip <ip> [--ua <agent>] | --email <sha256> | --phone <sha256>]
+                                      (defaults to a placeholder IP+UA identifier if none given — the API requires one)
   queue                      View items in the campaign queue
                              Options: [--status draft|scheduled|approved|published]
   approve <id>               Approve a queued post for publication
