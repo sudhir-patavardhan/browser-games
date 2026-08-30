@@ -39,6 +39,7 @@
 */
 (function(){
   var ID='G-9XV3GF4FT0';
+  var XPIXEL='reso2';         // X (Twitter) Ads conversion-tracking pixel id — attributes site visits to ad clicks
   var LOG=[];                 // what the page believes it reported, oldest first, capped
   var CAP=200;
   var live=false;
@@ -102,6 +103,26 @@
       (document.head||document.documentElement).appendChild(s);
       live=true;
     }catch(e){ live=false; }
+    bootXPixel();
+  }
+
+  /* X Ads conversion tracking. This is X's "website tag" base code, restated in this file's terms: the
+     same queue-then-load shape as gtag above (calls made before uwt.js arrives are buffered in twq.queue
+     and replayed), the same async script injection, the same file:// guard via boot(), and its own
+     try/catch so a blocked ad domain can never reach the game. Its page view is what lets Ads Manager
+     attribute a visit to the ad that was clicked; conversion events, if ever wanted, are twq('event', ...). */
+  function bootXPixel(){
+    try{
+      if(!window.twq){
+        var q=window.twq=function(){ q.exe ? q.exe.apply(q, arguments) : q.queue.push(arguments); };
+        q.version='1.1'; q.queue=[];
+        var x=document.createElement('script');
+        x.async=true;
+        x.src='https://static.ads-twitter.com/uwt.js';
+        (document.head||document.documentElement).appendChild(x);
+      }
+      window.twq('config', XPIXEL);
+    }catch(e){}
   }
 
   /* The only thing a game ever calls. Name and params follow GA4's rules (snake_case, <=40 char names),
