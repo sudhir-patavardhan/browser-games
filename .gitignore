@@ -6,4 +6,5 @@
 marketing/.env
 node_modules/
 dist/
+marketing/artifacts/videos/
 

@@ -11,9 +11,13 @@ import { ContentGenerator } from './src/generator/contentGenerator.js';
 import { CampaignPlanner } from './src/generator/campaignPlanner.js';
 import { OpportunityScout } from './src/scout/opportunityScout.js';
 import { VisualStudio } from './src/studio/visualStudio.js';
+import { VideoStudio } from './src/studio/videoStudio.js';
 import { QueueManager } from './src/scheduler/queueManager.js';
 import { AutonomousRunner } from './src/scheduler/autonomousRunner.js';
 import { UniversalPublisher } from './src/publishers/index.js';
+import { CampaignManager } from './src/ads/campaignManager.js';
+import { XAdsClient } from './src/ads/xAdsClient.js';
+import { ConversionApiClient } from './src/ads/conversionApi.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -158,6 +162,107 @@ async function main() {
       break;
     }
 
+    case 'video': {
+      const gameId = flags.game || 'drift';
+      const duration = Number(flags.duration) || 8;
+      console.log(`\n🎬 Recording ${duration}s of real gameplay for "${gameId}"...`);
+      const studio = new VideoStudio();
+      const mp4Path = await studio.generateGameplayVideo(gameId, { durationSeconds: duration });
+      console.log(`✅ Saved video: ${mp4Path}\n`);
+      break;
+    }
+
+    case 'promote-video': {
+      const gameId = flags.game || 'drift';
+      const duration = Number(flags.duration) || 8;
+      const dryRun = !flags.live;
+
+      console.log(`\n🎬 Recording ${duration}s of real gameplay for "${gameId}"...`);
+      const studio = new VideoStudio();
+      const videoPath = await studio.generateGameplayVideo(gameId, { durationSeconds: duration });
+      console.log(`✅ Saved video: ${videoPath}`);
+
+      console.log(`\n✨ Generating tweet copy for "${gameId}"...`);
+      const gen = new ContentGenerator();
+      const result = await gen.generate(gameId, 'twitter', {});
+      const text = result.content.text || result.content.headline || '';
+      console.log(`Tweet: "${text}"`);
+
+      const pub = new UniversalPublisher();
+      console.log(`\n📡 Publishing (${dryRun ? 'DRY-RUN' : 'LIVE'})...`);
+      const publishResult = await pub.publish('twitter', { text, videoPath }, dryRun);
+      console.log(`\nPublish Result:`, JSON.stringify(publishResult, null, 2));
+      break;
+    }
+
+    case 'ads-status': {
+      const mgr = new CampaignManager();
+      const st = mgr.status();
+      console.log(`\n💸 X ADS — POLICY & STATE`);
+      console.log(`  Per-campaign cap: $${st.policy.maxDailyPerCampaignUsd}/day · total cap: $${st.policy.maxTotalDailyUsd}/day · trial: ${st.policy.trialDays} days · max active: ${st.policy.maxActiveCampaigns}`);
+      console.log(`  Account currency: ${st.policy.currency} (1 USD = ${st.policy.usdToLocalRate} ${st.policy.currency})`);
+      console.log(`  Active: ${st.active.length} (committing $${st.committedDailyUsd}/day) · paused: ${st.paused} · simulated: ${st.simulated}`);
+      st.active.forEach(c => console.log(`   • ${c.name} — $${c.dailyBudgetUsd}/day since ${c.launchedAt.slice(0, 10)}${c.lastStats ? ` · ${c.lastStats.clicks} clicks, CTR ${c.lastStats.ctrPercent}%` : ''}`));
+      const client = new XAdsClient();
+      if (!client.isConfigured) {
+        console.log(`  API: not configured (need Twitter OAuth1 keys + X_ADS_ACCOUNT_ID)\n`);
+      } else {
+        const probe = await client.probeAccess();
+        console.log(`  API access: ${probe.authorized ? `✅ authorized (${probe.accounts.length} account(s))` : `❌ ${probe.error}`}\n`);
+      }
+      break;
+    }
+
+    case 'ads-launch': {
+      const mgr = new CampaignManager();
+      const gameId = flags.game || 'drift';
+      const game = GAME_CATALOG[gameId];
+      if (!game) { console.error(`Unknown game "${gameId}"`); process.exit(1); }
+      const brief = {
+        gameId,
+        angle: flags.angle || 'manual',
+        tweetId: flags.tweet,
+        tweetText: flags.text || `${game.tagline} ${game.pitch.split('. ')[0]}. Free in your browser: ${game.url}`,
+        dailyBudgetUsd: Number(flags.daily) || undefined,
+        ageBucket: flags.age,
+        interests: flags.interests ? String(flags.interests).split(',').map(s => s.trim()) : undefined,
+        keywords: flags.keywords ? String(flags.keywords).split(',').map(s => s.trim()) : undefined
+      };
+      const res = await mgr.launch(brief, { dryRun: !flags.live });
+      console.log(JSON.stringify(res, null, 2));
+      break;
+    }
+
+    case 'ads-review': {
+      const mgr = new CampaignManager();
+      const res = await mgr.review({ dryRun: !flags.live });
+      console.log(JSON.stringify(res, null, 2));
+      break;
+    }
+
+    case 'ads-cycle': {
+      const mgr = new CampaignManager();
+      const res = await mgr.runCycle({ dryRun: !flags.live });
+      console.log(`\nCycle summary:`, JSON.stringify({ reviewed: res.reviewed.length, planned: res.planned, blocked: res.blocked || null }, null, 2));
+      break;
+    }
+
+    case 'ads-conversion-test': {
+      const client = new ConversionApiClient();
+      console.log(`\nX Conversion API: ${client.isConfigured ? '✅ pixel + token configured' : '❌ missing X_PIXEL_ID / X_PIXEL_TOKEN'}`);
+      if (!flags.event) {
+        console.log(`Pass --event <tw-<pixel>-xxxxx> (from Ads Manager > Events manager) to send a real conversion.`);
+        break;
+      }
+      const res = await client.send({
+        eventId: flags.event,
+        sourceUrl: flags.url || config.general.baseUrl,
+        conversionId: `cli-test-${Date.now()}`
+      }, !flags.live);
+      console.log(JSON.stringify(res, null, 2));
+      break;
+    }
+
     case 'queue': {
       const queue = new QueueManager();
       const items = queue.getAll({ status: flags.status, channel: flags.channel });
@@ -292,6 +397,18 @@ Commands:
                              Options: --game <id>
   scout                      Scout community queries & draft authentic contextual replies
   studio                     Generate high-res SVG social cards & banners for all 12 games
+  video                      Record a real gameplay clip and convert to MP4
+                             Options: --game <id> [--duration <seconds>]
+  promote-video              Record gameplay, generate tweet copy, and post the video to Twitter
+                             Options: --game <id> [--duration <seconds>] [--live]
+  ads-status                 Show X Ads spend policy, active/paused campaigns, and API access
+  ads-launch                 Launch one paid campaign (≤ $10/day; ≤ $25/day across all)
+                             Options: --game <id> [--daily <usd>] [--tweet <id>] [--text "..."] [--age AGE_21_TO_34]
+                                      [--interests "Gaming,Relationships"] [--keywords "a,b"] [--live]
+  ads-review                 Pull analytics for active campaigns; pause any that failed the 2-day trial [--live]
+  ads-cycle                  review → learn → plan+launch the next campaign [--live]
+  ads-conversion-test        Send a test event via the X Conversion API (dry-run unless --live)
+                             Options: --event <tw-<pixel>-xxxxx> [--url <page>] [--live]
   queue                      View items in the campaign queue
                              Options: [--status draft|scheduled|approved|published]
   approve <id>               Approve a queued post for publication

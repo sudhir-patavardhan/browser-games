@@ -29,6 +29,8 @@
   "license": "MIT",
   "dependencies": {
     "@google/genai": "^2.19.0",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "ffmpeg-static": "^5.3.0",
+    "playwright": "^1.62.1"
   }
 }

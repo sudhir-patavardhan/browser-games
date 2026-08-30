@@ -3,6 +3,7 @@ import { CampaignPlanner } from '../generator/campaignPlanner.js';
 import { OpportunityScout } from '../scout/opportunityScout.js';
 import { QueueManager } from './queueManager.js';
 import { VisualStudio } from '../studio/visualStudio.js';
+import { CampaignManager } from '../ads/campaignManager.js';
 import { config } from '../config.js';
 
 export class AutonomousRunner {
@@ -63,6 +64,19 @@ export class AutonomousRunner {
       const cards = this.studio.generateAllCards();
       summary.actions.generatedCards = Object.keys(cards).length;
       console.log(`✅ Generated ${Object.keys(cards).length} visual cards.`);
+    }
+
+    // 5. Paid campaigns: review yesterday's, learn, launch the next one (policy-capped)
+    if (config.ads.enabled) {
+      const ads = await new CampaignManager().runCycle({ dryRun });
+      summary.actions.ads = {
+        reviewed: ads.reviewed.length,
+        paused: ads.reviewed.filter(r => r.verdict === 'pause').length,
+        launched: Boolean(ads.planned?.launched),
+        blocked: ads.blocked || null
+      };
+    } else {
+      console.log(`\n💸 X Ads: skipped (set X_ADS_ACCOUNT_ID to enable paid campaigns).`);
     }
 
     console.log(`\n🤖 ========================================================`);

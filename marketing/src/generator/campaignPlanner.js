@@ -59,9 +59,9 @@ export class CampaignPlanner {
         day: 'Saturday',
         theme: 'Indie Game Spotlight',
         channel: 'reddit',
-        focusGame: 'deadpoint',
+        focusGame: 'dasanana',
         options: { subreddit: 'r/indiegames' },
-        description: 'Showcase 2.5D bouldering with realistic flagging and dyno mechanics'
+        description: 'Showcase the mythological astra-countering combat and tejas mechanics'
       },
       {
         day: 'Sunday',

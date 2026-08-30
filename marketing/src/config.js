@@ -86,6 +86,27 @@ export const config = {
       enabled: Boolean(process.env.DEVTO_API_KEY),
       apiKey: process.env.DEVTO_API_KEY || ''
     }
+  },
+  // Paid campaigns on X Ads. The USD ceilings are hard limits: env vars can
+  // lower them but never raise them.
+  ads: {
+    enabled: Boolean(process.env.X_ADS_ACCOUNT_ID),
+    accountId: process.env.X_ADS_ACCOUNT_ID || '',
+    // Conversion API (server-side): reports on-site conversions analytics.js
+    // fires client-side back to Ads Manager. A separate credential from the
+    // OAuth1 Ads API above — no developer-app approval needed for this one.
+    pixelId: process.env.X_PIXEL_ID || '',
+    pixelToken: process.env.X_PIXEL_TOKEN || '',
+    fundingInstrumentId: process.env.X_ADS_FUNDING_INSTRUMENT_ID || '',
+    currency: process.env.X_ADS_CURRENCY || 'USD',
+    // Local currency units per 1 USD (e.g. ~84 for an INR-billed account).
+    usdToLocalRate: Number(process.env.X_ADS_USD_TO_LOCAL_RATE) || 1,
+    maxDailyPerCampaignUsd: Math.min(Number(process.env.X_ADS_MAX_DAILY_PER_CAMPAIGN_USD) || 10, 10),
+    maxTotalDailyUsd: Math.min(Number(process.env.X_ADS_MAX_TOTAL_DAILY_USD) || 25, 25),
+    trialDays: Number(process.env.X_ADS_TRIAL_DAYS) || 2,
+    maxActiveCampaigns: Number(process.env.X_ADS_MAX_ACTIVE_CAMPAIGNS) || 2,
+    ledgerFile: path.join(MARKETING_DIR, 'data', 'ads-campaigns.json'),
+    learningsFile: path.join(MARKETING_DIR, 'data', 'ads-learnings.json')
   }
 };
 

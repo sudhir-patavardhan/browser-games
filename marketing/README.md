@@ -21,10 +21,15 @@ node marketing/cli.js studio
 # 4. Scout community discussions & draft helpful contextual replies
 node marketing/cli.js scout
 
-# 5. Launch the local interactive web dashboard
+# 5. Record a real gameplay clip and post it as a video tweet
+node marketing/cli.js promote-video --game drift --live
+
+# 6. Launch the local interactive web dashboard
 node marketing/cli.js dashboard
 # 👉 Open in browser: http://localhost:3030
 ```
+
+**One-time setup for video generation**: after `npm install`, also run `npx playwright install chromium` to download the headless browser used to record real gameplay footage. MP4 conversion uses a bundled static ffmpeg binary (`ffmpeg-static`), so no separate ffmpeg install is needed.
 
 ---
 
@@ -130,6 +135,37 @@ To enable automated posting across different platforms, create a `.env` file in 
 | `node marketing/cli.js process-due [--live]` | Publishes all approved items due today or earlier |
 | `node marketing/cli.js run-autonomous [--daemon]` | Runs one full marketing loop (or runs continuously as background daemon) |
 | `node marketing/cli.js dashboard` | Starts the interactive web dashboard on `http://localhost:3030` |
+
+---
+
+## 💸 Paid Campaigns on X (Ads)
+
+The agent can run paid "Website traffic" campaigns on X and manage them daily, under a hard spend policy:
+
+| Rule | Value |
+| :--- | :--- |
+| Per-campaign budget | **≤ $10/day** (env can lower it, never raise it) |
+| Total across all active campaigns | **≤ $25/day** |
+| Trial window | **2 days**, then analytics decide: keep, or pause |
+| Kill rule after the trial | < 3 link clicks, or CPC > $1.00, or CTR < 0.25% |
+| Backstop | every campaign also gets a total budget cap and an end time of trial + 1 day, so it cannot outspend the trial even if a daily run is missed |
+
+Each daily cycle (`ads-cycle`, also part of `run-autonomous`) does:
+
+1. **Review** — pulls impressions / link clicks / spend for every active campaign from the Ads analytics API and pauses anything that failed its trial.
+2. **Learn** — folds results into `data/ads-learnings.json` (per-game aggregates plus Gemini-written lessons).
+3. **Plan & launch** — asks Gemini for the next brief (game, angle, hashtag-free ad copy, age bucket, interests, keywords) given those learnings and what's already running, then posts the ad tweet and creates campaign → ad group → targeting → promoted post. Launch is skipped when the active budget already fills the cap.
+
+```bash
+node marketing/cli.js ads-status                       # policy, access check, active/paused campaigns
+node marketing/cli.js ads-launch --game sync --daily 8 # one campaign (dry-run; add --live to spend)
+node marketing/cli.js ads-review --live                # pull analytics and pause trial failures
+node marketing/cli.js ads-cycle --live                 # review → learn → plan+launch
+```
+
+**Setup**: set `X_ADS_ACCOUNT_ID` (from the Ads Manager URL) plus the currency/rate variables in `.env` (see `.env.example` §9). The developer app must be approved for the Ads API — request it at https://docs.x.com/forms/ads-api-access, then regenerate the access token; until then `ads-status` reports `UNAUTHORIZED_CLIENT_APPLICATION` and cycles run as dry-runs.
+
+State lives in `data/ads-campaigns.json` (ledger of every campaign with its stats history) and `data/ads-learnings.json`.
 
 ---
 

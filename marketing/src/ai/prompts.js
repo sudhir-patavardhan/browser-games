@@ -111,6 +111,36 @@ Structure:
 6. Play the game & view the source code.
 - Output JSON: { "title": "...", "tags": ["javascript", "webdev", "gamedev", "showdev"], "contentMarkdown": "..." }`,
 
+  adsCampaignBrief: ({ catalog = [], learnings = null, activeCampaigns = [], dailyBudgetUsd = 10 }) => `Plan the next paid X (Twitter) "Website traffic" campaign for Kreeda. Budget: $${dailyBudgetUsd}/day for a 2-day trial, so the ad must earn link clicks fast.
+
+You may ONLY pick one of these games (use the exact "id" for gameId):
+${catalog.map(g => `- id: "${g.id}", name: "${g.name}" — ${g.tagline} — ${g.url}`).join('\n')}
+
+Campaigns currently running (avoid duplicating their game + angle):
+${activeCampaigns.length ? activeCampaigns.map(c => `- ${c.gameId} / ${c.angle}`).join('\n') : '- none'}
+
+What past campaigns taught us (most recent first; empty if this is the first):
+${learnings ? JSON.stringify(learnings, null, 2) : 'No history yet — pick the game with the broadest appeal and the strongest, most concrete hook.'}
+
+Rules for the ad text:
+- Lead with the benefit to the player, not the mechanics or the tech stack.
+- No hashtags at all (X rejects hashtags in ads). No @mentions.
+- Include the game's URL exactly as listed above.
+- Under 240 characters. Plain, specific, human.
+
+Choose targeting for the audience most likely to click:
+- ageBucket: one of AGE_18_PLUS, AGE_21_TO_34, AGE_25_TO_34, AGE_35_TO_49
+- interests: 1-3 names from X's taxonomy, e.g. "Gaming", "Technology/Software Development", "Relationships", "Relationships/Dating"
+- keywords: 4-7 short phrases people would post or search
+
+Output JSON: { "gameId": "...", "angle": "<3-6 word label for this creative angle>", "tweetText": "...", "headline": "<website card headline, under 50 chars>", "ageBucket": "...", "interests": ["..."], "keywords": ["..."], "rationale": "<one sentence on why, citing the learnings if any>" }`,
+
+  adsLearningsSummary: (records) => `You are reviewing paid X campaign results for Kreeda (free browser games). Each record has the game, the creative angle, targeting, spend in USD, impressions, link clicks, CTR and CPC, and whether it was kept or paused.
+
+${JSON.stringify(records, null, 2)}
+
+Write 3-5 short, concrete lessons for planning the next campaign (which games/angles/audiences earn cheap clicks, which don't, what to try next). Output JSON: { "lessons": ["..."], "recommendedNext": "<one sentence>" }`,
+
   opportunityDraft: (post, catalog = []) => `Analyze this social post / user query and draft a personalized, helpful reply introducing the most appropriate Kreeda game:
 User Post: "${post.content}"
 Platform: "${post.platform}"
