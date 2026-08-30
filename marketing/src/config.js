@@ -38,6 +38,9 @@ export const config = {
     queueFile: path.join(MARKETING_DIR, 'data', 'queue.json'),
     opportunitiesFile: path.join(MARKETING_DIR, 'data', 'opportunities.json'),
     telemetryFile: path.join(MARKETING_DIR, 'data', 'telemetry.json'),
+    postMetricsFile: path.join(MARKETING_DIR, 'data', 'post-metrics.json'),
+    lastCycleFile: path.join(MARKETING_DIR, 'data', 'last-cycle.json'),
+    reports: path.join(MARKETING_DIR, 'artifacts', 'reports'),
     dashboard: path.join(MARKETING_DIR, 'dashboard')
   },
   general: {
@@ -86,6 +89,18 @@ export const config = {
       enabled: Boolean(process.env.DEVTO_API_KEY),
       apiKey: process.env.DEVTO_API_KEY || ''
     }
+  },
+  // Play-together video posts: film one storyboarded game and post it, on a
+  // cadence, as part of the autonomous cycle. The two demo names appear in
+  // the footage; keep them short so they fit the games' 12-character inputs.
+  together: {
+    enabled: process.env.TOGETHER_VIDEO_DISABLED !== '1',
+    cadenceDays: Number(process.env.TOGETHER_VIDEO_CADENCE_DAYS) || 2,
+    names: (() => {
+      const n = (process.env.TOGETHER_DEMO_NAMES || '').split(',').map(s => s.trim().slice(0, 12)).filter(Boolean);
+      return n.length === 2 ? n : ['Maya', 'Arjun'];
+    })(),
+    stateFile: path.join(MARKETING_DIR, 'data', 'together-state.json')
   },
   // Paid campaigns on X Ads. The USD ceilings are hard limits: env vars can
   // lower them but never raise them.

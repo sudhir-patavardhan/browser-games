@@ -18,6 +18,9 @@ import { UniversalPublisher } from './src/publishers/index.js';
 import { CampaignManager } from './src/ads/campaignManager.js';
 import { XAdsClient } from './src/ads/xAdsClient.js';
 import { ConversionApiClient } from './src/ads/conversionApi.js';
+import { TogetherDirector } from './src/studio/togetherDirector.js';
+import { TogetherPromoter } from './src/generator/togetherPromoter.js';
+import { XMetrics } from './src/insights/xMetrics.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -164,11 +167,51 @@ async function main() {
 
     case 'video': {
       const gameId = flags.game || 'drift';
+      const studio = new VideoStudio();
+      if (TogetherDirector.hasStoryboard(gameId) && !flags.generic) {
+        console.log(`\n🎬 Filming the "${gameId}" storyboard (${config.together.names.join(' & ')})...`);
+        const out = await studio.generateTogetherVideo(gameId);
+        console.log(`✅ ${out.mp4Path}\n   square: ${out.squarePath}\n   ${out.seconds}s of footage\n`);
+        break;
+      }
       const duration = Number(flags.duration) || 8;
       console.log(`\n🎬 Recording ${duration}s of real gameplay for "${gameId}"...`);
-      const studio = new VideoStudio();
-      const mp4Path = await studio.generateGameplayVideo(gameId, { durationSeconds: duration });
+      const mp4Path = await studio.generateGameplayVideo(gameId, { durationSeconds: duration, generic: true });
       console.log(`✅ Saved video: ${mp4Path}\n`);
+      break;
+    }
+
+    case 'promote-together': {
+      const promoter = new TogetherPromoter();
+      const dryRun = !flags.live;
+      console.log(`\n🎬 PLAY-TOGETHER VIDEO POST (${dryRun ? 'DRY-RUN' : 'LIVE'})`);
+      console.log(`   storyboards: ${TogetherDirector.storyboardGames().join(', ')} · next in rotation: ${promoter.nextGame()}`);
+      const res = await promoter.promote({ gameId: flags.game || undefined, dryRun, video: !flags['no-video'] });
+      console.log(JSON.stringify({ gameId: res.gameId, video: res.videoPath, square: res.squarePath, seconds: res.renderSeconds, text: res.text, altText: res.altText, publish: res.publishResult, queueId: res.queueId }, null, 2));
+      break;
+    }
+
+    case 'metrics': {
+      const res = await new XMetrics().refresh();
+      console.log(`\n📈 ORGANIC PERFORMANCE BY GAME (our own tweets)`);
+      const rows = Object.entries(res.summary);
+      if (!rows.length) console.log(`   nothing measured yet — metrics begin once posts go out live`);
+      rows.forEach(([g, s]) => console.log(`   • ${g.padEnd(13)} ${String(s.posts).padStart(2)} post(s) · ${s.impressions} imp · ${s.linkClicks} link clicks · CTR ${s.ctrPercent}% · engagement ${s.engagementPercent}%`));
+      console.log();
+      break;
+    }
+
+    case 'ads-preflight': {
+      const p = await new CampaignManager().preflight();
+      console.log(`\n🛫 X ADS PREFLIGHT — ${p.ready ? '✅ ready to go live' : '⚠️ not ready yet'}`);
+      p.checks.forEach(c => console.log(`   ${c.ok ? '✅' : '⚠️'} ${c.label.padEnd(18)} ${c.detail}`));
+      console.log();
+      break;
+    }
+
+    case 'report': {
+      const f = path.join(config.paths.reports, 'latest.md');
+      console.log(fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : 'No cycle report yet — run "node cli.js run-autonomous" first.');
       break;
     }
 
@@ -407,10 +450,16 @@ Commands:
                              Options: --game <id>
   scout                      Scout community queries & draft authentic contextual replies
   studio                     Generate high-res SVG social cards & banners for all 12 games
-  video                      Record a real gameplay clip and convert to MP4
-                             Options: --game <id> [--duration <seconds>]
+  video                      Record a gameplay clip and convert to MP4 (Play-together games are
+                             filmed from their storyboard: 1080x1920 + a square variant)
+                             Options: --game <id> [--duration <seconds>] [--generic]
   promote-video              Record gameplay, generate tweet copy, and post the video to Twitter
                              Options: --game <id> [--duration <seconds>] [--live]
+  promote-together           Film the next Play-together game in rotation and post the video
+                             Options: [--game sync|windows] [--live] [--no-video]
+  metrics                    Pull impressions / link clicks for the tweets the agent posted live
+  report                     Print the latest cycle report (the auto-update PR body)
+  ads-preflight              Readiness checklist for going live with X Ads (keys, approval, funding, video)
   ads-status                 Show X Ads spend policy, active/paused campaigns, and API access
   ads-launch                 Launch one paid campaign (≤ $10/day; ≤ $25/day across all)
                              Options: --game <id> [--daily <usd>] [--tweet <id>] [--text "..."] [--age AGE_21_TO_34]
