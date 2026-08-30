@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sync — Kreeda</title>
-<meta name="description" content="How well do you actually know each other? Two players, one phone: answer each question for yourself, predict the other player, then reveal together. Similarity and insight, measured in ten rounds.">
+<meta name="description" content="How well do you actually know each other? Two players, one phone: on every card, pick your own answer and the one you think they'd give. Then one page shows everything — similarity, insight, and all ten questions side by side.">
 <link rel="canonical" href="https://kreeda.games/sync/">
 <meta name="theme-color" content="#14101f">
 
@@ -12,13 +12,13 @@
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/sync/">
 <meta property="og:title" content="Sync — Kreeda">
-<meta property="og:description" content="How well do you actually know each other? Answer for yourself, predict the other player, reveal together. Two players, one phone.">
+<meta property="og:description" content="How well do you actually know each other? Answer for yourself, guess for them, reveal on one page. Two players, one phone.">
 <meta property="og:image" content="https://kreeda.games/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Sync — Kreeda">
-<meta name="twitter:description" content="How well do you actually know each other? Answer for yourself, predict the other player, reveal together. Two players, one phone.">
+<meta name="twitter:description" content="How well do you actually know each other? Answer for yourself, guess for them, reveal on one page. Two players, one phone.">
 <meta name="twitter:image" content="https://kreeda.games/og.png">
 
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
@@ -26,20 +26,20 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Sync","description":"How well do you actually know each other? Two players, one phone: answer each question for yourself, predict the other player, then reveal together.","url":"https://kreeda.games/sync/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Sync","description":"How well do you actually know each other? Two players, one phone: on every card, pick your own answer and the one you think they'd give, then reveal everything on one page.","url":"https://kreeda.games/sync/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <style>
 /* ============================ tokens ============================
    Dusk violet: the hour when people actually talk. One committed dark look — this game is played
    with two heads over one phone, usually in the evening, and a theme flip mid-hand-off would read
    as a glitch. Every colour lives here once. Player A is always violet, player B always rose,
-   everywhere — meters, chips, reveal rows — so ownership never needs a label twice. */
+   everywhere — pick cells, chips, result columns — so ownership never needs a label twice. */
 :root{
   --ground:#14101f;  --ground-2:#1b1530;
   --panel:#211a36;   --panel-2:#2a2246;  --rule:rgba(190,175,255,.16);
   --ink:#f0ecfa;     --ink-dim:#a89fc7;
-  --a:#7c5cff;       --a-soft:rgba(124,92,255,.18);
-  --b:#ff6b9d;       --b-soft:rgba(255,107,157,.16);
+  --a:#7c5cff;       --a-soft:rgba(124,92,255,.18);  --a-ink:#c9b8ff;
+  --b:#ff6b9d;       --b-soft:rgba(255,107,157,.16); --b-ink:#ffb3cb;
   --ok:#57d9a3;      --ok-soft:rgba(87,217,163,.14);
   --no:#ff8c7a;      --no-soft:rgba(255,140,122,.12);
   --gold:#ffd166;
@@ -69,7 +69,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible{
   outline:3px solid var(--gold); outline-offset:2px; }
 
 /* ============================ shared chrome ============================ */
-.top{ display:flex; align-items:center; gap:10px; margin:2px 0 14px; min-height:44px; }
+.top{ display:flex; align-items:center; gap:10px; margin:2px 0 12px; min-height:44px; }
 .wordmark{ display:flex; align-items:center; gap:9px; }
 .wordmark svg{ width:34px; height:34px; flex:none; }
 .wordmark b{ font-size:22px; font-weight:900; letter-spacing:1px; }
@@ -90,12 +90,14 @@ button:focus-visible, input:focus-visible, summary:focus-visible{
   border-color:transparent; color:#fff; box-shadow:0 8px 24px rgba(124,92,255,.35); }
 .btn.ghost{ background:transparent; border-color:var(--rule); color:var(--ink-dim); font-weight:700; }
 .btn[disabled]{ opacity:.45; cursor:default; }
+.btnrow{ display:flex; gap:10px; }
+.btnrow .btn{ flex:1; }
 
 .dim{ color:var(--ink-dim); }
 .tiny{ font-size:12px; line-height:1.55; }
 
 /* ============================ title ============================ */
-.hero{ text-align:center; margin:26px 0 20px; }
+.hero{ text-align:center; margin:22px 0 18px; }
 .hero svg{ width:120px; height:74px; }
 .hero h1{ font-size:44px; font-weight:900; letter-spacing:3px; margin:6px 0 4px;
   background:linear-gradient(95deg, var(--a), var(--b)); -webkit-background-clip:text;
@@ -112,17 +114,21 @@ button:focus-visible, input:focus-visible, summary:focus-visible{
 }
 .field.pa input{ border-left:4px solid var(--a); }
 .field.pb input{ border-left:4px solid var(--b); }
+.names2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.names2 .field{ margin-top:0; }
 
 .packs{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
 .pack{ flex:1 1 30%; min-height:46px; padding:10px 8px; background:var(--panel-2);
   border:1px solid var(--rule); border-radius:12px; font-size:13.5px; font-weight:800; }
 .pack[aria-pressed="true"]{ background:var(--a-soft); border-color:var(--a); color:#fff;
   box-shadow:inset 0 0 0 1px var(--a); }
+.packblurb{ font-size:12.5px; color:var(--ink-dim); margin:8px 2px 0; min-height:1.4em; }
 
 details.how{ margin-top:14px; border:1px solid var(--rule); border-radius:14px;
   background:var(--panel); padding:0 14px; }
 details.how summary{ cursor:pointer; font-size:14px; font-weight:800; padding:13px 0;
   min-height:44px; list-style:none; display:flex; align-items:center; gap:8px; }
+details.how summary::-webkit-details-marker{ display:none; }
 details.how summary::before{ content:'▸'; color:var(--ink-dim); transition:transform .15s ease; }
 details.how[open] summary::before{ transform:rotate(90deg); }
 details.how ul{ margin:0 0 14px; padding-left:20px; font-size:13.5px; line-height:1.65;
@@ -138,7 +144,7 @@ details.how li b{ color:var(--ink); }
 .handoff .pass{ font-size:13px; font-weight:800; letter-spacing:2.4px; text-transform:uppercase;
   color:var(--ink-dim); }
 .handoff h2{ font-size:36px; font-weight:900; margin:12px 0 6px; overflow-wrap:anywhere; }
-.handoff h2.pa{ color:#b7a3ff; } .handoff h2.pb{ color:#ffa2c1; }
+.handoff h2.pa{ color:var(--a-ink); } .handoff h2.pb{ color:var(--b-ink); }
 .handoff .sub{ font-size:15px; color:var(--ink-dim); margin:0 0 26px; line-height:1.5; }
 .handoff .btn{ max-width:340px; }
 .handoff .peek{ margin-top:22px; font-size:12.5px; color:var(--ink-dim); }
@@ -147,95 +153,114 @@ details.how li b{ color:var(--ink); }
   @keyframes heartbeat{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.03);} }
 }
 
-/* ============================ answering ============================ */
-.progress{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-.progress .n{ font-size:12.5px; font-weight:800; color:var(--ink-dim); white-space:nowrap; }
-.bar{ flex:1; height:6px; border-radius:99px; background:var(--panel-2); overflow:hidden; }
-.bar i{ display:block; height:100%; border-radius:99px; width:0%;
-  background:linear-gradient(90deg, var(--a), var(--b)); transition:width .3s ease; }
+/* ============================ answering ============================
+   One card per question, both answers on it. The two columns of cells are the whole interface:
+   no mode to be in, no "which step am I on" — the colour says whose answer a cell is. */
+.prog{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.prog .n{ font-size:12.5px; font-weight:800; color:var(--ink-dim); white-space:nowrap; }
+.dots{ flex:1; display:flex; gap:4px; }
+.dotb{ flex:1; height:30px; background:none; border:0; padding:0; display:flex; align-items:center; }
+.dotb i{ display:block; width:100%; height:8px; border-radius:99px; background:var(--panel-2);
+  transition:background .2s ease, box-shadow .2s ease; }
+.dotb.done i{ background:linear-gradient(90deg, var(--a), var(--b)); }
+.dotb.cur i{ box-shadow:0 0 0 2px var(--gold); }
 
-.modechip{ display:inline-flex; align-items:center; gap:7px; font-size:11.5px; font-weight:900;
-  letter-spacing:1.6px; text-transform:uppercase; border-radius:999px; padding:7px 13px; }
-.modechip.self{ background:var(--a-soft); color:#c9b8ff; box-shadow:inset 0 0 0 1px var(--a); }
-.modechip.pred{ background:var(--b-soft); color:#ffb3cb; box-shadow:inset 0 0 0 1px var(--b); }
+.turn{ display:flex; align-items:center; gap:10px; background:var(--panel-2); border:1px solid var(--rule);
+  border-radius:13px; padding:10px 12px; margin-bottom:12px; font-size:13px; line-height:1.4; }
+.turn .eye{ font-size:20px; flex:none; }
+.turn b.pa{ color:var(--a-ink); } .turn b.pb{ color:var(--b-ink); }
 
-.qtext{ font-size:22px; font-weight:900; line-height:1.3; margin:12px 0 4px; }
-.qsub{ font-size:14px; color:var(--ink-dim); margin:0 0 16px; line-height:1.5; }
-.qsub b{ color:var(--ink); }
+.qcard{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:16px 14px 10px; }
+.qtext{ font-size:21px; font-weight:900; line-height:1.3; margin:0 0 12px; }
+.colhead{ display:flex; align-items:flex-end; gap:6px; margin-bottom:4px; padding-right:2px; }
+.colhead .sp{ flex:1; }
+.colhead .ch{ width:54px; flex:none; text-align:center; font-size:11px; font-weight:900;
+  letter-spacing:.8px; text-transform:uppercase; line-height:1.15; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; }
+.colhead .ch small{ display:block; font-size:9.5px; font-weight:700; letter-spacing:0;
+  text-transform:none; color:var(--ink-dim); margin-bottom:2px; }
+.colhead .ch.me{ color:var(--a-ink); } .colhead .ch.them{ color:var(--b-ink); }
 
-.opt{
-  display:block; width:100%; text-align:left; min-height:54px; padding:14px 16px; margin-top:9px;
-  background:var(--panel); border:1px solid var(--rule); border-radius:14px;
-  font-size:16px; font-weight:700; line-height:1.35;
-  transition:transform .1s ease, background .15s ease, border-color .15s ease;
-}
-.opt:active{ transform:scale(.985); }
-.opt.picked{ background:var(--a-soft); border-color:var(--a); }
-.pred .opt.picked{ background:var(--b-soft); border-color:var(--b); }
+.orow{ display:flex; align-items:center; gap:6px; padding:5px 2px 5px 0; border-top:1px solid var(--rule);
+  border-radius:10px; transition:background .2s ease; }
+.orow:first-of-type{ border-top:0; }
+.orow.both{ background:var(--ok-soft); }
+.orow .otext{ flex:1; min-width:0; font-size:15.5px; font-weight:700; line-height:1.3; padding:6px 4px 6px 6px;
+  overflow-wrap:anywhere; cursor:pointer; }
+.cell{ width:54px; height:48px; flex:none; border-radius:13px; background:transparent;
+  border:2px solid transparent; display:flex; align-items:center; justify-content:center;
+  padding:0; transition:transform .12s ease, background .15s ease, border-color .15s ease; }
+.cell svg{ width:22px; height:22px; opacity:0; transform:scale(.6); transition:opacity .15s, transform .15s; }
+.cell.me{ border-color:rgba(124,92,255,.5); }
+.cell.them{ border-color:rgba(255,107,157,.5); }
+.cell.me.on{ background:var(--a); border-color:var(--a); }
+.cell.them.on{ background:var(--b); border-color:var(--b); }
+.cell.on svg{ opacity:1; transform:none; }
+.cell:active{ transform:scale(.92); }
 @media (prefers-reduced-motion:no-preference){
+  .cell.nudge{ animation:nudge .45s ease; }
+  @keyframes nudge{ 0%,100%{ transform:none; } 30%{ transform:scale(1.12); } 60%{ transform:scale(.96); } }
   .stepin{ animation:stepin .22s ease; }
   @keyframes stepin{ from{ opacity:0; transform:translateX(14px);} to{ opacity:1; transform:none;} }
 }
-.backrow{ margin-top:16px; }
-.backrow .btn{ min-height:44px; }
+.hint{ margin:10px 4px 0; font-size:12.5px; color:var(--ink-dim); line-height:1.5; text-align:center; }
+.hint b.pa{ color:var(--a-ink); } .hint b.pb{ color:var(--b-ink); }
+.navrow{ display:flex; gap:10px; margin-top:12px; }
+.navrow .btn{ flex:1; min-height:44px; margin-top:0; }
 
-/* lock-in */
-.lock{ text-align:center; padding:26px 4px 6px; }
-.lock .bignum{ font-size:52px; font-weight:900;
+/* ============================ recap / lock-in ============================ */
+.lock{ text-align:center; padding:10px 4px 6px; }
+.lock .bignum{ font-size:44px; font-weight:900; line-height:1;
   background:linear-gradient(95deg, var(--a), var(--b)); -webkit-background-clip:text;
   background-clip:text; color:transparent; }
-.lock h2{ font-size:22px; font-weight:900; margin:4px 0 8px; }
-.lock p{ font-size:14px; color:var(--ink-dim); line-height:1.55; margin:0 0 20px; }
+.lock h2{ font-size:21px; font-weight:900; margin:6px 0 6px; overflow-wrap:anywhere; }
+.lock p{ font-size:13.5px; color:var(--ink-dim); line-height:1.5; margin:0 0 12px; }
+.rrow-r{ display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+  background:var(--panel); border:1px solid var(--rule); border-radius:13px; padding:10px 12px; margin-top:8px; }
+.rrow-r .num{ flex:none; width:22px; height:22px; border-radius:99px; background:var(--panel-2);
+  font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; color:var(--ink-dim); }
+.rrow-r .body{ flex:1; min-width:0; }
+.rrow-r .rq{ font-size:13.5px; font-weight:800; line-height:1.3; margin-bottom:6px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rrow-r .picks{ display:flex; gap:6px; flex-wrap:wrap; }
+.pk{ font-size:12px; font-weight:800; border-radius:999px; padding:4px 9px; line-height:1.3;
+  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pk.me{ background:var(--a-soft); color:var(--a-ink); box-shadow:inset 0 0 0 1px rgba(124,92,255,.5); }
+.pk.them{ background:var(--b-soft); color:var(--b-ink); box-shadow:inset 0 0 0 1px rgba(255,107,157,.5); }
+.pk.todo{ background:var(--no-soft); color:var(--no); box-shadow:inset 0 0 0 1px rgba(255,140,122,.5); }
+.rrow-r .chev{ color:var(--ink-dim); flex:none; font-size:18px; }
+.lockbar{ position:sticky; bottom:0; padding:14px 0 calc(6px + env(safe-area-inset-bottom));
+  margin-top:6px; background:linear-gradient(180deg, transparent 0%, var(--ground) 38%); }
+.lockbar .btn{ margin-top:0; }
 
-/* ============================ reveal ============================ */
-.tallies{ display:flex; gap:7px; margin-bottom:12px; }
-.tally{ flex:1; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
-  padding:7px 6px; text-align:center; min-width:0; }
-.tally b{ display:block; font-size:17px; font-weight:900; }
-.tally span{ display:block; font-size:9.5px; font-weight:800; letter-spacing:.6px;
-  text-transform:uppercase; color:var(--ink-dim); margin-top:1px; white-space:nowrap;
-  overflow:hidden; text-overflow:ellipsis; }
-.tally.t-sim b{ color:var(--ok); } .tally.t-a b{ color:#b7a3ff; } .tally.t-b b{ color:#ffa2c1; }
-
-.rq{ font-size:19px; font-weight:900; line-height:1.35; margin:2px 0 14px; }
-.rrow{ display:flex; align-items:center; gap:11px; background:var(--panel); border:1px solid var(--rule);
-  border-radius:13px; padding:11px 13px; margin-top:9px; }
-.rrow .who{ font-size:11px; font-weight:900; letter-spacing:.8px; text-transform:uppercase;
-  width:74px; flex:none; line-height:1.3; overflow-wrap:anywhere; }
-.rrow .who.pa{ color:#b7a3ff; } .rrow .who.pb{ color:#ffa2c1; }
-.rrow .what{ flex:1; font-size:15px; font-weight:700; line-height:1.35; min-width:0;
-  overflow-wrap:anywhere; }
-.rrow .what small{ display:block; font-size:11.5px; font-weight:600; color:var(--ink-dim); }
-.rrow .mark{ flex:none; width:30px; height:30px; border-radius:99px; display:flex;
-  align-items:center; justify-content:center; font-size:15px; font-weight:900; }
-.mark.hit{ background:var(--ok-soft); color:var(--ok); box-shadow:inset 0 0 0 1.5px var(--ok); }
-.mark.miss{ background:var(--no-soft); color:var(--no); box-shadow:inset 0 0 0 1.5px var(--no); }
-.rrow.same{ border-color:rgba(87,217,163,.45); }
-@media (prefers-reduced-motion:no-preference){
-  .rrow{ opacity:0; transform:translateY(10px); animation:rise .4s ease forwards; }
-  @keyframes rise{ to{ opacity:1; transform:none; } }
-}
-
-/* ============================ results ============================ */
+/* ============================ results — one page ============================ */
 .results h2{ font-size:15px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
   color:var(--ink-dim); text-align:center; margin:4px 0 2px; }
-.pairtitle{ text-align:center; font-size:30px; font-weight:900; line-height:1.2; margin:2px 0 4px;
-  background:linear-gradient(95deg, #c9b8ff, var(--b)); -webkit-background-clip:text;
+.pairtitle{ text-align:center; font-size:32px; font-weight:900; line-height:1.15; margin:2px 0 6px;
+  background:linear-gradient(95deg, var(--a-ink), var(--b)); -webkit-background-clip:text;
   background-clip:text; color:transparent; }
-.pairsub{ text-align:center; font-size:14px; color:var(--ink-dim); margin:0 0 16px; line-height:1.5; }
-.names{ text-align:center; font-size:14px; font-weight:800; margin:0 0 14px; }
-.names .na{ color:#b7a3ff; } .names .nb{ color:#ffa2c1; }
+.pairsub{ text-align:center; font-size:14px; color:var(--ink-dim); margin:0 0 14px; line-height:1.5; }
+.names{ text-align:center; font-size:14px; font-weight:800; margin:0 0 12px; overflow-wrap:anywhere; }
+.names .na{ color:var(--a-ink); } .names .nb{ color:var(--b-ink); }
 .names .x{ color:var(--ink-dim); font-weight:600; padding:0 6px; }
 
-.meter{ margin-top:13px; }
-.meter .mhead{ display:flex; justify-content:space-between; align-items:baseline; font-size:13px;
-  font-weight:800; margin-bottom:5px; }
-.meter .mhead b{ font-size:15px; }
-.mtrack{ height:12px; background:var(--panel-2); border-radius:99px; overflow:hidden; }
-.mtrack i{ display:block; height:100%; width:0%; border-radius:99px; transition:width 1s cubic-bezier(.2,.7,.2,1); }
-.meter.m-sim i{ background:var(--ok); } .meter.m-a i{ background:var(--a); } .meter.m-b i{ background:var(--b); }
+/* scoreboard: three rows of ten squares — the share grid, rendered. Square i is question i. */
+.srow{ display:flex; align-items:center; gap:8px; margin-top:8px; }
+.srow .sl{ width:92px; flex:none; font-size:10.5px; font-weight:800; color:var(--ink-dim);
+  text-transform:uppercase; letter-spacing:.4px; line-height:1.2; overflow-wrap:anywhere; }
+.srow .sq{ flex:1; display:flex; gap:4px; }
+.srow .sq button{ flex:1; height:22px; border-radius:5px; background:var(--panel-2); border:0; padding:0;
+  transition:background .2s ease, transform .2s ease; }
+.srow.s-sim button.on{ background:var(--ok); } .srow.s-a button.on{ background:var(--a); } .srow.s-b button.on{ background:var(--b); }
+.srow .sn{ width:40px; flex:none; text-align:right; font-size:15px; font-weight:900; }
+.srow.s-sim .sn{ color:var(--ok); } .srow.s-a .sn{ color:var(--a-ink); } .srow.s-b .sn{ color:var(--b-ink); }
+@media (prefers-reduced-motion:no-preference){
+  .srow .sq button.on{ animation:pop .35s ease backwards; }
+  @keyframes pop{ from{ transform:scale(.4); opacity:.3; } to{ transform:none; opacity:1; } }
+}
+.sqhint{ font-size:11px; color:var(--ink-dim); text-align:center; margin:10px 0 0; }
 
-.callout{ margin-top:14px; padding:12px 14px; border-radius:13px; background:var(--panel-2);
+.callout{ margin-top:12px; padding:12px 14px; border-radius:13px; background:var(--panel-2);
   border:1px solid var(--rule); font-size:13.5px; line-height:1.55; }
 .callout b{ font-weight:900; }
 .callout.best{ border-color:rgba(87,217,163,.4); }
@@ -245,8 +270,37 @@ details.how li b{ color:var(--ink); }
 .callout.best .lbl{ color:var(--ok); } .callout.miss .lbl{ color:var(--no); }
 .callout.asym .lbl{ color:var(--gold); }
 
-.datefoot{ text-align:center; font-size:11.5px; color:var(--ink-dim); margin-top:14px; }
+.sect{ margin:22px 0 8px; }
+.sect h3{ margin:0; font-size:14px; font-weight:900; letter-spacing:1.4px; text-transform:uppercase; }
+.sect span{ display:block; font-size:12px; color:var(--ink-dim); margin-top:2px; }
 
+.qres{ background:var(--panel); border:1px solid var(--rule); border-radius:14px; padding:12px 12px 10px;
+  margin-top:9px; scroll-margin-top:12px; }
+.qres .qh{ display:flex; gap:8px; align-items:flex-start; margin-bottom:9px; }
+.qres .qn{ flex:none; width:22px; height:22px; border-radius:99px; background:var(--panel-2);
+  font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; color:var(--ink-dim); }
+.qres .qq{ flex:1; font-size:14.5px; font-weight:800; line-height:1.3; }
+.qres .badge{ flex:none; font-size:10px; font-weight:900; letter-spacing:.8px; text-transform:uppercase;
+  border-radius:999px; padding:4px 8px; line-height:1.2; }
+.badge.same{ color:var(--ok); background:var(--ok-soft); }
+.badge.sweep{ color:var(--gold); background:rgba(255,209,102,.14); }
+.qres .cols{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.qres .col{ background:var(--panel-2); border-radius:11px; padding:8px 10px; min-width:0; }
+.qres .who{ font-size:10px; font-weight:900; letter-spacing:.8px; text-transform:uppercase; margin-bottom:3px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.qres .col.ca .who{ color:var(--a-ink); } .qres .col.cb .who{ color:var(--b-ink); }
+.qres .said{ font-size:14px; font-weight:800; line-height:1.3; overflow-wrap:anywhere; }
+.qres .guess{ margin-top:6px; font-size:12px; color:var(--ink-dim); line-height:1.35; display:flex; gap:5px;
+  align-items:flex-start; overflow-wrap:anywhere; }
+.qres .guess b{ color:var(--ink); font-weight:800; }
+.qres .m{ flex:none; width:16px; font-weight:900; text-align:center; }
+.m.hit{ color:var(--ok); } .m.miss{ color:var(--no); }
+@media (prefers-reduced-motion:no-preference){
+  .qres, .callout, .pairtitle, .pairsub{ opacity:0; transform:translateY(10px); animation:rise .4s ease forwards; }
+  @keyframes rise{ to{ opacity:1; transform:none; } }
+}
+
+.datefoot{ text-align:center; font-size:11.5px; color:var(--ink-dim); margin-top:14px; }
 .sharebox{ width:100%; margin-top:10px; font-size:13px; line-height:1.5;
   font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
@@ -269,7 +323,7 @@ details.how li b{ color:var(--ink); }
 
 @media (prefers-reduced-motion:reduce){
   *{ animation:none !important; transition:none !important; }
-  .rrow{ opacity:1; transform:none; }
+  .qres, .callout, .pairtitle, .pairsub{ opacity:1; transform:none; }
 }
 </style>
 </head>
@@ -292,8 +346,9 @@ details.how li b{ color:var(--ink); }
 'use strict';
 /* ============================================================================================
    SYNC — an empathic-accuracy duel. Two players, one phone. Every question is answered twice by
-   each player: once for yourself, once predicting the other. Nothing is revealed until both have
-   locked in — the entire game is the gap between prediction and reveal.
+   each player — once for yourself, once predicting the other — but on ONE card: two columns of
+   cells, tap one in each. Nothing is revealed until both have locked in; then the entire game is
+   laid out on a single page — three scores and all ten questions side by side.
 
    Privacy is a design constraint, not a feature flag: answers live in one in-memory session
    object (S) and NOTHING else. localStorage holds only names and a play counter. Analytics gets
@@ -317,8 +372,8 @@ function esc(s){ return String(s).replace(/[&<>"']/g,
    QUESTION BANK — 64 original questions.
    Tags: n = New pair · c = Couple · f = Friends · a = Family · w = Coworkers.
    Every question is answerable about A PERSON, not about the world: there is no correct option,
-   only a true one. Options are kept short enough to survive two names and a tick on one reveal
-   row. A question may serve several packs; a session draws 10 from its pack without repeats.
+   only a true one. Options are kept short enough to sit beside two pick cells on one row.
+   A question may serve several packs; a session draws 10 from its pack without repeats.
    ============================================================================================ */
 const BANK=[
  {q:"You're upset. What do you want first?", o:["Solutions","Company","Space","Distraction"], t:"ncfaw"},
@@ -388,8 +443,8 @@ const BANK=[
 ];
 
 const PACKS=[
-  {id:'n', name:'New pair',  blurb:'Just met, or never played'},
-  {id:'c', name:'Couple',    blurb:'Partners'},
+  {id:'n', name:'New pair',  blurb:'Just met, or never played together'},
+  {id:'c', name:'Couple',    blurb:'Partners — date nights, chores, thermostat wars'},
   {id:'f', name:'Friends',   blurb:'Old or new'},
   {id:'a', name:'Family',    blurb:'Siblings, parents, cousins'},
   {id:'w', name:'Coworkers', blurb:'Team, office, shift'}
@@ -412,13 +467,19 @@ function newSession(pack){
       names:names.slice(), done:[false,false] };
   for(let p=0;p<2;p++) for(let i=0;i<ROUNDS;i++){ S.self[p][i]=-1; S.pred[p][i]=-1; }
 }
+function answered(p,qi){ return S.self[p][qi]>=0 && S.pred[p][qi]>=0; }
+function answeredCount(p){ let n=0; for(let i=0;i<ROUNDS;i++) if(answered(p,i)) n++; return n; }
+/* the next card still needing an answer, searching forward from `from` and wrapping — so a
+   player who jumped back to fix one answer lands on whatever they skipped, not on the recap */
+function nextUnanswered(p,from){
+  for(let k=1;k<=ROUNDS;k++){ const i=(from+k)%ROUNDS; if(!answered(p,i)) return i; }
+  return -1;
+}
 
 let names=['Player 1','Player 2'];
 try{ const n=JSON.parse(LS.get('sync.names')||'[]');
   if(Array.isArray(n)&&n.length===2) names=[String(n[0]).slice(0,12)||'Player 1',
                                             String(n[1]).slice(0,12)||'Player 2']; }catch(e){}
-
-let firstHandoff=true;   // the "tilt the phone away" hint shows once per page load
 
 /* ============================ rendering core ============================
    One container, innerHTML replaced wholesale per screen. GEN is a render generation counter:
@@ -444,6 +505,7 @@ const MOTIF='<svg viewBox="0 0 120 74" aria-hidden="true"><g fill="none" stroke-
  +'</g></svg>';
 const MARK='<svg viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke-linecap="round" stroke-width="5">'
  +'<path d="M6 20 q4-11 8-11 t8 11" stroke="#7c5cff"/><path d="M18 20 q4 11 8 11 t8-11" stroke="#ff6b9d"/></g></svg>';
+const TICK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 function header(showHome){
   return '<header class="top"><span class="wordmark">'+MARK+'<span><b>Sync</b>'
@@ -477,137 +539,205 @@ let pack='n';
 function title(){
   show(
    '<div class="hero">'+MOTIF+'<h1>SYNC</h1>'
-   +'<p>How well do you actually know each other?<br>Two players. One phone. Ten questions, answered twice.</p></div>'
+   +'<p>How well do you actually know each other?<br>Two players. One phone. Ten cards.</p></div>'
    +'<div class="card">'
+   +'<div class="names2">'
    +'<div class="field pa"><label for="inA">Player 1</label>'
    +'<input id="inA" type="text" maxlength="12" autocomplete="off" value="'+esc(names[0])+'"></div>'
    +'<div class="field pb"><label for="inB">Player 2</label>'
    +'<input id="inB" type="text" maxlength="12" autocomplete="off" value="'+esc(names[1])+'"></div>'
+   +'</div>'
    +'<div class="field"><label id="packLbl">Pack</label>'
    +'<div class="packs" role="group" aria-labelledby="packLbl">'
    +PACKS.map(p=>'<button class="pack" type="button" data-pack="'+p.id+'" aria-pressed="'
      +(p.id===pack)+'">'+p.name+'</button>').join('')
-   +'</div></div>'
-   +'<button class="btn primary" type="button" id="bStart">Start</button>'
+   +'</div><p class="packblurb" id="packBlurb"></p></div>'
+   +'<button class="btn primary" type="button" id="bStart"></button>'
    +'</div>'
    +'<details class="how"><summary>How it works</summary><ul>'
-   +'<li>Each question gets answered two ways: <b>for yourself</b>, and <b>predicting the other player</b>.</li>'
-   +'<li>Player 1 answers all ten privately, then hands the phone over. No peeking — nothing shows until both are done.</li>'
-   +'<li>Then you reveal together, question by question: answers, predictions, hits and misses.</li>'
-   +'<li>Three scores: <b>Similarity</b>, and each player’s <b>Insight</b> into the other.</li>'
+   +'<li>Every card is one question with <b>two columns</b>: what <b>you</b> would pick, and what <b>they</b> would pick. Tap one in each.</li>'
+   +'<li>Player 1 does all ten, locks in, and passes the phone. Player 2 does the same. Nothing shows until both are done.</li>'
+   +'<li>Then everything lands on <b>one page</b>: how alike you are, how well each of you read the other, and all ten questions side by side.</li>'
    +'</ul></details>'
    +'<footer class="foot">For fun and conversation — a game, not a psychological assessment.<br>'
    +'Answers stay on this phone and are never uploaded.<br><a href="../">Kreeda</a></footer>'
   );
+  const inA=document.getElementById('inA'), inB=document.getElementById('inB');
+  const startBtn=document.getElementById('bStart'), blurb=document.getElementById('packBlurb');
+  const refresh=()=>{
+    const a=inA.value.trim().slice(0,12)||'Player 1';
+    startBtn.textContent='Start · '+a+' goes first';
+    blurb.textContent=PACKS.find(p=>p.id===pack).blurb;
+  };
+  refresh();
+  inA.addEventListener('input',refresh);
   document.querySelectorAll('.pack').forEach(el=>{
     el.addEventListener('click',()=>{
       pack=el.getAttribute('data-pack');
       document.querySelectorAll('.pack').forEach(x=>x.setAttribute('aria-pressed',
         String(x.getAttribute('data-pack')===pack)));
+      refresh();
     });
   });
   on('bStart',()=>{
-    const a=document.getElementById('inA').value.trim().slice(0,12)||'Player 1';
-    const b=document.getElementById('inB').value.trim().slice(0,12)||'Player 2';
+    const a=inA.value.trim().slice(0,12)||'Player 1';
+    const b=inB.value.trim().slice(0,12)||'Player 2';
     names=[a,b]; LS.set('sync.names',JSON.stringify(names));
     newSession(pack);
     track('game_start',{pack:pack});
-    handoff(0);
+    /* Player 1 is already holding the phone — no interstitial; the first card carries the
+       "look away" banner instead */
+    question(0,0,false);
   });
 }
 
 /* ============================ hand-off ============================
-   The interstitial renders through show(), which has already destroyed the previous screen —
-   so by the time this paints there is nothing underneath to peek at, however fast the tap. */
+   Only the phone's change of hands gets an interstitial. It renders through show(), which has
+   already destroyed the previous screen — so by the time this paints there is nothing underneath
+   to peek at, however fast the tap. */
 function handoff(p){
   const nm=S.names[p], cls=p===0?'pa':'pb';
   show(
    '<div class="handoff">'
    +'<div class="pass">Pass the phone to</div>'
    +'<h2 class="'+cls+'">'+esc(nm)+'</h2>'
-   +'<p class="sub">'+(S.done[0]||S.done[1]
-      ? esc(S.names[p===0?1:0])+' is done. Your turn — same ten questions.'
-      : 'Answer privately. Nothing is shown to '+esc(S.names[p===0?1:0])+' until the reveal.')+'</p>'
+   +'<p class="sub">'+esc(S.names[p===0?1:0])+' is done and locked in.<br>Your turn — same ten cards.</p>'
    +'<button class="btn primary" type="button" id="bReady">I’m '+esc(nm)+' — show me</button>'
-   +(firstHandoff?'<p class="peek">👀 tilt the phone away while you answer</p>':'')
+   +'<p class="peek">👀 tilt the phone away while you answer</p>'
    +'</div>'
   );
-  firstHandoff=false;
-  on('bReady',()=>question(p,0,'self'));
+  on('bReady',()=>question(p,0,false));
 }
 
 /* ============================ answering ============================
-   Two clearly separated steps per question: SELF first, then PREDICT. A tap on an option briefly
-   shows the pick, then advances; Back walks the same rail in reverse (your own answers only —
-   the other player's are never reachable from here). */
-function question(p,qi,mode){
-  const other=S.names[p===0?1:0];
-  const step=qi*2+(mode==='pred'?1:0), total=ROUNDS*2;
+   One card per question. Two columns of cells beside the options: Me (violet) and Them (rose).
+   Tapping a cell picks that option for that column; once both columns have a pick, the card
+   advances on its own after a short beat. The dots along the top jump to any card, so "Back"
+   is never more than one tap and a change never means re-walking a rail. */
+function question(p,qi,fromRecap){
+  const me=S.names[p], other=S.names[p===0?1:0];
+  const pcls=p===0?'pa':'pb', ocls=p===0?'pb':'pa';
   const q=S.qs[qi];
-  const cur=(mode==='self'?S.self:S.pred)[p][qi];
+  const mySelf=S.self[p][qi], myPred=S.pred[p][qi];
+  const done=answeredCount(p);
+  const showTurn = qi===0 && done===0 && !fromRecap;
   show(
    header(true)
-   +'<div class="progress"><span class="n">'+(qi+1)+' of '+ROUNDS+'</span>'
-   +'<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="'+total+'" aria-valuenow="'+step+'">'
-   +'<i style="width:'+Math.round(step/total*100)+'%"></i></div></div>'
-   +'<div class="stepin '+(mode==='pred'?'pred':'')+'">'
-   +'<span class="modechip '+(mode==='self'?'self':'pred')+'">'
-   +(mode==='self'?'You':'Predict · '+esc(other))+'</span>'
+   +'<div class="prog"><span class="n">'+(qi+1)+' of '+ROUNDS+'</span>'
+   +'<div class="dots" role="group" aria-label="Questions">'
+   +S.qs.map((_,i)=>'<button class="dotb'+(answered(p,i)?' done':'')+(i===qi?' cur':'')+'" type="button" '
+      +'data-i="'+i+'" aria-label="Question '+(i+1)+(answered(p,i)?', answered':'')+'"'
+      +(i===qi?' aria-current="step"':'')+'><i></i></button>').join('')
+   +'</div></div>'
+   +(showTurn
+      ? '<div class="turn"><span class="eye">👀</span><span><b class="'+pcls+'">'+esc(me)+'’s turn.</b> '
+        +esc(other)+', look away — nothing shows until you’ve both locked in.</span></div>'
+      : '')
+   +'<div class="qcard stepin">'
    +'<p class="qtext">'+esc(q.q)+'</p>'
-   +'<p class="qsub">'+(mode==='self'
-      ? 'Answer for <b>yourself</b>.'
-      : 'What will <b>'+esc(other)+'</b> pick for themselves?')+'</p>'
-   +q.o.map((opt,i)=>'<button class="opt'+(i===cur?' picked':'')+'" type="button" data-i="'+i+'">'
-      +esc(opt)+'</button>').join('')
+   +'<div class="colhead"><span class="sp"></span>'
+   +'<span class="ch me"><small>I’d say</small>Me</span>'
+   +'<span class="ch them"><small>'+esc(other)+'’d say</small>'+esc(other)+'</span></div>'
+   +q.o.map((opt,i)=>'<div class="orow'+(mySelf===i&&myPred===i?' both':'')+'" data-i="'+i+'">'
+      +'<span class="otext">'+esc(opt)+'</span>'
+      +'<button class="cell me'+(mySelf===i?' on':'')+'" type="button" data-col="me" data-i="'+i+'" '
+      +'aria-pressed="'+(mySelf===i)+'" aria-label="Me: '+esc(opt)+'">'+TICK+'</button>'
+      +'<button class="cell them'+(myPred===i?' on':'')+'" type="button" data-col="them" data-i="'+i+'" '
+      +'aria-pressed="'+(myPred===i)+'" aria-label="'+esc(other)+': '+esc(opt)+'">'+TICK+'</button>'
+      +'</div>').join('')
    +'</div>'
-   +'<div class="backrow">'+(step>0
-      ?'<button class="btn ghost" type="button" id="bBack">← Back</button>':'')+'</div>'
+   +'<p class="hint">Tap one in each column — <b class="'+pcls+'">your</b> answer, and your guess for <b class="'+ocls+'">'+esc(other)+'</b>.</p>'
+   +'<div class="navrow">'
+   +(qi>0||fromRecap?'<button class="btn ghost" type="button" id="bBack">← '+(fromRecap?'Back to list':'Back')+'</button>':'')
+   +(answered(p,qi)?'<button class="btn" type="button" id="bNext">'+(fromRecap?'Done ✓':'Next →')+'</button>':'')
+   +'</div>'
   );
   bindHome();
   const g=GEN;
-  document.querySelectorAll('.opt').forEach(el=>{
+  let pending=false;
+  const goOn=()=>{
+    if(fromRecap){ recap(p); return; }
+    const n=nextUnanswered(p,qi);
+    if(n<0) recap(p); else question(p,n,false);
+  };
+  document.querySelectorAll('.cell').forEach(el=>{
     el.addEventListener('click',()=>{
-      if(g!==GEN) return;                                  // stale screen: ignore
-      const i=+el.getAttribute('data-i');
-      (mode==='self'?S.self:S.pred)[p][qi]=i;
-      el.classList.add('picked');
-      /* tiny beat so the pick registers visually before the slide; guarded by GEN so a double
-         tap can't queue two advances */
-      setTimeout(()=>{ if(g!==GEN) return; advance(p,qi,mode); },130);
+      if(g!==GEN||pending) return;                         // stale screen or mid-advance: ignore
+      const i=+el.getAttribute('data-i'), col=el.getAttribute('data-col');
+      (col==='me'?S.self:S.pred)[p][qi]=i;
+      document.querySelectorAll('.cell.'+col).forEach(c=>{
+        const onNow=+c.getAttribute('data-i')===i;
+        c.classList.toggle('on',onNow); c.setAttribute('aria-pressed',String(onNow));
+      });
+      document.querySelectorAll('.orow').forEach(r=>{ const k=+r.getAttribute('data-i');
+        r.classList.toggle('both', S.self[p][qi]===k && S.pred[p][qi]===k); });
+      document.querySelectorAll('.dotb').forEach(d=>d.classList.toggle('done',answered(p,+d.getAttribute('data-i'))));
+      if(answered(p,qi)){
+        /* a beat so the second tick is seen landing before the slide; GEN-guarded so a double
+           tap can't queue two advances */
+        pending=true;
+        setTimeout(()=>{ if(g!==GEN) return; pending=false; goOn(); },420);
+      }
     });
   });
-  on('bBack',()=>{
-    if(mode==='pred') question(p,qi,'self');
-    else question(p,qi-1,'pred');
+  /* tapping the words themselves isn't a pick — wiggle the empty cells on that row as a nudge */
+  document.querySelectorAll('.otext').forEach(el=>{
+    el.addEventListener('click',()=>{
+      if(g!==GEN) return;
+      el.parentNode.querySelectorAll('.cell:not(.on)').forEach(c=>{
+        c.classList.remove('nudge'); void c.offsetWidth; c.classList.add('nudge'); });
+    });
   });
-}
-function advance(p,qi,mode){
-  if(mode==='self') question(p,qi,'pred');
-  else if(qi+1<ROUNDS) question(p,qi+1,'self');
-  else lockin(p);
+  document.querySelectorAll('.dotb').forEach(el=>{
+    el.addEventListener('click',()=>{
+      if(g!==GEN||pending) return;
+      const i=+el.getAttribute('data-i'); if(i===qi) return;
+      question(p,i,fromRecap);
+    });
+  });
+  on('bBack',()=>{ if(fromRecap) recap(p); else question(p,qi-1,false); });
+  on('bNext',goOn);
 }
 
-/* explicit lock-in before the phone changes hands — the last chance to go back */
-function lockin(p){
-  const other=p===0?1:0;
+/* ============================ recap / lock-in ============================
+   The last screen before the phone changes hands is the useful one: every answer on a list,
+   tap any to change it. Lock in hides everything and moves on — for Player 1 to the hand-off,
+   for Player 2 straight to the one-page reveal. */
+function recap(p){
+  const me=S.names[p], other=S.names[p===0?1:0], done=answeredCount(p);
+  const all=done===ROUNDS;
   show(
    header(true)
-   +'<div class="lock">'
-   +'<div class="bignum">'+ROUNDS+'/'+ROUNDS+'</div>'
-   +'<h2>All answered, '+esc(S.names[p])+'</h2>'
-   +'<p>Lock in to hide your answers and pass the phone.<br>You can’t change them after this.</p>'
-   +'<button class="btn primary" type="button" id="bLock">Lock in &amp; pass to '
-   +esc(S.names[other])+'</button>'
-   +'<button class="btn ghost" type="button" id="bRevise">← Go back and revise</button>'
-   +'</div>'
+   +'<div class="lock"><div class="bignum">'+done+'/'+ROUNDS+'</div>'
+   +'<h2>'+(all?'All answered, '+esc(me):esc(me)+', a few cards are still blank')+'</h2>'
+   +'<p>'+(all
+      ? 'Tap any card to change it. '+(p===0
+          ? 'Locking in hides your answers and passes the phone to '+esc(other)+'.'
+          : 'Bring '+esc(other)+' over — locking in opens the reveal for both of you.')
+      : 'Tap a card to finish it.')+'</p></div>'
+   +S.qs.map((q,i)=>{
+      const s=S.self[p][i], g=S.pred[p][i];
+      return '<button class="rrow-r" type="button" data-i="'+i+'">'
+       +'<span class="num">'+(i+1)+'</span><span class="body">'
+       +'<span class="rq">'+esc(q.q)+'</span><span class="picks">'
+       +(s>=0?'<span class="pk me">Me: '+esc(q.o[s])+'</span>':'<span class="pk todo">Me: ?</span>')
+       +(g>=0?'<span class="pk them">'+esc(other)+': '+esc(q.o[g])+'</span>':'<span class="pk todo">'+esc(other)+': ?</span>')
+       +'</span></span><span class="chev" aria-hidden="true">›</span></button>';
+    }).join('')
+   +'<div class="lockbar"><button class="btn primary" type="button" id="bLock"'+(all?'':' disabled')+'>'
+   +(p===0?'Lock in &amp; pass to '+esc(other):'Lock in &amp; reveal together')+'</button></div>'
   );
   bindHome();
-  on('bLock',()=>{
-    S.done[p]=true;
-    if(S.done[0]&&S.done[1]) revealIntro();
-    else handoff(other);
+  const g=GEN;
+  document.querySelectorAll('.rrow-r').forEach(el=>{
+    el.addEventListener('click',()=>{ if(g!==GEN) return; question(p,+el.getAttribute('data-i'),true); });
   });
-  on('bRevise',()=>question(p,ROUNDS-1,'pred'));
+  on('bLock',()=>{
+    if(answeredCount(p)!==ROUNDS) return;
+    S.done[p]=true;
+    if(S.done[0]&&S.done[1]) results();
+    else handoff(p===0?1:0);
+  });
 }
 
 /* ============================ scoring ============================ */
@@ -620,69 +750,6 @@ function totals(){
   let sim=0, ia=0, ib=0;
   for(let i=0;i<ROUNDS;i++){ const s=scoreQ(i); if(s.same)sim++; if(s.aHit)ia++; if(s.bHit)ib++; }
   return {sim:sim, ia:ia, ib:ib};
-}
-
-/* ============================ reveal ============================
-   The reveal is a hard gate: it is only reachable from lockin() once both done flags are true.
-   Guarded again here anyway — a state machine bug should fail loudly to the hand-off, not
-   quietly leak answers. */
-function revealIntro(){
-  if(!S){ title(); return; }
-  if(!(S.done[0]&&S.done[1])){ handoff(S.done[0]?1:0); return; }
-  show(
-   header(true)
-   +'<div class="handoff">'
-   +'<div class="pass">Both locked in</div>'
-   +'<h2>Sit together</h2>'
-   +'<p class="sub">'+esc(S.names[0])+' and '+esc(S.names[1])+' — shoulder to shoulder.<br>'
-   +'Ten questions, revealed one at a time.</p>'
-   +'<button class="btn primary" type="button" id="bGo">Start the reveal</button>'
-   +'</div>'
-  );
-  bindHome();
-  on('bGo',()=>reveal(0));
-}
-
-function reveal(i){
-  if(!(S&&S.done[0]&&S.done[1])) return;
-  const q=S.qs[i], s=scoreQ(i);
-  /* running tallies count only questions revealed so far — the totals stay a surprise */
-  let sim=0, ia=0, ib=0;
-  for(let k=0;k<=i;k++){ const t=scoreQ(k); if(t.same)sim++; if(t.aHit)ia++; if(t.bHit)ib++; }
-  const A=esc(S.names[0]), B=esc(S.names[1]);
-  const d=n=>'style="animation-delay:'+n+'ms"';
-  show(
-   header(true)
-   +'<div class="progress"><span class="n">Reveal '+(i+1)+' of '+ROUNDS+'</span>'
-   +'<div class="bar"><i style="width:'+Math.round((i+1)/ROUNDS*100)+'%"></i></div></div>'
-   +'<div class="tallies">'
-   +'<div class="tally t-sim"><b>'+sim+'</b><span>Same</span></div>'
-   +'<div class="tally t-a"><b>'+ia+'</b><span>'+A+' got right</span></div>'
-   +'<div class="tally t-b"><b>'+ib+'</b><span>'+B+' got right</span></div>'
-   +'</div>'
-   +'<div aria-live="polite">'
-   +'<p class="rq">'+esc(q.q)+'</p>'
-   +'<div class="rrow'+(s.same?' same':'')+'" '+d(60)+'><span class="who pa">'+A+'</span>'
-   +'<span class="what">'+esc(q.o[S.self[0][i]])+'</span>'
-   +'<span class="mark '+(s.same?'hit':'miss')+'" aria-label="'+(s.same?'same answer':'different answers')+'">'
-   +(s.same?'=':'≠')+'</span></div>'
-   +'<div class="rrow'+(s.same?' same':'')+'" '+d(280)+'><span class="who pb">'+B+'</span>'
-   +'<span class="what">'+esc(q.o[S.self[1][i]])+'</span>'
-   +'<span class="mark '+(s.same?'hit':'miss')+'" aria-hidden="true">'+(s.same?'=':'≠')+'</span></div>'
-   +'<div class="rrow" '+d(620)+'><span class="who pa">'+A+' guessed</span>'
-   +'<span class="what">'+esc(q.o[S.pred[0][i]])+'<small>for '+B+'</small></span>'
-   +'<span class="mark '+(s.aHit?'hit':'miss')+'" aria-label="'+(s.aHit?'correct prediction':'wrong prediction')+'">'
-   +(s.aHit?'✓':'✗')+'</span></div>'
-   +'<div class="rrow" '+d(900)+'><span class="who pb">'+B+' guessed</span>'
-   +'<span class="what">'+esc(q.o[S.pred[1][i]])+'<small>for '+A+'</small></span>'
-   +'<span class="mark '+(s.bHit?'hit':'miss')+'" aria-label="'+(s.bHit?'correct prediction':'wrong prediction')+'">'
-   +(s.bHit?'✓':'✗')+'</span></div>'
-   +'</div>'
-   +'<button class="btn primary" type="button" id="bNext" style="margin-top:18px">'
-   +(i+1<ROUNDS?'Next question':'See the verdict')+'</button>'
-  );
-  bindHome();
-  on('bNext',()=>{ if(i+1<ROUNDS) reveal(i+1); else results(); });
 }
 
 /* ============================ verdicts ============================ */
@@ -706,6 +773,10 @@ function pairTitle(t){
     'Some hits, some misses, plenty of material. This pairing has chapters left.'];
 }
 
+/* a question quoted mid-sentence loses its trailing colon or ellipsis: "Your desk, right now:"
+   reads as “Your desk, right now” once it's the object of a sentence */
+function qname(q){ return '<b>“'+esc(q.q.replace(/[:…]+\s*$/,''))+'”</b>'; }
+
 function bestAndMiss(){
   let best=null, bScore=-1, miss=null, mScore=4;
   for(let i=0;i<ROUNDS;i++){
@@ -717,23 +788,23 @@ function bestAndMiss(){
   let bHtml=null, mHtml=null;
   if(bScore===3){
     const q=S.qs[best];
-    bHtml='You both knew: <b>'+esc(q.q)+'</b> — “'+esc(q.o[S.self[0][best]])
+    bHtml='You both knew '+qname(q)+' — “'+esc(q.o[S.self[0][best]])
      +'”, called correctly from both sides.';
   }else if(bScore===2){
     const q=S.qs[best], s=scoreQ(best);
     bHtml=s.same
-      ? 'Same answer, no rehearsal: <b>'+esc(q.q)+'</b> — both said “'+esc(q.o[S.self[0][best]])+'”.'
-      : 'Read each other right on: <b>'+esc(q.q)+'</b> — both predictions landed.';
+      ? 'Same answer, no rehearsal, on '+qname(q)+' — both said “'+esc(q.o[S.self[0][best]])+'”.'
+      : 'Read each other right on '+qname(q)+' — both predictions landed.';
   }else if(bScore>=0){
     bHtml='No clean sweep this round — that’s next game’s material.';
   }
   if(mScore===0){
     const q=S.qs[miss];
-    mHtml='Total scramble on: <b>'+esc(q.q)+'</b>. '+A+' said “'+esc(q.o[S.self[0][miss]])
+    mHtml='Total scramble on '+qname(q)+'. '+A+' said “'+esc(q.o[S.self[0][miss]])
      +'”, '+B+' said “'+esc(q.o[S.self[1][miss]])+'” — and neither prediction landed. Ask about it.';
   }else if(mScore<3){
     const q=S.qs[miss], s=scoreQ(miss);
-    mHtml='Closest to a miss: <b>'+esc(q.q)+'</b>'
+    mHtml='Closest to a miss: '+qname(q)
      +(!s.aHit&&!s.bHit?' — both predictions were off.':
        !s.aHit?' — '+A+'’s prediction was off.':
        !s.bHit?' — '+B+'’s prediction was off.':' — different answers, worth a story.');
@@ -743,10 +814,16 @@ function bestAndMiss(){
   return {best:bHtml, miss:mHtml};
 }
 
-/* ============================ results ============================ */
+/* ============================ results — one page ============================
+   Reachable only once both done flags are true. Guarded again here anyway — a state machine
+   bug should fail loudly to the hand-off, not quietly leak answers.
+   Everything is on this one screen: the verdict, a scoreboard of ten squares per score (square
+   i is question i — tap it to jump), the callouts, and all ten questions with both players'
+   answers and guesses side by side. */
 let completeSent=false;
 function results(){
-  if(!(S&&S.done[0]&&S.done[1])) return;
+  if(!S){ title(); return; }
+  if(!(S.done[0]&&S.done[1])){ handoff(S.done[0]?1:0); return; }
   const t=totals(), A=esc(S.names[0]), B=esc(S.names[1]);
   const pt=pairTitle(t), bm=bestAndMiss();
   const d=Math.abs(t.ia-t.ib);
@@ -763,41 +840,63 @@ function results(){
     const plays=(+LS.get('sync.plays')||0)+1; LS.set('sync.plays',String(plays));
   }
 
+  const dl=n=>'style="animation-delay:'+n+'ms"';
+  const squares=(fn,cls)=>{
+    let h='';
+    for(let i=0;i<ROUNDS;i++){ const hit=fn(scoreQ(i));
+      h+='<button type="button" class="'+(hit?'on':'')+'" data-q="'+i+'" style="animation-delay:'+(i*55)+'ms" '
+        +'aria-label="Question '+(i+1)+': '+(hit?'yes':'no')+'"></button>'; }
+    return '<div class="sq">'+h+'</div>';
+  };
+  const mark=(hit,label)=>'<span class="m '+(hit?'hit':'miss')+'" aria-label="'+label+'">'+(hit?'✓':'✗')+'</span>';
+
   show(
    header(false)
-   +'<div class="results" aria-live="polite">'
+   +'<div class="results">'
    +'<h2>The verdict</h2>'
-   +'<div class="pairtitle">'+pt[0]+'</div>'
-   +'<p class="pairsub">'+pt[1]+'</p>'
+   +'<div class="pairtitle" '+dl(0)+'>'+pt[0]+'</div>'
+   +'<p class="pairsub" '+dl(120)+'>'+pt[1]+'</p>'
    +'<div class="card">'
    +'<p class="names"><span class="na">'+A+'</span><span class="x">×</span>'
    +'<span class="nb">'+B+'</span><span class="x">·</span><span class="dim">'+packName+' pack</span></p>'
-   +'<div class="meter m-sim"><div class="mhead"><span>Similarity</span><b>'+t.sim+'/'+ROUNDS+'</b></div>'
-   +'<div class="mtrack"><i data-w="'+(t.sim*10)+'"></i></div></div>'
-   +'<div class="meter m-a"><div class="mhead"><span>'+A+'’s insight</span><b>'+t.ia+'/'+ROUNDS+'</b></div>'
-   +'<div class="mtrack"><i data-w="'+(t.ia*10)+'"></i></div></div>'
-   +'<div class="meter m-b"><div class="mhead"><span>'+B+'’s insight</span><b>'+t.ib+'/'+ROUNDS+'</b></div>'
-   +'<div class="mtrack"><i data-w="'+(t.ib*10)+'"></i></div></div>'
-   +(asym?'<div class="callout asym"><span class="lbl">The asymmetry</span>'+asym+'</div>':'')
-   +(bm.best?'<div class="callout best"><span class="lbl">Best moment</span>'+bm.best+'</div>':'')
-   +(bm.miss?'<div class="callout miss"><span class="lbl">Biggest miss</span>'+bm.miss+'</div>':'')
-   +'<p class="datefoot">'+esc(today)+' · kreeda.games/sync</p>'
+   +'<div class="srow s-sim"><span class="sl">Same answer</span>'+squares(s=>s.same)+'<span class="sn">'+t.sim+'/'+ROUNDS+'</span></div>'
+   +'<div class="srow s-a"><span class="sl">'+A+' read '+B+'</span>'+squares(s=>s.aHit)+'<span class="sn">'+t.ia+'/'+ROUNDS+'</span></div>'
+   +'<div class="srow s-b"><span class="sl">'+B+' read '+A+'</span>'+squares(s=>s.bHit)+'<span class="sn">'+t.ib+'/'+ROUNDS+'</span></div>'
+   +'<p class="sqhint">One square per question, in order — tap any to jump to it.</p>'
+   +(asym?'<div class="callout asym" '+dl(700)+'><span class="lbl">The asymmetry</span>'+asym+'</div>':'')
+   +(bm.best?'<div class="callout best" '+dl(800)+'><span class="lbl">Best moment</span>'+bm.best+'</div>':'')
+   +(bm.miss?'<div class="callout miss" '+dl(900)+'><span class="lbl">Biggest miss</span>'+bm.miss+'</div>':'')
    +'</div>'
+   +'<div class="sect"><h3>All ten, side by side</h3><span>who said what — and who guessed right</span></div>'
+   +S.qs.map((q,i)=>{
+      const s=scoreQ(i), pts=(s.same?1:0)+(s.aHit?1:0)+(s.bHit?1:0);
+      return '<div class="qres" id="q'+i+'" '+dl(950+i*70)+'>'
+       +'<div class="qh"><span class="qn">'+(i+1)+'</span><span class="qq">'+esc(q.q)+'</span>'
+       +(pts===3?'<span class="badge sweep">Clean sweep</span>':s.same?'<span class="badge same">Same</span>':'')+'</div>'
+       +'<div class="cols">'
+       +'<div class="col ca"><div class="who">'+A+'</div><div class="said">'+esc(q.o[S.self[0][i]])+'</div>'
+       +'<div class="guess">'+mark(s.aHit,s.aHit?'correct guess':'wrong guess')+'<span>guessed <b>'+esc(q.o[S.pred[0][i]])+'</b> for '+B+'</span></div></div>'
+       +'<div class="col cb"><div class="who">'+B+'</div><div class="said">'+esc(q.o[S.self[1][i]])+'</div>'
+       +'<div class="guess">'+mark(s.bHit,s.bHit?'correct guess':'wrong guess')+'<span>guessed <b>'+esc(q.o[S.pred[1][i]])+'</b> for '+A+'</span></div></div>'
+       +'</div></div>';
+    }).join('')
+   +'<p class="datefoot">'+esc(today)+' · kreeda.games/sync</p>'
    +'<button class="btn primary" type="button" id="bAgain">Play again</button>'
-   +'<button class="btn" type="button" id="bCopy">Copy result</button>'
-   +'<button class="btn ghost" type="button" id="bChange">Change players</button>'
+   +'<div class="btnrow"><button class="btn" type="button" id="bCopy">Copy result</button>'
+   +'<button class="btn ghost" type="button" id="bChange">Change players</button></div>'
    +'<div id="shareSlot"></div>'
    +'</div>'
    +'<footer class="foot">Mismatches aren’t wrong answers — they’re the conversation.<br>'
    +'<a href="../">Kreeda</a></footer>'
   );
-  /* meters animate from zero after first paint; width transition is CSS, reduced-motion kills it */
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    document.querySelectorAll('.mtrack i').forEach(el=>{ el.style.width=el.getAttribute('data-w')+'%'; });
-  }));
-
+  const g=GEN;
+  document.querySelectorAll('.srow .sq button').forEach(el=>{
+    el.addEventListener('click',()=>{ if(g!==GEN) return;
+      const q=document.getElementById('q'+el.getAttribute('data-q'));
+      if(q) q.scrollIntoView({behavior:'smooth',block:'start'}); });
+  });
   on('bAgain',()=>{ completeSent=false; newSession(S.pack);
-    track('game_start',{pack:S.pack}); handoff(0); });
+    track('game_start',{pack:S.pack}); question(0,0,false); });
   on('bChange',()=>{ completeSent=false; S=null; title(); });
   on('bCopy',()=>{
     const text=shareText(t,pt[0],packName);
