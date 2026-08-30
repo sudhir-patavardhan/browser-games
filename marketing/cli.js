@@ -17,6 +17,7 @@ import { AutonomousRunner } from './src/scheduler/autonomousRunner.js';
 import { UniversalPublisher } from './src/publishers/index.js';
 import { CampaignManager } from './src/ads/campaignManager.js';
 import { XAdsClient } from './src/ads/xAdsClient.js';
+import { ConversionApiClient } from './src/ads/conversionApi.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -246,6 +247,22 @@ async function main() {
       break;
     }
 
+    case 'ads-conversion-test': {
+      const client = new ConversionApiClient();
+      console.log(`\nX Conversion API: ${client.isConfigured ? '✅ pixel + token configured' : '❌ missing X_PIXEL_ID / X_PIXEL_TOKEN'}`);
+      if (!flags.event) {
+        console.log(`Pass --event <tw-<pixel>-xxxxx> (from Ads Manager > Events manager) to send a real conversion.`);
+        break;
+      }
+      const res = await client.send({
+        eventId: flags.event,
+        sourceUrl: flags.url || config.general.baseUrl,
+        conversionId: `cli-test-${Date.now()}`
+      }, !flags.live);
+      console.log(JSON.stringify(res, null, 2));
+      break;
+    }
+
     case 'queue': {
       const queue = new QueueManager();
       const items = queue.getAll({ status: flags.status, channel: flags.channel });
@@ -390,6 +407,8 @@ Commands:
                                       [--interests "Gaming,Relationships"] [--keywords "a,b"] [--live]
   ads-review                 Pull analytics for active campaigns; pause any that failed the 2-day trial [--live]
   ads-cycle                  review → learn → plan+launch the next campaign [--live]
+  ads-conversion-test        Send a test event via the X Conversion API (dry-run unless --live)
+                             Options: --event <tw-<pixel>-xxxxx> [--url <page>] [--live]
   queue                      View items in the campaign queue
                              Options: [--status draft|scheduled|approved|published]
   approve <id>               Approve a queued post for publication

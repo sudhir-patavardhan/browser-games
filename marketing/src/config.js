@@ -92,6 +92,11 @@ export const config = {
   ads: {
     enabled: Boolean(process.env.X_ADS_ACCOUNT_ID),
     accountId: process.env.X_ADS_ACCOUNT_ID || '',
+    // Conversion API (server-side): reports on-site conversions analytics.js
+    // fires client-side back to Ads Manager. A separate credential from the
+    // OAuth1 Ads API above — no developer-app approval needed for this one.
+    pixelId: process.env.X_PIXEL_ID || '',
+    pixelToken: process.env.X_PIXEL_TOKEN || '',
     fundingInstrumentId: process.env.X_ADS_FUNDING_INSTRUMENT_ID || '',
     currency: process.env.X_ADS_CURRENCY || 'USD',
     // Local currency units per 1 USD (e.g. ~84 for an INR-billed account).
