@@ -111,10 +111,23 @@ Structure:
 6. Play the game & view the source code.
 - Output JSON: { "title": "...", "tags": ["javascript", "webdev", "gamedev", "showdev"], "contentMarkdown": "..." }`,
 
-  adsCampaignBrief: ({ catalog = [], learnings = null, activeCampaigns = [], dailyBudgetUsd = 10 }) => `Plan the next paid X (Twitter) "Website traffic" campaign for Kreeda. Budget: $${dailyBudgetUsd}/day for a 2-day trial, so the ad must earn link clicks fast.
+  togetherVideoPost: (game) => `Write one X (Twitter) post to accompany a 25-second video of two people playing "${game.name}" (${game.url}) together.
+Tagline: ${game.tagline}
+Pitch: ${game.pitch}
+Hooks: ${game.viralHooks?.join(' | ')}
+
+Rules:
+- Lead with the relationship benefit — what the two people find out about each other, the feeling of the reveal. NEVER open with the mechanic ("one phone", "pass the phone", "two players"): that is how it works, not why anyone plays.
+- Speak to couples, close friends, siblings, coworkers — people who already have someone to play with tonight.
+- Plain, warm, specific. No exclamation-mark hype, no rocket emoji, no "game-changer".
+- Under 240 characters including the URL exactly as given. At most two hashtags, at the very end.
+- Also write alt text for the video: one sentence, what is visibly happening on screen.
+Output JSON: { "text": "...", "altText": "..." }`,
+
+  adsCampaignBrief: ({ catalog = [], learnings = null, organic = null, activeCampaigns = [], dailyBudgetUsd = 10 }) => `Plan the next paid X (Twitter) "Website traffic" campaign for Kreeda. Budget: $${dailyBudgetUsd}/day for a 2-day trial, so the ad must earn link clicks fast.
 
 You may ONLY pick one of these games (use the exact "id" for gameId):
-${catalog.map(g => `- id: "${g.id}", name: "${g.name}" — ${g.tagline} — ${g.url}`).join('\n')}
+${catalog.map(g => `- id: "${g.id}", name: "${g.name}"${g.category === 'together' ? ' [play-together]' : ''} — ${g.tagline} — ${g.url}`).join('\n')}
 
 Campaigns currently running (avoid duplicating their game + angle):
 ${activeCampaigns.length ? activeCampaigns.map(c => `- ${c.gameId} / ${c.angle}`).join('\n') : '- none'}
@@ -122,8 +135,12 @@ ${activeCampaigns.length ? activeCampaigns.map(c => `- ${c.gameId} / ${c.angle}`
 What past campaigns taught us (most recent first; empty if this is the first):
 ${learnings ? JSON.stringify(learnings, null, 2) : 'No history yet — pick the game with the broadest appeal and the strongest, most concrete hook.'}
 
+How our own organic posts have performed, by game (impressions, link clicks, CTR; the video posts are the [play-together] storyboards):
+${organic && Object.keys(organic).length ? JSON.stringify(organic, null, 2) : 'No organic measurements yet.'}
+
 Rules for the ad text:
 - Lead with the benefit to the player, not the mechanics or the tech stack.
+- For [play-together] games, lead with the relationship benefit — what the two people find out about each other — never with the one-phone / pass-the-phone mechanic. These ads run with the game's video creative, so the text can assume the viewer sees it being played.
 - No hashtags at all (X rejects hashtags in ads). No @mentions.
 - Include the game's URL exactly as listed above.
 - Under 240 characters. Plain, specific, human.

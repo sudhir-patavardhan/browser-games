@@ -14,7 +14,9 @@
     "studio": "node cli.js studio",
     "dashboard": "node cli.js dashboard",
     "autonomous": "node cli.js run-autonomous",
-    "test": "node tests/verify-agent.js"
+    "together": "node cli.js promote-together",
+    "metrics": "node cli.js metrics",
+    "test": "node tests/verify-agent.js && node tests/verify-ads-policy.js && node tests/verify-together.js"
   },
   "keywords": [
     "marketing-agent",

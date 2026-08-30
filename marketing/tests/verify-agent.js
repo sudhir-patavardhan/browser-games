@@ -44,8 +44,9 @@ async function runTests() {
   }
 
   // 1. Catalog & Audiences
-  test('Catalog includes all 12 games and hub', () => {
-    const expected = ['hub', 'drift', 'drift-mp', 'carrom', 'break-room', 'chroma-blocks', 'last-16', 'road-rumble', 'fairway-four', 'deadpoint', 'ennead', 'dasanana', 'blackjack'];
+  test('Catalog includes the hub, the arcade games and the five Play-together games', () => {
+    const expected = ['hub', 'drift', 'carrom', 'break-room', 'chroma-blocks', 'last-16', 'road-rumble', 'fairway-four', 'ennead', 'dasanana', 'blackjack',
+      'sync', 'windows', 'split', 'auction', 'fathom'];
     for (const key of expected) {
       assert.ok(GAME_CATALOG[key], `Missing catalog entry: ${key}`);
       assert.ok(GAME_CATALOG[key].name, `Missing name for ${key}`);
@@ -78,7 +79,7 @@ async function runTests() {
     assert.ok(rd.content);
 
     // Hacker News
-    const hn = await gen.generate('drift-mp', 'hackernews');
+    const hn = await gen.generate('ennead', 'hackernews');
     assert.ok(hn.content);
 
     // Shorts
@@ -86,7 +87,7 @@ async function runTests() {
     assert.ok(sh.content);
 
     // Dev.to
-    const dt = await gen.generate('deadpoint', 'devto');
+    const dt = await gen.generate('apogee', 'devto');
     assert.ok(dt.content);
   });
 
@@ -149,9 +150,12 @@ async function runTests() {
   // 8. Full Autonomous Runner Cycle
   await asyncTest('Autonomous Runner executes one full cycle without error', async () => {
     const runner = new AutonomousRunner();
-    const summary = await runner.runCycle({ dryRun: true, generateVisuals: true });
+    // together:false — the unit suite must not film a video or touch data/together-state.json
+    const summary = await runner.runCycle({ dryRun: true, generateVisuals: true, together: false });
     assert.ok(summary.timestamp);
     assert.strictEqual(summary.mode, 'draft');
+    assert.ok(summary.nextSteps.length > 0);
+    assert.ok(fs.existsSync(path.join(config.paths.reports, 'latest.md')));
   });
 
   console.log(`\n======================================================`);

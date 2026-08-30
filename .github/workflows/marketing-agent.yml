@@ -1,9 +1,11 @@
 name: Autonomous Marketing Agent
 
 on:
-  # Run daily at 09:00 AM UTC
   schedule:
+    # Daily full cycle at 09:00 UTC
     - cron: '0 9 * * *'
+    # Tue & Fri 15:00 UTC: film the next Play-together game and post the video
+    - cron: '0 15 * * 2,5'
 
   # Allow manual trigger from GitHub Actions tab
   workflow_dispatch:
@@ -26,6 +28,16 @@ on:
           - plan
           - scout
           - process_due
+          - promote_video
+          - promote_together
+          - ads_cycle
+          - ads_preflight
+          - metrics
+      game:
+        description: 'Game id (promote_video defaults to drift; promote_together defaults to the next game in rotation)'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: write
@@ -50,6 +62,10 @@ jobs:
       - name: Install marketing dependencies
         working-directory: marketing
         run: npm ci
+
+      - name: Install Playwright Chromium (for gameplay video recording)
+        working-directory: marketing
+        run: npx playwright install --with-deps chromium
 
       - name: Load All-in-One .env Secret (if configured)
         if: ${{ env.MARKETING_ENV != '' }}
@@ -92,38 +108,63 @@ jobs:
           GENERIC_WEBHOOK_URL: ${{ secrets.GENERIC_WEBHOOK_URL }}
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
           BUFFER_PROFILE_IDS: ${{ secrets.BUFFER_PROFILE_IDS }}
-        run: |
-          ACTION="${{ github.event.inputs.action || 'full_cycle' }}"
-          echo "🤖 Running Marketing Action: $ACTION in mode: $MARKETING_MODE"
 
-          if [ "$ACTION" = "plan" ]; then
-            node marketing/cli.js plan
-          elif [ "$ACTION" = "scout" ]; then
-            node marketing/cli.js scout
-          elif [ "$ACTION" = "process_due" ]; then
-            if [ "$MARKETING_MODE" = "live" ]; then
-              node marketing/cli.js process-due --live
-            else
-              node marketing/cli.js process-due
-            fi
-          else
-            if [ "$MARKETING_MODE" = "live" ]; then
-              node marketing/cli.js run-autonomous --live
-            else
-              node marketing/cli.js run-autonomous
-            fi
+          # X Ads (paid campaigns; hard-capped at $10/day per campaign, $25/day total)
+          X_ADS_ACCOUNT_ID: ${{ secrets.X_ADS_ACCOUNT_ID }}
+          X_ADS_FUNDING_INSTRUMENT_ID: ${{ secrets.X_ADS_FUNDING_INSTRUMENT_ID }}
+          X_ADS_CURRENCY: ${{ secrets.X_ADS_CURRENCY }}
+          X_ADS_USD_TO_LOCAL_RATE: ${{ secrets.X_ADS_USD_TO_LOCAL_RATE }}
+
+          # Play-together videos (optional overrides; defaults: every 2 days, "Maya" & "Arjun")
+          TOGETHER_VIDEO_CADENCE_DAYS: ${{ secrets.TOGETHER_VIDEO_CADENCE_DAYS }}
+          TOGETHER_DEMO_NAMES: ${{ secrets.TOGETHER_DEMO_NAMES }}
+        id: run
+        run: |
+          ACTION="${{ github.event.inputs.action }}"
+          if [ -z "$ACTION" ]; then
+            # Scheduled runs: the Tue/Fri slot films a video, every other slot is the full cycle.
+            if [ "${{ github.event.schedule }}" = "0 15 * * 2,5" ]; then ACTION=promote_together; else ACTION=full_cycle; fi
+          fi
+          GAME="${{ github.event.inputs.game }}"
+          LIVE=""; [ "$MARKETING_MODE" = "live" ] && LIVE="--live"
+          echo "🤖 Running Marketing Action: $ACTION in mode: $MARKETING_MODE"
+          echo "action=$ACTION" >> "$GITHUB_OUTPUT"
+
+          case "$ACTION" in
+            plan)              node marketing/cli.js plan ;;
+            scout)             node marketing/cli.js scout ;;
+            metrics)           node marketing/cli.js metrics ;;
+            ads_preflight)     node marketing/cli.js ads-preflight ;;
+            process_due)       node marketing/cli.js process-due $LIVE ;;
+            ads_cycle)         node marketing/cli.js ads-cycle $LIVE ;;
+            promote_video)     node marketing/cli.js promote-video --game "${GAME:-drift}" $LIVE ;;
+            promote_together)  if [ -n "$GAME" ]; then node marketing/cli.js promote-together --game "$GAME" $LIVE; else node marketing/cli.js promote-together $LIVE; fi ;;
+            *)                 node marketing/cli.js run-autonomous $LIVE ;;
+          esac
+
+      - name: Upload rendered videos (workflow artifact — not committed)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketing-videos-${{ github.run_id }}
+          path: marketing/artifacts/videos/*.mp4
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Prepare pull request body
+        run: |
+          mkdir -p marketing/artifacts/reports
+          if [ ! -f marketing/artifacts/reports/latest.md ]; then
+            printf '## Marketing agent — %s · %s UTC · **%s**\n\nAutomated update (no cycle report for this action).\n' \
+              "${{ steps.run.outputs.action }}" "$(date -u +'%Y-%m-%d %H:%M')" "$MARKETING_MODE" > marketing/artifacts/reports/latest.md
           fi
 
       - name: Open Pull Request with Updated Artifacts
         uses: peter-evans/create-pull-request@v6
         with:
-          commit-message: "chore(marketing): autonomous cycle update"
-          title: "chore(marketing): autonomous cycle update"
-          body: |
-            Automated update from the marketing agent's autonomous cycle run.
-
-            - Updated campaign queue and opportunity leads
-            - Refreshed visual social cards
+          commit-message: "chore(marketing): ${{ steps.run.outputs.action }} update"
+          title: "chore(marketing): ${{ steps.run.outputs.action }} · ${{ github.event.inputs.mode || 'draft' }}"
+          body-path: marketing/artifacts/reports/latest.md
           branch: marketing-agent/auto-update
           delete-branch: true
           add-paths: |
