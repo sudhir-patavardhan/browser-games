@@ -32,7 +32,7 @@ Open [`index.html`](index.html) at the repo root for the [Kreeda](https://kreeda
 
 ### Play together
 
-Five psychology games for **two people on one phone**. All five share one mechanic — the hidden-input loop: a hand-off screen ("Pass the phone to Priya"), a private answer, and a reveal only once both players have committed. The fun is always the gap between what you predicted and what was revealed. Answers stay on the phone — nothing is uploaded, and these are games for conversation, not psychological assessments.
+Five psychology games for **two people on one phone**. All five share one mechanic — the hidden-input loop: a hand-off screen ("Pass the phone to Priya"), a private answer, and a reveal only once both players have committed. The fun is always the gap between what you predicted and what was revealed. Answers stay on the phone — nothing is uploaded, and these are games for conversation, not psychological assessments. Every results page ends with a **Share on WhatsApp** button (a `wa.me` link, so it opens the app on a phone and WhatsApp Web on a desktop): whoever is holding the phone sends the write-up to the other player and both keep a copy. Sync and Windows share the whole page in words — verdict, figures, every answer and guess, every pane — and add the system share sheet where the browser has one; the other three share their result card.
 
 | Game | Description | Play |
 |---|---|---|
