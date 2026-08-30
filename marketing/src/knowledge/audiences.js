@@ -13,13 +13,13 @@ export const AUDIENCES = {
       name: 'Web Dev & Engineering Community',
       tone: 'Technical, deep, highlighting zero-dependency, single-file HTML, Canvas/WebGL, procedural WebAudio, WebRTC',
       preferredPlatforms: ['hackernews', 'twitter', 'reddit', 'devto'],
-      bestGames: ['drift', 'ennead', 'deadpoint', 'carrom', 'dasanana']
+      bestGames: ['drift', 'ennead', 'chroma-blocks', 'carrom', 'dasanana']
     },
     indie_gamers: {
       name: 'Indie Game Enthusiasts & Speedrunners',
       tone: 'Gameplay-focused, mechanics-rich, challenging, emphasizing emergent physics and high-skill ceilings',
       preferredPlatforms: ['reddit', 'twitter', 'discord'],
-      bestGames: ['drift', 'deadpoint', 'road-rumble', 'last-16']
+      bestGames: ['drift', 'road-rumble', 'last-16', 'fairway-four']
     },
     board_and_puzzle: {
       name: 'Strategy & Board Game Lovers',

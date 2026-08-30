@@ -181,29 +181,6 @@ export const GAME_CATALOG = {
       'Check out how the putting green visualizes slope breaks with animated contour lines.'
     ]
   },
-  deadpoint: {
-    id: 'deadpoint',
-    name: 'Deadpoint',
-    genre: '2.5D Rock Climbing & Bouldering',
-    url: 'https://kreeda.games/deadpoint/index.html',
-    tagline: 'The commit. The pump. The send.',
-    pitch: 'A 2.5D rock-climbing game built around the commitment of bouldering. Reach for holds, time your latch at the deadpoint apex, counterbalance your center-of-mass with foot flagging (A/D) to avoid barn-dooring, chalk up, and stick slow-mo dynos across V0-V5 problems.',
-    mechanics: [
-      'Articulated Inverse Kinematics (IK) 4-limb climber model',
-      'Per-hand grip pump meter, deadpoint timing rings, chalk bag friction recovery',
-      'Center-of-mass barn-door rotation physics, foot flagging, slow-motion dyno jumps',
-      '6 procedurally generated boulder routes (V0 to V5) with Flash and Send scoring'
-    ],
-    technicalHighlights: [
-      'Custom 2D IK solver and rotational torque physics in vanilla JS',
-      'Golden hour parallax backdrop, chalk dust particle simulation'
-    ],
-    targetAudiences: ['rock_climbers', 'bouldering_community', 'physics_puzzle_lovers'],
-    viralHooks: [
-      'The first realistic rock climbing game where foot flagging and barn-door torque actually matter.',
-      'Built a bouldering game with 2D Inverse Kinematics and dynamic dynos in pure JavaScript.'
-    ]
-  },
   ennead: {
     id: 'ennead',
     name: 'Ennead',
@@ -266,5 +243,176 @@ export const GAME_CATALOG = {
     viralHooks: [
       'Cleanest browser blackjack — no ads, no purchase prompts, real 3:2 payouts.'
     ]
+  },
+
+  // ---- "Play together": two people, one phone, pass-and-play ----
+  sync: {
+    id: 'sync',
+    name: 'Sync',
+    genre: 'Two-Player Relationship Game',
+    category: 'together',
+    url: 'https://kreeda.games/sync/index.html',
+    tagline: 'How well do you actually know each other?',
+    pitch: 'Two players, one phone. Answer each question for yourself, predict what the other person will say, then reveal together. Ten rounds that show where you are in sync — and where you have been guessing. Packs for new pairs, couples, friends, family and coworkers.',
+    mechanics: [
+      'Answer → predict → reveal loop across ten rounds',
+      'Similarity and insight scored separately',
+      'Question packs: new pair, couple, friends, family, coworkers'
+    ],
+    technicalHighlights: ['Single HTML file; answers never leave the phone'],
+    targetAudiences: ['couples', 'new_couples', 'close_friends', 'families'],
+    viralHooks: [
+      'Predict how your partner answers — then find out how wrong you were.',
+      'The ten-question game that tells you whether you actually know your best friend.'
+    ]
+  },
+  windows: {
+    id: 'windows',
+    name: 'Windows',
+    genre: 'Johari Window for Two',
+    category: 'together',
+    url: 'https://kreeda.games/windows/index.html',
+    tagline: 'How you see yourself vs how they see you.',
+    pitch: 'A playable Johari Window for two people on one phone. Each of you picks six words for yourself and six for the other — then the panes fill in: what you both see, what only you see, and the blind spots they see in you.',
+    mechanics: [
+      'Forty adjectives; six picks for yourself, six for them',
+      'Four panes: open, hidden, blind spot, unknown',
+      'Reveal is simultaneous so nobody adjusts their answers'
+    ],
+    technicalHighlights: ['Single HTML file; nothing uploaded'],
+    targetAudiences: ['couples', 'close_friends', 'coworkers', 'psychology_curious'],
+    viralHooks: [
+      'Find out your blind spots from the one person who actually sees them.',
+      'A 5-minute Johari Window you can play on a date.'
+    ]
+  },
+  split: {
+    id: 'split',
+    name: 'Split',
+    genre: 'Two-Player Trust Game',
+    category: 'together',
+    url: 'https://kreeda.games/split/index.html',
+    tagline: 'Share or Take. The score says who won — the pattern says who you are.',
+    pitch: 'Ten rounds of Share or Take between two people on one phone. Both share and everyone wins; one takes and burns the other; both take and it is mutual ruin. Round 4 pays double, round 7 is sealed, round 10 pays triple — and the pattern of your choices says more than the score.',
+    mechanics: [
+      'Prisoner\'s-dilemma payoff grid: 3/3, 0/5, 5/0, 1/1',
+      'Special rounds: double, sealed, triple',
+      'End-of-game pattern read-out for both players'
+    ],
+    technicalHighlights: ['Single HTML file; local only'],
+    targetAudiences: ['couples', 'close_friends', 'siblings', 'game_theory_fans'],
+    viralHooks: [
+      'How much do you trust each other, really? Ten rounds will tell.',
+      'Play the prisoner\'s dilemma with someone you love. Watch round 7.'
+    ]
+  },
+  auction: {
+    id: 'auction',
+    name: 'The Auction',
+    genre: 'Two-Player Values Game',
+    category: 'together',
+    url: 'https://kreeda.games/auction/index.html',
+    tagline: '100 coins. Ten things people want from life. You can\'t fund them all.',
+    pitch: 'A pass-the-phone game about what you value. Each player gets 100 coins to bid, in private, on ten things people want from life — then you reveal together and see where your priorities line up and where they collide.',
+    mechanics: [
+      'Private sealed bids across ten life priorities',
+      'Scarcity forces trade-offs — you can\'t fund everything',
+      'Side-by-side reveal of both players\' allocations'
+    ],
+    technicalHighlights: ['Single HTML file; no accounts'],
+    targetAudiences: ['couples', 'new_couples', 'close_friends', 'families'],
+    viralHooks: [
+      'Bid on what matters to you — then see what your partner bid on.',
+      'A ten-minute game that starts the money-and-priorities conversation without the fight.'
+    ]
+  },
+  fathom: {
+    id: 'fathom',
+    name: 'Fathom',
+    genre: 'Guided Conversation for Two',
+    category: 'together',
+    url: 'https://kreeda.games/fathom/index.html',
+    tagline: '36 questions deep — a guided dive for two.',
+    pitch: 'Two people, one phone, a guided dive through three depths of conversation based on the 36 questions. Includes a real before-and-after closeness check-in so you can see what the conversation changed.',
+    mechanics: [
+      'Three depths, twelve questions each, escalating intimacy',
+      'Before/after closeness check-in',
+      'Take turns; nothing is scored, everything is shared'
+    ],
+    technicalHighlights: ['Single HTML file; ambient sound optional'],
+    targetAudiences: ['couples', 'new_couples', 'close_friends', 'psychology_curious'],
+    viralHooks: [
+      'The 36 questions, as a game you can actually finish in one evening.',
+      'Measure how much closer you feel after 36 questions — the game does it for you.'
+    ]
+  },
+
+  // ---- Build-and-learn ----
+  apogee: {
+    id: 'apogee',
+    name: 'Apogee',
+    genre: 'Rocket Builder',
+    category: 'build',
+    url: 'https://kreeda.games/apogee/index.html',
+    tagline: 'Build a rocket from real parts, then see how high it flies.',
+    pitch: 'Assemble a rocket from real parts — payload, tanks, engines, fins, avionics, boosters — learn what each one does, then launch and see how high your design flies. Cross the Kármán line to reach space.',
+    mechanics: ['Part-by-part assembly with real trade-offs', 'Launch simulation with altitude read-out', 'Kármán line as the goal'],
+    technicalHighlights: ['Single HTML file; physics runs in the browser'],
+    targetAudiences: ['space_fans', 'stem_students', 'curious_builders'],
+    viralHooks: ['Can your rocket cross the Kármán line? Build it and find out.']
+  },
+  garage: {
+    id: 'garage',
+    name: 'Garage',
+    genre: 'Car Builder',
+    category: 'build',
+    url: 'https://kreeda.games/garage/index.html',
+    tagline: 'Build a car from 19 real parts and learn what every one of them does.',
+    pitch: 'Build a car from 19 real parts — chassis, carburetor, alternator, driveshaft — and learn what every one of them does along the way.',
+    mechanics: ['19 real components with explanations', 'Assembly order matters'],
+    technicalHighlights: ['Single HTML file'],
+    targetAudiences: ['car_enthusiasts', 'stem_students', 'curious_builders'],
+    viralHooks: ['Finally understand what an alternator does — by building the car around it.']
+  },
+
+  // ---- Daily grids ----
+  quanta: {
+    id: 'quanta',
+    name: 'Quanta',
+    genre: 'Daily Physics Grid',
+    category: 'daily',
+    url: 'https://kreeda.games/quanta/index.html',
+    tagline: 'A daily physics grid: nine cells, nine guesses.',
+    pitch: 'Three criteria down, three across, nine cells — name a physical quantity for every square. Vectors, SI units, dimensional formulae, and every answer revealed at the end.',
+    mechanics: ['3×3 criteria grid', 'Nine guesses', 'New puzzle daily'],
+    technicalHighlights: ['Single HTML file; daily seed'],
+    targetAudiences: ['physics_students', 'teachers', 'daily_puzzle_players'],
+    viralHooks: ['The daily grid for people who remember their dimensional formulae.']
+  },
+  radian: {
+    id: 'radian',
+    name: 'Radian',
+    genre: 'Daily Trigonometry Grid',
+    category: 'daily',
+    url: 'https://kreeda.games/radian/index.html',
+    tagline: 'A daily trigonometry grid on the unit circle.',
+    pitch: 'Three criteria down, three across, nine cells — name an angle on the unit circle for every square, in degrees or radians.',
+    mechanics: ['3×3 criteria grid', 'Degrees or radians', 'New puzzle daily'],
+    technicalHighlights: ['Single HTML file; daily seed'],
+    targetAudiences: ['math_students', 'teachers', 'daily_puzzle_players'],
+    viralHooks: ['Nine angles, one unit circle, one shot a day.']
+  },
+  valence: {
+    id: 'valence',
+    name: 'Valence',
+    genre: 'Daily Chemistry Grid',
+    category: 'daily',
+    url: 'https://kreeda.games/valence/index.html',
+    tagline: 'A daily chemistry grid — name an element for every square.',
+    pitch: 'Three criteria down, three across, nine cells, nine guesses — name a chemical element for every square before the guesses run out. Built for high-school chemistry.',
+    mechanics: ['3×3 criteria grid', 'Nine guesses', 'New puzzle daily'],
+    technicalHighlights: ['Single HTML file; daily seed'],
+    targetAudiences: ['chemistry_students', 'teachers', 'daily_puzzle_players'],
+    viralHooks: ['Wordle for the periodic table.']
   }
 };

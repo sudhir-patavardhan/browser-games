@@ -31,7 +31,6 @@ export class VisualStudio {
       'last-16': { g1: '#2bff88', g2: '#ffd93d', g3: '#21c7ff', bg: '#04140a', accent: '#2bff88' },
       'road-rumble': { g1: '#ff5a4d', g2: '#ffd24a', g3: '#4aa3ff', bg: '#0a0d12', accent: '#ff5a4d' },
       'fairway-four': { g1: '#5cb86e', g2: '#a8e6cf', g3: '#ffd3b6', bg: '#0a1410', accent: '#5cb86e' },
-      deadpoint: { g1: '#ffb454', g2: '#ff6a6a', g3: '#c98bff', bg: '#0c0f16', accent: '#ffb454' },
       ennead: { g1: '#ff6a52', g2: '#4fa9ee', g3: '#ffc23d', bg: '#0e1220', accent: '#ff6a52' },
       dasanana: { g1: '#ff8a1e', g2: '#ffd76b', g3: '#e8360a', bg: '#1a0c02', accent: '#ffd76b' },
       blackjack: { g1: '#f4d35e', g2: '#1b7a3f', g3: '#0c4a24', bg: '#05140a', accent: '#f4d35e' },
