@@ -34,15 +34,14 @@
    teal (what's seen) and amber (what's offered). This game commits to a single dark look —
    the hand-off ritual depends on the screen reading as "private", and a bright theme would
    fight that — so the body is painted explicitly and there is no light variant.
-   Player 1 is teal and player 2 amber everywhere. The three "temperature" colours are for the
-   word bank's warm / neutral / spiky thirds and appear only on the results page. */
+   Player 1 is teal and player 2 amber everywhere; the Big Five card reuses those two for
+   "by yourself" (filled) and "by the other" (ring). */
 :root{
   --ground:#171614;   --ground-2:#1f1d1a;  --panel:#242220;   --panel-2:#2c2926;
   --ink:#f0ece4;      --ink-dim:#a89f92;   --rule:rgba(240,236,228,.14);
   --teal:#2bb3a3;     --teal-deep:#1b7a70; --teal-ink:#0b2622;
   --amber:#ffb020;    --amber-deep:#b57708;--amber-ink:#2a1e04;
   --hidden-c:#8f86c9; --hidden-ink:#17142c; --unknown-c:#565049;
-  --warm:#ff8fb1;     --neutral:#7f8fa6;   --spiky:#ff7a52;
   --danger:#e07856;   --gold:#ffd166;
   --shade:rgba(10,9,8,.72);
 }
@@ -255,8 +254,9 @@ details.how li b{ color:var(--ink); }
 .gl .w{ font-weight:900; }
 .gl .w.a{ color:var(--teal); } .gl .w.b{ color:var(--amber); } .gl .w.h{ color:var(--hidden-c); }
 
-/* temperature: the word bank is a warm third, a neutral third and a spiky third. For each
-   person, six blocks for how they painted themselves and six for how the other painted them. */
+/* Big Five: for each person, five tracks — Openness, Conscientiousness, Extraversion,
+   Agreeableness, Neuroticism — with a filled dot for where their own six words land and a ring
+   for where the other's six land. Left is less, right is more, the tick is the middle. */
 .rcard h4{ margin:0 0 4px; font-size:11px; font-weight:900; letter-spacing:1.6px; text-transform:uppercase;
   color:var(--ink-dim); }
 .rcard .sub{ margin:0 0 10px; font-size:12.5px; color:var(--ink-dim); line-height:1.45; }
@@ -264,17 +264,23 @@ details.how li b{ color:var(--ink); }
 .tp:first-of-type{ border-top:0; padding-top:2px; }
 .tp .tname{ font-size:14px; font-weight:900; margin-bottom:6px; overflow-wrap:anywhere; }
 .tp .tname.a{ color:var(--teal); } .tp .tname.b{ color:var(--amber); }
-.trow{ display:flex; align-items:center; gap:10px; margin-top:5px; }
-.trow .tl{ width:84px; flex:none; font-size:11px; font-weight:800; color:var(--ink-dim); text-align:right;
+.b5row{ display:flex; align-items:center; gap:10px; margin-top:6px; }
+.b5row .b5l{ width:122px; flex:none; font-size:11.5px; font-weight:800; color:var(--ink-dim); text-align:right;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.tbar{ flex:1; display:flex; gap:3px; }
-.tbar i{ flex:1; height:16px; border-radius:4px; animation:chipIn .3s ease backwards; }
-.tbar i.w{ background:var(--warm); } .tbar i.n{ background:var(--neutral); } .tbar i.s{ background:var(--spiky); }
-.tline{ margin:8px 0 4px 94px; font-size:13px; line-height:1.4; }
-.tlegend{ display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; }
-.tlegend span{ display:flex; align-items:center; gap:5px; font-size:11px; color:var(--ink-dim); font-weight:700; }
-.tlegend i{ width:10px; height:10px; border-radius:3px; }
-@media (max-width:380px){ .trow .tl{ width:70px; } .tline{ margin-left:80px; } }
+.b5track{ position:relative; flex:1; height:18px; }
+.b5track i{ position:absolute; left:0; right:0; top:8px; height:2px; background:var(--rule); }
+.b5track i::after{ content:''; position:absolute; left:50%; top:-4px; width:1px; height:10px; background:var(--rule); }
+.dot{ position:absolute; top:3px; width:12px; height:12px; border-radius:99px; margin-left:-6px;
+  box-sizing:border-box; animation:chipIn .3s ease backwards; }
+.dot.self{ background:var(--teal); z-index:2; }
+.dot.other{ background:var(--panel); border:2.5px solid var(--amber); z-index:1; }
+.tp.pb .dot.self{ background:var(--amber); } .tp.pb .dot.other{ border-color:var(--teal); }
+.tline{ margin:8px 0 4px 132px; font-size:13px; line-height:1.4; }
+.b5legend{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; align-items:center; }
+.b5legend span{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-dim); font-weight:700; }
+.b5legend .dot{ position:static; margin:0; animation:none; }
+.b5legend .dot.self{ background:var(--ink-dim); } .b5legend .dot.other{ border-color:var(--ink-dim); }
+@media (max-width:380px){ .b5row .b5l{ width:100px; font-size:11px; } .tline{ margin-left:110px; } }
 
 .win{ margin-top:16px; animation:screenIn .4s ease backwards; }
 .winhead{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin:0 2px 8px; }
@@ -416,8 +422,8 @@ details.how li b{ color:var(--ink); }
       <summary>How it works</summary>
       <ul>
         <li>Each of you privately picks <b>6 words for yourself</b>, then <b>6 for the other player</b>. Your picks collect in a tray at the top — tap one there to drop it. Pass the phone in between — nothing shows until you're both done.</li>
-        <li>Then one page, numbers first: <b>how clearly you see each other</b>, how <b>warm</b> each of you paints the other versus yourself, and both windows — <b>Open</b> (you both picked it), <b>Hidden</b> (only you claimed it), <b>Blind spot</b> (only they see it), and <b>Unknown</b>.</li>
-        <li><b>Close words count.</b> Forty words overlap a lot, so a pair that means nearly the same thing — Warm ≈ Kind, Quiet ≈ Private, Spontaneous ≈ Impulsive — is scored as a match, weighted by how close they are.</li>
+        <li>Then one page, numbers first: <b>how clearly you see each other</b>, where your words land on the <b>Big Five</b> — openness, conscientiousness, extraversion, agreeableness, neuroticism — as you see yourself and as they see you, and both windows — <b>Open</b> (you both picked it), <b>Hidden</b> (only you claimed it), <b>Blind spot</b> (only they see it), and <b>Unknown</b>.</li>
+        <li><b>Close words count.</b> Every word sits on the Big Five's thirty facets, so a pair that means nearly the same thing — Warm ≈ Kind, Quiet ≈ Private, Spontaneous ≈ Impulsive — is scored as a match, weighted by how close they are.</li>
         <li>The blind spots are the conversation. The page ends with three things to ask each other.</li>
       </ul>
     </details>
@@ -533,7 +539,7 @@ const REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-moti
 /* ============================ word bank ============================
    40 original trait words, balanced warm / neutral / spiky. The rule for the spiky third:
    a friend could pick it to your face and mean it kindly. "Stubborn" passes; anything
-   contemptuous does not. The thirds are also the "temperature" the results page reads. */
+   contemptuous does not. Each word's Big Five facet loadings live in LOAD below. */
 const WORDS = [
   // warm (14)
   'Warm','Funny','Loyal','Patient','Generous','Kind','Dependable','Playful',
@@ -547,37 +553,86 @@ const WORDS = [
 ];
 const PICKS_EACH = 6;
 
-/* ============================ trait space ============================
+/* ============================ Big Five space ============================
    Forty words is enough that two people describing the same person rarely land on the same
    word: Warm and Kind, Quiet and Private, Spontaneous and Impulsive are the same observation in
-   different clothes. So every word gets a position on eight hand-set trait axes — warmth,
-   energy, order, expressiveness, assertiveness, steadiness, reflectiveness, flexibility, each
-   -1..1 — and two words match when the cosine of their vectors clears NEAR. Exact matches score
-   1; a near match scores its cosine, so "Priya sees Sam" is partial credit, not a coin flip.
-   Hand-set rather than fetched: the game must work offline, off the disk, with no model. */
-const VEC = {
-  Warm:        [1, 0, 0, .3, -.2, .3, 0, .3],       Kind:        [1, -.1, 0, .1, -.3, .3, .1, .3],
-  Gentle:      [.8, -.5, 0, -.2, -.6, .4, .1, .3],  Generous:    [.9, .1, -.1, .3, 0, .2, 0, .5],
-  Encouraging: [.8, .3, 0, .5, .2, .3, 0, .3],      Loyal:       [.6, 0, .1, -.1, .1, .9, 0, -.1],
-  Dependable:  [.4, -.2, .5, -.2, .1, .9, .2, 0],   Patient:     [.5, -.7, .2, -.3, -.3, .7, .3, .4],
-  Honest:      [.3, 0, .2, .3, .5, .5, .1, -.2],    Brave:       [.1, .5, 0, .3, .9, .2, -.2, 0],
-  Funny:       [.4, .5, -.2, .9, .1, 0, -.1, .4],   Playful:     [.4, .7, -.3, .8, 0, -.1, -.4, .5],
-  Curious:     [.2, .5, 0, .3, .1, 0, .6, .4],      Wise:        [.4, -.4, .3, -.2, .1, .6, .9, .2],
-  Quiet:       [.1, -.7, .1, -.9, -.4, .3, .3, 0],  Private:     [0, -.4, .1, -.9, 0, .2, .2, -.2],
-  Guarded:     [-.3, -.3, .2, -.9, 0, .1, .2, -.4], Independent: [0, .2, .2, -.3, .5, .3, .2, -.3],
-  Ambitious:   [0, .6, .3, .2, .8, .2, .2, -.3],    Competitive: [-.2, .7, .1, .3, .9, 0, 0, -.4],
-  Intense:     [0, .8, .1, .3, .7, -.2, .2, -.5],   Dramatic:    [.1, .8, -.3, .9, .3, -.5, -.3, 0],
-  Spontaneous: [.2, .8, -.6, .5, .2, -.4, -.7, .6], Impulsive:   [0, .9, -.6, .4, .3, -.5, -.9, .2],
-  Restless:    [0, .9, -.4, .1, .1, -.6, -.3, 0],   Impatient:   [-.2, .8, 0, .2, .4, -.4, -.5, -.4],
-  Scattered:   [.1, .5, -.9, .2, -.2, -.5, -.3, .3],Dreamy:      [.3, -.3, -.6, 0, -.4, -.1, .3, .4],
-  Easygoing:   [.4, -.5, -.3, .2, -.4, .4, -.2, .9],Practical:   [0, -.1, .8, -.2, .2, .6, .4, 0],
-  Careful:     [.1, -.5, .8, -.3, -.2, .6, .6, -.1],Analytical:  [-.1, -.2, .8, -.3, .1, .4, .9, -.2],
-  Observant:   [.1, -.3, .5, -.5, -.1, .4, .8, .1], Overthinking:[0, .2, .2, -.4, -.3, -.3, .9, -.3],
-  'Old-school':[.1, -.4, .5, -.3, .2, .6, .2, -.6], Stubborn:    [-.2, .1, .2, 0, .7, .4, -.1, -.9],
-  Blunt:       [-.4, .3, .1, .5, .8, .2, -.2, -.4], Picky:       [-.2, 0, .6, -.2, .2, .2, .4, -.8],
-  Moody:       [-.1, .3, -.2, .2, -.1, -.9, 0, -.3],Sensitive:   [.5, .2, -.1, 0, -.6, -.5, .3, 0]
+   different clothes. So every word carries loadings (-1..1) on the thirty NEO facets of the Big
+   Five — six each for Openness, Conscientiousness, Extraversion, Agreeableness and Neuroticism.
+   One table does two jobs: (1) matching — a word's vector is its thirty facet loadings plus its
+   five trait scores as a smoothing term, and two words match when the cosine clears NEAR; an
+   exact match scores 1, a near match its cosine, so "Priya sees Sam" is partial credit, not a
+   coin flip; (2) the Big Five card — a person's six words average into a five-trait profile.
+   Hand-set rather than fetched: the game must work offline, off the disk, with no model, and
+   this is a playful read of words, not a psychometric instrument. */
+const FACETS = ['O1','O2','O3','O4','O5','O6',   // fantasy, aesthetics, feelings, actions, ideas, values
+                'C1','C2','C3','C4','C5','C6',   // competence, order, dutifulness, achievement, self-discipline, deliberation
+                'E1','E2','E3','E4','E5','E6',   // warmth, gregariousness, assertiveness, activity, excitement-seeking, positive emotions
+                'A1','A2','A3','A4','A5','A6',   // trust, straightforwardness, altruism, compliance, modesty, tender-mindedness
+                'N1','N2','N3','N4','N5','N6'];  // anxiety, angry hostility, depression, self-consciousness, impulsiveness, vulnerability
+const TRAITS = [
+  { k:'O', name:'Openness',          hi:'open to new things', lo:'conventional' },
+  { k:'C', name:'Conscientiousness', hi:'organised',          lo:'freewheeling' },
+  { k:'E', name:'Extraversion',      hi:'outgoing',           lo:'reserved' },
+  { k:'A', name:'Agreeableness',     hi:'agreeable',          lo:'tough-minded' },
+  { k:'N', name:'Neuroticism',       hi:'emotionally reactive', lo:'unflappable' }
+];
+const LOAD = {
+  Warm:        {E1:1, E6:.4, A3:.6, A6:.6, A1:.3},
+  Kind:        {A3:1, A6:.8, E1:.6, A4:.3, E6:.2},
+  Gentle:      {A6:.9, A4:.6, E1:.5, E3:-.4, N2:-.5, A3:.4},
+  Generous:    {A3:1, A5:.4, E1:.6, A1:.3, E6:.2},
+  Encouraging: {E1:.7, A3:.7, E6:.6, E3:.3, A1:.3},
+  Loyal:       {A1:.7, C3:.9, A3:.5, C5:.3, A4:.2},
+  Dependable:  {C3:1, C5:.7, C1:.6, A1:.4, C2:.3},
+  Patient:     {N2:-.8, C6:.6, A4:.6, N5:-.5, A6:.4, C5:.3, E1:.2},
+  Honest:      {A2:1, C3:.5, A1:.4, A5:.2},
+  Brave:       {E3:.6, E5:.7, N1:-.7, N6:-.6, E4:.3},
+  Funny:       {E6:.9, E2:.6, O1:.4, E4:.3, E5:.3},
+  Playful:     {E6:.8, E5:.6, O1:.5, E2:.4, C6:-.3, O4:.3},
+  Curious:     {O5:1, O4:.6, O2:.3, O1:.3, E5:.2},
+  Wise:        {O5:.6, C6:.8, C1:.6, O6:.4, N6:-.3, O3:.2},
+  Quiet:       {E2:-.9, E4:-.4, E3:-.4, N4:.2, E5:-.3},
+  Private:     {E2:-.8, E4:-.3, N4:.4, O3:-.3, A2:-.2, E1:-.2},
+  Guarded:     {A1:-.7, E2:-.5, N4:.5, O3:-.5, E1:-.4, A2:-.3},
+  Independent: {E3:.5, A4:-.6, C1:.4, A1:-.2, O6:.2, E2:-.2},
+  Ambitious:   {C4:1, E3:.6, E4:.5, A5:-.3, C5:.3, E5:.2},
+  Competitive: {C4:.8, E3:.7, A4:-.6, A5:-.5, N2:.2, E4:.3, E5:.2},
+  Intense:     {E4:.6, O3:.6, N1:.3, C4:.5, E3:.3, E6:-.2},
+  Dramatic:    {O3:.7, E2:.5, E6:.4, E5:.4, A5:-.5, N1:.3, O1:.3},
+  Spontaneous: {O4:.8, N5:.5, C6:-.8, E5:.6, C2:-.4, E4:.3, O1:.2},
+  Impulsive:   {N5:1, C6:-.9, E5:.5, C5:-.4, O4:.3, E4:.3},
+  Restless:    {E4:.7, N1:.4, C5:-.4, O4:.4, N5:.4, C6:-.3, E5:.3},
+  Impatient:   {N2:.6, C6:-.5, E4:.5, A4:-.4, N5:.5, N1:.2},
+  Scattered:   {C2:-1, C5:-.6, C1:-.3, O1:.3, N1:.2, C6:-.3},
+  Dreamy:      {O1:1, O2:.5, C2:-.4, E4:-.3, O3:.4, C5:-.2},
+  Easygoing:   {N1:-.6, N2:-.7, A4:.7, C2:-.3, E6:.4, N6:-.3, A1:.3},
+  Practical:   {C1:.8, O1:-.6, C2:.6, O5:-.2, C6:.6, C5:.4, O2:-.2},
+  Careful:     {C6:1, C2:.7, N1:.3, E5:-.6, C1:.5, C5:.4, C3:.3, O1:-.2},
+  Analytical:  {O5:.8, C6:.7, C1:.5, O3:-.3, E6:-.2, C2:.3, O2:-.1},
+  Observant:   {O5:.5, C6:.6, E2:-.3, O2:.4, N4:.2, O3:.3, C1:.3},
+  Overthinking:{N1:.9, C6:.6, N4:.5, N5:-.3, O5:.3, N6:.3},
+  'Old-school':{O4:-.8, O6:-.8, C3:.5, C2:.4, O1:-.3, A4:.2, C5:.2},
+  Stubborn:    {A4:-1, O6:-.3, C5:.4, N2:.3, E3:.4, O4:-.3},
+  Blunt:       {A2:.8, A6:-.7, E3:.6, A4:-.4, N2:.3, A5:-.2},
+  Picky:       {C2:.6, A4:-.5, N2:.3, O4:-.4, C6:.4, A6:-.2, C1:.2},
+  Moody:       {N3:.7, N2:.5, N6:.5, E6:-.5, N1:.3, N4:.2},
+  Sensitive:   {A6:.7, N4:.6, N6:.5, O3:.8, N1:.3, E1:.2}
 };
-const NEAR = 0.75;
+/* a word's trait scores: its facet loadings summed per trait, clipped to -1..1 */
+function traitVec(w){
+  return TRAITS.map(t => Math.max(-1, Math.min(1,
+    FACETS.filter(f => f[0]===t.k).reduce((s,f) => s + (LOAD[w][f]||0), 0))));
+}
+/* a person's profile from a list of words: the average trait vector, each value -1..1 */
+function profile(words){
+  const acc = [0,0,0,0,0];
+  words.forEach(w => { traitVec(w).forEach((x,i) => { acc[i] += x; }); });
+  return acc.map(x => x / (words.length || 1));
+}
+const DOMAIN_WEIGHT = 1;     // how much the five trait scores count next to the thirty facets
+const VEC = {};
+WORDS.forEach(w => { VEC[w] = FACETS.map(f => LOAD[w][f]||0).concat(traitVec(w).map(x => x*DOMAIN_WEIGHT)); });
+const NEAR = 0.65;
 const NORM = {}; WORDS.forEach(w => { NORM[w] = Math.sqrt(VEC[w].reduce((s,x)=>s+x*x, 0)); });
 function sim(a, b){
   if(a===b) return 1;
@@ -603,10 +658,6 @@ function softMatch(X, Y){
     score: pairs.reduce((s,o) => s + o.sim, 0) };
 }
 const pairLabel = o => o.a===o.b ? o.a : o.a + ' ≈ ' + o.b;
-
-function toneOf(w){ const i = WORDS.indexOf(w); return i<14 ? 'w' : i<27 ? 'n' : 's'; }
-function toneCounts(list){ const c={w:0,n:0,s:0}; list.forEach(x=>{ c[toneOf(x)]++; }); return c; }
-function toneScore(list){ const c=toneCounts(list); return c.w - c.s; }     // warm minus spiky, -6..6
 
 /* ============================ persistence ============================
    Only names, a sound preference and a plays counter are ever stored. Picks are personal —
@@ -911,15 +962,31 @@ function pairVerdict(){
   return ['Getting there', 'Some overlap, some surprises. Good material for the walk home.'];
 }
 
-/* temperature: how warm each person painted themselves versus how the other painted them */
-function tempLine(p){
+/* Big Five: the trait where the other's picture of you differs most from your own, in words —
+   or, if no trait moves by more than a notch, that you read alike */
+function bigFiveLine(p){
   const me = esc(S.names[p]), other = esc(S.names[1-p]);
-  const self = S.picks[p].self, byOther = S.picks[1-p].other;
-  const diff = toneScore(byOther) - toneScore(self);
-  if(diff >= 2) return `<span class="w ${p===0?'b':'a'}">${other}</span> sees ${me} warmer than ${me} does.`;
-  if(diff <= -2) return `${other} sees a spikier ${me} than ${me} claims.`;
-  if(toneCounts(self).s >= 3) return `Nobody’s harder on ${me} than ${me} — and ${other} agrees on the temperature.`;
-  return `${me} and ${other} agree on ${me}’s temperature.`;
+  const self = profile(S.picks[p].self), byOther = profile(S.picks[1-p].other);
+  let gap = 0, at = 0;
+  TRAITS.forEach((t,i)=>{ const d = byOther[i]-self[i]; if(Math.abs(d) > Math.abs(gap)){ gap = d; at = i; } });
+  if(Math.abs(gap) < 0.3) return `${me} and ${other} read ${me}’s Big Five alike.`;
+  const t = TRAITS[at];
+  return `<span class="w ${p===0?'b':'a'}">${other}</span> sees ${me} as more ${gap>0 ? t.hi : t.lo} than ${me} does.`;
+}
+/* six words averaged sit close to the middle by construction, so the card shows each value with
+   a gain (clipped) — positions and the percentages in the tooltips and the share text agree */
+const B5_GAIN = 1.6;
+const shown = v => Math.max(-1, Math.min(1, v*B5_GAIN));
+function bigFiveHTML(p){
+  const me = esc(S.names[p]), other = esc(S.names[1-p]);
+  const self = profile(S.picks[p].self), byOther = profile(S.picks[1-p].other);
+  const pos = v => (50 + shown(v)*50).toFixed(0), pct = v => Math.round((shown(v)+1)*50) + '%';
+  return `<div class="tp ${p===0?'pa':'pb'}"><div class="tname ${p===0?'a':'b'}">${me}</div>
+    ${TRAITS.map((t,i)=>`<div class="b5row"><span class="b5l">${t.name}</span>
+      <span class="b5track" role="img" aria-label="${t.name}: ${pct(self[i])} by ${me}, ${pct(byOther[i])} by ${other}"><i></i>
+        <b class="dot self" style="left:${pos(self[i])}%; animation-delay:${400+i*70}ms" title="by ${me}: ${pct(self[i])}"></b>
+        <b class="dot other" style="left:${pos(byOther[i])}%; animation-delay:${600+i*70}ms" title="by ${other}: ${pct(byOther[i])}"></b></span></div>`).join('')}
+    <p class="tline">${bigFiveLine(p)}</p></div>`;
 }
 
 function headlineFor(p){
@@ -1005,13 +1072,6 @@ function ring(pct, cls, label, big){
     <div class="rl" aria-hidden="true">${label}</div><span class="sr">${label}: ${v}%</span></div>`;
 }
 
-function toneBar(list, delay){
-  const c = toneCounts(list); let h = '', k = 0;
-  const add = (cls, n)=>{ for(let i=0;i<n;i++){ h += `<i class="${cls}" style="animation-delay:${delay + (k++)*50}ms"></i>`; } };
-  add('w', c.w); add('n', c.n); add('s', c.s);
-  return `<span class="tbar" role="img" aria-label="${c.w} warm, ${c.n} neutral, ${c.s} spiky">${h}</span>`;
-}
-
 function paneHTML(P, W, me, other, delay){
   const words = W[P.key];
   let body;
@@ -1065,16 +1125,10 @@ function finish(){
       ${glanceItems().map(g=>`<div class="gl"><span class="gi">${g[0]}</span><span>${g[1]}</span></div>`).join('')}
     </div>
     <div class="rcard" style="animation-delay:.4s">
-      <h4>Temperature</h4>
-      <p class="sub">The forty words come in a warm third, a neutral third and a spiky third. Six blocks for how each of you painted yourself, six for how the other painted you.</p>
-      ${[0,1].map(p=>{
-        const me = esc(S.names[p]), other = esc(S.names[1-p]);
-        return `<div class="tp"><div class="tname ${p===0?'a':'b'}">${me}</div>
-          <div class="trow"><span class="tl">by ${me}</span>${toneBar(S.picks[p].self, 500+p*400)}</div>
-          <div class="trow"><span class="tl">by ${other}</span>${toneBar(S.picks[1-p].other, 700+p*400)}</div>
-          <p class="tline">${tempLine(p)}</p></div>`;
-      }).join('')}
-      <div class="tlegend"><span><i style="background:var(--warm)"></i>warm</span><span><i style="background:var(--neutral)"></i>neutral</span><span><i style="background:var(--spiky)"></i>spiky</span></div>
+      <h4>Big Five</h4>
+      <p class="sub">Where the six words land on the five traits — as each of you sees yourself, and as the other sees you. A playful read of the words, not a test.</p>
+      ${bigFiveHTML(0)}${bigFiveHTML(1)}
+      <div class="b5legend"><span><b class="dot self"></b>by yourself</span><span><b class="dot other"></b>by the other</span><span>less ← · → more</span></div>
     </div>
     ${windowHTML(0, 600)}${windowHTML(1, 900)}`;
   $('talkList').innerHTML = talkItems().map(t=>`<li>${t}</li>`).join('');
@@ -1122,7 +1176,7 @@ function resultText(){
   const clear = Math.round((WA.seen + WB.seen)*100/(2*PICKS_EACH));
   const v = pairVerdict();
   const words = l => l.length ? l.map(w => typeof w==='string' ? w : pairLabel(w)).join(', ') : '—';
-  const tc = l => { const c = toneCounts(l); return `${c.w} warm · ${c.n} neutral · ${c.s} spiky`; };
+  const b5 = l => { const v = profile(l); return TRAITS.map((t,i) => t.k + Math.round((shown(v[i])+1)*50)).join(' '); };
   const lines = [
     `*Windows* · ${A} × ${B}`,
     `_${v[0]}_ — ${plain(v[1])}`,
@@ -1134,11 +1188,11 @@ function resultText(){
     ''
   ];
   glanceItems().forEach(g => lines.push(g[0] + ' ' + plain(g[1])));
-  lines.push('', '🌡️ *Temperature*');
+  lines.push('', '🧭 *Big Five* (O C E A N, 0–100)');
   [0,1].forEach(p => {
     const me = S.names[p], other = S.names[1-p];
-    lines.push(`${me} — by ${me}: ${tc(S.picks[p].self)} · by ${other}: ${tc(S.picks[1-p].other)}`);
-    lines.push('   ' + plain(tempLine(p)));
+    lines.push(`${me} — by ${me}: ${b5(S.picks[p].self)} · by ${other}: ${b5(S.picks[1-p].other)}`);
+    lines.push('   ' + plain(bigFiveLine(p)));
   });
   [0,1].forEach(p => {
     const W = S.windows[p];
