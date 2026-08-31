@@ -193,14 +193,24 @@
   .thumb{
     display:block; width:100%; aspect-ratio:8/3; border-radius:12px; overflow:hidden;
     background:#0d0d14; box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+    position:relative;
   }
   .thumb svg{ display:block; width:100%; height:100%; }
 
-  .card .top{ display:flex; align-items:baseline; gap:6px; margin:8px 3px 0; }
+  .card .top{ margin:8px 3px 0; }
   .card h2{ margin:0; font-size:15px; font-weight:800; letter-spacing:-.2px; }
+  /* Used to sit inline next to the title, competing with it for width — a
+     two-word name like "The Auction" wrapped to a second line, and because
+     .rail-row's cards stretch to match the tallest one in the row, that single
+     wrap padded out every other card alongside it too. Overlaid on the thumb
+     instead (bottom-right — top-left is .badge's corner, top-right is
+     .dstat's), it costs the layout nothing and the title gets the card's full
+     width to itself. */
   .tag{
-    margin-left:auto; flex:none; font-size:9.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
-    color:var(--ink-dim); border:1px solid var(--line); border-radius:999px; padding:2px 6px;
+    position:absolute; z-index:2; right:8px; bottom:8px;
+    font-size:9.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
+    color:var(--ink); background:rgba(7,7,13,.72); border:1px solid rgba(255,255,255,.14);
+    border-radius:999px; padding:3px 7px;
   }
   /* The blurb and the Play button are both cut on phones. Nobody reads two lines of
      prose about thirteen games while deciding which to tap — the art and the name do
@@ -332,8 +342,9 @@
             <circle cx="-8" cy="-19" r="2.4" fill="#fff3c4"/><circle cx="8" cy="-19" r="2.4" fill="#fff3c4"/>
           </g>
         </svg>
+        <span class="tag">Racing</span>
       </span>
-      <span class="top"><h2>Drift</h2><span class="tag">Racing</span></span>
+      <span class="top"><h2>Drift</h2></span>
       <p>Endless drifting from behind the wheel. No handbrake — just throttle, brake and a grip budget. Chain slides to claw charge back, thread the oncoming traffic, and run down the zombies on the verge for bounty money.</p>
       <span class="foot"><span class="meta">Solo &middot; One-thumb touch or keyboard</span><span class="play">Play now <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -381,8 +392,9 @@
                 <circle cx="204" cy="65" r="4.5"/><circle cx="220" cy="65" r="4.5"/><circle cx="236" cy="65" r="4.5"/>
               </g>
             </svg>
+            <span class="tag">Duo quiz</span>
           </span>
-          <span class="top"><h2>Sync</h2><span class="tag">Duo quiz</span></span>
+          <span class="top"><h2>Sync</h2></span>
           <p>All ten questions on one page — your answer and your guess for them on every one. Then one page reveals who really knows whom.</p>
           <span class="foot"><span class="meta">2 players &middot; One phone</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
         </a>
@@ -422,8 +434,9 @@
                 <text x="248" y="40">guarded</text><text x="256" y="66">dreamy</text><text x="250" y="92">loyal</text>
               </g>
             </svg>
+            <span class="tag">Traits</span>
           </span>
-          <span class="top"><h2>Windows</h2><span class="tag">Traits</span></span>
+          <span class="top"><h2>Windows</h2></span>
           <p>Pick six words for yourself and six for them. One page shows how clearly you see each other — and your blind spots.</p>
           <span class="foot"><span class="meta">2 players &middot; One phone</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
         </a>
@@ -463,8 +476,9 @@
                 <line x1="284" y1="26" x2="294" y2="16"/><line x1="292" y1="34" x2="304" y2="30"/><line x1="276" y1="20" x2="280" y2="8"/>
               </g>
             </svg>
+            <span class="tag">Values</span>
           </span>
-          <span class="top"><h2>The Auction</h2><span class="tag">Values</span></span>
+          <span class="top"><h2>The Auction</h2></span>
           <p>100 coins, ten things people want from life — and you can't fund them all. See where your maps line up.</p>
           <span class="foot"><span class="meta">2 players &middot; One phone</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
         </a>
@@ -498,8 +512,9 @@
                 <circle cx="246" cy="58" r="2"/><circle cx="286" cy="40" r="2.5"/><circle cx="292" cy="28" r="2"/>
               </g>
             </svg>
+            <span class="tag">Deep talk</span>
           </span>
-          <span class="top"><h2>Fathom</h2><span class="tag">Deep talk</span></span>
+          <span class="top"><h2>Fathom</h2></span>
           <p>A guided dive through three depths of questions, answered out loud — then measure how much closer you surfaced.</p>
           <span class="foot"><span class="meta">2 players &middot; One phone</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
         </a>
@@ -532,8 +547,9 @@
                 <text x="252" y="29" font-size="14" fill="#101f3a">5</text>
               </g>
             </svg>
+            <span class="tag">Trust</span>
           </span>
-          <span class="top"><h2>Split</h2><span class="tag">Trust</span></span>
+          <span class="top"><h2>Split</h2></span>
           <p>Share or take, ten hidden rounds. The score says who won — the pattern says who you both are.</p>
           <span class="foot"><span class="meta">2 players &middot; One phone</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
         </a>
@@ -549,7 +565,7 @@
       <div class="rail-row">
 
     <a class="card" href="valence/index.html" data-game="valence" data-cat="study">
-      <span class="badge">New &middot; Daily</span>
+      <span class="badge">Daily</span>
       <span class="thumb">
         <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Nine periodic-table tiles showing element symbols">
           <defs>
@@ -558,7 +574,11 @@
             </linearGradient>
           </defs>
           <rect width="320" height="120" fill="url(#va-bg)"/>
-          <g font-family="ui-sans-serif,system-ui,sans-serif" font-weight="700" text-anchor="middle">
+          <!-- Shifted clear of the top-left corner and scaled down to fit: that's where
+               the "Daily" badge sits (an HTML element overlaid on the thumb, painted after
+               it), and at the tiles' original size and position the badge hid the entire
+               top row (H, Na, O) rather than just grazing a corner. -->
+          <g font-family="ui-sans-serif,system-ui,sans-serif" font-weight="700" text-anchor="middle" transform="translate(0,48) scale(0.615)">
             <g fill="#1d5674">
               <rect x="24" y="14" width="30" height="30" rx="5"/><rect x="60" y="14" width="30" height="30" rx="5"/><rect x="96" y="14" width="30" height="30" rx="5"/>
               <rect x="24" y="50" width="30" height="30" rx="5"/><rect x="60" y="50" width="30" height="30" rx="5"/><rect x="96" y="50" width="30" height="30" rx="5"/>
@@ -586,14 +606,15 @@
             <circle cx="268" cy="60" r="4"/><circle cx="199" cy="21" r="4"/><circle cx="199" cy="99" r="4"/>
           </g>
         </svg>
+        <span class="tag">Chemistry</span>
       </span>
-      <span class="top"><h2>Valence</h2><span class="tag">Chemistry</span></span>
+      <span class="top"><h2>Valence</h2></span>
       <p>Nine cells, and every one wants an element that fits both its row and its column. Answer with the name or the symbol &mdash; and whatever you score, the reveal shows every element that would have worked.</p>
       <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
 
     <a class="card" href="quanta/index.html" data-game="quanta" data-cat="study">
-      <span class="badge">New &middot; Daily</span>
+      <span class="badge">Daily</span>
       <span class="thumb">
         <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A projectile arc with velocity vectors over a faint grid">
           <defs>
@@ -623,14 +644,15 @@
             <rect x="250" y="40" width="20" height="20" rx="4"/><rect x="274" y="40" width="20" height="20" rx="4"/>
           </g>
         </svg>
+        <span class="tag">Physics</span>
       </span>
-      <span class="top"><h2>Quanta</h2><span class="tag">Physics</span></span>
+      <span class="top"><h2>Quanta</h2></span>
       <p>Vector or scalar, base unit or derived, which branch it belongs to &mdash; nine cells of physical quantities, and a reveal that gives you the SI unit for every answer you missed.</p>
       <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
 
     <a class="card" href="radian/index.html" data-game="radian" data-cat="study">
-      <span class="badge">New &middot; Daily</span>
+      <span class="badge">Daily</span>
       <span class="thumb">
         <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A unit circle with a swept angle beside a sine wave">
           <defs>
@@ -658,14 +680,15 @@
             <rect x="290" y="82" width="18" height="18" rx="4"/>
           </g>
         </svg>
+        <span class="tag">Trigonometry</span>
       </span>
-      <span class="top"><h2>Radian</h2><span class="tag">Trigonometry</span></span>
+      <span class="top"><h2>Radian</h2></span>
       <p>Quadrants, signs, reference angles and exact values. Answer in degrees or radians &mdash; 30, 30&deg; and &pi;/6 are all the same angle, and the reveal shows every one in both.</p>
       <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
 
     <a class="card" href="isomer/index.html" data-game="isomer" data-cat="study">
-      <span class="badge">New &middot; Daily</span>
+      <span class="badge">Daily</span>
       <span class="thumb">
         <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A carbon chain of linked spheres over a warm gradient">
           <defs>
@@ -682,14 +705,15 @@
             <circle cx="80" cy="40" r="9"/><circle cx="180" cy="30" r="9"/><circle cx="280" cy="25" r="9"/>
           </g>
         </svg>
+        <span class="tag">Organic chemistry</span>
       </span>
-      <span class="top"><h2>Isomer</h2><span class="tag">Organic chemistry</span></span>
+      <span class="top"><h2>Isomer</h2></span>
       <p>Nine cells, and every one wants an organic compound that fits both its row and its column &mdash; alkane or acid, gas or solid, fuel or household product. The reveal shows every compound that would have worked.</p>
       <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
 
     <a class="card" href="wattage/index.html" data-game="wattage" data-cat="study">
-      <span class="badge">New &middot; Daily</span>
+      <span class="badge">Daily</span>
       <span class="thumb">
         <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A lightning bolt over a night-sky gradient">
           <defs>
@@ -705,8 +729,9 @@
           <circle cx="60" cy="34" r="16" fill="none" stroke="#ffcc33" stroke-width="3" opacity="0.8"/>
           <path d="M255 40 a20 20 0 1 1 0 40" fill="none" stroke="#e9f6ff" stroke-width="3" opacity="0.7"/>
         </svg>
+        <span class="tag">Energy sources</span>
       </span>
-      <span class="top"><h2>Wattage</h2><span class="tag">Energy sources</span></span>
+      <span class="top"><h2>Wattage</h2></span>
       <p>Nine cells, and every one wants an energy source that fits both its row and its column &mdash; renewable or not, burned or not, mined or drilled. The reveal shows every source that would have worked.</p>
       <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -744,8 +769,9 @@
           <circle cx="60" cy="100" r="6" fill="none" stroke="#b03a30" stroke-width="1.6"/>
           <circle cx="57" cy="97" r="2.6" fill="rgba(255,255,255,.8)"/>
         </svg>
+        <span class="tag">Board</span>
       </span>
-      <span class="top"><h2>Carrom</h2><span class="tag">Board</span></span>
+      <span class="top"><h2>Carrom</h2></span>
       <p>The Indian classic, flick-perfect. Pull the striker back, pocket your nine and the red queen.</p>
       <span class="foot"><span class="meta">vs AI &middot; 2-player</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -786,8 +812,9 @@
             <circle cx="193" cy="71" r="2.4"/><circle cx="229" cy="53" r="2.4"/>
           </g>
         </svg>
+        <span class="tag">Pool</span>
       </span>
-      <span class="top"><h2>Break Room</h2><span class="tag">Pool</span></span>
+      <span class="top"><h2>Break Room</h2></span>
       <p>8-ball with real physics — spin, fouls, ball-in-hand, and an AI that punishes a loose safety.</p>
       <span class="foot"><span class="meta">vs AI &middot; 2-player</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -821,8 +848,9 @@
           </g>
           <rect x="114" y="14" width="92" height="92" rx="8" fill="none" stroke="#6b76a8" stroke-width="2" opacity="0.5"/>
         </svg>
+        <span class="tag">Strategy</span>
       </span>
-      <span class="top"><h2>Ennead</h2><span class="tag">Strategy</span></span>
+      <span class="top"><h2>Ennead</h2></span>
       <p>Tic-tac-toe taken seriously — 3&times;3 up to 9&times;9 gomoku, plus Ultimate's nine nested boards.</p>
       <span class="foot"><span class="meta">vs AI &middot; 2-player</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -874,15 +902,16 @@
           <path d="M92 70 Q120 56 142 52" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="5 6" stroke-linecap="round" opacity="0.85"/>
           <path d="M232 80 Q206 84 182 82" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="5 6" stroke-linecap="round" opacity="0.85"/>
         </svg>
+        <span class="tag">Educational</span>
       </span>
       <span class="badge">New</span>
-      <span class="top"><h2>Apogee</h2><span class="tag">Educational</span></span>
+      <span class="top"><h2>Apogee</h2></span>
       <p>Build a rocket from twelve real parts — every one fitted teaches what it does. Launch through max-Q and the atmosphere&rsquo;s layers, read your gravity and drag losses in the mission log, and pass the 100&nbsp;km K&aacute;rm&aacute;n line into space.</p>
       <span class="foot"><span class="meta">Solo &middot; Build, learn &amp; launch</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
 
     <a class="card" href="garage/index.html" data-game="garage" data-cat="study">
-      <span class="badge">New &middot; Educational</span>
+      <span class="badge">New</span>
       <span class="thumb">
         <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A cutaway car with an engine part being dragged toward a dashed slot">
           <defs>
@@ -909,8 +938,9 @@
           <path d="M240 46 Q 228 56 222 58" fill="none" stroke="#21e6ff" stroke-width="2" stroke-dasharray="3 4" opacity="0.8"/>
           <path d="M224 54 l-5 5 l7 1 z" fill="#21e6ff" opacity="0.8"/>
         </svg>
+        <span class="tag">Educational</span>
       </span>
-      <span class="top"><h2>Garage</h2><span class="tag">Educational</span></span>
+      <span class="top"><h2>Garage</h2></span>
       <p>Build a car from 19 real parts &mdash; chassis, carburetor, alternator, driveshaft &mdash; and learn what every one does.</p>
       <span class="foot"><span class="meta">Solo &middot; Learn &amp; quiz</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -952,8 +982,9 @@
             <g fill="#5CFF6E"><rect x="266" y="20" width="20" height="20" rx="3"/></g>
           </g>
         </svg>
+        <span class="tag">Puzzle</span>
       </span>
-      <span class="top"><h2>Chroma Blocks</h2><span class="tag">Puzzle</span></span>
+      <span class="top"><h2>Chroma Blocks</h2></span>
       <p>Neon falling blocks. Hold queue, ghost piece, combo flashes and a soundtrack it makes up as it goes.</p>
       <span class="foot"><span class="meta">Solo &middot; Touch or keyboard</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -1013,8 +1044,9 @@
             <text x="292" y="74" font-size="8" fill="#f4d35e" text-anchor="middle" font-weight="bold">100</text>
           </g>
         </svg>
+        <span class="tag">Cards</span>
       </span>
-      <span class="top"><h2>Blackjack</h2><span class="tag">Cards</span></span>
+      <span class="top"><h2>Blackjack</h2></span>
       <p>Casino blackjack on green felt — bet the chips, split, double, and take your 3:2 on a natural.</p>
       <span class="foot"><span class="meta">Solo &middot; Built for one hand</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -1073,8 +1105,9 @@
             <path d="M308 60 C 314 53, 317 54, 318 50 C 318 58, 314 64, 308 60 Z" fill="#ff9a3d"/>
           </g>
         </svg>
+        <span class="tag">Mythic</span>
       </span>
-      <span class="top"><h2>Da&#347;&#257;nana</h2><span class="tag">Mythic</span></span>
+      <span class="top"><h2>Da&#347;&#257;nana</h2></span>
       <p>A R&#257;m&#257;ya&#7751;a astra-duel. Counter R&#257;va&#7751;a's divine missiles, chant to restore your tejas, loose the Brahm&#257;stra.</p>
       <span class="foot"><span class="meta">Solo &middot; Story mode</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -1127,8 +1160,9 @@
             </g>
           </g>
         </svg>
+        <span class="tag">Football</span>
       </span>
-      <span class="top"><h2>Last 16</h2><span class="tag">Football</span></span>
+      <span class="top"><h2>Last 16</h2></span>
       <p>World Cup Round of 16. Pick a nation, control one star player, and fight through the real bracket.</p>
       <span class="foot"><span class="meta">Solo &middot; Full tournament</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -1152,8 +1186,9 @@
             <circle cx="0" cy="-20" r="7" fill="#141a24"/>
           </g>
         </svg>
+        <span class="tag">Racing</span>
       </span>
-      <span class="top"><h2>Road Rumble</h2><span class="tag">Racing</span></span>
+      <span class="top"><h2>Road Rumble</h2></span>
       <p>A Road Rash-style brawler. Race five rivals down a pseudo-3D highway and punch your way past them.</p>
       <span class="foot"><span class="meta">Solo &middot; Touch or keyboard</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -1183,8 +1218,9 @@
           <circle cx="62" cy="86" r="8" fill="#ffffff" stroke="#c7d8bd" stroke-width="1"/>
           <g fill="#d8e4d0"><circle cx="60" cy="84" r="1"/><circle cx="64" cy="84" r="1"/><circle cx="62" cy="87" r="1"/></g>
         </svg>
+        <span class="tag">Golf</span>
       </span>
-      <span class="top"><h2>Fairway Four</h2><span class="tag">Golf</span></span>
+      <span class="top"><h2>Fairway Four</h2></span>
       <p>Four holes of full-3D golf. Three-click swing, wind and shape, then read the break on a sloped green.</p>
       <span class="foot"><span class="meta">Solo &middot; Best on a laptop</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
