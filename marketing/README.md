@@ -24,6 +24,9 @@ node marketing/cli.js scout
 # 5. Record a real gameplay clip and post it as a video tweet
 node marketing/cli.js promote-video --game drift --live
 
+# 5b. Film the next Play-together game (Sync, Windows, …) and post the video
+node marketing/cli.js promote-together --live
+
 # 6. Launch the local interactive web dashboard
 node marketing/cli.js dashboard
 # 👉 Open in browser: http://localhost:3030
@@ -134,7 +137,33 @@ To enable automated posting across different platforms, create a `.env` file in 
 | `node marketing/cli.js publish <id> [--live]` | Publishes a post (dry-run by default; `--live` for real API call) |
 | `node marketing/cli.js process-due [--live]` | Publishes all approved items due today or earlier |
 | `node marketing/cli.js run-autonomous [--daemon]` | Runs one full marketing loop (or runs continuously as background daemon) |
+| `node marketing/cli.js video --game <id>` | Records a gameplay clip; Play-together games are filmed from their storyboard (1080×1920 + square) |
+| `node marketing/cli.js promote-together [--game <id>] [--live]` | Films the next Play-together game in rotation and posts the video to X |
+| `node marketing/cli.js metrics` | Pulls impressions / link clicks for the tweets the agent posted live |
+| `node marketing/cli.js ads-preflight` | Readiness checklist for going live with X Ads |
+| `node marketing/cli.js report` | Prints the latest cycle report (the body of the auto-update PR) |
 | `node marketing/cli.js dashboard` | Starts the interactive web dashboard on `http://localhost:3030` |
+
+---
+
+## 🎬 Play-together videos
+
+The five Play-together games (Sync, Windows, Split, The Auction, Fathom) can't be filmed by mashing arrow keys — they need two names typed, a pack chosen, cells tapped and a phone handed over. So each gets a **storyboard** in `src/studio/togetherDirector.js`: a real session driven through the real UI at a human pace, at a phone-sized viewport, with captions laid over the top and a branded end card. The captions tell the story the ad needs — *what the two people find out about each other* — never the one-phone mechanic.
+
+- Output: a 1080×1920 vertical master and a 1080×1080 square variant (vertical frame over a blurred copy of itself) in `artifacts/videos/` — git-ignored, uploaded as a workflow-run artifact.
+- Copy: Gemini writes the post from the same relationship-first brief (`togetherVideoPost`); without a key, each game has a hand-written fallback in `FALLBACK_COPY`. At most two hashtags, after the link.
+- Cadence: the autonomous cycle films the next game in rotation every `TOGETHER_VIDEO_CADENCE_DAYS` (default 2); the workflow also has a Tue/Fri 15:00 UTC slot dedicated to it. State: `data/together-state.json`.
+- Storyboards exist for **sync** and **windows**; add one per game to `STORYBOARDS` (a `run(api, [nameA, nameB])` function using `api.tap / fill / tapWord / cap / hold / scrollBy / end`).
+
+```bash
+node marketing/cli.js video --game sync              # film only
+node marketing/cli.js promote-together               # film next in rotation, write copy, draft the post
+node marketing/cli.js promote-together --game windows --live
+```
+
+## 📈 Organic feedback loop
+
+`metrics` (also step 7 of every cycle) pulls `public_metrics` + `non_public_metrics` for every tweet the agent posted live — queue posts, together videos, ad tweets — into `data/post-metrics.json`, and summarizes them per game (impressions, link clicks, CTR, engagement). The ads planner reads that summary alongside the paid learnings, so the agent learns which games and angles earn clicks **before** a rupee is spent, and while the Ads API approval is still pending.
 
 ---
 
@@ -154,14 +183,17 @@ Each daily cycle (`ads-cycle`, also part of `run-autonomous`) does:
 
 1. **Review** — pulls impressions / link clicks / spend for every active campaign from the Ads analytics API and pauses anything that failed its trial.
 2. **Learn** — folds results into `data/ads-learnings.json` (per-game aggregates plus Gemini-written lessons).
-3. **Plan & launch** — asks Gemini for the next brief (game, angle, hashtag-free ad copy, age bucket, interests, keywords) given those learnings and what's already running, then posts the ad tweet and creates campaign → ad group → targeting → promoted post. Launch is skipped when the active budget already fills the cap.
+3. **Plan & launch** — asks Gemini for the next brief (game, angle, hashtag-free ad copy, age bucket, interests, keywords) given those learnings, the organic metrics, and what's already running, then posts the ad tweet and creates campaign → ad group → targeting → promoted post. A Play-together brief is launched **with its storyboard video** as the creative. Launch is skipped when the active budget already fills the cap, and a live launch checks API access *before* posting the ad tweet so a failed launch never leaves an orphan tweet.
 
 ```bash
+node marketing/cli.js ads-preflight                    # keys, approval, funding, currency, storyboards, headroom
 node marketing/cli.js ads-status                       # policy, access check, active/paused campaigns
 node marketing/cli.js ads-launch --game sync --daily 8 # one campaign (dry-run; add --live to spend)
 node marketing/cli.js ads-review --live                # pull analytics and pause trial failures
 node marketing/cli.js ads-cycle --live                 # review → learn → plan+launch
 ```
+
+While the approval is pending, every cycle still rehearses a launch (one simulated record per game per day, last ten kept) so the brief-writing and video pipeline are exercised daily.
 
 **Setup**: set `X_ADS_ACCOUNT_ID` (from the Ads Manager URL) plus the currency/rate variables in `.env` (see `.env.example` §9). The developer app must be approved for the Ads API — request it at https://docs.x.com/forms/ads-api-access, then regenerate the access token; until then `ads-status` reports `UNAUTHORIZED_CLIENT_APPLICATION` and cycles run as dry-runs.
 

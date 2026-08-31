@@ -6,6 +6,9 @@ import { SYSTEM_PROMPTS, PROMPT_TEMPLATES } from '../ai/prompts.js';
 import { TwitterPublisher } from '../publishers/twitterPublisher.js';
 import { XAdsClient, AdsApiAccessError } from './xAdsClient.js';
 import { ADS_POLICY, evaluateLaunchBudget, judgeCampaign, usdToLocalMicro, localToUsd } from './adsPolicy.js';
+import { XMetrics } from '../insights/xMetrics.js';
+import { VideoStudio } from '../studio/videoStudio.js';
+import { TogetherDirector } from '../studio/togetherDirector.js';
 
 const DEFAULT_COUNTRIES = ['US', 'GB', 'CA', 'AU', 'IN'];
 const AGE_BUCKETS = new Set(['AGE_18_PLUS', 'AGE_21_TO_34', 'AGE_25_TO_34', 'AGE_35_TO_49', 'AGE_13_TO_24', 'AGE_50_PLUS']);
@@ -126,6 +129,7 @@ export class CampaignManager {
       dailyBudgetUsd: dailyUsd,
       totalBudgetUsd: totalUsd,
       currency: config.ads.currency,
+      videoPath: brief.videoPath || null,
       launchedAt: now.toISOString(),
       endsAt: endTime.toISOString(),
       status: dryRun ? 'simulated' : 'active',
@@ -133,15 +137,27 @@ export class CampaignManager {
       history: []
     };
 
-    console.log(`\n💸 ${dryRun ? '[DRY-RUN] Would launch' : 'Launching'} "${name}" at $${dailyUsd}/day (cap $${totalUsd}) — ${budget.reason}`);
+    console.log(`\n💸 ${dryRun ? '[DRY-RUN] Would launch' : 'Launching'} "${name}" at $${dailyUsd}/day (cap $${totalUsd})${brief.videoPath ? ' with video creative' : ''} — ${budget.reason}`);
 
     if (dryRun) {
       record.tweetId = brief.tweetId || `sim-tweet-${Date.now()}`;
       record.campaignId = `sim-campaign-${Date.now()}`;
-      ledger.push(record);
-      this.saveLedger(ledger);
+      /* A rehearsal, not a campaign: keep one per game per day and only the last
+         ten overall, so the ledger stays readable while the Ads API approval is
+         pending and every daily cycle rehearses a launch. */
+      const today = now.toISOString().slice(0, 10);
+      let kept = ledger.filter(c => !(c.status === 'simulated' && c.gameId === record.gameId && String(c.launchedAt).slice(0, 10) === today));
+      const sims = kept.filter(c => c.status === 'simulated');
+      if (sims.length >= 10) { const drop = new Set(sims.slice(0, sims.length - 9)); kept = kept.filter(c => !drop.has(c)); }
+      kept.push(record);
+      this.saveLedger(kept);
       return { launched: true, dryRun: true, campaign: record };
     }
+
+    // 0. Never post the ad tweet if the Ads API can't take the campaign — an
+    //    orphaned tweet on the timeline is the worst outcome of a failed launch.
+    const probe = await this.ads.probeAccess();
+    if (!probe.authorized) throw new AdsApiAccessError(probe.error);
 
     // 1. The creative: post the ad tweet (or reuse one).
     let tweetId = brief.tweetId;
@@ -290,7 +306,14 @@ export class CampaignManager {
 
   // ---------- plan ----------
 
-  async planNext({ dryRun = true } = {}) {
+  /**
+   * @param {Object} [opts]
+   * @param {boolean} [opts.dryRun]
+   * @param {boolean|'auto'} [opts.video]  render the storyboard video for a
+   *   Play-together brief: 'auto' = only for a live launch (rendering takes
+   *   ~40 s and needs Chromium), true = always, false = never
+   */
+  async planNext({ dryRun = true, video = 'auto' } = {}) {
     const ledger = this.loadLedger();
     const active = this.activeCampaigns(ledger);
     if (active.length >= config.ads.maxActiveCampaigns) {
@@ -299,13 +322,20 @@ export class CampaignManager {
     const budget = evaluateLaunchBudget(ADS_POLICY.maxDailyPerCampaignUsd, active);
     if (!budget.ok) return { launched: false, reason: budget.reason };
 
-    const catalog = Object.values(GAME_CATALOG).filter(g => g.id !== 'hub').map(g => ({ id: g.id, name: g.name, tagline: g.tagline, url: g.url }));
+    // Going live? Check the API will take a campaign before filming or posting anything.
+    if (!dryRun) {
+      const probe = await this.ads.probeAccess();
+      if (!probe.authorized) throw new AdsApiAccessError(probe.error);
+    }
+
+    const catalog = Object.values(GAME_CATALOG).filter(g => g.id !== 'hub').map(g => ({ id: g.id, name: g.name, tagline: g.tagline, url: g.url, category: g.category || 'solo' }));
     const learnings = this.loadLearnings();
+    const organic = new XMetrics().summarizeByGame();   // what our own posts earned, per game
 
     let brief;
     if (this.ai.isConfigured) {
       brief = await this.ai.generate({
-        prompt: PROMPT_TEMPLATES.adsCampaignBrief({ catalog, learnings, activeCampaigns: active, dailyBudgetUsd: budget.dailyUsd }),
+        prompt: PROMPT_TEMPLATES.adsCampaignBrief({ catalog, learnings, organic, activeCampaigns: active, dailyBudgetUsd: budget.dailyUsd }),
         systemInstruction: SYSTEM_PROMPTS.marketingStrategist,
         jsonMode: true
       });
@@ -313,8 +343,50 @@ export class CampaignManager {
     brief = this.sanitizeBrief(brief, catalog, active);
     brief.dailyBudgetUsd = budget.dailyUsd;
 
+    /* A Play-together game is promoted with its storyboard film — a video
+       creative in the promoted post earns far more than a text card, and it
+       is the same film the organic cadence posts. A render failure falls back
+       to a text ad rather than blocking the launch. */
+    const wantsVideo = video === true || (video === 'auto' && !dryRun);
+    if (wantsVideo && TogetherDirector.hasStoryboard(brief.gameId)) {
+      try {
+        const out = await new VideoStudio().generateTogetherVideo(brief.gameId);
+        brief.videoPath = out.mp4Path;
+        console.log(`🎬 Video creative: ${out.mp4Path} (${out.seconds}s)`);
+      } catch (err) {
+        console.warn(`  ⚠️ video creative skipped, launching a text ad instead: ${err.message}`);
+      }
+    }
+
     console.log(`🧭 Next brief: ${brief.gameId} / ${brief.angle} — ${brief.rationale || 'deterministic fallback'}`);
     return this.launch(brief, { dryRun });
+  }
+
+  /**
+   * Readiness checklist for going live — what is in place and what is still
+   * missing, in one call, without launching or posting anything.
+   */
+  async preflight() {
+    const checks = [];
+    const add = (label, ok, detail = '') => checks.push({ label, ok: Boolean(ok), detail });
+    add('Gemini key', this.ai.isConfigured, this.ai.isConfigured ? 'briefs written by Gemini' : 'briefs use the deterministic fallback');
+    add('X posting keys', this.twitter.isConfigured, this.twitter.isConfigured ? 'OAuth 1.0a user context' : 'need TWITTER_API_KEY/SECRET + ACCESS_TOKEN/SECRET');
+    add('Ads account id', Boolean(config.ads.accountId), config.ads.accountId || 'set X_ADS_ACCOUNT_ID');
+    add('Currency rate', config.ads.currency === 'USD' || config.ads.usdToLocalRate !== 1, `${config.ads.currency} @ ${config.ads.usdToLocalRate} per USD`);
+    let access = { authorized: false, error: 'Ads client not configured' };
+    if (this.ads.isConfigured) {
+      try { access = await this.ads.probeAccess(); } catch (err) { access = { authorized: false, error: err.message }; }
+    }
+    add('Ads API approval', access.authorized, access.authorized ? `${access.accounts.length} account(s) visible` : access.error);
+    if (access.authorized) {
+      try { const f = await this.ads.resolveFundingInstrument(); add('Funding instrument', true, f.id); }
+      catch (err) { add('Funding instrument', false, err.message); }
+    }
+    const boards = TogetherDirector.storyboardGames();
+    add('Video storyboards', boards.length > 0, boards.join(', '));
+    const st = this.status();
+    add('Budget headroom', st.committedDailyUsd < ADS_POLICY.maxTotalDailyUsd, `$${st.committedDailyUsd}/day committed of $${ADS_POLICY.maxTotalDailyUsd}/day`);
+    return { ready: checks.every(c => c.ok), checks, status: st };
   }
 
   /** Makes an AI brief safe to launch, or builds a deterministic one without AI. */
@@ -342,21 +414,22 @@ export class CampaignManager {
 
   // ---------- daily cycle ----------
 
-  async runCycle({ dryRun = true } = {}) {
+  async runCycle({ dryRun = true, video = 'auto' } = {}) {
     console.log(`\n💸 ADS CYCLE (${dryRun ? 'DRY-RUN' : 'LIVE'}) — policy: ≤ $${ADS_POLICY.maxDailyPerCampaignUsd}/day per campaign, ≤ $${ADS_POLICY.maxTotalDailyUsd}/day total, ${ADS_POLICY.trialDays}-day trial`);
-    const summary = { reviewed: [], learned: null, planned: null };
+    const summary = { reviewed: [], learned: null, planned: null, blocked: null, status: null };
     try {
       summary.reviewed = await this.review({ dryRun });
       summary.learned = await this.learn();
-      summary.planned = await this.planNext({ dryRun });
+      summary.planned = await this.planNext({ dryRun, video });
     } catch (err) {
       if (err instanceof AdsApiAccessError) {
         console.warn(`⚠️ ${err.message}`);
         summary.blocked = err.message;
-        return summary;
+      } else {
+        throw err;
       }
-      throw err;
     }
+    summary.status = this.status();
     return summary;
   }
 }

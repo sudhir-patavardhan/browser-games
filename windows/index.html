@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Windows — Kreeda</title>
-<meta name="description" content="A playable Johari Window for two people on one phone. Pick six words for yourself, six for them — then watch the panes fill in: what you both see, what's hidden, and the blind spots.">
+<meta name="description" content="A playable Johari Window for two people on one phone. Pick six words for yourself, six for them — then one page shows how clearly you see each other, how warm each of you paints the other, and both windows: what you both see, what's hidden, and the blind spots.">
 <link rel="canonical" href="https://kreeda.games/windows/">
 <meta name="theme-color" content="#171614">
 
@@ -12,13 +12,13 @@
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/windows/">
 <meta property="og:title" content="Windows — Kreeda">
-<meta property="og:description" content="A playable Johari Window for two people on one phone. Pick six words for yourself, six for them — then watch the panes fill in.">
+<meta property="og:description" content="A playable Johari Window for two people on one phone. Pick six words for yourself, six for them — then one page shows how clearly you see each other.">
 <meta property="og:image" content="https://kreeda.games/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Windows — Kreeda">
-<meta name="twitter:description" content="A playable Johari Window for two people on one phone. Pick six words for yourself, six for them — then watch the panes fill in.">
+<meta name="twitter:description" content="A playable Johari Window for two people on one phone. Pick six words for yourself, six for them — then one page shows how clearly you see each other.">
 <meta name="twitter:image" content="https://kreeda.games/og.png">
 
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
@@ -26,21 +26,23 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Windows","description":"A playable Johari Window for two people on one phone. Pick six words for yourself, six for them — then watch the panes fill in: what you both see, what's hidden, and the blind spots.","url":"https://kreeda.games/windows/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Windows","description":"A playable Johari Window for two people on one phone. Pick six words for yourself, six for them — then one page shows how clearly you see each other, and both windows: what you both see, what's hidden, and the blind spots.","url":"https://kreeda.games/windows/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <style>
 /* ============================ tokens ============================
    A warm room after dark, one window still lit. Charcoal ground; the two panes of light are
    teal (what's seen) and amber (what's offered). This game commits to a single dark look —
    the hand-off ritual depends on the screen reading as "private", and a bright theme would
-   fight that — so the body is painted explicitly and there is no light variant. */
+   fight that — so the body is painted explicitly and there is no light variant.
+   Player 1 is teal and player 2 amber everywhere; the Big Five card reuses those two for
+   "by yourself" (filled) and "by the other" (ring). */
 :root{
   --ground:#171614;   --ground-2:#1f1d1a;  --panel:#242220;   --panel-2:#2c2926;
   --ink:#f0ece4;      --ink-dim:#a89f92;   --rule:rgba(240,236,228,.14);
   --teal:#2bb3a3;     --teal-deep:#1b7a70; --teal-ink:#0b2622;
   --amber:#ffb020;    --amber-deep:#b57708;--amber-ink:#2a1e04;
-  --hidden-c:#8f86c9; --unknown-c:#565049;
-  --danger:#e07856;
+  --hidden-c:#8f86c9; --hidden-ink:#17142c; --unknown-c:#565049;
+  --danger:#e07856;   --gold:#ffd166;
   --shade:rgba(10,9,8,.72);
 }
 
@@ -72,10 +74,12 @@ button:focus-visible{ outline:3px solid var(--amber); outline-offset:2px; }
 .brand .t{ font-size:20px; font-weight:900; letter-spacing:1px; }
 .brand .t small{ display:block; font-size:10px; font-weight:700; letter-spacing:2.6px;
   text-transform:uppercase; color:var(--ink-dim); margin-top:1px; }
-.homebtn{ background:var(--panel); color:var(--ink-dim); border:1px solid var(--rule);
+.topbtns{ display:flex; gap:8px; }
+.homebtn, .soundbtn{ background:var(--panel); color:var(--ink-dim); border:1px solid var(--rule);
   border-radius:12px; min-width:44px; min-height:44px; padding:8px 12px; font-size:14px;
   font-weight:700; cursor:pointer; }
-.homebtn:active{ transform:translateY(1px); }
+.soundbtn{ font-size:17px; line-height:1; padding:8px 10px; }
+.homebtn:active, .soundbtn:active{ transform:translateY(1px); }
 
 .screen{ animation:screenIn .28s ease; }
 @keyframes screenIn{ from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:none;} }
@@ -93,20 +97,20 @@ button:focus-visible{ outline:3px solid var(--amber); outline-offset:2px; }
 .btnrow .btn{ flex:1; }
 
 /* ============================ title ============================ */
-.wordmark{ text-align:center; margin:18px 0 6px; }
+.wordmark{ text-align:center; margin:14px 0 6px; }
 .wordmark svg{ width:96px; height:96px; }
 .wordmark h1{ margin:8px 0 0; font-size:40px; font-weight:900; letter-spacing:2px; }
 .wordmark h1 .w1{ color:var(--teal); } .wordmark h1 .w2{ color:var(--amber); }
-.pitch{ text-align:center; color:var(--ink-dim); font-size:15px; margin:6px 0 20px; line-height:1.45; }
+.pitch{ text-align:center; color:var(--ink-dim); font-size:15px; margin:6px 0 18px; line-height:1.45; }
 
 .namecard{ background:var(--panel); border:1px solid var(--rule); border-radius:18px;
   padding:16px; margin-bottom:14px; }
+.namecard .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
 .namecard label{ display:block; font-size:11px; font-weight:800; letter-spacing:1.4px;
   text-transform:uppercase; color:var(--ink-dim); margin:0 0 5px; }
-.namecard .field + label{ margin-top:12px; }
-.field{ display:flex; align-items:center; gap:8px; }
+.field{ display:flex; align-items:center; gap:8px; min-width:0; }
 .field .dot{ width:12px; height:12px; border-radius:4px; flex:none; }
-.field input{ flex:1; background:var(--panel-2); color:var(--ink); border:1px solid var(--rule);
+.field input{ flex:1; min-width:0; background:var(--panel-2); color:var(--ink); border:1px solid var(--rule);
   border-radius:12px; padding:12px 12px; font-size:16px; font-weight:700; min-height:46px; width:100%; }
 .field input:focus-visible{ outline:3px solid var(--amber); outline-offset:1px; }
 
@@ -122,6 +126,7 @@ details.how li b{ color:var(--ink); }
 
 .finefoot{ text-align:center; color:var(--ink-dim); font-size:11.5px; line-height:1.6;
   margin-top:18px; opacity:.75; }
+.finefoot a{ color:var(--ink-dim); }
 
 /* ============================ hand-off ============================ */
 .handoff{ position:fixed; inset:0; z-index:40; display:flex; flex-direction:column;
@@ -132,12 +137,17 @@ details.how li b{ color:var(--ink); }
 .handoff .pass-ico{ width:74px; height:74px; margin-bottom:16px; }
 .handoff .to{ font-size:13px; font-weight:800; letter-spacing:2.2px; text-transform:uppercase;
   color:var(--ink-dim); margin-bottom:6px; }
-.handoff .who{ font-size:36px; font-weight:900; margin-bottom:8px; overflow-wrap:anywhere; }
+.handoff .who{ font-size:36px; font-weight:900; margin-bottom:8px; overflow-wrap:anywhere; color:var(--amber); }
 .handoff .why{ color:var(--ink-dim); font-size:15px; margin-bottom:26px; max-width:300px; line-height:1.5; }
 .handoff .btn{ max-width:320px; }
 .handoff .tilt{ margin-top:20px; color:var(--ink-dim); font-size:12.5px; opacity:.8; }
 
 /* ============================ picking ============================ */
+.turn{ display:flex; align-items:center; gap:10px; background:var(--panel-2); border:1px solid var(--rule);
+  border-radius:13px; padding:10px 12px; margin-bottom:12px; font-size:13px; line-height:1.4; }
+.turn .eye{ font-size:20px; flex:none; }
+.turn b.a{ color:var(--teal); } .turn b.b{ color:var(--amber); }
+
 .pickhead{ background:var(--panel); border:1px solid var(--rule); border-radius:18px;
   padding:14px 16px; margin-bottom:12px; }
 .pickhead .pass-tag{ display:inline-block; font-size:10.5px; font-weight:900; letter-spacing:1.6px;
@@ -147,106 +157,187 @@ details.how li b{ color:var(--ink); }
 .pickhead h2{ margin:0 0 3px; font-size:20px; font-weight:900; line-height:1.25; overflow-wrap:anywhere; }
 .pickhead p{ margin:0; color:var(--ink-dim); font-size:13.5px; line-height:1.5; }
 
-.counter{ position:sticky; top:max(8px, env(safe-area-inset-top)); z-index:5;
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
-  background:var(--panel-2); border:1px solid var(--rule); border-radius:999px;
-  padding:8px 14px; margin-bottom:12px; box-shadow:0 6px 18px rgba(0,0,0,.35); }
-.counter .n{ font-size:15px; font-weight:900; }
-.counter .n b{ font-size:19px; }
-.counter .pips{ display:flex; gap:5px; }
-.counter .pip{ width:11px; height:11px; border-radius:4px; background:var(--panel);
+/* the tray: a sticky count, six pips, and the words picked so far as chips — tap one to drop it */
+.tray{ position:sticky; top:max(8px, env(safe-area-inset-top)); z-index:5;
+  background:var(--panel-2); border:1px solid var(--rule); border-radius:18px;
+  padding:9px 12px 9px; margin-bottom:12px; box-shadow:0 6px 18px rgba(0,0,0,.35); }
+.tray .row1{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.tray .n{ font-size:15px; font-weight:900; }
+.tray .n b{ font-size:19px; }
+.tray .pips{ display:flex; gap:5px; }
+.tray .pip{ width:11px; height:11px; border-radius:4px; background:var(--panel);
   border:1px solid var(--rule); transition:background .18s ease, border-color .18s ease; }
-.counter .pip.on{ border-color:transparent; }
-.counter.selfmode .pip.on{ background:var(--teal); }
-.counter.othermode .pip.on{ background:var(--amber); }
+.tray .pip.on{ border-color:transparent; }
+.selfmode .pip.on{ background:var(--teal); }
+.othermode .pip.on{ background:var(--amber); }
+.tray .chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.tray .chips:empty{ display:none; }
+.tchip{ border:0; border-radius:999px; padding:6px 10px; font-size:12.5px; font-weight:800; cursor:pointer;
+  display:inline-flex; align-items:center; gap:6px; animation:chipIn .25s ease; }
+.tchip i{ font-style:normal; opacity:.65; font-size:12px; }
+.selfmode .tchip{ background:var(--teal); color:var(--teal-ink); }
+.othermode .tchip{ background:var(--amber); color:var(--amber-ink); }
 
-.wordgrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:16px; }
-@media (min-width:420px){ .wordgrid{ grid-template-columns:repeat(3,1fr); } }
-.word{ background:var(--panel); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
-  min-height:46px; padding:10px 8px; font-size:14.5px; font-weight:700; cursor:pointer;
-  transition:background .15s ease, border-color .15s ease, transform .1s ease; }
-.word:active{ transform:scale(.97); }
+/* words flow as pills rather than sit in a rigid grid: short words share a row, long ones get
+   the room they need, and the whole bank fits in fewer screens of scroll */
+.wordcloud{ display:flex; flex-wrap:wrap; gap:8px; }
+.word{ flex:1 0 auto; background:var(--panel); color:var(--ink); border:1px solid var(--rule); border-radius:999px;
+  min-height:46px; padding:10px 15px; font-size:14.5px; font-weight:700; cursor:pointer;
+  transition:background .15s ease, border-color .15s ease, transform .1s ease, opacity .15s ease; }
+.word:active{ transform:scale(.96); }
 .word[aria-pressed="true"]{ border-color:transparent; }
 .selfmode .word[aria-pressed="true"]{ background:var(--teal); color:var(--teal-ink); }
 .othermode .word[aria-pressed="true"]{ background:var(--amber); color:var(--amber-ink); }
 .word.maxed{ opacity:.4; }
+#scrPick{ padding-bottom:84px; }   /* clears the fixed confirm bar */
+@media (prefers-reduced-motion:no-preference){
+  .word.pop{ animation:pop .28s cubic-bezier(.2,.8,.3,1); }
+  @keyframes pop{ 0%{ transform:scale(.92);} 55%{ transform:scale(1.08);} 100%{ transform:none;} }
+  /* pass 1 swooshes off to the left; pass 2 slides in from the right */
+  .screen.arrive{ animation:arrive .38s cubic-bezier(.2,.8,.3,1); }
+  @keyframes arrive{ from{ opacity:0; transform:translateX(56px);} }
+  .screen.leaving{ animation:leave .3s cubic-bezier(.5,0,.85,.4) forwards; }
+  @keyframes leave{ to{ opacity:0; transform:translateX(-64px) scale(.97);} }
+}
 
-/* ============================ reveal ============================ */
-.revealhead{ text-align:center; margin:8px 0 14px; }
-.revealhead .step{ font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase;
-  color:var(--ink-dim); margin-bottom:4px; }
-.revealhead h2{ margin:0; font-size:26px; font-weight:900; overflow-wrap:anywhere; }
-.revealhead p{ margin:6px 0 0; color:var(--ink-dim); font-size:13.5px; }
+/* the confirm lives in a fixed bar (outside the animated section, since a transform would
+   re-anchor it), so finishing a pass never means hunting below 40 words */
+.pickbar{ position:fixed; left:0; right:0; bottom:0; z-index:6; pointer-events:none;
+  padding:20px 16px calc(12px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg, rgba(23,22,20,0) 0%, var(--ground) 45%); }
+.pickbar .btn{ max-width:560px; margin:0 auto; pointer-events:auto; }
 
-.pane{ border-radius:18px; padding:16px; margin-bottom:12px; border:1px solid var(--rule);
-  background:var(--panel); animation:paneIn .45s cubic-bezier(.2,.8,.3,1); }
-@keyframes paneIn{ from{ opacity:0; transform:translateY(14px) scale(.97);} to{ opacity:1; transform:none;} }
-.pane .pane-top{ display:flex; align-items:baseline; gap:8px; margin-bottom:4px; }
-.pane h3{ margin:0; font-size:17px; font-weight:900; }
-.pane .cnt{ margin-left:auto; font-size:13px; font-weight:900; color:var(--ink-dim); }
-.pane .sub{ margin:0 0 10px; color:var(--ink-dim); font-size:13px; line-height:1.5; }
-.pane .chips{ display:flex; flex-wrap:wrap; gap:7px; }
-.chip{ border-radius:999px; padding:7px 13px; font-size:13.5px; font-weight:800;
+/* ============================ results — one page ============================
+   Numbers first: rings for how clearly you see each other, then the temperature of the words,
+   then the two windows themselves, then three things to ask. */
+.rc-top{ text-align:center; margin:4px 0 12px; }
+.rc-top .lbl{ font-size:14px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--ink-dim); margin-bottom:3px; }
+.rc-top .names{ font-size:20px; font-weight:900; overflow-wrap:anywhere; }
+.rc-top .names .x{ color:var(--ink-dim); font-weight:700; padding:0 6px; }
+.rc-top .names .hl-a{ color:var(--teal); } .rc-top .names .hl-b{ color:var(--amber); }
+.rc-top .date{ font-size:11.5px; color:var(--ink-dim); margin-top:2px; }
+
+.rcard{ background:var(--panel); border:1px solid var(--rule); border-radius:20px; padding:14px 16px; margin-top:12px; }
+.info{ text-align:center; padding:16px 10px 16px; }
+.ring{ position:relative; display:inline-flex; flex-direction:column; align-items:center; min-width:0; }
+.ring svg{ width:92px; height:92px; transform:rotate(-90deg); }
+.ring .tr{ fill:none; stroke:var(--panel-2); stroke-width:10; }
+.ring .fl{ fill:none; stroke-width:10; stroke-linecap:round;
+  transition:stroke-dashoffset 1.2s cubic-bezier(.2,.7,.2,1); }
+.ring.ra .fl{ stroke:var(--teal); } .ring.rb .fl{ stroke:var(--amber); } .ring.rs .fl{ stroke:var(--hidden-c); }
+.ring.big .fl{ stroke:url(#ringGrad); }
+.ring .rv{ position:absolute; top:0; left:0; width:100%; height:92px; display:flex; align-items:center;
+  justify-content:center; font-weight:900; font-size:22px; line-height:1; }
+.ring .rv i{ font-style:normal; font-size:.55em; opacity:.7; margin-left:1px; }
+.ring.ra .rv{ color:var(--teal); } .ring.rb .rv{ color:var(--amber); } .ring.rs .rv{ color:var(--hidden-c); }
+.ring .rl{ margin-top:5px; font-size:11px; font-weight:800; color:var(--ink-dim); line-height:1.25;
+  overflow-wrap:anywhere; }
+.ring .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+.ring.big{ display:flex; margin:0 auto; }
+.ring.big svg{ width:156px; height:156px; }
+.ring.big .rv{ height:156px; font-size:44px; }
+.ring.big .rl{ font-size:13px; color:var(--ink); margin-top:2px; }
+.rings3{ display:flex; justify-content:space-between; gap:6px; margin-top:14px; }
+.rings3 .ring{ flex:1; }
+.verdict{ margin-top:16px; }
+.verdict b{ display:block; font-size:26px; font-weight:900; line-height:1.15;
+  background:linear-gradient(95deg, var(--teal), var(--amber)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.verdict span{ display:block; margin-top:4px; font-size:13px; color:var(--ink-dim); line-height:1.45; }
+
+/* at a glance: one line per insight, an icon each */
+.gl{ display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-top:1px solid var(--rule);
+  font-size:13.5px; line-height:1.45; }
+.gl:first-child{ border-top:0; padding-top:0; } .gl:last-child{ padding-bottom:0; }
+.gl .gi{ flex:none; width:26px; text-align:center; font-size:18px; line-height:1.15; }
+.gl .w{ font-weight:900; }
+.gl .w.a{ color:var(--teal); } .gl .w.b{ color:var(--amber); } .gl .w.h{ color:var(--hidden-c); }
+
+/* Big Five: for each person, five tracks — Openness, Conscientiousness, Extraversion,
+   Agreeableness, Neuroticism — with a filled dot for where their own six words land and a ring
+   for where the other's six land. Left is less, right is more, the tick is the middle. */
+.rcard h4{ margin:0 0 4px; font-size:11px; font-weight:900; letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--ink-dim); }
+.rcard .sub{ margin:0 0 10px; font-size:12.5px; color:var(--ink-dim); line-height:1.45; }
+.tp{ padding:10px 0 4px; border-top:1px solid var(--rule); }
+.tp:first-of-type{ border-top:0; padding-top:2px; }
+.tp .tname{ font-size:14px; font-weight:900; margin-bottom:6px; overflow-wrap:anywhere; }
+.tp .tname.a{ color:var(--teal); } .tp .tname.b{ color:var(--amber); }
+.b5row{ display:flex; align-items:center; gap:10px; margin-top:6px; }
+.b5row .b5l{ width:122px; flex:none; font-size:11.5px; font-weight:800; color:var(--ink-dim); text-align:right;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.b5track{ position:relative; flex:1; height:18px; }
+.b5track i{ position:absolute; left:0; right:0; top:8px; height:2px; background:var(--rule); }
+.b5track i::after{ content:''; position:absolute; left:50%; top:-4px; width:1px; height:10px; background:var(--rule); }
+.dot{ position:absolute; top:3px; width:12px; height:12px; border-radius:99px; margin-left:-6px;
+  box-sizing:border-box; animation:chipIn .3s ease backwards; }
+.dot.self{ background:var(--teal); z-index:2; }
+.dot.other{ background:var(--panel); border:2.5px solid var(--amber); z-index:1; }
+.tp.pb .dot.self{ background:var(--amber); } .tp.pb .dot.other{ border-color:var(--teal); }
+.tline{ margin:8px 0 4px 132px; font-size:13px; line-height:1.4; }
+.b5legend{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; align-items:center; }
+.b5legend span{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-dim); font-weight:700; }
+.b5legend .dot{ position:static; margin:0; animation:none; }
+.b5legend .dot.self{ background:var(--ink-dim); } .b5legend .dot.other{ border-color:var(--ink-dim); }
+@media (max-width:380px){ .b5row .b5l{ width:100px; font-size:11px; } .tline{ margin-left:110px; } }
+
+.win{ margin-top:16px; animation:screenIn .4s ease backwards; }
+.winhead{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin:0 2px 8px; }
+.winhead h3{ margin:0; font-size:19px; font-weight:900; overflow-wrap:anywhere; min-width:0; }
+.winhead h3.a{ color:var(--teal); } .winhead h3.b{ color:var(--amber); }
+.winhead .sees{ font-size:12px; font-weight:800; color:var(--ink-dim); white-space:nowrap; flex:none; }
+.winhead .sees b{ color:var(--ink); font-size:14px; }
+
+/* the window itself: a dark frame, four lit panes */
+.johari{ display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:6px; border-radius:18px;
+  background:#0f0e0c; border:2px solid #4a4438; box-shadow:0 12px 32px rgba(0,0,0,.4); }
+.pane{ border-radius:12px; padding:10px 10px 11px; min-height:118px; border:1px solid var(--rule);
+  animation:paneIn .5s cubic-bezier(.2,.8,.3,1) backwards; min-width:0; }
+@keyframes paneIn{ from{ opacity:0; transform:scale(.94);} to{ opacity:1; transform:none;} }
+.pane .lbl{ display:flex; justify-content:space-between; align-items:baseline; gap:6px;
+  font-size:10px; font-weight:900; letter-spacing:1.4px; text-transform:uppercase; }
+.pane .lbl b{ font-size:15px; }
+.pane .chips{ display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+.chip{ font-size:12px; font-weight:800; border-radius:999px; padding:5px 9px; line-height:1.2;
   animation:chipIn .3s ease backwards; }
+.chip.near i{ font-style:normal; opacity:.6; margin:0 4px; }   /* the ≈ between two close words */
+.reslegend .lg b{ font-size:13px; color:var(--teal); }
 @keyframes chipIn{ from{ opacity:0; transform:scale(.7);} to{ opacity:1; transform:none;} }
-.pane.open{ border-color:rgba(43,179,163,.5); background:linear-gradient(180deg, rgba(43,179,163,.10), var(--panel)); }
-.pane.open h3{ color:var(--teal); }
-.pane.open .chip{ background:var(--teal); color:var(--teal-ink); }
-.pane.blind{ border-color:rgba(255,176,32,.5); background:linear-gradient(180deg, rgba(255,176,32,.09), var(--panel)); }
-.pane.blind h3{ color:var(--amber); }
-.pane.blind .chip{ background:var(--amber); color:var(--amber-ink); }
-.pane.hidden-p{ border-color:rgba(143,134,201,.5); background:linear-gradient(180deg, rgba(143,134,201,.09), var(--panel)); }
-.pane.hidden-p h3{ color:var(--hidden-c); }
-.pane.hidden-p .chip{ background:var(--hidden-c); color:#17142c; }
-.pane.unknown h3{ color:var(--unknown-c); }
-.pane.unknown .sub{ margin-bottom:0; }
-.pane .none{ color:var(--ink-dim); font-size:13.5px; font-style:italic; }
+.pane .none{ font-size:12px; font-style:italic; color:var(--ink-dim); margin-top:8px; line-height:1.4; }
+.pane .sub{ font-size:11.5px; color:var(--ink-dim); margin-top:6px; line-height:1.4; }
+.pane.open{ background:rgba(43,179,163,.16); border-color:rgba(43,179,163,.45); }
+.pane.open .lbl{ color:var(--teal); } .pane.open .chip{ background:var(--teal); color:var(--teal-ink); }
+.pane.blind{ background:rgba(255,176,32,.13); border-color:rgba(255,176,32,.42); }
+.pane.blind .lbl{ color:var(--amber); } .pane.blind .chip{ background:var(--amber); color:var(--amber-ink); }
+.pane.hid{ background:rgba(143,134,201,.13); border-color:rgba(143,134,201,.42); }
+.pane.hid .lbl{ color:var(--hidden-c); } .pane.hid .chip{ background:var(--hidden-c); color:var(--hidden-ink); }
+.pane.unk{ background:var(--ground-2); }
+.pane.unk .lbl{ color:var(--unknown-c); } .pane.unk .lbl b{ color:var(--ink-dim); }
+.pane.unk .sub{ color:var(--unknown-c); }
+.wincap{ margin:9px 2px 0; font-size:13.5px; font-weight:800; line-height:1.4; }
+.wincap.a{ color:var(--teal); } .wincap.b{ color:var(--amber); }
 
-/* the finished 2×2 window */
-.johari{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:4px 0 14px;
-  animation:paneIn .5s cubic-bezier(.2,.8,.3,1); }
-.johari .q{ border-radius:14px; padding:12px; min-height:96px; border:1px solid var(--rule); }
-.johari .q .lbl{ font-size:10px; font-weight:900; letter-spacing:1.4px; text-transform:uppercase;
-  margin-bottom:2px; }
-.johari .q .num{ font-size:24px; font-weight:900; line-height:1.1; }
-.johari .q .wl{ font-size:11.5px; font-weight:700; line-height:1.45; margin-top:4px; overflow-wrap:anywhere; }
-.q.open{ background:rgba(43,179,163,.16); border-color:rgba(43,179,163,.45); }
-.q.open .lbl{ color:var(--teal); }
-.q.blind{ background:rgba(255,176,32,.13); border-color:rgba(255,176,32,.42); }
-.q.blind .lbl{ color:var(--amber); }
-.q.hid{ background:rgba(143,134,201,.13); border-color:rgba(143,134,201,.42); }
-.q.hid .lbl{ color:var(--hidden-c); }
-.q.unk{ background:var(--ground-2); }
-.q.unk .lbl{ color:var(--unknown-c); }
-.q.unk .num{ color:var(--ink-dim); }
-.q.unk .wl{ color:var(--unknown-c); }
-
-/* ============================ results ============================ */
-.rescard{ background:var(--panel); border:1px solid var(--rule); border-radius:20px;
-  padding:18px 16px; margin-bottom:14px; }
-.rescard .rc-top{ text-align:center; margin-bottom:12px; }
-.rescard .rc-top .names{ font-size:20px; font-weight:900; overflow-wrap:anywhere; }
-.rescard .rc-top .names .x{ color:var(--ink-dim); font-weight:700; padding:0 6px; }
-.rescard .rc-top .date{ font-size:11.5px; color:var(--ink-dim); margin-top:2px; }
-.headline{ text-align:center; font-size:16px; font-weight:800; line-height:1.5;
-  margin:0 0 14px; }
-.headline .hl-a{ color:var(--teal); } .headline .hl-b{ color:var(--amber); }
-.miniwrap{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.mini{ min-width:0; }
-.mini .who{ text-align:center; font-size:13px; font-weight:900; margin-bottom:6px; overflow-wrap:anywhere; }
-.mini .mg{ display:grid; grid-template-columns:1fr 1fr; gap:4px; }
-.mini .mq{ border-radius:10px; padding:8px 6px; text-align:center; border:1px solid var(--rule); }
-.mini .mq b{ display:block; font-size:18px; font-weight:900; }
-.mini .mq span{ display:block; font-size:8.5px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; }
-.reslegend{ display:flex; justify-content:center; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.reslegend{ display:flex; justify-content:center; gap:12px; margin:14px 0 0; flex-wrap:wrap; }
 .reslegend .lg{ display:flex; align-items:center; gap:5px; font-size:11px; color:var(--ink-dim); font-weight:700; }
-.reslegend .sw{ width:10px; height:10px; border-radius:3px; }
-.talkline{ text-align:center; color:var(--ink-dim); font-size:13px; line-height:1.55; margin:0 0 16px; }
+.reslegend .sw{ width:10px; height:10px; border-radius:3px; flex:none; }
+
+.talk ul{ margin:0; padding-left:18px; font-size:13.5px; line-height:1.55; }
+.talk li+li{ margin-top:7px; }
+.talk .w{ font-weight:900; }
+.talk .w.a{ color:var(--teal); } .talk .w.b{ color:var(--amber); } .talk .w.h{ color:var(--hidden-c); }
+
+.resbtns{ margin-top:16px; }
+.resbtns .btnrow{ margin-bottom:10px; }
+@media (prefers-reduced-motion:no-preference){
+  .rcard, .win{ opacity:0; transform:translateY(10px); animation:rise .4s ease forwards; }
+  @keyframes rise{ to{ opacity:1; transform:none; } }
+}
 
 .toast{ position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); transform:translateX(-50%);
   background:var(--panel-2); border:1px solid var(--rule); color:var(--ink); border-radius:14px;
   padding:12px 16px; font-size:13px; max-width:88vw; z-index:60; box-shadow:0 10px 30px rgba(0,0,0,.5);
-  animation:screenIn .25s ease; overflow-wrap:anywhere; }
+  animation:screenIn .25s ease; overflow-wrap:anywhere; white-space:pre-wrap; }
 
 /* ============================ confirm scrim ============================ */
 .scrim{ position:fixed; inset:0; background:var(--shade); z-index:50; display:flex;
@@ -256,8 +347,15 @@ details.how li b{ color:var(--ink); }
 .dialog h3{ margin:0 0 6px; font-size:18px; }
 .dialog p{ margin:0 0 16px; color:var(--ink-dim); font-size:14px; line-height:1.5; }
 
+/* share: a WhatsApp link in WhatsApp's green, and a system share sheet where the browser has one */
+.btn.wa{ display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;
+  background:#25D366; color:#052e16; box-shadow:0 8px 22px rgba(37,211,102,.22); }
+.btn.wa svg{ width:20px; height:20px; flex:none; }
+.sharehint{ font-size:12px; color:var(--ink-dim); text-align:center; margin:8px 0 10px; line-height:1.45; }
+
 @media (prefers-reduced-motion: reduce){
-  *{ animation-duration:.001ms !important; transition-duration:.001ms !important; }
+  *{ animation-duration:.001ms !important; animation-delay:0s !important; transition-duration:.001ms !important; }
+  .rcard, .win{ opacity:1; transform:none; }
 }
 </style>
 </head>
@@ -276,7 +374,10 @@ details.how li b{ color:var(--ink); }
       </svg>
       <div class="t">WINDOWS<small>a Johari game</small></div>
     </div>
-    <button class="homebtn" id="homeBtn" aria-label="Back to title" hidden>Home</button>
+    <div class="topbtns" id="topbtns" hidden>
+      <button class="soundbtn" id="soundBtn" type="button" aria-label="Sound" aria-pressed="true">🔊</button>
+      <button class="homebtn" id="homeBtn" type="button" aria-label="Back to title">Home</button>
+    </div>
   </div>
 
   <!-- ============================ title ============================ -->
@@ -302,78 +403,90 @@ details.how li b{ color:var(--ink); }
     <p class="pitch">How you see yourself vs how they see you.<br>Two people, one phone, forty words.</p>
 
     <div class="namecard">
-      <label for="nameA">Player 1</label>
-      <div class="field"><span class="dot" style="background:var(--teal)"></span>
-        <input id="nameA" maxlength="12" autocomplete="off" placeholder="Player 1"></div>
-      <label for="nameB">Player 2</label>
-      <div class="field"><span class="dot" style="background:var(--amber)"></span>
-        <input id="nameB" maxlength="12" autocomplete="off" placeholder="Player 2"></div>
+      <div class="grid2">
+        <div>
+          <label for="nameA">Player 1</label>
+          <div class="field"><span class="dot" style="background:var(--teal)"></span>
+            <input id="nameA" maxlength="12" autocomplete="off" placeholder="Player 1"></div>
+        </div>
+        <div>
+          <label for="nameB">Player 2</label>
+          <div class="field"><span class="dot" style="background:var(--amber)"></span>
+            <input id="nameB" maxlength="12" autocomplete="off" placeholder="Player 2"></div>
+        </div>
+      </div>
+      <button class="btn" id="startBtn">Start</button>
     </div>
 
     <details class="how">
       <summary>How it works</summary>
       <ul>
-        <li>Each of you privately picks <b>6 words for yourself</b>, then <b>6 for the other player</b>.</li>
-        <li>Pass the phone at each hand-off — nothing shows until you're both done.</li>
-        <li>Each player gets a window with four panes: <b>Open</b> (you both picked it), <b>Hidden</b> (only you claimed it), <b>Blind spot</b> (only they see it), and <b>Unknown</b>.</li>
-        <li>The panes are the conversation — the blind spots especially.</li>
+        <li>Each of you privately picks <b>6 words for yourself</b>, then <b>6 for the other player</b>. Your picks collect in a tray at the top — tap one there to drop it. Pass the phone in between — nothing shows until you're both done.</li>
+        <li>Then one page, numbers first: <b>how clearly you see each other</b>, where your words land on the <b>Big Five</b> — openness, conscientiousness, extraversion, agreeableness, neuroticism — as you see yourself and as they see you, and both windows — <b>Open</b> (you both picked it), <b>Hidden</b> (only you claimed it), <b>Blind spot</b> (only they see it), and <b>Unknown</b>.</li>
+        <li><b>Close words count.</b> Every word sits on the Big Five's thirty facets, so a pair that means nearly the same thing — Warm ≈ Kind, Quiet ≈ Private, Spontaneous ≈ Impulsive — is scored as a match, weighted by how close they are.</li>
+        <li>The blind spots are the conversation. The page ends with three things to ask each other.</li>
       </ul>
     </details>
 
-    <button class="btn" id="startBtn">Start</button>
-
     <p class="finefoot">For fun and conversation — a game, not a psychological assessment.<br>
-    Answers stay on this phone and are never uploaded.</p>
+    Answers stay on this phone and are never uploaded.<br><a href="../">Kreeda</a></p>
   </section>
 
   <!-- ============================ picking ============================ -->
   <section class="screen" id="scrPick" hidden>
+    <div class="turn" id="turnBanner"><span class="eye">👀</span><span id="turnText"></span></div>
     <div class="pickhead">
       <span class="pass-tag" id="passTag">Pass 1 of 2</span>
       <h2 id="pickTitle"></h2>
       <p id="pickSub"></p>
     </div>
-    <div class="counter" id="counter">
-      <span class="n" aria-live="polite"><b id="pickCount">0</b> of 6 picked</span>
-      <span class="pips" id="pips" aria-hidden="true"></span>
+    <div class="tray" id="tray">
+      <div class="row1">
+        <span class="n" aria-live="polite"><b id="pickCount">0</b> of 6 picked</span>
+        <span class="pips" id="pips" aria-hidden="true"></span>
+      </div>
+      <div class="chips" id="trayChips" aria-label="Your picks so far"></div>
     </div>
-    <div class="wordgrid" id="wordGrid"></div>
-    <button class="btn" id="pickConfirm" disabled></button>
+    <div class="wordcloud" id="wordGrid"></div>
   </section>
-
-  <!-- ============================ reveal ============================ -->
-  <section class="screen" id="scrReveal" hidden>
-    <div class="revealhead">
-      <div class="step" id="revStep"></div>
-      <h2 id="revTitle"></h2>
-      <p id="revSub"></p>
-    </div>
-    <div id="revPanes" aria-live="polite"></div>
-    <button class="btn amber" id="revNext">Open the first pane</button>
-  </section>
+  <div class="pickbar" id="pickbar" hidden><button class="btn" id="pickConfirm" disabled></button></div>
 
   <!-- ============================ results ============================ -->
   <section class="screen" id="scrResults" hidden>
-    <div class="rescard" id="resCard">
-      <div class="rc-top">
-        <div class="names" id="resNames"></div>
-        <div class="date" id="resDate"></div>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+      <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#2bb3a3"/><stop offset="1" stop-color="#ffb020"/>
+      </linearGradient>
+    </defs></svg>
+    <div class="rc-top">
+      <div class="lbl">The verdict</div>
+      <div class="names" id="resNames"></div>
+      <div class="date" id="resDate"></div>
+    </div>
+    <div id="resBody"></div>
+    <div class="reslegend">
+      <span class="lg"><span class="sw" style="background:var(--teal)"></span>Open — you both picked it</span>
+      <span class="lg"><span class="sw" style="background:var(--amber)"></span>Blind — only they see it</span>
+      <span class="lg"><span class="sw" style="background:var(--hidden-c)"></span>Hidden — only you claimed it</span>
+      <span class="lg"><b>≈</b>&nbsp;close words count — Warm ≈ Kind, Quiet ≈ Private</span>
+    </div>
+    <div class="rcard talk" id="talk" style="animation-delay:.9s">
+      <h4>Talk about it</h4>
+      <ul id="talkList"></ul>
+    </div>
+    <div class="resbtns">
+      <div class="btnrow">
+        <button class="btn" id="againBtn">Play again</button>
+        <button class="btn ghost" id="changeBtn">Change players</button>
       </div>
-      <p class="headline" id="resHeadline"></p>
-      <div class="miniwrap" id="miniWrap"></div>
-      <div class="reslegend">
-        <span class="lg"><span class="sw" style="background:var(--teal)"></span>Open</span>
-        <span class="lg"><span class="sw" style="background:var(--amber)"></span>Blind</span>
-        <span class="lg"><span class="sw" style="background:var(--hidden-c)"></span>Hidden</span>
-        <span class="lg"><span class="sw" style="background:var(--unknown-c)"></span>Unknown</span>
+      <a class="btn wa" id="waBtn" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.8-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.2-.2-.2-.5-.4z"/></svg>Share on WhatsApp</a>
+      <p class="sharehint">Send it to the other player — you’ll both have a copy.</p>
+      <div class="btnrow">
+        <button class="btn ghost" id="copyBtn">Copy result</button>
+        <button class="btn ghost" id="shareBtn" hidden>Share…</button>
       </div>
     </div>
-    <p class="talkline" id="resTalk"></p>
-    <div class="btnrow" style="margin-bottom:10px">
-      <button class="btn" id="againBtn">Play again</button>
-      <button class="btn ghost" id="changeBtn">Change players</button>
-    </div>
-    <button class="btn ghost" id="copyBtn">Copy result</button>
+    <p class="finefoot">Blind spots aren't verdicts — they're where the conversation starts.<br><a href="../">Kreeda</a></p>
   </section>
 
 </div>
@@ -392,7 +505,7 @@ details.how li b{ color:var(--ink); }
   <div class="who" id="hoName"></div>
   <div class="why" id="hoWhy"></div>
   <button class="btn amber" id="hoReady"></button>
-  <div class="tilt" id="hoTilt">tilt the phone away from the other player 👀</div>
+  <div class="tilt">tilt the phone away from the other player 👀</div>
 </div>
 
 <!-- confirm-before-discard -->
@@ -418,14 +531,15 @@ function shuffled(arr){
   for(let i=a.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [a[i],a[j]]=[a[j],a[i]]; }
   return a;
 }
-/* Names go through textContent everywhere, but the reveal panes and results are assembled as
-   HTML strings, so one escape hatch is still needed for anything a player typed. */
+/* Names go through textContent where they can, but the results page is assembled as HTML
+   strings, so one escape hatch is still needed for anything a player typed. */
 function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
 /* ============================ word bank ============================
    40 original trait words, balanced warm / neutral / spiky. The rule for the spiky third:
    a friend could pick it to your face and mean it kindly. "Stubborn" passes; anything
-   contemptuous does not. */
+   contemptuous does not. Each word's Big Five facet loadings live in LOAD below. */
 const WORDS = [
   // warm (14)
   'Warm','Funny','Loyal','Patient','Generous','Kind','Dependable','Playful',
@@ -439,9 +553,115 @@ const WORDS = [
 ];
 const PICKS_EACH = 6;
 
+/* ============================ Big Five space ============================
+   Forty words is enough that two people describing the same person rarely land on the same
+   word: Warm and Kind, Quiet and Private, Spontaneous and Impulsive are the same observation in
+   different clothes. So every word carries loadings (-1..1) on the thirty NEO facets of the Big
+   Five — six each for Openness, Conscientiousness, Extraversion, Agreeableness and Neuroticism.
+   One table does two jobs: (1) matching — a word's vector is its thirty facet loadings plus its
+   five trait scores as a smoothing term, and two words match when the cosine clears NEAR; an
+   exact match scores 1, a near match its cosine, so "Priya sees Sam" is partial credit, not a
+   coin flip; (2) the Big Five card — a person's six words average into a five-trait profile.
+   Hand-set rather than fetched: the game must work offline, off the disk, with no model, and
+   this is a playful read of words, not a psychometric instrument. */
+const FACETS = ['O1','O2','O3','O4','O5','O6',   // fantasy, aesthetics, feelings, actions, ideas, values
+                'C1','C2','C3','C4','C5','C6',   // competence, order, dutifulness, achievement, self-discipline, deliberation
+                'E1','E2','E3','E4','E5','E6',   // warmth, gregariousness, assertiveness, activity, excitement-seeking, positive emotions
+                'A1','A2','A3','A4','A5','A6',   // trust, straightforwardness, altruism, compliance, modesty, tender-mindedness
+                'N1','N2','N3','N4','N5','N6'];  // anxiety, angry hostility, depression, self-consciousness, impulsiveness, vulnerability
+const TRAITS = [
+  { k:'O', name:'Openness',          hi:'open to new things', lo:'conventional' },
+  { k:'C', name:'Conscientiousness', hi:'organised',          lo:'freewheeling' },
+  { k:'E', name:'Extraversion',      hi:'outgoing',           lo:'reserved' },
+  { k:'A', name:'Agreeableness',     hi:'agreeable',          lo:'tough-minded' },
+  { k:'N', name:'Neuroticism',       hi:'emotionally reactive', lo:'unflappable' }
+];
+const LOAD = {
+  Warm:        {E1:1, E6:.4, A3:.6, A6:.6, A1:.3},
+  Kind:        {A3:1, A6:.8, E1:.6, A4:.3, E6:.2},
+  Gentle:      {A6:.9, A4:.6, E1:.5, E3:-.4, N2:-.5, A3:.4},
+  Generous:    {A3:1, A5:.4, E1:.6, A1:.3, E6:.2},
+  Encouraging: {E1:.7, A3:.7, E6:.6, E3:.3, A1:.3},
+  Loyal:       {A1:.7, C3:.9, A3:.5, C5:.3, A4:.2},
+  Dependable:  {C3:1, C5:.7, C1:.6, A1:.4, C2:.3},
+  Patient:     {N2:-.8, C6:.6, A4:.6, N5:-.5, A6:.4, C5:.3, E1:.2},
+  Honest:      {A2:1, C3:.5, A1:.4, A5:.2},
+  Brave:       {E3:.6, E5:.7, N1:-.7, N6:-.6, E4:.3},
+  Funny:       {E6:.9, E2:.6, O1:.4, E4:.3, E5:.3},
+  Playful:     {E6:.8, E5:.6, O1:.5, E2:.4, C6:-.3, O4:.3},
+  Curious:     {O5:1, O4:.6, O2:.3, O1:.3, E5:.2},
+  Wise:        {O5:.6, C6:.8, C1:.6, O6:.4, N6:-.3, O3:.2},
+  Quiet:       {E2:-.9, E4:-.4, E3:-.4, N4:.2, E5:-.3},
+  Private:     {E2:-.8, E4:-.3, N4:.4, O3:-.3, A2:-.2, E1:-.2},
+  Guarded:     {A1:-.7, E2:-.5, N4:.5, O3:-.5, E1:-.4, A2:-.3},
+  Independent: {E3:.5, A4:-.6, C1:.4, A1:-.2, O6:.2, E2:-.2},
+  Ambitious:   {C4:1, E3:.6, E4:.5, A5:-.3, C5:.3, E5:.2},
+  Competitive: {C4:.8, E3:.7, A4:-.6, A5:-.5, N2:.2, E4:.3, E5:.2},
+  Intense:     {E4:.6, O3:.6, N1:.3, C4:.5, E3:.3, E6:-.2},
+  Dramatic:    {O3:.7, E2:.5, E6:.4, E5:.4, A5:-.5, N1:.3, O1:.3},
+  Spontaneous: {O4:.8, N5:.5, C6:-.8, E5:.6, C2:-.4, E4:.3, O1:.2},
+  Impulsive:   {N5:1, C6:-.9, E5:.5, C5:-.4, O4:.3, E4:.3},
+  Restless:    {E4:.7, N1:.4, C5:-.4, O4:.4, N5:.4, C6:-.3, E5:.3},
+  Impatient:   {N2:.6, C6:-.5, E4:.5, A4:-.4, N5:.5, N1:.2},
+  Scattered:   {C2:-1, C5:-.6, C1:-.3, O1:.3, N1:.2, C6:-.3},
+  Dreamy:      {O1:1, O2:.5, C2:-.4, E4:-.3, O3:.4, C5:-.2},
+  Easygoing:   {N1:-.6, N2:-.7, A4:.7, C2:-.3, E6:.4, N6:-.3, A1:.3},
+  Practical:   {C1:.8, O1:-.6, C2:.6, O5:-.2, C6:.6, C5:.4, O2:-.2},
+  Careful:     {C6:1, C2:.7, N1:.3, E5:-.6, C1:.5, C5:.4, C3:.3, O1:-.2},
+  Analytical:  {O5:.8, C6:.7, C1:.5, O3:-.3, E6:-.2, C2:.3, O2:-.1},
+  Observant:   {O5:.5, C6:.6, E2:-.3, O2:.4, N4:.2, O3:.3, C1:.3},
+  Overthinking:{N1:.9, C6:.6, N4:.5, N5:-.3, O5:.3, N6:.3},
+  'Old-school':{O4:-.8, O6:-.8, C3:.5, C2:.4, O1:-.3, A4:.2, C5:.2},
+  Stubborn:    {A4:-1, O6:-.3, C5:.4, N2:.3, E3:.4, O4:-.3},
+  Blunt:       {A2:.8, A6:-.7, E3:.6, A4:-.4, N2:.3, A5:-.2},
+  Picky:       {C2:.6, A4:-.5, N2:.3, O4:-.4, C6:.4, A6:-.2, C1:.2},
+  Moody:       {N3:.7, N2:.5, N6:.5, E6:-.5, N1:.3, N4:.2},
+  Sensitive:   {A6:.7, N4:.6, N6:.5, O3:.8, N1:.3, E1:.2}
+};
+/* a word's trait scores: its facet loadings summed per trait, clipped to -1..1 */
+function traitVec(w){
+  return TRAITS.map(t => Math.max(-1, Math.min(1,
+    FACETS.filter(f => f[0]===t.k).reduce((s,f) => s + (LOAD[w][f]||0), 0))));
+}
+/* a person's profile from a list of words: the average trait vector, each value -1..1 */
+function profile(words){
+  const acc = [0,0,0,0,0];
+  words.forEach(w => { traitVec(w).forEach((x,i) => { acc[i] += x; }); });
+  return acc.map(x => x / (words.length || 1));
+}
+const DOMAIN_WEIGHT = 1;     // how much the five trait scores count next to the thirty facets
+const VEC = {};
+WORDS.forEach(w => { VEC[w] = FACETS.map(f => LOAD[w][f]||0).concat(traitVec(w).map(x => x*DOMAIN_WEIGHT)); });
+const NEAR = 0.65;
+const NORM = {}; WORDS.forEach(w => { NORM[w] = Math.sqrt(VEC[w].reduce((s,x)=>s+x*x, 0)); });
+function sim(a, b){
+  if(a===b) return 1;
+  const va = VEC[a], vb = VEC[b]; let d = 0;
+  for(let i=0;i<va.length;i++) d += va[i]*vb[i];
+  return d / (NORM[a]*NORM[b]);
+}
+/* Pair up two six-word lists: exact matches first, then the closest remaining pairs above NEAR,
+   greedily by similarity so each word is used once. What's left on either side is unmatched.
+   Pairs come back in bank order so panes read the same way every time. */
+function softMatch(X, Y){
+  const pairs = [], usedX = new Set(), usedY = new Set();
+  X.forEach(a => { if(Y.includes(a)){ pairs.push({a, b:a, sim:1}); usedX.add(a); usedY.add(a); } });
+  const cand = [];
+  X.forEach(a => { if(usedX.has(a)) return;
+    Y.forEach(b => { if(usedY.has(b)) return; const s = sim(a,b); if(s >= NEAR) cand.push({a, b, sim:s}); }); });
+  cand.sort((p,q) => q.sim - p.sim);
+  cand.forEach(c => { if(usedX.has(c.a) || usedY.has(c.b)) return; pairs.push(c); usedX.add(c.a); usedY.add(c.b); });
+  pairs.sort((p,q) => WORDS.indexOf(p.a) - WORDS.indexOf(q.a));
+  return { pairs,
+    restX: WORDS.filter(w => X.includes(w) && !usedX.has(w)),
+    restY: WORDS.filter(w => Y.includes(w) && !usedY.has(w)),
+    score: pairs.reduce((s,o) => s + o.sim, 0) };
+}
+const pairLabel = o => o.a===o.b ? o.a : o.a + ' ≈ ' + o.b;
+
 /* ============================ persistence ============================
-   Only names and a plays counter are ever stored. Picks are personal — they live in memory
-   for this session and are gone on reload, by design. */
+   Only names, a sound preference and a plays counter are ever stored. Picks are personal —
+   they live in memory for this session and are gone on reload, by design. */
 const LS = {
   get(k){ try{ return localStorage.getItem('windows.'+k); }catch(e){ return null; } },
   set(k,v){ try{ localStorage.setItem('windows.'+k, v); }catch(e){} }
@@ -453,11 +673,56 @@ function loadNames(){
 }
 function saveNames(){ LS.set('names', JSON.stringify(S.names)); }
 
+/* ============================ sound ============================
+   Two synthesized cues, no audio files: a soft tick on every pick and a swish when a pass
+   leaves the page. The context is created on the first tap (a user gesture, which iOS
+   requires). */
+const SND = { ctx:null, noise:null, on: LS.get('sound')!=='0' };
+function audio(){
+  if(!SND.on) return null;
+  if(!SND.ctx){ try{ SND.ctx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(SND.ctx.state==='suspended'){ try{ SND.ctx.resume(); }catch(e){} }
+  return SND.ctx;
+}
+function tick(){
+  const ac = audio(); if(!ac) return;
+  try{
+    const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(880,t); o.frequency.exponentialRampToValueAtTime(1320,t+0.03);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.09,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t+0.08);
+  }catch(e){}
+}
+function swish(){
+  const ac = audio(); if(!ac) return;
+  try{
+    const dur = 0.3, t = ac.currentTime;
+    if(!SND.noise){ const n = Math.floor(ac.sampleRate*0.5), b = ac.createBuffer(1,n,ac.sampleRate), d = b.getChannelData(0);
+      for(let i=0;i<n;i++) d[i] = Math.random()*2-1; SND.noise = b; }
+    const src = ac.createBufferSource(); src.buffer = SND.noise;
+    const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.4;     // filtered noise, swept up then down
+    f.frequency.setValueAtTime(500,t); f.frequency.exponentialRampToValueAtTime(3400,t+dur*0.45);
+    f.frequency.exponentialRampToValueAtTime(700,t+dur);
+    const g = ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.32,t+0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(f).connect(g).connect(ac.destination); src.start(t); src.stop(t+dur+0.02);
+  }catch(e){}
+}
+function setSound(on){
+  SND.on = on; LS.set('sound', on?'1':'0');
+  $('soundBtn').textContent = on ? '🔊' : '🔇'; $('soundBtn').setAttribute('aria-pressed', String(on));
+  if(on) tick();
+}
+$('soundBtn').textContent = SND.on ? '🔊' : '🔇'; $('soundBtn').setAttribute('aria-pressed', String(SND.on));
+$('soundBtn').addEventListener('click', ()=>setSound(!SND.on));
+
 /* ============================ state machine ============================
-   phase: title → (handoff → pick.self → pick.other) ×2 → reveal(A) → reveal(B) → results
-   All picks live here in memory only. `S.lock` guards every phase-advancing button against
-   the double-tap race: it is taken before any DOM swap and released when the next screen
-   is fully painted. */
+   phase: title → pick.self → pick.other → handoff → pick.self → pick.other → results
+   Player 1 is already holding the phone after Start, so only the change of hands gets an
+   interstitial; the last lock-in opens the one-page reveal directly.
+   All picks live here in memory only. `lock` guards every phase-advancing button against the
+   double-tap race: it is taken before any DOM swap and released when the next screen is painted. */
 let S = null;
 let lock = false;
 function freshSession(names){
@@ -465,38 +730,40 @@ function freshSession(names){
     names: names.slice(),
     turn: 0,               // which player holds the phone (0/1)
     pass: 0,               // 0 = picking for self, 1 = picking for the other
-    sel: new Set(),        // current in-progress selection
+    sel: new Set(),        // current in-progress selection, in pick order
     picks: [ {self:null, other:null}, {self:null, other:null} ],
-    windows: null,         // computed at reveal time
-    revealFor: 0,          // whose window is being revealed
-    revealStage: 0         // 0..3 panes, 4 = assembled window shown
+    windows: null          // computed once all four lists exist
   };
 }
 
 /* ============================ screens ============================ */
-const SCREENS = ['scrTitle','scrPick','scrReveal','scrResults'];
+const SCREENS = ['scrTitle','scrPick','scrResults'];
 function show(id){
   for(const s of SCREENS){ $(s).hidden = (s!==id); }
-  $('homeBtn').hidden = (id==='scrTitle');
+  $('topbtns').hidden = (id==='scrTitle');
+  $('pickbar').hidden = (id!=='scrPick');
   // retrigger the entrance animation
   const el = $(id); el.style.animation='none'; void el.offsetWidth; el.style.animation='';
-  window.scrollTo(0,0);
+  try{ window.scrollTo({top:0,left:0,behavior:'instant'}); }catch(e){ window.scrollTo(0,0); }
 }
 
 /* ============================ title ============================ */
+function nameA(){ return ($('nameA').value.trim() || 'Player 1').slice(0,12); }
+function nameB(){ return ($('nameB').value.trim() || 'Player 2').slice(0,12); }
+function refreshStart(){ $('startBtn').textContent = 'Start · ' + nameA() + ' picks first'; }
 (function initTitle(){
   const [a,b] = loadNames();
   $('nameA').value = a; $('nameB').value = b;
+  refreshStart();
+  $('nameA').addEventListener('input', refreshStart);
 })();
 
 $('startBtn').addEventListener('click', ()=>{
   if(lock) return; lock = true;
-  const a = ($('nameA').value.trim() || 'Player 1').slice(0,12);
-  const b = ($('nameB').value.trim() || 'Player 2').slice(0,12);
-  S = freshSession([a,b]);
+  S = freshSession([nameA(), nameB()]);
   saveNames();
   track('game_start', {});
-  toHandoff(0);
+  toPick(0);               // no interstitial: Player 1 already has the phone
   lock = false;
 });
 
@@ -504,36 +771,39 @@ $('startBtn').addEventListener('click', ()=>{
    The contract of this screen: by the time it is visible, the previous player's chips are
    already gone from the DOM (wordGrid is emptied and scrPick hidden before the interstitial
    is unhidden), so a fast tap or a back-swipe cannot resurface them. */
-let tiltShown = false;
 function toHandoff(player){
-  // scrub the pick screen BEFORE painting the interstitial
-  $('wordGrid').innerHTML = '';
-  $('revPanes').innerHTML = '';
+  $('wordGrid').innerHTML = ''; $('trayChips').innerHTML = '';
   for(const s of SCREENS){ $(s).hidden = true; }
-  $('homeBtn').hidden = false;
-  S.turn = player; S.pass = 0; S.sel = new Set();
+  $('pickbar').hidden = true;
+  $('topbtns').hidden = false;
   $('hoName').textContent = S.names[player];
-  $('hoWhy').textContent = player===0
-    ? 'You pick first. The other player shouldn’t watch.'
-    : `${S.names[0]} is done. Your turn to pick — privately.`;
+  $('hoWhy').textContent = `${S.names[1-player]} is done and locked in. Your turn to pick — privately.`;
   $('hoReady').textContent = `I’m ${S.names[player]} — show me`;
-  $('hoTilt').hidden = tiltShown;
   $('handoff').hidden = false;
 }
 $('hoReady').addEventListener('click', ()=>{
   if(lock) return; lock = true;
-  tiltShown = true;
   $('handoff').hidden = true;
-  if(S.windows){ startReveal(); }         // the second hand-off before the reveal
-  else startPick();
+  toPick(1);
   lock = false;
 });
 
 /* ============================ picking ============================ */
+let gridBtn = {};          // word → its pill in the current grid, so the tray can un-press it
+
+function toPick(player){
+  S.turn = player; S.pass = 0; S.sel = new Set();
+  startPick();
+}
+
 function startPick(){
   S.sel = new Set();
   const me = S.names[S.turn], other = S.names[1-S.turn];
   const isSelf = S.pass===0;
+  $('turnBanner').hidden = !isSelf;
+  if(isSelf){
+    $('turnText').innerHTML = `<b class="${S.turn===0?'a':'b'}">${esc(me)}’s turn.</b> ${esc(other)}, look away — nothing shows until you’ve both locked in.`;
+  }
   $('passTag').textContent = isSelf ? 'Pass 1 of 2 · yourself' : 'Pass 2 of 2 · about them';
   $('passTag').className = 'pass-tag ' + (isSelf?'self':'other');
   $('pickTitle').textContent = isSelf
@@ -542,7 +812,8 @@ function startPick(){
   $('pickSub').textContent = isSelf
     ? 'Go with your gut — the you of most days, not your best day.'
     : `The ${other} you actually know — kind is good, honest is better.`;
-  $('counter').className = 'counter ' + (isSelf?'selfmode':'othermode');
+  $('scrPick').className = 'screen ' + (isSelf?'selfmode':'othermode');
+  $('trayChips').innerHTML = '';
   buildGrid();
   syncPick();
   show('scrPick');
@@ -550,23 +821,34 @@ function startPick(){
 
 function buildGrid(){
   const grid = $('wordGrid');
-  grid.innerHTML = '';
+  grid.innerHTML = ''; gridBtn = {};
   // reshuffle between passes so pass 2 isn't answered by spatial memory of pass 1
   for(const w of shuffled(WORDS)){
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'word'; b.textContent = w;
     b.setAttribute('aria-pressed','false');
-    b.addEventListener('click', ()=>toggleWord(w,b));
-    grid.appendChild(b);
+    b.addEventListener('click', ()=>toggleWord(w));
+    grid.appendChild(b); gridBtn[w] = b;
   }
 }
 
-function toggleWord(w, btn){
-  if(S.sel.has(w)){ S.sel.delete(w); btn.setAttribute('aria-pressed','false'); }
-  else{
+function toggleWord(w){
+  const btn = gridBtn[w];
+  if(S.sel.has(w)){
+    S.sel.delete(w); btn.setAttribute('aria-pressed','false');
+    const chip = $('trayChips').querySelector('[data-w="'+CSS.escape(w)+'"]'); if(chip) chip.remove();
+  }else{
     if(S.sel.size >= PICKS_EACH) return;   // exactly 6, hard-enforced
     S.sel.add(w); btn.setAttribute('aria-pressed','true');
+    btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
+    const chip = document.createElement('button');
+    chip.type = 'button'; chip.className = 'tchip'; chip.setAttribute('data-w', w);
+    chip.setAttribute('aria-label', 'Drop '+w);
+    chip.innerHTML = esc(w) + ' <i aria-hidden="true">×</i>';
+    chip.addEventListener('click', ()=>toggleWord(w));
+    $('trayChips').appendChild(chip);
   }
+  tick();
   syncPick();
 }
 
@@ -588,13 +870,36 @@ function syncPick(){
   const other = S.names[1-S.turn];
   const btn = $('pickConfirm');
   btn.disabled = !full;
+  const left = PICKS_EACH - n;
   if(S.pass===0){
-    btn.textContent = full ? `These 6 are me — next: ${other}` : 'Pick exactly 6 to continue';
+    btn.textContent = full ? `These 6 are me — next: ${other}` : `Pick ${left} more`;
   }else{
     // pass 2's confirm is the lock-in before the hand-off / reveal
-    const next = S.turn===0 ? `pass to ${other}` : 'see the windows';
-    btn.textContent = full ? `Lock in & ${next}` : 'Pick exactly 6 to continue';
+    btn.textContent = full
+      ? (S.turn===0 ? `Lock in & pass to ${other}` : 'Lock in & open the windows')
+      : `Pick ${left} more`;
   }
+}
+
+/* pass 1 → pass 2 on the same screen: the whole sheet swooshes off to the left, re-renders as
+   the second pass, and slides in from the right. Reduced motion just re-renders. */
+function transitionPass(){
+  const sec = $('scrPick');
+  const go = ()=>{
+    sec.classList.remove('leaving');
+    S.pass = 1;
+    startPick();                                   // reshuffled grid, amber mode
+    sec.classList.add('arrive');
+    setTimeout(()=>sec.classList.remove('arrive'), 500);
+    lock = false;
+  };
+  if(REDUCED){ go(); return; }
+  swish();
+  let done = false; const once = ()=>{ if(done) return; done = true; go(); };
+  sec.classList.add('leaving');
+  sec.addEventListener('animationend', function h(ev){
+    if(ev.animationName==='leave'){ sec.removeEventListener('animationend', h); once(); } });
+  setTimeout(once, 450);                           // belt and braces: never leave the sheet invisible
 }
 
 $('pickConfirm').addEventListener('click', ()=>{
@@ -602,18 +907,18 @@ $('pickConfirm').addEventListener('click', ()=>{
   const words = [...S.sel];
   if(S.pass===0){
     S.picks[S.turn].self = words;
-    S.pass = 1;
-    startPick();               // same player, second pass, reshuffled grid
+    transitionPass();                              // releases `lock` itself once the new pass is painted
+    return;
+  }
+  S.picks[S.turn].other = words;
+  S.sel = new Set();
+  $('wordGrid').innerHTML = ''; $('trayChips').innerHTML = '';
+  swish();
+  if(S.turn===0){
+    toHandoff(1);
   }else{
-    S.picks[S.turn].other = words;
-    S.sel = new Set();
-    if(S.turn===0){
-      toHandoff(1);
-    }else{
-      computeWindows();
-      // both committed; hand the phone back so the reveal starts together
-      toRevealHandoff();
-    }
+    computeWindows();
+    finish();                // both committed — the one-page reveal, no further gate
   }
   lock = false;
 });
@@ -623,170 +928,229 @@ function computeWindows(){
   // Guard: never compute (and thus never reveal) unless all four pick lists exist.
   for(const p of S.picks){ if(!p.self || !p.other) return; }
   S.windows = [0,1].map(p=>{
-    const mine = new Set(S.picks[p].self);
-    const theirs = new Set(S.picks[1-p].other);   // what the OTHER player picked about p
-    const open=[], hidden=[], blind=[];
-    // iterate the bank so pane order is stable, not pick order
-    for(const w of WORDS){
-      const m = mine.has(w), t = theirs.has(w);
-      if(m&&t) open.push(w);
-      else if(m) hidden.push(w);
-      else if(t) blind.push(w);
-    }
-    const unknown = WORDS.length - open.length - hidden.length - blind.length;
-    return { open, hidden, blind, unknown };
+    const mine = S.picks[p].self, theirs = S.picks[1-p].other;   // what the OTHER player picked about p
+    const m = softMatch(mine, theirs);
+    /* open: pairs {a: my word, b: their word, sim} — a===b for an exact match;
+       hidden: my words nobody matched; blind: their words nobody matched;
+       seen: the partial-credit score, 0..6 */
+    return { open:m.pairs, hidden:m.restX, blind:m.restY,
+             unknown: WORDS.length - new Set(mine.concat(theirs)).size, seen:m.score };
   });
 }
 
-function toRevealHandoff(){
-  $('wordGrid').innerHTML = '';
-  for(const s of SCREENS){ $(s).hidden = true; }
-  $('hoName').textContent = `${S.names[0]} & ${S.names[1]}`;
-  $('hoWhy').textContent = 'Both locked in. Sit together — the windows open one pane at a time.';
-  $('hoReady').textContent = 'Open the windows';
-  $('hoTilt').hidden = true;
-  $('handoff').hidden = false;
-}
+/* ============================ insights ============================ */
+/* both soft-matched, like the panes: pairs of {a: player 1's word, b: player 2's word} */
+function mutualWords(){ return softMatch(S.picks[0].other, S.picks[1].other).pairs; }   // each picked it FOR the other
+function sharedSelf(){ return softMatch(S.picks[0].self, S.picks[1].self).pairs; }      // each picked it for THEMSELVES
+function alikeScore(){ return softMatch(S.picks[0].self, S.picks[1].self).score; }
 
-/* ============================ reveal ============================
-   One window per player, four panes in fixed order, one tap each. The panes stack so the
-   full window is readable as it grows; stage 4 swaps in the assembled 2×2. */
-const PANES = [
-  { key:'open', cls:'open', title:'Open',
-    sub:(me,other)=>`You both picked these for ${me}. No arguments here — this is ${me} in daylight.` },
-  { key:'hidden', cls:'hidden-p', title:'Hidden',
-    sub:(me,other)=>`${me} claimed these, but ${other} didn’t see them — parts of ${me} that haven’t landed yet.` },
-  { key:'blind', cls:'blind', title:'Blind spot',
-    sub:(me,other)=>`${other} sees this in ${me} even when ${me} doesn’t. Take it as a gift.` },
-  { key:'unknown', cls:'unknown', title:'Unknown',
-    sub:null }
-];
-
-function startReveal(){ renderRevealShell(); }
-
-function renderRevealShell(){
-  S.revealStage = 0;
-  const me = S.names[S.revealFor];
-  $('revStep').textContent = `Window ${S.revealFor+1} of 2`;
-  $('revTitle').textContent = `${me}’s window`;
-  $('revSub').textContent = 'Four panes. Tap to open each one.';
-  $('revPanes').innerHTML = '';
-  $('revNext').textContent = 'Open the first pane';
-  show('scrReveal');
-}
-
-$('revNext').addEventListener('click', ()=>{
-  if(lock || !S.windows) return; lock = true;
-  const W = S.windows[S.revealFor];
-  const me = S.names[S.revealFor], other = S.names[1-S.revealFor];
-  if(S.revealStage < 4){
-    addPane(S.revealStage, W, me, other);
-    S.revealStage++;
-    if(S.revealStage < 4){
-      $('revNext').textContent = ['','Next: Hidden','Next: Blind spot','Next: Unknown'][S.revealStage];
-    }else{
-      $('revNext').textContent = 'See the whole window';
-    }
-  }else if(S.revealStage === 4){
-    showAssembled(W, me);
-    S.revealStage = 5;
-    $('revNext').textContent = S.revealFor===0 ? `Now ${S.names[1]}’s window` : 'See the results';
-  }else{
-    if(S.revealFor===0){ S.revealFor = 1; renderRevealShell(); }
-    else finish();
+/* one title for the pair, from the shape of both windows together */
+function pairVerdict(){
+  const [WA, WB] = S.windows, n = S.names;
+  const open = WA.open.length + WB.open.length, blind = WA.blind.length + WB.blind.length,
+        hidden = WA.hidden.length + WB.hidden.length;
+  const mutual = mutualWords().length, shared = sharedSelf().length;
+  if(open >= 8) return ['Open books', 'You both see what you show. Very little is hiding here.'];
+  if(mutual >= 2 && shared >= 2) return ['Mirror images', 'You describe each other with the words you use for yourselves.'];
+  if(Math.abs(WA.open.length - WB.open.length) >= 3){
+    const clear = WA.open.length > WB.open.length ? 0 : 1;
+    return ['One-way glass', `${n[clear]} is much easier to read than ${n[1-clear]} — for now.`];
   }
-  lock = false;
-});
-
-function chipsHTML(words){
-  if(!words.length) return '<p class="none">none this time — rare, and worth a laugh</p>';
-  return '<div class="chips">' +
-    words.map((w,i)=>`<span class="chip" style="animation-delay:${i*70}ms">${w}</span>`).join('') +
-    '</div>';
+  if(blind >= 6) return ['Blind spots galore', 'You each see things in the other they haven’t claimed. Gifts, mostly.'];
+  if(hidden >= 6) return ['Hidden depths', 'You each claimed things the other hasn’t seen yet. Show your work.'];
+  if(open <= 3) return ['Still unwrapping', 'Very little overlap yet — which means everything is left to find out.'];
+  return ['Getting there', 'Some overlap, some surprises. Good material for the walk home.'];
 }
 
-function addPane(stage, W, me, other){
-  const P = PANES[stage];
-  const div = document.createElement('div');
-  div.className = 'pane ' + P.cls;
-  if(P.key==='unknown'){
-    div.innerHTML =
-      `<div class="pane-top"><h3>${P.title}</h3><span class="cnt">${W.unknown}</span></div>
-       <p class="sub">The other ${W.unknown} words — no one picked them for ${esc(me)}. Room to find out.</p>`;
-  }else{
-    const words = W[P.key];
-    div.innerHTML =
-      `<div class="pane-top"><h3>${P.title}</h3><span class="cnt">${words.length}</span></div>
-       <p class="sub">${P.sub(esc(me), esc(other))}</p>` + chipsHTML(words);
-  }
-  $('revPanes').appendChild(div);
-  div.scrollIntoView({ block:'nearest', behavior:'smooth' });
+/* Big Five: the trait where the other's picture of you differs most from your own, in words —
+   or, if no trait moves by more than a notch, that you read alike */
+function bigFiveLine(p){
+  const me = esc(S.names[p]), other = esc(S.names[1-p]);
+  const self = profile(S.picks[p].self), byOther = profile(S.picks[1-p].other);
+  let gap = 0, at = 0;
+  TRAITS.forEach((t,i)=>{ const d = byOther[i]-self[i]; if(Math.abs(d) > Math.abs(gap)){ gap = d; at = i; } });
+  if(Math.abs(gap) < 0.3) return `${me} and ${other} read ${me}’s Big Five alike.`;
+  const t = TRAITS[at];
+  return `<span class="w ${p===0?'b':'a'}">${other}</span> sees ${me} as more ${gap>0 ? t.hi : t.lo} than ${me} does.`;
+}
+/* six words averaged sit close to the middle by construction, so the card shows each value with
+   a gain (clipped) — positions and the percentages in the tooltips and the share text agree */
+const B5_GAIN = 1.6;
+const shown = v => Math.max(-1, Math.min(1, v*B5_GAIN));
+function bigFiveHTML(p){
+  const me = esc(S.names[p]), other = esc(S.names[1-p]);
+  const self = profile(S.picks[p].self), byOther = profile(S.picks[1-p].other);
+  const pos = v => (50 + shown(v)*50).toFixed(0), pct = v => Math.round((shown(v)+1)*50) + '%';
+  return `<div class="tp ${p===0?'pa':'pb'}"><div class="tname ${p===0?'a':'b'}">${me}</div>
+    ${TRAITS.map((t,i)=>`<div class="b5row"><span class="b5l">${t.name}</span>
+      <span class="b5track" role="img" aria-label="${t.name}: ${pct(self[i])} by ${me}, ${pct(byOther[i])} by ${other}"><i></i>
+        <b class="dot self" style="left:${pos(self[i])}%; animation-delay:${400+i*70}ms" title="by ${me}: ${pct(self[i])}"></b>
+        <b class="dot other" style="left:${pos(byOther[i])}%; animation-delay:${600+i*70}ms" title="by ${other}: ${pct(byOther[i])}"></b></span></div>`).join('')}
+    <p class="tline">${bigFiveLine(p)}</p></div>`;
 }
 
-function showAssembled(W, me){
-  const wrap = $('revPanes');
-  wrap.innerHTML = '';
-  wrap.insertAdjacentHTML('beforeend', johariHTML(W, false));
-  $('revSub').textContent = `${me}’s full window`;
-}
-
-function johariHTML(W, mini){
-  const wl = a => a.join(' · ');
-  if(mini){
-    return `<div class="mg">
-      <div class="mq q open"><b>${W.open.length}</b><span>Open</span></div>
-      <div class="mq q blind"><b>${W.blind.length}</b><span>Blind</span></div>
-      <div class="mq q hid"><b>${W.hidden.length}</b><span>Hidden</span></div>
-      <div class="mq q unk"><b>${W.unknown}</b><span>Unknown</span></div>
-    </div>`;
-  }
-  return `<div class="johari">
-    <div class="q open"><div class="lbl">Open</div><div class="num">${W.open.length}</div><div class="wl">${wl(W.open)}</div></div>
-    <div class="q blind"><div class="lbl">Blind spot</div><div class="num">${W.blind.length}</div><div class="wl">${wl(W.blind)}</div></div>
-    <div class="q hid"><div class="lbl">Hidden</div><div class="num">${W.hidden.length}</div><div class="wl">${wl(W.hidden)}</div></div>
-    <div class="q unk"><div class="lbl">Unknown</div><div class="num">${W.unknown}</div><div class="wl">still on the shelf</div></div>
-  </div>`;
-}
-
-/* ============================ results ============================ */
 function headlineFor(p){
   // One phrase per player, from that player's dominant pane. Ties resolve toward the
   // warmer reading — both players should come off well even in a maximal-mismatch game.
   const W = S.windows[p], me = S.names[p], other = S.names[1-p];
   const o = W.open.length, h = W.hidden.length, b = W.blind.length;
   if(o >= h && o >= b){
-    return o >= 4 ? `You agree on who ${me} is` : `You mostly agree on who ${me} is`;
+    return o >= 4 ? `You agree on who ${me} is.` : `You mostly agree on who ${me} is.`;
   }
-  if(h > b) return `${me} is still surprising you`;
-  return `${other} sees things ${me} hasn’t claimed yet`;
+  if(h > b) return `${me} is still surprising ${other}.`;
+  return `${other} sees things ${me} hasn’t claimed yet.`;
 }
 
-function talkLine(){
-  // Point the conversation at the richest seam: the biggest blind pane in the room.
-  const b0 = S.windows[0].blind.length, b1 = S.windows[1].blind.length;
-  if(b0===0 && b1===0) return 'No blind spots today — ask each other which Hidden word deserves to land next.';
-  const p = b1 > b0 ? 1 : 0;
-  const W = S.windows[p];
-  const word = W.blind[0];
-  return `Start with the blind spots: ask ${S.names[1-p]} where “${word.toLowerCase()}” shows up in ${S.names[p]}.`;
+/* a list of pairs as prose: “funny”, or “warm” ≈ “kind” when the two words only nearly agree */
+function listWords(pairs, cls){
+  const one = o => o.a===o.b
+    ? `<span class="w ${cls}">“${o.a.toLowerCase()}”</span>`
+    : `<span class="w ${cls}">“${o.a.toLowerCase()}”</span> ≈ <span class="w ${cls}">“${o.b.toLowerCase()}”</span>`;
+  const q = pairs.map(one);
+  if(q.length===1) return q[0];
+  return q.slice(0,-1).join(', ') + ' and ' + q[q.length-1];
+}
+
+/* at a glance: up to four one-liners, each a different kind of fact */
+function glanceItems(){
+  const n = S.names.map(esc), W = S.windows, out = [];
+  const mutual = mutualWords(), shared = sharedSelf();
+  if(mutual.length) out.push(['🪞', `You see each other as ${listWords(mutual,'b')}.`]);
+  if(shared.length) out.push(['👯', `You both see yourselves as ${listWords(shared,'a')}.`]);
+  const bp = W[1].blind.length > W[0].blind.length ? 1 : 0;
+  if(W[bp].blind.length) out.push(['🎁', `${n[1-bp]} sees <span class="w b">“${W[bp].blind[0].toLowerCase()}”</span> in ${n[bp]} — ${n[bp]} didn’t claim it.`]);
+  const hp = W[1-bp].hidden.length ? 1-bp : (W[bp].hidden.length ? bp : -1);
+  if(hp>=0) out.push(['🔒', `${n[hp]} claimed <span class="w h">“${W[hp].hidden[0].toLowerCase()}”</span> — ${n[1-hp]} hasn’t seen it yet.`]);
+  if(!out.length) out.push(['🌱', 'No overlap anywhere today — start with the one word each of you was most surprised by.']);
+  return out.slice(0,4);
+}
+
+/* three openers, each pointed at a different pane so the conversation has somewhere to go */
+function talkItems(){
+  const n = S.names.map(esc), W = S.windows, out = [], used = new Set();
+  // each prompt takes a word the earlier prompts haven't — three openers, three different words
+  const fresh = list => list.find(w=>!used.has(w)) || list[0];
+  const take = list => { const w = fresh(list); used.add(w); return w.toLowerCase(); };
+  // 1 — the biggest blind pane in the room
+  const bp = W[1].blind.length > W[0].blind.length ? 1 : 0;
+  if(W[bp].blind.length){
+    out.push(`Ask ${n[1-bp]} where <span class="w b">“${take(W[bp].blind)}”</span> shows up in ${n[bp]} — ${n[bp]} didn’t pick it.`);
+  }
+  // 2 — a hidden word, preferably from the other player so both get a question
+  const hp = W[1-bp].hidden.length ? 1-bp : (W[bp].hidden.length ? bp : -1);
+  if(hp>=0){
+    out.push(`${n[hp]}: when did <span class="w h">“${take(W[hp].hidden)}”</span> last show? ${n[1-hp]} hasn’t seen it yet.`);
+  }
+  // 3 — something agreed on, for a story (a near match names both words)
+  const op = W[0].open.length ? 0 : (W[1].open.length ? 1 : -1);
+  if(op>=0){
+    const o = W[op].open.find(x => !used.has(x.a)) || W[op].open[0]; used.add(o.a);
+    out.push(`You both agree ${n[op]} is <span class="w a">“${o.a.toLowerCase()}”</span>`
+      + (o.a!==o.b ? ` (${n[1-op]}’s word: “${o.b.toLowerCase()}”)` : '') + ` — swap the story that proves it.`);
+  }
+  if(!out.length) out.push('No overlap anywhere today — start with the one word each of you was most surprised by.');
+  return out;
+}
+
+/* ============================ results — one page ============================
+   Rings first: how clearly the pair sees each other (the average of the two windows' Open
+   panes), then each direction and how alike the two self-images are. Then the temperature
+   bars, the two windows with the words in every pane, and three things to ask. The panes still
+   arrive one after another, on their own clock. */
+const PANES = [
+  { key:'open',   cls:'open',  title:'Open',       none:'nothing you both picked — rare, and worth a laugh' },
+  { key:'blind',  cls:'blind', title:'Blind spot', none:(me,other)=>`${other} saw nothing ${me} didn’t already claim` },
+  { key:'hidden', cls:'hid',   title:'Hidden',     none:(me,other)=>`${other} saw every word ${me} claimed` }
+];
+
+function ring(pct, cls, label, big){
+  const r = big?70:40, s = 2*r+12, c = s/2, C = 2*Math.PI*r, v = Math.round(pct);
+  return `<div class="ring ${cls}${big?' big':''}"><svg viewBox="0 0 ${s} ${s}" aria-hidden="true">
+    <circle class="tr" cx="${c}" cy="${c}" r="${r}"/>
+    <circle class="fl" cx="${c}" cy="${c}" r="${r}" style="stroke-dasharray:${C.toFixed(1)};stroke-dashoffset:${C.toFixed(1)}" data-off="${(C*(1-v/100)).toFixed(1)}"/>
+    </svg><div class="rv" aria-hidden="true"><b data-n="${v}">0</b><i>%</i></div>
+    <div class="rl" aria-hidden="true">${label}</div><span class="sr">${label}: ${v}%</span></div>`;
+}
+
+function paneHTML(P, W, me, other, delay){
+  const words = W[P.key];
+  let body;
+  if(words.length){
+    /* the Open pane holds pairs; a near match shows both words with ≈ between them */
+    const chip = (w,i) => typeof w==='string' || w.a===w.b
+      ? `<span class="chip" style="animation-delay:${delay+160+i*60}ms">${typeof w==='string' ? w : w.a}</span>`
+      : `<span class="chip near" style="animation-delay:${delay+160+i*60}ms" title="close enough to count: ${Math.round(w.sim*100)}%">${w.a}<i>≈</i>${w.b}</span>`;
+    body = '<div class="chips">' + words.map(chip).join('') + '</div>';
+  }else{
+    const t = typeof P.none==='function' ? P.none(me, other) : P.none;
+    body = `<p class="none">${t}</p>`;
+  }
+  return `<div class="pane ${P.cls}" style="animation-delay:${delay}ms">
+    <div class="lbl"><span>${P.title}</span><b>${words.length}</b></div>${body}</div>`;
+}
+
+function windowHTML(p, base){
+  const W = S.windows[p], me = esc(S.names[p]), other = esc(S.names[1-p]);
+  return `<section class="win" style="animation-delay:${base}ms">
+    <div class="winhead"><h3 class="${p===0?'a':'b'}">${me}’s window</h3>
+      <span class="sees" title="How much of ${me}’s own six words ${other} also picked — a close word counts for most of a match">${other} sees ${me}: <b>${Math.round(W.seen*100/PICKS_EACH)}</b>%</span></div>
+    <div class="johari">
+      ${paneHTML(PANES[0], W, me, other, base+120)}
+      ${paneHTML(PANES[1], W, me, other, base+480)}
+      ${paneHTML(PANES[2], W, me, other, base+840)}
+      <div class="pane unk" style="animation-delay:${base+1200}ms">
+        <div class="lbl"><span>Unknown</span><b>${W.unknown}</b></div>
+        <p class="sub">No one picked these ${W.unknown} for ${me}. Room to find out.</p>
+      </div>
+    </div>
+    <p class="wincap ${p===0?'a':'b'}">${esc(headlineFor(p))}</p>
+  </section>`;
 }
 
 function finish(){
-  const [WA, WB] = S.windows;
-  $('resNames').innerHTML = `<span class="hl-a">${esc(S.names[0])}</span><span class="x">×</span><span class="hl-b">${esc(S.names[1])}</span>`;
+  if(!S.windows) return;      // never paint results without all four lists
+  const [WA, WB] = S.windows, A = esc(S.names[0]), B = esc(S.names[1]);
+  const seesA = WA.seen*100/PICKS_EACH, seesB = WB.seen*100/PICKS_EACH;
+  const clear = (seesA+seesB)/2, alike = alikeScore()*100/PICKS_EACH;
+  const v = pairVerdict();
+  $('resNames').innerHTML = `<span class="hl-a">${A}</span><span class="x">×</span><span class="hl-b">${B}</span>`;
   $('resDate').textContent = new Date().toLocaleDateString(undefined,{ year:'numeric', month:'long', day:'numeric' });
-  $('resHeadline').innerHTML =
-    `<span class="hl-a">${esc(headlineFor(0))}</span> · <span class="hl-b">${esc(headlineFor(1))}</span>`;
-  const mw = $('miniWrap');
-  mw.innerHTML = '';
-  [0,1].forEach(p=>{
-    const d = document.createElement('div');
-    d.className = 'mini';
-    d.innerHTML = `<div class="who">${esc(S.names[p])}</div>` + johariHTML(S.windows[p], true);
-    mw.appendChild(d);
-  });
-  $('resTalk').textContent = talkLine();
+  $('resBody').innerHTML =
+    `<div class="rcard info">
+      ${ring(clear, 'rk', 'see each other clearly', true)}
+      <div class="rings3">${ring(seesA,'ra',`${B} sees ${A}`)}${ring(seesB,'rb',`${A} sees ${B}`)}${ring(alike,'rs','Alike')}</div>
+      <div class="verdict"><b>${v[0]}</b><span>${v[1]}</span></div>
+    </div>
+    <div class="rcard" style="animation-delay:.25s">
+      ${glanceItems().map(g=>`<div class="gl"><span class="gi">${g[0]}</span><span>${g[1]}</span></div>`).join('')}
+    </div>
+    <div class="rcard" style="animation-delay:.4s">
+      <h4>Big Five</h4>
+      <p class="sub">Where the six words land on the five traits — as each of you sees yourself, and as the other sees you. A playful read of the words, not a test.</p>
+      ${bigFiveHTML(0)}${bigFiveHTML(1)}
+      <div class="b5legend"><span><b class="dot self"></b>by yourself</span><span><b class="dot other"></b>by the other</span><span>less ← · → more</span></div>
+    </div>
+    ${windowHTML(0, 600)}${windowHTML(1, 900)}`;
+  $('talkList').innerHTML = talkItems().map(t=>`<li>${t}</li>`).join('');
   show('scrResults');
+
+  /* rings fill and numbers count up after first paint; reduced motion gets the final state at once.
+     Clocked off performance.now(), not the frame timestamp, so it lands on the final figure even if
+     the tab was hidden when the page rendered. */
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if($('scrResults').hidden) return;
+    document.querySelectorAll('.ring .fl').forEach(el=>{ el.style.strokeDashoffset = el.getAttribute('data-off'); });
+    const nums = Array.prototype.slice.call(document.querySelectorAll('.ring .rv b'));
+    if(REDUCED){ nums.forEach(b=>{ b.textContent = b.getAttribute('data-n'); }); return; }
+    const t0 = performance.now(), D = 1100;
+    (function step(){
+      if($('scrResults').hidden) return;
+      const k = Math.min(1,(performance.now()-t0)/D), e = 1-Math.pow(1-k,3);
+      nums.forEach(b=>{ b.textContent = Math.round(+b.getAttribute('data-n')*e); });
+      if(k<1) requestAnimationFrame(step);
+    })();
+  }));
+
   track('game_complete', {
     open_a: WA.open.length,  blind_a: WA.blind.length,  hidden_a: WA.hidden.length,
     open_b: WB.open.length,  blind_b: WB.blind.length,  hidden_b: WB.hidden.length
@@ -797,14 +1161,59 @@ function finish(){
   }catch(e){}
 }
 
-/* ---- copy result: counts and headline only, never the words themselves ---- */
+/* ============================ share ============================
+   The results page in words, for WhatsApp (its *bold* and _italic_ marks) and the clipboard:
+   the verdict and figures, the glance lines, the temperature, both windows pane by pane, and the
+   three openers. Sharing is the players' own explicit act, so unlike analytics it may carry the
+   words themselves. */
+function waLink(text){ return 'https://wa.me/?text=' + encodeURIComponent(text); }
+/* the insight lines are built as HTML with escaped names; the share text wants them plain */
+function plain(html){ return String(html).replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<')
+  .replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'"); }
 function resultText(){
-  const line = W => `🟩${W.open.length} 🟨${W.blind.length} 🟪${W.hidden.length} ⬛${W.unknown}`;
-  return `Windows — ${S.names[0]} × ${S.names[1]}\n` +
-    `${S.names[0]}: ${line(S.windows[0])}\n` +
-    `${S.names[1]}: ${line(S.windows[1])}\n` +
-    `(open · blind · hidden · unknown)\n` +
-    `https://kreeda.games/windows/`;
+  const [WA, WB] = S.windows, A = S.names[0], B = S.names[1];
+  const pct = n => Math.round(n*100/PICKS_EACH);
+  const clear = Math.round((WA.seen + WB.seen)*100/(2*PICKS_EACH));
+  const v = pairVerdict();
+  const words = l => l.length ? l.map(w => typeof w==='string' ? w : pairLabel(w)).join(', ') : '—';
+  const b5 = l => { const v = profile(l); return TRAITS.map((t,i) => t.k + Math.round((shown(v[i])+1)*50)).join(' '); };
+  const lines = [
+    `*Windows* · ${A} × ${B}`,
+    `_${v[0]}_ — ${plain(v[1])}`,
+    '',
+    `🔍 See each other clearly: *${clear}%*`,
+    `🟩 ${B} sees ${A}: ${pct(WA.seen)}% (${WA.open.length} of 6 matched)`,
+    `🟨 ${A} sees ${B}: ${pct(WB.seen)}% (${WB.open.length} of 6 matched)`,
+    `🟪 Alike: ${pct(alikeScore())}%`,
+    ''
+  ];
+  glanceItems().forEach(g => lines.push(g[0] + ' ' + plain(g[1])));
+  lines.push('', '🧭 *Big Five* (O C E A N, 0–100)');
+  [0,1].forEach(p => {
+    const me = S.names[p], other = S.names[1-p];
+    lines.push(`${me} — by ${me}: ${b5(S.picks[p].self)} · by ${other}: ${b5(S.picks[1-p].other)}`);
+    lines.push('   ' + plain(bigFiveLine(p)));
+  });
+  [0,1].forEach(p => {
+    const W = S.windows[p];
+    lines.push('', `*${S.names[p]}’s window*`,
+      `Open: ${words(W.open)}`, `Blind spot: ${words(W.blind)}`, `Hidden: ${words(W.hidden)}`, `Unknown: ${W.unknown} words`);
+  });
+  lines.push('', '💬 *Talk about it*');
+  talkItems().forEach(t => lines.push('• ' + plain(t)));
+  lines.push('', new Date().toLocaleDateString(undefined,{ year:'numeric', month:'short', day:'numeric' }) + ' · kreeda.games/windows');
+  return lines.join('\n');
+}
+$('waBtn').addEventListener('click', e => {
+  e.currentTarget.href = waLink(resultText());     // set on the way out so it always carries this game
+  track('share', { via:'whatsapp' });
+});
+if(navigator.share){
+  $('shareBtn').hidden = false;
+  $('shareBtn').addEventListener('click', () => {
+    track('share', { via:'system' });
+    try{ navigator.share({ title:`Windows — ${S.names[0]} × ${S.names[1]}`, text:resultText() }).catch(()=>{}); }catch(e){}
+  });
 }
 let toastTimer = null;
 function toast(msg){
@@ -832,7 +1241,7 @@ $('againBtn').addEventListener('click', ()=>{
   if(lock) return; lock = true;
   S = freshSession(S.names);
   track('game_start', {});
-  toHandoff(0);
+  toPick(0);
   lock = false;
 });
 $('changeBtn').addEventListener('click', ()=>{ goHome(); });
@@ -850,11 +1259,13 @@ $('confirmScrim').addEventListener('click', e=>{ if(e.target===$('confirmScrim')
 
 function goHome(){
   // scrub everything private before the title paints
-  $('wordGrid').innerHTML = '';
-  $('revPanes').innerHTML = '';
+  $('wordGrid').innerHTML = ''; $('trayChips').innerHTML = '';
+  $('resBody').innerHTML = ''; $('talkList').innerHTML = '';
   $('handoff').hidden = true;
+  $('scrPick').className = 'screen';
   if(S){ $('nameA').value = S.names[0]; $('nameB').value = S.names[1]; }
   S = null;
+  refreshStart();
   show('scrTitle');
 }
 </script>

@@ -6,6 +6,7 @@ import { chromium } from 'playwright';
 import ffmpegPath from 'ffmpeg-static';
 import { config } from '../config.js';
 import { GAME_CATALOG } from '../knowledge/catalog.js';
+import { TogetherDirector } from './togetherDirector.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -207,18 +208,14 @@ export class VideoStudio {
    * @param {string} webmPath
    * @returns {Promise<string>} path to the .mp4 file
    */
-  async convertToMp4(webmPath) {
+  async convertToMp4(webmPath, { fps = null, silent = false } = {}) {
     const mp4Path = webmPath.replace(/\.webm$/, '.mp4');
+    const args = ['-y', '-i', webmPath, '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-pix_fmt', 'yuv420p'];
+    if (fps) args.push('-r', String(fps));
+    args.push(...(silent ? ['-an'] : ['-c:a', 'aac']));
+    args.push('-movflags', '+faststart', mp4Path);
     try {
-      await execFileAsync(ffmpegPath, [
-        '-y',
-        '-i', webmPath,
-        '-c:v', 'libx264',
-        '-pix_fmt', 'yuv420p',
-        '-c:a', 'aac',
-        '-movflags', '+faststart',
-        mp4Path
-      ]);
+      await execFileAsync(ffmpegPath, args);
     } catch (err) {
       throw new Error(`ffmpeg conversion failed: ${err.message}`);
     }
@@ -227,10 +224,48 @@ export class VideoStudio {
   }
 
   /**
-   * Records gameplay and returns a ready-to-post MP4 path.
+   * Records gameplay and returns a ready-to-post MP4 path. A Play-together
+   * game with a storyboard is filmed by the TogetherDirector — the generic
+   * key-mashing recorder shows nothing meaningful for a game that needs two
+   * names typed, cells tapped and a phone handed over. Pass { generic: true }
+   * to force the old recorder anyway.
    */
   async generateGameplayVideo(gameId, options = {}) {
+    if (TogetherDirector.hasStoryboard(gameId) && !options.generic) {
+      return (await this.generateTogetherVideo(gameId, options)).mp4Path;
+    }
     const webmPath = await this.recordGameplay(gameId, options);
     return this.convertToMp4(webmPath);
+  }
+
+  /**
+   * Films a Play-together storyboard: a 1080×1920 vertical master (X, Reels,
+   * Shorts) plus a 1080×1080 square variant — the vertical frame centred over
+   * a blurred copy of itself — for feed placements. Silent: the recording
+   * carries no audio track, and X is fine with that.
+   * @returns {Promise<{ mp4Path: string, squarePath: string, seconds: number }>}
+   */
+  async generateTogetherVideo(gameId, options = {}) {
+    const director = new TogetherDirector(this.outputDir);
+    const { webmPath, seconds } = await director.record(gameId, options);
+    const mp4Path = await this.convertToMp4(webmPath, { fps: 30, silent: true });
+    const squarePath = await this.squareVariant(mp4Path);
+    return { mp4Path, squarePath, seconds };
+  }
+
+  async squareVariant(mp4Path) {
+    const out = mp4Path.replace(/\.mp4$/, '-square.mp4');
+    try {
+      await execFileAsync(ffmpegPath, [
+        '-y', '-i', mp4Path,
+        '-filter_complex',
+        '[0:v]scale=1080:1080:force_original_aspect_ratio=increase,crop=1080:1080,boxblur=24:8[bg];[0:v]scale=-2:1080[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2',
+        '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-pix_fmt', 'yuv420p', '-an', '-movflags', '+faststart',
+        out
+      ]);
+    } catch (err) {
+      throw new Error(`ffmpeg square variant failed: ${err.message}`);
+    }
+    return out;
   }
 }
