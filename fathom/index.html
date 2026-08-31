@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Fathom — Kreeda</title>
+<title>Deep Talk — Kreeda</title>
 <meta name="description" content="36 questions deep. Two people, one phone, a guided dive through three depths of conversation — with a real before-and-after closeness check-in.">
 <link rel="canonical" href="https://kreeda.games/fathom/">
 <meta name="theme-color" content="#0a2540">
@@ -11,13 +11,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/fathom/">
-<meta property="og:title" content="Fathom — Kreeda">
+<meta property="og:title" content="Deep Talk — Kreeda">
 <meta property="og:description" content="36 questions deep. Two people, one phone, a guided dive through three depths of conversation — with a real before-and-after closeness check-in.">
 <meta property="og:image" content="https://kreeda.games/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Fathom — Kreeda">
+<meta name="twitter:title" content="Deep Talk — Kreeda">
 <meta name="twitter:description" content="36 questions deep. Two people, one phone, a guided dive through three depths of conversation.">
 <meta name="twitter:image" content="https://kreeda.games/og.png">
 
@@ -26,7 +26,7 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Fathom","description":"36 questions deep. Two people, one phone, a guided dive through three depths of conversation — with a real before-and-after closeness check-in.","url":"https://kreeda.games/fathom/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Deep Talk","description":"36 questions deep. Two people, one phone, a guided dive through three depths of conversation — with a real before-and-after closeness check-in.","url":"https://kreeda.games/fathom/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <style>
 /* ============================ tokens ============================
@@ -329,7 +329,7 @@ details.how li{ margin-bottom:7px; }
 
 <div class="wrap">
   <header class="top">
-    <span class="brand">Fathom</span>
+    <span class="brand">Deep Talk</span>
     <span class="spacer"></span>
     <span id="depthchip" hidden>0 m</span>
     <button id="mutebtn" class="iconbtn" aria-label="Toggle sound" hidden>♪</button>
@@ -345,7 +345,7 @@ details.how li{ margin-bottom:7px; }
         <path d="M20 56 q10 -6 20 0 t20 0 t20 0 t20 0" fill="none" stroke="rgba(157,183,204,.5)" stroke-width="2" stroke-linecap="round"/>
       </svg>
     </div>
-    <h1 class="wordmark">Fathom</h1>
+    <h1 class="wordmark">Deep Talk</h1>
     <p class="pitch">36 questions deep — a guided dive for two.</p>
 
     <div class="panel">
@@ -456,7 +456,7 @@ details.how li{ margin-bottom:7px; }
   <!-- ============================ results ============================ -->
   <section class="scr" id="scr-results" hidden>
     <div class="resultcard" aria-live="polite">
-      <div class="rc-title">Fathom · dive log</div>
+      <div class="rc-title">Deep Talk · dive log</div>
       <div class="rc-pair" id="rc-pair"></div>
       <div class="rc-date" id="rc-date"></div>
       <div class="rc-minis" id="rc-minis"></div>
@@ -862,7 +862,7 @@ function openResults(){
 function resultText(){
   const wa = S.iosAfter[0]-S.iosBefore[0], wb = S.iosAfter[1]-S.iosBefore[1];
   const word = d => d>0 ? d+' closer' : (d===0 ? 'held steady' : 'more room');
-  return '\u{1F30A} Fathom — Kreeda\n'
+  return '\u{1F30A} Deep Talk — Kreeda\n'
     + S.names[0]+' & '+S.names[1]+' · '+new Date().toLocaleDateString()+'\n'
     + '3 depths · '+S.cardsSeen+' cards · 36 m down\n'
     + S.names[0]+': '+S.iosBefore[0]+'→'+S.iosAfter[0]+' of 7 — '+word(wa)+'\n'

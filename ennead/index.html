@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Ennead — Kreeda</title>
+<title>Tic Tac Toe — Kreeda</title>
 <meta name="description" content="Tic-tac-toe taken seriously — 3×3 up to 9×9 gomoku, plus Ultimate's nine nested boards.">
 <link rel="canonical" href="https://kreeda.games/ennead/">
 <meta name="theme-color" content="#0e1220">
@@ -11,13 +11,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/ennead/">
-<meta property="og:title" content="Ennead — Kreeda">
+<meta property="og:title" content="Tic Tac Toe — Kreeda">
 <meta property="og:description" content="Tic-tac-toe taken seriously — 3×3 up to 9×9 gomoku, plus Ultimate's nine nested boards.">
 <meta property="og:image" content="https://kreeda.games/assets/ennead-og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Ennead — Kreeda">
+<meta name="twitter:title" content="Tic Tac Toe — Kreeda">
 <meta name="twitter:description" content="Tic-tac-toe taken seriously — 3×3 up to 9×9 gomoku, plus Ultimate's nine nested boards.">
 <meta name="twitter:image" content="https://kreeda.games/assets/ennead-og.png">
 
@@ -26,7 +26,7 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Ennead","description":"Tic-tac-toe taken seriously — 3×3 up to 9×9 gomoku, plus Ultimate's nine nested boards.","url":"https://kreeda.games/ennead/","image":"https://kreeda.games/assets/ennead-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Strategy","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Tic Tac Toe","description":"Tic-tac-toe taken seriously — 3×3 up to 9×9 gomoku, plus Ultimate's nine nested boards.","url":"https://kreeda.games/ennead/","image":"https://kreeda.games/assets/ennead-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Strategy","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <style>
   :root{
@@ -160,7 +160,7 @@
 <body>
 <div class="app">
   <header>
-    <h1>ENNEAD<small>TIC · TAC · TOE</small></h1>
+    <h1>TIC TAC TOE<small>3×3 · 9×9 · ULTIMATE</small></h1>
     <button class="iconbtn" id="settingsBtn" aria-label="Settings">⚙ Settings</button>
   </header>
 
@@ -540,8 +540,8 @@ function showBanner(){
       shareBtn.onclick=function(){
         try{
           const text = settings.opponent==='ai'
-            ? 'I beat the AI at Ennead ⭕ — beat me:'
-            : 'I won at Ennead ⭕ — beat me:';
+            ? 'I beat the AI at Tic Tac Toe ⭕ — beat me:'
+            : 'I won at Tic Tac Toe ⭕ — beat me:';
           const url = location.origin + location.pathname + '?ref=share';
           kreedaShare(text, url, shareBtn);
         }catch(e){}

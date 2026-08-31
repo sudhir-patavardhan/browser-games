@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Wattage — Kreeda</title>
+<title>Energy Grid — Kreeda</title>
 <meta name="description" content="A daily energy-sources grid. Three criteria down, three across, nine cells, nine guesses — name an energy source for every square before the guesses run out. Built for high-school science.">
 <link rel="canonical" href="https://kreeda.games/wattage/">
 <meta name="theme-color" content="#0a2438">
@@ -11,13 +11,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/wattage/">
-<meta property="og:title" content="Wattage — Kreeda">
+<meta property="og:title" content="Energy Grid — Kreeda">
 <meta property="og:description" content="A daily energy-sources grid. Three criteria down, three across, nine cells, nine guesses — name a source that fits both.">
 <meta property="og:image" content="https://kreeda.games/assets/wattage-og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Wattage — Kreeda">
+<meta name="twitter:title" content="Energy Grid — Kreeda">
 <meta name="twitter:description" content="A daily energy-sources grid. Three criteria down, three across, nine cells, nine guesses — name a source that fits both.">
 <meta name="twitter:image" content="https://kreeda.games/assets/wattage-og.png">
 
@@ -26,7 +26,7 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Wattage","description":"A daily energy-sources grid. Three criteria down, three across, nine cells, nine guesses — name a source that fits both.","url":"https://kreeda.games/wattage/","image":"https://kreeda.games/assets/wattage-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Energy Grid","description":"A daily energy-sources grid. Three criteria down, three across, nine cells, nine guesses — name a source that fits both.","url":"https://kreeda.games/wattage/","image":"https://kreeda.games/assets/wattage-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <style>
 /* ============================ tokens ============================
@@ -228,7 +228,7 @@ footer.foot a{ color:var(--ink); }
 <div class="wrap">
 
   <header class="top">
-    <h1>Wattage<small>Kreeda · Daily</small></h1>
+    <h1>Energy Grid<small>Kreeda · Daily</small></h1>
     <span class="datechip" id="datechip"></span>
   </header>
 
@@ -901,7 +901,7 @@ function submit(){
   $('disamb').hidden=true;
   if(r.kind==='none'){
     if(r.tooShort) return;
-    sheetMsg('Wattage doesn’t know that name. The roster is '+N+' energy sources — fossil fuels, '+
+    sheetMsg('Energy Grid doesn’t know that name. The roster is '+N+' energy sources — fossil fuels, '+
              'nuclear, the renewables, and the traditional biofuels. No guess spent.');
     return;
   }
@@ -1039,7 +1039,7 @@ function closeReveal(){ $('reveal').classList.remove('show'); $('reveal').hidden
 
 function shareText(){
   const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const a=KEY.split('-'), head='Kreeda · Wattage · '+(+a[2])+' '+MON[+a[1]-1];
+  const a=KEY.split('-'), head='Kreeda · Energy Grid · '+(+a[2])+' '+MON[+a[1]-1];
   let rows='';
   for(let i=0;i<3;i++){
     for(let j=0;j<3;j++){

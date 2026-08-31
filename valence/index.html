@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Valence — Kreeda</title>
+<title>Chemistry Grid — Kreeda</title>
 <meta name="description" content="A daily chemistry grid. Three criteria down, three across, nine cells, nine guesses — name a chemical element for every square before the guesses run out. Built for high-school chemistry.">
 <link rel="canonical" href="https://kreeda.games/valence/">
 <meta name="theme-color" content="#12303c">
@@ -11,13 +11,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/valence/">
-<meta property="og:title" content="Valence — Kreeda">
+<meta property="og:title" content="Chemistry Grid — Kreeda">
 <meta property="og:description" content="A daily chemistry grid. Three criteria down, three across, nine cells, nine guesses — name a chemical element for every square before the guesses run out.">
 <meta property="og:image" content="https://kreeda.games/assets/valence-og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Valence — Kreeda">
+<meta name="twitter:title" content="Chemistry Grid — Kreeda">
 <meta name="twitter:description" content="A daily chemistry grid. Three criteria down, three across, nine cells, nine guesses — name a chemical element for every square before the guesses run out.">
 <meta name="twitter:image" content="https://kreeda.games/assets/valence-og.png">
 
@@ -26,7 +26,7 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Valence","description":"A daily chemistry grid. Three criteria down, three across, nine cells, nine guesses — name a chemical element for every square before the guesses run out.","url":"https://kreeda.games/valence/","image":"https://kreeda.games/assets/valence-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Chemistry Grid","description":"A daily chemistry grid. Three criteria down, three across, nine cells, nine guesses — name a chemical element for every square before the guesses run out.","url":"https://kreeda.games/valence/","image":"https://kreeda.games/assets/valence-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <style>
 /* ============================ tokens ============================
@@ -251,7 +251,7 @@ footer.foot a{ color:var(--ink); }
 <div class="wrap">
 
   <header class="top">
-    <h1>Valence<small>Kreeda · Daily</small></h1>
+    <h1>Chemistry Grid<small>Kreeda · Daily</small></h1>
     <span class="datechip" id="datechip"></span>
   </header>
 
@@ -324,7 +324,7 @@ footer.foot a{ color:var(--ink); }
    Chemistry makes that easy in a way sport does not: an element's group, block, period, symbol and
    room-temperature state do not change. Where a classification is genuinely CONTESTED between
    syllabuses — is zinc a transition metal, is polonium a metalloid, is lanthanum in the d-block —
-   Valence does not take a side and does not build a criterion on it. It asks about the d-block
+   Chemistry Grid does not take a side and does not build a criterion on it. It asks about the d-block
    instead, which every syllabus draws in the same place. See the reveal panel's conventions note.
 
    Where a fact could not be confirmed against a public reference, the element is simply left OUT of
@@ -685,7 +685,7 @@ const E=[
 
      "a transition metal"  — IUPAC's definition excludes zinc, cadmium and mercury (no partly filled
                              d-subshell in the atom or its ions), and NCERT teaches exactly that;
-                             most GCSE material counts them in. Valence asks about THE D-BLOCK
+                             most GCSE material counts them in. Chemistry Grid asks about THE D-BLOCK
                              instead, which every syllabus draws in the same place, and which
                              includes Zn, Cd and Hg without anybody having to be wrong.
      "a metalloid"         — shipped, but only with the six that every syllabus agrees on:
@@ -1344,7 +1344,7 @@ function submit(){
                'No guess spent.');
       return;
     }
-    sheetMsg('Valence doesn’t know that name. The roster is all '+N+' elements from hydrogen (1) to '+
+    sheetMsg('Chemistry Grid doesn’t know that name. The roster is all '+N+' elements from hydrogen (1) to '+
              'plutonium (94), by name or by symbol. No guess spent.');
     return;
   }
@@ -1457,7 +1457,7 @@ function showReveal(){
     parts.push('</ul>');
   }
   parts.push('<h3>Conventions this grid uses</h3>');
-  parts.push('<p class="note">Where syllabuses disagree, Valence does not take a side — it asks a '+
+  parts.push('<p class="note">Where syllabuses disagree, Chemistry Grid does not take a side — it asks a '+
     'different question instead. <b>“Transition metal” is never a criterion</b>, because IUPAC and '+
     'NCERT exclude zinc, cadmium and mercury while much GCSE material includes them; the grid asks '+
     'about the <b>d-block</b>, which everybody draws in the same place, and which contains all three. '+
@@ -1476,7 +1476,7 @@ function showReveal(){
     'billion times the age of the universe.</p>');
   parts.push('<p class="note"><b>Weight is not rarity scoring.</b> The Immaculate Grid’s rarity is a '+
     '<i>social</i> measurement — it tells you how few of the other players thought of your answer, '+
-    'and knowing that requires a server counting everybody. Valence has no server and never phones '+
+    'and knowing that requires a server counting everybody. Chemistry Grid has no server and never phones '+
     'home. Its Weight is an <i>editorial</i> measurement: a number assigned to each element when the '+
     'dataset was written, reflecting roughly how well known it is to somebody in school. Naming '+
     'thulium is worth five; naming oxygen is worth one. It is the same on day one as on day one '+
@@ -1509,7 +1509,7 @@ function closeReveal(){ $('reveal').classList.remove('show'); $('reveal').hidden
    like a nice idea in review. It isn't. */
 function shareText(){
   const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const a=KEY.split('-'), head='Kreeda · Valence · '+(+a[2])+' '+MON[+a[1]-1];
+  const a=KEY.split('-'), head='Kreeda · Chemistry Grid · '+(+a[2])+' '+MON[+a[1]-1];
   let rows='';
   for(let i=0;i<3;i++){
     for(let j=0;j<3;j++){

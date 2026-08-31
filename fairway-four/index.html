@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Fairway Four — Kreeda</title>
+<title>Golf — Kreeda</title>
 <meta name="description" content="Four holes of full-3D golf — three-click swing, wind and shape, then read the break on a sloped green.">
 <link rel="canonical" href="https://kreeda.games/fairway-four/">
 <meta name="theme-color" content="#0a1410">
@@ -11,13 +11,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/fairway-four/">
-<meta property="og:title" content="Fairway Four — Kreeda">
+<meta property="og:title" content="Golf — Kreeda">
 <meta property="og:description" content="Four holes of full-3D golf — three-click swing, wind and shape, then read the break on a sloped green.">
 <meta property="og:image" content="https://kreeda.games/assets/fairway-four-og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Fairway Four — Kreeda">
+<meta name="twitter:title" content="Golf — Kreeda">
 <meta name="twitter:description" content="Four holes of full-3D golf — three-click swing, wind and shape, then read the break on a sloped green.">
 <meta name="twitter:image" content="https://kreeda.games/assets/fairway-four-og.png">
 
@@ -26,7 +26,7 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Fairway Four","description":"Four holes of full-3D golf — three-click swing, wind and shape, then read the break on a sloped green.","url":"https://kreeda.games/fairway-four/","image":"https://kreeda.games/assets/fairway-four-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Sports","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Golf","description":"Four holes of full-3D golf — three-click swing, wind and shape, then read the break on a sloped green.","url":"https://kreeda.games/fairway-four/","image":"https://kreeda.games/assets/fairway-four-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Sports","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <style>
   *{ box-sizing:border-box; margin:0; padding:0; }
@@ -146,7 +146,7 @@
 
 <div class="modal open" id="titleModal">
   <div class="card">
-    <h1>FAIRWAY FOUR</h1>
+    <h1>GOLF</h1>
     <p>Four handcrafted holes. Late-afternoon light. A quiet course.</p>
     <p>Read each hole from the air, swoop down to the ball, and strike with the three-click meter.
        Wind, water, sand, rough and slope all matter.</p>
@@ -1325,7 +1325,7 @@ function roundReport(outcome){
 addEventListener('pagehide', function(){ try{ if(game.state!=='TITLE') roundReport('quit'); }catch(e){} });
 function dailyShareText(){
   const d=new Date(), { total, parSum }=roundTotals(), streak=streakOf('kreeda.streak');
-  return 'Kreeda · Fairway Four · '+d.getDate()+' '+MONTHS[d.getMonth()]+'\n'
+  return 'Kreeda · Golf · '+d.getDate()+' '+MONTHS[d.getMonth()]+'\n'
     + game.scores.map((s,i)=>parSquare(s-HOLES[i].par)).join('')+'\n'
     + fmtPar(total-parSum)+' ('+total+' strokes)'
     + (streak>=2 ? ' · streak '+streak+' \u{1F525}' : '')+'\n';
@@ -1378,7 +1378,7 @@ try{
       try{
         if(game.daily){ kreedaShare(dailyShareText(),'kreeda.games/fairway-four/',shareBtnEl); return; }
         const scoreToPar=shareBtnEl.dataset.scoreToPar||'E';
-        const text='I shot '+scoreToPar+' in Fairway Four ⛳ — beat me:';
+        const text='I shot '+scoreToPar+' in Golf ⛳ — beat me:';
         const url='https://kreeda.games/fairway-four/?ref=share';
         kreedaShare(text,url,shareBtnEl);
       }catch(e){}

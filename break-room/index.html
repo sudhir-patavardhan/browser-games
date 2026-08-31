@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Break Room — Kreeda</title>
+<title>8-Ball Pool — Kreeda</title>
 <meta name="description" content="8-ball with real physics — spin, fouls, ball-in-hand, and an AI that punishes a loose safety.">
 <link rel="canonical" href="https://kreeda.games/break-room/">
 <meta name="theme-color" content="#0d0a08">
@@ -11,13 +11,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/break-room/">
-<meta property="og:title" content="Break Room — Kreeda">
+<meta property="og:title" content="8-Ball Pool — Kreeda">
 <meta property="og:description" content="8-ball with real physics — spin, fouls, ball-in-hand, and an AI that punishes a loose safety.">
 <meta property="og:image" content="https://kreeda.games/assets/break-room-og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Break Room — Kreeda">
+<meta name="twitter:title" content="8-Ball Pool — Kreeda">
 <meta name="twitter:description" content="8-ball with real physics — spin, fouls, ball-in-hand, and an AI that punishes a loose safety.">
 <meta name="twitter:image" content="https://kreeda.games/assets/break-room-og.png">
 
@@ -26,7 +26,7 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Break Room","description":"8-ball with real physics — spin, fouls, ball-in-hand, and an AI that punishes a loose safety.","url":"https://kreeda.games/break-room/","image":"https://kreeda.games/assets/break-room-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Sports","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"8-Ball Pool","description":"8-ball with real physics — spin, fouls, ball-in-hand, and an AI that punishes a loose safety.","url":"https://kreeda.games/break-room/","image":"https://kreeda.games/assets/break-room-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Sports","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <style>
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
@@ -95,7 +95,7 @@
 <div id="app">
 
   <div id="screen-title" class="screen">
-    <h1 class="title">BREAK ROOM</h1>
+    <h1 class="title">8-BALL POOL</h1>
     <p class="subtitle">8-Ball Pool</p>
     <p class="blink">Tap or press any key to continue</p>
   </div>
@@ -239,7 +239,7 @@ function renderModeStats(){
 function track(name,params){ try{ if(window.bgTrack) window.bgTrack(name,params); }catch(e){} }
 /* game_start/game_end bracket ONE rack, from the first cue strike (see executeShot, the single choke
    point for both a human's release and the AI's swing) to however it stops: a legal win, a loss on the
-   8-ball, or the player bailing to the menu mid-rack. A pageview already covers "opened Break Room". */
+   8-ball, or the player bailing to the menu mid-rack. A pageview already covers "opened 8-Ball Pool". */
 const analytics = { started:false, ended:false, t0:0, shots:0 };
 function modeVocab(){ return game.mode==='ai' ? 'vs-ai' : game.mode; }   // '2p' | 'practice' pass through as-is
 function markStarted(){
@@ -1072,13 +1072,13 @@ function endGameUI(winner){
     if (game.mode==='ai'){
       if (winner===game.humanPlayer){
         shareBtn.style.display = '';
-        shareBtn.dataset.shareText = 'I beat the AI at Break Room \u{1F3B1} — beat me:';
+        shareBtn.dataset.shareText = 'I beat the AI at 8-Ball Pool \u{1F3B1} — beat me:';
       } else {
         shareBtn.style.display = 'none';
       }
     } else if (game.mode==='2p'){
       shareBtn.style.display = '';
-      shareBtn.dataset.shareText = `Player ${winner} won a game of Break Room \u{1F3B1} — your turn:`;
+      shareBtn.dataset.shareText = `Player ${winner} won a game of 8-Ball Pool \u{1F3B1} — your turn:`;
     } else {
       shareBtn.style.display = 'none';
     }
@@ -1250,7 +1250,7 @@ function kreedaToast(anchorEl, msg){
 }
 document.getElementById('shareBtn').addEventListener('click', function(){
   try{
-    const text = this.dataset.shareText || 'I played Break Room \u{1F3B1}:';
+    const text = this.dataset.shareText || 'I played 8-Ball Pool \u{1F3B1}:';
     const url = 'https://kreeda.games/break-room/?ref=share';
     kreedaShare(text, url, this);
   }catch(e){}

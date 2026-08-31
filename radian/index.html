@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Radian — Kreeda</title>
+<title>Trigonometry Grid — Kreeda</title>
 <meta name="description" content="A daily trigonometry grid. Three criteria down, three across, nine cells, nine guesses — name an angle on the unit circle for every square, in degrees or radians.">
 <link rel="canonical" href="https://kreeda.games/radian/">
 <meta name="theme-color" content="#16202c">
@@ -11,13 +11,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/radian/">
-<meta property="og:title" content="Radian — Kreeda">
+<meta property="og:title" content="Trigonometry Grid — Kreeda">
 <meta property="og:description" content="A daily trigonometry grid. Three criteria down, three across, nine cells, nine guesses — name an angle on the unit circle for every square, in degrees or radians.">
 <meta property="og:image" content="https://kreeda.games/assets/radian-og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Radian — Kreeda">
+<meta name="twitter:title" content="Trigonometry Grid — Kreeda">
 <meta name="twitter:description" content="A daily trigonometry grid. Three criteria down, three across, nine cells, nine guesses — name an angle on the unit circle for every square, in degrees or radians.">
 <meta name="twitter:image" content="https://kreeda.games/assets/radian-og.png">
 
@@ -26,7 +26,7 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Radian","description":"A daily trigonometry grid. Three criteria down, three across, nine cells, nine guesses — name an angle on the unit circle for every square, in degrees or radians.","url":"https://kreeda.games/radian/","image":"https://kreeda.games/assets/radian-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"educationalUse":"Practice","learningResourceType":"Game","teaches":"Trigonometry: the unit circle, quadrants, reference angles, exact values, and radian measure"}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Trigonometry Grid","description":"A daily trigonometry grid. Three criteria down, three across, nine cells, nine guesses — name an angle on the unit circle for every square, in degrees or radians.","url":"https://kreeda.games/radian/","image":"https://kreeda.games/assets/radian-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"educationalUse":"Practice","learningResourceType":"Game","teaches":"Trigonometry: the unit circle, quadrants, reference angles, exact values, and radian measure"}
 </script>
 <style>
 /* ============================ tokens ============================
@@ -262,7 +262,7 @@ footer.foot a{ color:var(--ink); }
 <div class="wrap">
 
   <header class="top">
-    <h1>Radian<small>Kreeda · Daily</small></h1>
+    <h1>Trigonometry Grid<small>Kreeda · Daily</small></h1>
     <span class="datechip" id="datechip"></span>
   </header>
 
@@ -1159,12 +1159,12 @@ function submit(){
   if(!r.ok){
     if(r.why==='empty') return;                              // mid-typing: silent, costs nothing
     if(r.why==='offgrid'){
-      sheetMsg('Radian’s circle is the 72 angles at 5° steps, and '+r.deg+'° is not one of them. '+
+      sheetMsg('Trigonometry Grid’s circle is the 72 angles at 5° steps, and '+r.deg+'° is not one of them. '+
                'The nearest are '+(Math.floor(r.deg/5)*5)+'° and '+((Math.floor(r.deg/5)*5+5)%360)+
                '°. No guess spent.');
       return;
     }
-    sheetMsg('Radian couldn’t read that. Degrees: 210, 210°, 210 deg. '+
+    sheetMsg('Trigonometry Grid couldn’t read that. Degrees: 210, 210°, 210 deg. '+
              'Radians: 7pi/6, 7π/6, -π/3, 3π/2. A bare number is degrees. No guess spent.');
     return;
   }
@@ -1250,7 +1250,7 @@ function showReveal(){
   parts.push('<h3>The unit circle</h3>');
   parts.push('<div class="circlebox">'+bigCircle()+'</div>');
   parts.push('<p class="note">The sixteen angles every course asks you to know cold, in degrees '+
-    'outside and radians inside. Radian’s roster is wider than this: all 72 angles at 5° steps, '+
+    'outside and radians inside. Trigonometry Grid’s roster is wider than this: all 72 angles at 5° steps, '+
     'because a criterion has to leave at least three answers in every cell and the sixteen alone '+
     'cannot do that. The other 56 are still ordinary angles — you reason about each one from its '+
     'quadrant and its reference angle, which is the skill the grid is actually testing.</p>');
@@ -1278,7 +1278,7 @@ function showReveal(){
     parts.push('</ul>');
   }
 
-  parts.push('<h3>How Radian is built</h3>');
+  parts.push('<h3>How Trigonometry Grid is built</h3>');
   parts.push('<p class="note"><b>Nothing here is remembered; all of it is derived.</b> Every angle’s '+
     'quadrant, signs, reference angle and radian form come from integer arithmetic on its degree '+
     'measure, and at every boot the game re-derives all of it from <i>Math.sin</i>, <i>Math.cos</i> '+
@@ -1296,11 +1296,11 @@ function showReveal(){
     'Coterminal input is accepted and told to you: −π/6 is 330°, 390° is 30°.</p>');
   parts.push('<p class="note"><b>Weight is not rarity scoring.</b> Immaculate Grid’s rarity is a '+
     '<i>social</i> measurement — how few of the other players thought of your answer — and knowing '+
-    'that needs a server counting everybody. Radian has no server and never phones home. Its Weight '+
+    'that needs a server counting everybody. Trigonometry Grid has no server and never phones home. Its Weight '+
     'is an <i>editorial</i> measurement: 5 for an angle nobody memorises, 1 for one everybody has. '+
     'It is the same on day one as on day one thousand, and it works on a plane. It can never '+
     'surprise you by revealing that everyone else also thought of 240°.</p>');
-  parts.push('<p class="note">Radian ships <b>zero image files</b>; every diagram on this page is '+
+  parts.push('<p class="note">Trigonometry Grid ships <b>zero image files</b>; every diagram on this page is '+
     'inline SVG drawn from the same numbers the grid is built on. Something wrong here? '+
     '<a href="../">kreeda.games</a></p>');
 
@@ -1323,7 +1323,7 @@ function closeReveal(){ $('reveal').classList.remove('show'); $('reveal').hidden
    appears only as a single total on the score line, where it belongs to no cell. */
 function shareText(){
   const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const a=KEY.split('-'), head='Kreeda · Radian · '+(+a[2])+' '+MON[+a[1]-1];
+  const a=KEY.split('-'), head='Kreeda · Trigonometry Grid · '+(+a[2])+' '+MON[+a[1]-1];
   let rows='';
   for(let i=0;i<3;i++){
     for(let j=0;j<3;j++){

@@ -74,7 +74,7 @@ export const GAME_CATALOG = {
   },
   'break-room': {
     id: 'break-room',
-    name: 'Break Room',
+    name: '8-Ball Pool',
     genre: 'Physics 8-Ball Pool',
     url: 'https://kreeda.games/break-room/index.html',
     tagline: 'Real spin, called pockets, zero downloads.',
@@ -96,7 +96,7 @@ export const GAME_CATALOG = {
   },
   'chroma-blocks': {
     id: 'chroma-blocks',
-    name: 'Chroma Blocks',
+    name: 'Falling Blocks',
     genre: 'Neon Falling Blocks Puzzle',
     url: 'https://kreeda.games/chroma-blocks/index.html',
     tagline: 'Vibrant neon, pure flow state.',
@@ -118,7 +118,7 @@ export const GAME_CATALOG = {
   },
   'last-16': {
     id: 'last-16',
-    name: 'Last 16',
+    name: 'Knockout Football',
     genre: 'World Cup 2026 Arcade Football',
     url: 'https://kreeda.games/last-16/index.html',
     tagline: '16 nations. 4 real stars each. Lift the trophy.',
@@ -162,7 +162,7 @@ export const GAME_CATALOG = {
   },
   'fairway-four': {
     id: 'fairway-four',
-    name: 'Fairway Four',
+    name: 'Golf',
     genre: '3D Golf Simulation',
     url: 'https://kreeda.games/fairway-four/index.html',
     tagline: '4 pristine holes. Wind, Magnus lift, flowing greens.',
@@ -183,7 +183,7 @@ export const GAME_CATALOG = {
   },
   ennead: {
     id: 'ennead',
-    name: 'Ennead',
+    name: 'Tic Tac Toe',
     genre: 'Classic & Ultimate Tic-Tac-Toe',
     url: 'https://kreeda.games/ennead/index.html',
     tagline: 'From 3x3 to nested 9x9 mind games.',
@@ -205,7 +205,7 @@ export const GAME_CATALOG = {
   },
   dasanana: {
     id: 'dasanana',
-    name: 'Daśānana',
+    name: 'Astra Duel',
     genre: 'Mythic Astra-Duel & Sanskrit Rhythm',
     url: 'https://kreeda.games/dasanana/index.html',
     tagline: 'Counter divine astras. Chant for tejas. Loose the Brahmāstra.',
@@ -248,7 +248,7 @@ export const GAME_CATALOG = {
   // ---- "Play together": two people, one phone, pass-and-play ----
   sync: {
     id: 'sync',
-    name: 'Sync',
+    name: 'Duo Quiz',
     genre: 'Two-Player Relationship Game',
     category: 'together',
     url: 'https://kreeda.games/sync/index.html',
@@ -268,7 +268,7 @@ export const GAME_CATALOG = {
   },
   windows: {
     id: 'windows',
-    name: 'Windows',
+    name: 'Blind Spots',
     genre: 'Johari Window for Two',
     category: 'together',
     url: 'https://kreeda.games/windows/index.html',
@@ -288,7 +288,7 @@ export const GAME_CATALOG = {
   },
   split: {
     id: 'split',
-    name: 'Split',
+    name: 'Share or Take',
     genre: 'Two-Player Trust Game',
     category: 'together',
     url: 'https://kreeda.games/split/index.html',
@@ -308,7 +308,7 @@ export const GAME_CATALOG = {
   },
   auction: {
     id: 'auction',
-    name: 'The Auction',
+    name: 'Life Auction',
     genre: 'Two-Player Values Game',
     category: 'together',
     url: 'https://kreeda.games/auction/index.html',
@@ -328,7 +328,7 @@ export const GAME_CATALOG = {
   },
   fathom: {
     id: 'fathom',
-    name: 'Fathom',
+    name: 'Deep Talk',
     genre: 'Guided Conversation for Two',
     category: 'together',
     url: 'https://kreeda.games/fathom/index.html',
@@ -350,7 +350,7 @@ export const GAME_CATALOG = {
   // ---- Build-and-learn ----
   apogee: {
     id: 'apogee',
-    name: 'Apogee',
+    name: 'Rocket Builder',
     genre: 'Rocket Builder',
     category: 'build',
     url: 'https://kreeda.games/apogee/index.html',
@@ -363,7 +363,7 @@ export const GAME_CATALOG = {
   },
   garage: {
     id: 'garage',
-    name: 'Garage',
+    name: 'Car Builder',
     genre: 'Car Builder',
     category: 'build',
     url: 'https://kreeda.games/garage/index.html',
@@ -378,7 +378,7 @@ export const GAME_CATALOG = {
   // ---- Daily grids ----
   quanta: {
     id: 'quanta',
-    name: 'Quanta',
+    name: 'Physics Grid',
     genre: 'Daily Physics Grid',
     category: 'daily',
     url: 'https://kreeda.games/quanta/index.html',
@@ -391,7 +391,7 @@ export const GAME_CATALOG = {
   },
   radian: {
     id: 'radian',
-    name: 'Radian',
+    name: 'Trigonometry Grid',
     genre: 'Daily Trigonometry Grid',
     category: 'daily',
     url: 'https://kreeda.games/radian/index.html',
@@ -404,7 +404,7 @@ export const GAME_CATALOG = {
   },
   valence: {
     id: 'valence',
-    name: 'Valence',
+    name: 'Chemistry Grid',
     genre: 'Daily Chemistry Grid',
     category: 'daily',
     url: 'https://kreeda.games/valence/index.html',

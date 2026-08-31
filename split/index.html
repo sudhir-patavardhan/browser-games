@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Split — Kreeda</title>
+<title>Share or Take — Kreeda</title>
 <meta name="description" content="Two players, one phone, ten rounds of Share or Take. The score says who won — the pattern says who you are. A pass-and-play trust game with a mirror at the end.">
 <link rel="canonical" href="https://kreeda.games/split/">
 <meta name="theme-color" content="#0b0d13">
@@ -11,13 +11,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/split/">
-<meta property="og:title" content="Split — Kreeda">
+<meta property="og:title" content="Share or Take — Kreeda">
 <meta property="og:description" content="Two players, one phone, ten rounds of Share or Take. The score says who won — the pattern says who you are.">
 <meta property="og:image" content="https://kreeda.games/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Split — Kreeda">
+<meta name="twitter:title" content="Share or Take — Kreeda">
 <meta name="twitter:description" content="Two players, one phone, ten rounds of Share or Take. The score says who won — the pattern says who you are.">
 <meta name="twitter:image" content="https://kreeda.games/og.png">
 
@@ -26,11 +26,11 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Split","description":"Two players, one phone, ten rounds of Share or Take. The score says who won — the pattern says who you are.","url":"https://kreeda.games/split/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Share or Take","description":"Two players, one phone, ten rounds of Share or Take. The score says who won — the pattern says who you are.","url":"https://kreeda.games/split/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <style>
 /* ============================ tokens ============================
-   Split's identity is a screen divided: crimson on the left, deep blue on the right, a jagged
+   Share or Take's identity is a screen divided: crimson on the left, deep blue on the right, a jagged
    fault line between them that mends as trust grows. One committed dark theme — the drama of
    the reveal needs a dark room, so we don't ship a light variant. Every colour lives here once. */
 :root{
@@ -908,7 +908,7 @@ function renderResults(){
   const today = new Date().toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
   setStage(
     '<div class="rescard" aria-live="polite"><div class="reshead">' +
-      '<div class="gname">Split · 10 rounds</div>' +
+      '<div class="gname">Share or Take · 10 rounds</div>' +
       '<div class="score">' +
         '<span><span class="vsnm" style="color:var(--pa)">' + esc(names[0]) + '</span><br><span class="s a">' + sa + '</span></span>' +
         '<span style="color:var(--faint);font-weight:900">·</span>' +
@@ -954,7 +954,7 @@ function resultText(aA, aB){
     const [a,b] = e.c;
     return (a==='S'&&b==='S') ? '🟡' : (a==='T'&&b==='T') ? '⚫' : '🔻';
   }).join('');
-  return 'Split — ' + names[0] + ' ' + G.totals[0] + ' · ' + names[1] + ' ' + G.totals[1] + '\n' +
+  return 'Share or Take — ' + names[0] + ' ' + G.totals[0] + ' · ' + names[1] + ' ' + G.totals[1] + '\n' +
     strip + '\n' +
     names[0] + ': ' + aA.name + ' · ' + names[1] + ': ' + aB.name + '\n' +
     'kreeda.games/split';

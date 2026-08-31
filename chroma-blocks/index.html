@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Chroma Blocks — Kreeda</title>
+<title>Falling Blocks — Kreeda</title>
 <meta name="description" content="Neon falling blocks — hold queue, ghost piece, combo flashes and a soundtrack it makes up as it goes.">
 <link rel="canonical" href="https://kreeda.games/chroma-blocks/">
 <meta name="theme-color" content="#05050a">
@@ -11,13 +11,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/chroma-blocks/">
-<meta property="og:title" content="Chroma Blocks — Kreeda">
+<meta property="og:title" content="Falling Blocks — Kreeda">
 <meta property="og:description" content="Neon falling blocks — hold queue, ghost piece, combo flashes and a soundtrack it makes up as it goes.">
 <meta property="og:image" content="https://kreeda.games/assets/chroma-blocks-og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Chroma Blocks — Kreeda">
+<meta name="twitter:title" content="Falling Blocks — Kreeda">
 <meta name="twitter:description" content="Neon falling blocks — hold queue, ghost piece, combo flashes and a soundtrack it makes up as it goes.">
 <meta name="twitter:image" content="https://kreeda.games/assets/chroma-blocks-og.png">
 
@@ -26,7 +26,7 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Chroma Blocks","description":"Neon falling blocks — hold queue, ghost piece, combo flashes and a soundtrack it makes up as it goes.","url":"https://kreeda.games/chroma-blocks/","image":"https://kreeda.games/assets/chroma-blocks-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Falling Blocks","description":"Neon falling blocks — hold queue, ghost piece, combo flashes and a soundtrack it makes up as it goes.","url":"https://kreeda.games/chroma-blocks/","image":"https://kreeda.games/assets/chroma-blocks-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <style>
   :root{
@@ -195,7 +195,7 @@
       <div id="popupLayer"></div>
       <div id="levelBanner"></div>
       <div id="startScreen" class="overlay">
-        <h1 class="title">CHROMA BLOCKS</h1>
+        <h1 class="title">FALLING BLOCKS</h1>
         <p class="subtitle">A radiant falling-blocks game</p>
         <div class="modeRow">
           <button id="dailyBtn" class="modeBtn">TODAY’S BAG</button>
@@ -895,13 +895,13 @@ function setupInput(game){
         /* the grid's last line is the bare host — schemeless, per the contract, because chat clients
            linkify it anyway and a visible https:// costs a line of width the squares want. */
         const lines = +btn.dataset.lines || 0, streak = +btn.dataset.streak || 0;
-        const text = 'Kreeda · Chroma Blocks · ' + shareDate() + '\n'
+        const text = 'Kreeda · Falling Blocks · ' + shareDate() + '\n'
           + btn.dataset.grid + '\n'
           + lines + ' lines · ' + score + ' pts' + (streak >= 2 ? ' · streak ' + streak + ' 🔥' : '') + '\n'
           + 'kreeda.games/chroma-blocks/';
         kreedaShare(text, '', btn);
       } else {
-        kreedaShare('I scored ' + score + ' in Chroma Blocks 🧩 — beat me:', url + '?ref=share', btn);
+        kreedaShare('I scored ' + score + ' in Falling Blocks 🧩 — beat me:', url + '?ref=share', btn);
       }
     }catch(e){}
   });

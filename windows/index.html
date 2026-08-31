@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Windows — Kreeda</title>
+<title>Blind Spots — Kreeda</title>
 <meta name="description" content="A playable Johari Window for two people on one phone. Pick six words for yourself, six for them — then one page shows how clearly you see each other, how warm each of you paints the other, and both windows: what you both see, what's hidden, and the blind spots.">
 <link rel="canonical" href="https://kreeda.games/windows/">
 <meta name="theme-color" content="#171614">
@@ -11,13 +11,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/windows/">
-<meta property="og:title" content="Windows — Kreeda">
+<meta property="og:title" content="Blind Spots — Kreeda">
 <meta property="og:description" content="A playable Johari Window for two people on one phone. Pick six words for yourself, six for them — then one page shows how clearly you see each other.">
 <meta property="og:image" content="https://kreeda.games/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Windows — Kreeda">
+<meta name="twitter:title" content="Blind Spots — Kreeda">
 <meta name="twitter:description" content="A playable Johari Window for two people on one phone. Pick six words for yourself, six for them — then one page shows how clearly you see each other.">
 <meta name="twitter:image" content="https://kreeda.games/og.png">
 
@@ -26,7 +26,7 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Windows","description":"A playable Johari Window for two people on one phone. Pick six words for yourself, six for them — then one page shows how clearly you see each other, and both windows: what you both see, what's hidden, and the blind spots.","url":"https://kreeda.games/windows/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Blind Spots","description":"A playable Johari Window for two people on one phone. Pick six words for yourself, six for them — then one page shows how clearly you see each other, and both windows: what you both see, what's hidden, and the blind spots.","url":"https://kreeda.games/windows/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <style>
 /* ============================ tokens ============================
@@ -372,7 +372,7 @@ details.how li b{ color:var(--ink); }
         <rect x="7.5" y="21.5" width="11" height="11" rx="2.5" fill="#8f86c9" opacity=".85"/>
         <rect x="21.5" y="21.5" width="11" height="11" rx="2.5" fill="#565049" opacity=".7"/>
       </svg>
-      <div class="t">WINDOWS<small>a Johari game</small></div>
+      <div class="t">BLIND SPOTS<small>a Johari game</small></div>
     </div>
     <div class="topbtns" id="topbtns" hidden>
       <button class="soundbtn" id="soundBtn" type="button" aria-label="Sound" aria-pressed="true">🔊</button>
@@ -398,7 +398,7 @@ details.how li b{ color:var(--ink); }
         <path d="M39 56 L30 112 L48 112 Z" fill="#2bb3a3" opacity=".14"/>
         <path d="M81 56 L72 112 L90 112 Z" fill="#ffb020" opacity=".14"/>
       </svg>
-      <h1><span class="w1">WIN</span><span class="w2">DOWS</span></h1>
+      <h1><span class="w1">BLIND</span> <span class="w2">SPOTS</span></h1>
     </div>
     <p class="pitch">How you see yourself vs how they see you.<br>Two people, one phone, forty words.</p>
 
@@ -1178,7 +1178,7 @@ function resultText(){
   const words = l => l.length ? l.map(w => typeof w==='string' ? w : pairLabel(w)).join(', ') : '—';
   const b5 = l => { const v = profile(l); return TRAITS.map((t,i) => t.k + Math.round((shown(v[i])+1)*50)).join(' '); };
   const lines = [
-    `*Windows* · ${A} × ${B}`,
+    `*Blind Spots* · ${A} × ${B}`,
     `_${v[0]}_ — ${plain(v[1])}`,
     '',
     `🔍 See each other clearly: *${clear}%*`,
@@ -1212,7 +1212,7 @@ if(navigator.share){
   $('shareBtn').hidden = false;
   $('shareBtn').addEventListener('click', () => {
     track('share', { via:'system' });
-    try{ navigator.share({ title:`Windows — ${S.names[0]} × ${S.names[1]}`, text:resultText() }).catch(()=>{}); }catch(e){}
+    try{ navigator.share({ title:`Blind Spots — ${S.names[0]} × ${S.names[1]}`, text:resultText() }).catch(()=>{}); }catch(e){}
   });
 }
 let toastTimer = null;
