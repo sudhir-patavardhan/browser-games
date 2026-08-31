@@ -144,9 +144,26 @@
      sideways scroll, and cards keep a fixed width instead of grid-stretching. */
   .rails{ display:flex; flex-direction:column; gap:26px; }
   .rail{ scroll-margin-top:calc(var(--barh, 48px) + 56px); }
-  .rail-head{ display:flex; align-items:baseline; gap:10px; margin:0 2px 9px; }
-  .rail-head h2{ margin:0; font-size:16px; font-weight:800; letter-spacing:-.2px; }
+  /* A rail heading sits directly above the row's leftmost card, and at 16px/800 it
+     used to be barely bigger than that card's own 15px/800 h2 — close enough in size
+     and proximity that a glance read "Play together" as Sync's caption, not a label
+     for the five-card shelf below it (a real reader's confusion, not a hypothetical
+     one). The fix is a clear size jump plus a full-width rule: the rule's width is
+     the whole rail, not any one card, so it can't be mistaken for belonging to the
+     first one, and the extra bottom margin keeps the row from reading as glued to it. */
+  .rail-head{
+    display:flex; align-items:baseline; gap:10px;
+    margin:0 2px 14px; padding-bottom:10px; border-bottom:1px solid var(--line);
+  }
+  .rail-head h2{ margin:0; font-size:19px; font-weight:800; letter-spacing:-.3px; }
   .rail-note{ margin-left:auto; font-size:11.5px; color:#7f7f92; white-space:nowrap; }
+  .streak{
+    display:inline-flex; align-items:center; gap:4px; flex:none;
+    font-size:12px; font-weight:800; letter-spacing:-.1px;
+    color:var(--accent); background:rgba(92,255,110,.10);
+    border:1px solid rgba(92,255,110,.30); border-radius:999px; padding:2px 9px 2px 7px;
+  }
+  .streak svg{ width:10px; height:12px; flex:none; }
   .rail-row{
     display:flex; gap:10px; overflow-x:auto; scrollbar-width:none;
     margin:0 calc(var(--pad) * -1); padding:2px var(--pad) 4px;
@@ -229,59 +246,6 @@
   }
 
 
-  /* ---- daily lane ---------------------------------------------------------- */
-  /* The one horizontal rail on the page, and the only place a rail earns its keep.
-     Netflix scrolls sideways because it has thousands of titles and hiding some is
-     unavoidable; this site has thirteen games and wants every one findable, so the
-     grid below stays a grid. What makes the dailies different is that they EXPIRE —
-     a set that changes at midnight is a different kind of object from a game that is
-     always there, and a rail says so at a glance.
-
-     Unlike the strip this replaces, it ships in the markup and is always visible. The
-     old one was written entirely from localStorage, so a first-time visitor — most of
-     the traffic — never learned the dailies existed at all. The loop cannot advertise
-     itself only to people already inside it. Storage now only decorates: streak, and
-     which of today's grids are already done. */
-  .lane{ margin:4px 0 0; }
-  .lane-head{ display:flex; align-items:center; gap:9px; margin:0 2px 8px; }
-  .lane-head h2{ margin:0; font-size:14px; font-weight:800; letter-spacing:-.1px; }
-  .lane-note{ margin-left:auto; font-size:11.5px; color:#7f7f92; }
-  .streak{
-    display:inline-flex; align-items:center; gap:4px; flex:none;
-    font-size:12px; font-weight:800; letter-spacing:-.1px;
-    color:var(--accent); background:rgba(92,255,110,.10);
-    border:1px solid rgba(92,255,110,.30); border-radius:999px; padding:2px 9px 2px 7px;
-  }
-  .streak svg{ width:10px; height:12px; flex:none; }
-
-  /* Bleeds to both edges so a half-cut third tile is visible at 360px — the standard
-     signal that a rail scrolls. A rail whose contents fit exactly looks like a dead end. */
-  .lane-row{
-    display:flex; gap:9px; overflow-x:auto; scrollbar-width:none;
-    margin:0 calc(var(--pad) * -1); padding:0 var(--pad) 2px;
-    -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity;
-  }
-  .lane-row::-webkit-scrollbar{ display:none; }
-  .tile{
-    flex:none; scroll-snap-align:start; position:relative;
-    width:152px; display:flex; flex-direction:column; gap:2px;
-    background:var(--surface); border:1px solid var(--line); border-radius:14px;
-    padding:9px 11px 10px; overflow:hidden;
-    transition:border-color .15s, background .15s, transform .15s;
-  }
-  /* The subject's own colour, set per tile — the only thing distinguishing three
-     otherwise identical grids at a glance. */
-  .tile::before{
-    content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--hue);
-  }
-  .tile-name{ font-size:14.5px; font-weight:800; letter-spacing:-.15px; }
-  .tile-sub{ font-size:11.5px; color:var(--ink-dim); }
-  .tile-state{ margin-top:5px; font-size:11.5px; font-weight:700; color:var(--accent); display:flex; align-items:center; gap:4px; }
-  .tile-state svg{ width:10px; height:10px; flex:none; }
-  .tile.done .tile-state{ color:#7f7f92; }
-  .tile:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
-  @media (hover:hover){ .tile:hover{ border-color:var(--line-strong); background:var(--surface-2); transform:translateY(-2px); } }
-
   /* Per-card daily state — a corner pill floated over the art, mirroring .badge on
      the opposite side so the featured card can carry both without them colliding.
      Offsets track each card's own padding (10px / 12px) so the pill sits a uniform
@@ -329,7 +293,7 @@
 <div class="wrap">
 
   <header class="hero">
-    <h1>Twenty games that start the second you <em>tap</em>.</h1>
+    <h1>Twenty-two games that start the second you <em>tap</em>.</h1>
     <ul class="trust">
       <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>Free</li>
       <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>No sign-up</li>
@@ -337,31 +301,6 @@
       <li><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>Works offline</li>
     </ul>
   </header>
-
-  <!-- Today's grids. Ships filled, unlike the storage-built strip it replaces: a
-       first-time visitor is most of the traffic and never saw that one, so the daily
-       loop advertised itself only to players already in it. Script only decorates —
-       the streak pill, and which of these are already done today. -->
-  <section class="lane" aria-label="Today&rsquo;s grids">
-    <div class="lane-head">
-      <h2>Today&rsquo;s grids</h2>
-      <span class="lane-note" id="laneNote">New set at midnight</span>
-    </div>
-    <div class="lane-row">
-      <a class="tile" href="valence/index.html" data-daily="valence" style="--hue:#22c3a6">
-        <span class="tile-name">Valence</span><span class="tile-sub">Chemistry</span>
-        <span class="tile-state"><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg>Play today&rsquo;s</span>
-      </a>
-      <a class="tile" href="quanta/index.html" data-daily="quanta" style="--hue:#9a8df0">
-        <span class="tile-name">Quanta</span><span class="tile-sub">Physics</span>
-        <span class="tile-state"><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg>Play today&rsquo;s</span>
-      </a>
-      <a class="tile" href="radian/index.html" data-daily="radian" style="--hue:#4fcfae">
-        <span class="tile-name">Radian</span><span class="tile-sub">Trigonometry</span>
-        <span class="tile-state"><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg>Play today&rsquo;s</span>
-      </a>
-    </div>
-  </section>
 
   <span id="sentinel" aria-hidden="true"></span>
   <nav class="filters" id="filters" aria-label="Jump to a category">
@@ -605,7 +544,7 @@
     <section class="rail" id="rail-study" aria-label="Daily study grids">
       <div class="rail-head">
         <h2>Daily study grids</h2>
-        <span class="rail-note">One grid a day, three subjects</span>
+        <span class="rail-note">One grid a day, five subjects</span>
       </div>
       <div class="rail-row">
 
@@ -725,7 +664,52 @@
       <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
 
+    <a class="card" href="isomer/index.html" data-game="isomer" data-cat="study">
+      <span class="badge">New &middot; Daily</span>
+      <span class="thumb">
+        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A carbon chain of linked spheres over a warm gradient">
+          <defs>
+            <linearGradient id="is-bg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#3d2b1a"/><stop offset="1" stop-color="#1a1410"/>
+            </linearGradient>
+          </defs>
+          <rect width="320" height="120" fill="url(#is-bg)"/>
+          <path d="M30 90 L80 40 L130 80 L180 30 L230 70 L280 25" fill="none" stroke="#f3e6cc" stroke-width="4" stroke-linecap="round" opacity="0.85"/>
+          <g fill="#ff9d3d">
+            <circle cx="30" cy="90" r="9"/><circle cx="130" cy="80" r="9"/><circle cx="230" cy="70" r="9"/>
+          </g>
+          <g fill="#f3e6cc">
+            <circle cx="80" cy="40" r="9"/><circle cx="180" cy="30" r="9"/><circle cx="280" cy="25" r="9"/>
+          </g>
+        </svg>
+      </span>
+      <span class="top"><h2>Isomer</h2><span class="tag">Organic chemistry</span></span>
+      <p>Nine cells, and every one wants an organic compound that fits both its row and its column &mdash; alkane or acid, gas or solid, fuel or household product. The reveal shows every compound that would have worked.</p>
+      <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+    </a>
 
+    <a class="card" href="wattage/index.html" data-game="wattage" data-cat="study">
+      <span class="badge">New &middot; Daily</span>
+      <span class="thumb">
+        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A lightning bolt over a night-sky gradient">
+          <defs>
+            <linearGradient id="wa-bg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#124a70"/><stop offset="1" stop-color="#020a10"/>
+            </linearGradient>
+          </defs>
+          <rect width="320" height="120" fill="url(#wa-bg)"/>
+          <g stroke="#e9f6ff" stroke-width="1" opacity="0.22">
+            <line x1="0" y1="30" x2="320" y2="30"/><line x1="0" y1="60" x2="320" y2="60"/><line x1="0" y1="90" x2="320" y2="90"/>
+          </g>
+          <polygon points="176,18 118,68 150,68 132,102 210,52 176,52" fill="#ffcc33" stroke="#fff6d8" stroke-width="1.5" stroke-linejoin="round"/>
+          <circle cx="60" cy="34" r="16" fill="none" stroke="#ffcc33" stroke-width="3" opacity="0.8"/>
+          <path d="M255 40 a20 20 0 1 1 0 40" fill="none" stroke="#e9f6ff" stroke-width="3" opacity="0.7"/>
+        </svg>
+      </span>
+      <span class="top"><h2>Wattage</h2><span class="tag">Energy sources</span></span>
+      <p>Nine cells, and every one wants an energy source that fits both its row and its column &mdash; renewable or not, burned or not, mined or drilled. The reveal shows every source that would have worked.</p>
+      <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+    </a>
 
       </div>
     </section>
@@ -1324,20 +1308,20 @@
    (see /DAILY.md) and a landing page that wrote to it could corrupt a real streak
    from a page nobody was playing on.
 
-   What changed in the redesign: the lane above ships filled, so this no longer
-   BUILDS anything — it decorates. Three rules survive from the version it replaces
-   and all three are about refusing to overstate what storage says:
+   There is no daily lane on this page any more — the five daily grids live only in
+   the "Daily study grids" rail, same as every other game, since duplicating them in
+   a strip at the top just meant explaining the same five cards twice. What survives
+   here is the part storage actually adds: the streak pill next to that rail's own
+   heading, and the "Daily done/ready" pill any card gets once it has a ledger entry.
+   Two rules are still about refusing to overstate what storage says:
 
    1. A day-stamped value from another day is worth zero, not stale-but-usable.
       Yesterday's dbest is not today's best; a kreeda.streak stamped any day but
       today is not a live streak and shows nothing at all.
-   2. Anything unparseable is absent. Garbage never reaches the document.
-   3. Storage is evidence of what a player did, never of what exists. The lane's
-      three grids are in the markup; a junk key cannot add a fourth.                */
+   2. Anything unparseable is absent. Garbage never reaches the document.        */
 (function(){
-  var lane = document.querySelector('.lane');
   var grid = document.getElementById('rails');
-  if (!lane || !grid) return;
+  if (!grid) return;
 
   function read(k){ try{ return localStorage.getItem(k) || ''; }catch(e){ return ''; } }
 
@@ -1359,51 +1343,28 @@
   }
   function num(n){ try{ return Math.round(n).toLocaleString(); }catch(e){ return String(Math.round(n)); } }
 
-  var TICK  = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.2 12.5 2 8.3l1.5-1.5 2.7 2.7 6.3-6.3L14 4.7z"/></svg>';
   var FLAME = '<svg viewBox="0 0 14 16" fill="currentColor" aria-hidden="true"><path d="M7.7 0c.5 2.8-1.6 4-3.1 5.7-.5-.8-.6-1.7-.6-1.7C2.3 5.5 1 7.4 1 9.5 1 13 3.7 16 7 16s6-3 6-6.5C13 5.9 10.4 3.4 7.7 0zM7 14c-1.5 0-2.6-1.2-2.6-2.7 0-1 .4-1.8 1.4-2.9.2.9.7 1.4.7 1.4 1-1.2 1.5-2 1.4-3.3.9 1.2 1.7 2.4 1.7 3.5C9.6 12.5 8.5 14 7 14z"/></svg>';
 
   var doneToday = read('kreeda.daily.' + today).split(',');
 
-  /* ---- the lane's own tiles ------------------------------------------------ */
-  var doneCount = 0, total = 0;
-  [].forEach.call(lane.querySelectorAll('[data-daily]'), function(tile){
-    total++;
-    var slug  = tile.getAttribute('data-daily');
-    var best  = stamped(read(slug + '.dbest'));
-    var done  = doneToday.indexOf(slug) >= 0 || (best && best.day === today);
-    var state = tile.querySelector('.tile-state');
-    if (!done || !state) return;
-    doneCount++;
-    tile.classList.add('done');
-    /* Rule 1: only today's row can supply today's figure, so a dbest from any other
-       day shows the tick with no number rather than yesterday's score dressed up as
-       this morning's. */
-    var score = (best && best.day === today && best.n >= 0) ? best.n : -1;
-    state.innerHTML = TICK;
-    state.appendChild(document.createTextNode(score >= 0 ? ('Done · ' + num(score)) : 'Done'));
-  });
-
-  var note = document.getElementById('laneNote');
-  if (note && doneCount) {
-    note.textContent = doneCount >= total ? 'All done · new set at midnight'
-                                          : (doneCount + ' of ' + total + ' done');
-  }
-
   /* ---- the streak ---------------------------------------------------------- */
-  /* Shown only when stamped today. A streak the player can still save by playing
-     tonight is deliberately NOT advertised here: DAILY.md's "worth zero, not
-     stale-but-usable" rule is unconditional, and the games' own HUDs read it the
-     same way. A landing page claiming a streak the game itself denies is the worse
-     failure of the two. */
+  /* Shown only when stamped today, next to the "Daily study grids" heading — the
+     one rail the streak is actually about. A streak the player can still save by
+     playing tonight is deliberately NOT advertised here: DAILY.md's "worth zero,
+     not stale-but-usable" rule is unconditional, and the games' own HUDs read it
+     the same way. A landing page claiming a streak the game itself denies is the
+     worse failure of the two. */
   var s = stamped(read('kreeda.streak'));
   var streak = (s && s.day === today && s.n > 0) ? s.n : 0;
   if (streak >= 2) {
-    var pill = document.createElement('span');
-    pill.className = 'streak';
-    pill.innerHTML = FLAME;
-    pill.appendChild(document.createTextNode(num(streak) + '-day streak'));
-    var h = lane.querySelector('.lane-head h2');
-    if (h && h.parentNode) h.parentNode.insertBefore(pill, h.nextSibling);
+    var h = document.querySelector('#rail-study .rail-head h2');
+    if (h && h.parentNode) {
+      var pill = document.createElement('span');
+      pill.className = 'streak';
+      pill.innerHTML = FLAME;
+      pill.appendChild(document.createTextNode(num(streak) + '-day streak'));
+      h.parentNode.insertBefore(pill, h.nextSibling);
+    }
   }
 
   /* ---- per-card state on the grid ------------------------------------------ */
@@ -1771,6 +1732,46 @@
           "applicationCategory": "GameApplication",
           "operatingSystem": "Any (web browser)",
           "playMode": "SinglePlayer",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 20,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Isomer",
+          "url": "https://kreeda.games/isomer/",
+          "genre": "Educational",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "playMode": "SinglePlayer",
+          "educationalUse": "Organic chemistry revision",
+          "typicalAgeRange": "14-18",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 21,
+        "item": {
+          "@type": "VideoGame",
+          "name": "Wattage",
+          "url": "https://kreeda.games/wattage/",
+          "genre": "Educational",
+          "applicationCategory": "GameApplication",
+          "operatingSystem": "Any (web browser)",
+          "playMode": "SinglePlayer",
+          "educationalUse": "Sources of energy revision",
+          "typicalAgeRange": "14-18",
           "offers": {
             "@type": "Offer",
             "price": "0",
