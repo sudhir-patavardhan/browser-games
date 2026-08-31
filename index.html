@@ -574,7 +574,11 @@
             </linearGradient>
           </defs>
           <rect width="320" height="120" fill="url(#va-bg)"/>
-          <g font-family="ui-sans-serif,system-ui,sans-serif" font-weight="700" text-anchor="middle">
+          <!-- Shifted clear of the top-left corner and scaled down to fit: that's where
+               the "Daily" badge sits (an HTML element overlaid on the thumb, painted after
+               it), and at the tiles' original size and position the badge hid the entire
+               top row (H, Na, O) rather than just grazing a corner. -->
+          <g font-family="ui-sans-serif,system-ui,sans-serif" font-weight="700" text-anchor="middle" transform="translate(0,48) scale(0.615)">
             <g fill="#1d5674">
               <rect x="24" y="14" width="30" height="30" rx="5"/><rect x="60" y="14" width="30" height="30" rx="5"/><rect x="96" y="14" width="30" height="30" rx="5"/>
               <rect x="24" y="50" width="30" height="30" rx="5"/><rect x="60" y="50" width="30" height="30" rx="5"/><rect x="96" y="50" width="30" height="30" rx="5"/>
