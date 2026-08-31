@@ -29,6 +29,8 @@ Open [`index.html`](index.html) at the repo root for the [Kreeda](https://kreeda
 | [Quanta](quanta/index.html) | The same grid over physical quantities: vector or scalar, base unit or derived, which dimensions appear in it, which branch it belongs to. The reveal gives the SI unit for every answer, including the ones you missed. | [kreeda.games/quanta](https://kreeda.games/quanta/) |
 | [Apogee](apogee/index.html) | An educational rocket-builder. Twelve real parts on the shelf — three payloads (Aero Cone, Crew Capsule, Science Probe), a parachute, an avionics ring, two tank sizes, **three engines** (efficient Sparrow, mighty Titan, and the Aether — a vacuum engine that's feeble at sea level and monstrous up high, so it needs boosters to carry it through the thick air: staging, discovered by playing), fins, and solid strap-on boosters. Every part fitted pops a fact card about the real thing (propellant mass fraction, centre of pressure, specific impulse, why crew ride on top), and the pad shows live mass/thrust/fuel/TWR/stability. Then LAUNCH: countdown, rumble, booster jettison, **max-Q called out for real** (0.5ρv², like actual launch commentary), atmosphere layers flashing genuine facts as you pass (troposphere, ozone, meteors in the mesosphere, the 100 km Kármán line, even ISS altitude at 400 km), and a **mission log** at apogee — burnout speed, max-Q, and the velocity lost to gravity vs drag. A parachute recovers the rocket; a crew capsule without one gets called out. The 🎓 Flight School quiz (10 questions from a 16-strong pool, ranks Cadet → Flight Director) checks it all stuck. Best apogee and quiz score saved; your rocket persists between visits. Full spec in [APOGEE.md](APOGEE.md). | [kreeda.games/apogee](https://kreeda.games/apogee/) |
 | [Radian](radian/index.html) | Trigonometry on the unit circle — quadrants, signs, reference angles and exact values. Answer in whichever notation you think in: `30`, `30°` and `π/6` are the same angle, and the reveal shows every answer in both. | [kreeda.games/radian](https://kreeda.games/radian/) |
+| [Isomer](isomer/index.html) | The grid over organic chemistry: 47 compounds from alkanes to haloalkanes, criteria drawn from what a "carbon and its compounds" unit actually asks — functional group, hydrocarbon or derivative, saturated or not, carbon count, state at room temperature, fuel or household product. | [kreeda.games/isomer](https://kreeda.games/isomer/) |
+| [Wattage](wattage/index.html) | The grid over sources of energy: 19 sources from coal to wave power, criteria drawn from a "sources of energy" unit — renewable or not, fossil fuel, burned or not, mined or drilled, generates electricity, powers vehicles. Hydrogen is correctly flagged as a carrier, not a source. | [kreeda.games/wattage](https://kreeda.games/wattage/) |
 
 ### Play together
 
@@ -59,9 +61,9 @@ No server required — just open the file directly, or serve the repo root with 
 
 Four games — [Drift](drift/index.html), [Chroma Blocks](chroma-blocks/index.html), [Carrom](carrom/index.html)
 and [Fairway Four](fairway-four/index.html) — carry a **daily** alongside their normal mode: today's road,
-today's bag, today's board, today's round. [Valence](valence/index.html), [Quanta](quanta/index.html) and
-[Radian](radian/index.html) are daily all the way down: one grid a day and nothing else, the way the format
-wants to be played.
+today's bag, today's board, today's round. [Valence](valence/index.html), [Quanta](quanta/index.html),
+[Radian](radian/index.html), [Isomer](isomer/index.html) and [Wattage](wattage/index.html) are daily all
+the way down: one grid a day and nothing else, the way the format wants to be played.
 
 The whole thing turns on one property. The day's challenge is drawn from `mulberry32(daySeed(dayKey()))`,
 a pure function of the calendar date, so **every player in the world gets the identical puzzle and no
@@ -217,10 +219,11 @@ serving an extracted zip on its own and driving it: no page errors, game fully p
 
 ## Publishing the daily grids
 
-The three daily grids — [Valence](valence/index.html), [Quanta](quanta/index.html) and
-[Radian](radian/index.html) — are the ones worth listing in directories, because a daily is the only thing
-those directories index. All three are revision aids, which is a sharper pitch than a puzzle: chemistry,
-physics and trigonometry at high-school level.
+The five daily grids — [Valence](valence/index.html), [Quanta](quanta/index.html),
+[Radian](radian/index.html), [Isomer](isomer/index.html) and [Wattage](wattage/index.html) — are the ones
+worth listing in directories, because a daily is the only thing those directories index. All five are
+revision aids, which is a sharper pitch than a puzzle: chemistry, physics, trigonometry, organic chemistry
+and sources of energy at high-school level.
 
 They are submission-ready as they stand: complete `<title>`, meta description, canonical, OG/Twitter tags,
 `VideoGame` JSON-LD, a 1200×630 OG image in [`assets/`](assets/), and **no external network dependency at
@@ -252,8 +255,9 @@ spec-then-Claude-Code loop for the most involved game here.
 
 [`RAMAYANA_GRID.md`](RAMAYANA_GRID.md) and [`CRICKET_GRID.md`](CRICKET_GRID.md) are kept even though
 the two games they were written for — Setu and Maidan — have been removed. They remain the authority on
-the grid mechanic itself, which [Valence](valence/index.html), [Quanta](quanta/index.html) and
-[Radian](radian/index.html) were all built from and still cite in their own comments: why validation
+the grid mechanic itself, which [Valence](valence/index.html), [Quanta](quanta/index.html),
+[Radian](radian/index.html), [Isomer](isomer/index.html) and [Wattage](wattage/index.html) were all built
+from and still cite in their own comments: why validation
 folds diacritics by NFD decomposition instead of a substitution table, why a solvable grid needs a
 perfect matching and not merely non-empty cells, why rarity scoring is impossible without a server and
 what replaced it. Read them before changing any grid. The two removed games are in git history if
