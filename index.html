@@ -322,6 +322,7 @@
 
   <span id="sentinel" aria-hidden="true"></span>
   <nav class="filters" id="filters" aria-label="Jump to a category">
+    <button class="chip" data-rail="rail-action">Full throttle</button>
     <button class="chip" data-rail="rail-together">Play together</button>
     <button class="chip" data-rail="rail-study">Study grids</button>
     <button class="chip" data-rail="rail-versus">Head to head</button>
@@ -330,6 +331,16 @@
   </nav>
 
   <main class="rails" id="rails">
+
+    <!-- Jump back in — hidden until the script above the footer finds play history in
+         localStorage; a first-time visitor never sees an empty shelf. -->
+    <section class="rail" id="rail-resume" aria-label="Games you have played" hidden>
+      <div class="rail-head">
+        <h2>Jump back in</h2>
+        <span class="rail-note">Your games, most recent first</span>
+      </div>
+      <div class="rail-row"></div>
+    </section>
 
     <a class="card featured" href="drift/index.html" data-game="drift" data-cat="racing">
       <span class="badge">Start here</span>
@@ -357,12 +368,150 @@
     </a>
 
     <!-- ============ rails ============
-         The grid became Netflix-style category rails when the Together games landed: with
-         eighteen games, one undifferentiated grid stopped being scannable, and the categories
-         are now real — five games that need two people are a different shelf from a solo
-         drifting run. Every game appears in exactly ONE rail (gen-sitemap.js reads data-game
-         and does not want duplicates), and each rail bleeds off both edges so a half-cut card
-         signals sideways scroll, same trick as the daily lane above. -->
+         Netflix-style category rails. Each game's card LIVES in exactly one rail — that
+         single physical copy is what gen-sitemap.js scrapes, so the sitemap never sees
+         duplicates — but a rail can borrow any game by naming it in its row's data-also
+         attribute; the script above the footer clones the card in. With JS off you get
+         the classic one-copy layout and lose nothing. Rails bleed off both edges so a
+         half-cut card signals sideways scroll. -->
+
+    <section class="rail" id="rail-action" aria-label="Fast action games">
+      <div class="rail-head">
+        <h2>Full throttle</h2>
+        <span class="rail-note">Fast hands, near misses, one more run</span>
+      </div>
+      <div class="rail-row" data-also="drift last-16">
+
+    <a class="card" href="road-rumble/index.html" data-game="road-rumble" data-cat="racing">
+      <span class="thumb">
+        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A motorbike racing down a highway toward the horizon">
+          <rect width="320" height="120" fill="#7ec2ff"/>
+          <circle cx="232" cy="30" r="16" fill="#fff6d6"/>
+          <path d="M0 66 C 60 50, 110 58, 160 52 C 210 46, 270 54, 320 60 L 320 68 L 0 72 Z" fill="#7cbf6e"/>
+          <rect y="66" width="320" height="54" fill="#5fa852"/>
+          <path d="M132 120 L152 66 L168 66 L188 120 Z" fill="#767e8c"/>
+          <path d="M132 120 L152 66 L149 66 L126 120 Z" fill="#c02b2b"/>
+          <path d="M188 120 L168 66 L171 66 L194 120 Z" fill="#c02b2b"/>
+          <path d="M160 70 L160 120" fill="none" stroke="#f4f6fa" stroke-width="3" stroke-dasharray="5 7"/>
+          <g transform="translate(150,64)"><ellipse cx="0" cy="4" rx="4" ry="1.4" fill="rgba(0,0,0,.25)"/><rect x="-2" y="-6" width="4" height="9" rx="2" fill="#4aa3ff"/><circle cx="0" cy="-7" r="2.2" fill="#dfe8f5"/></g>
+          <g transform="translate(160,104)">
+            <ellipse cx="0" cy="10" rx="16" ry="4" fill="rgba(0,0,0,.28)"/>
+            <ellipse cx="0" cy="6" rx="5" ry="8" fill="#12141a"/>
+            <rect x="-9" y="-16" width="18" height="20" rx="7" fill="#ff8a3d"/>
+            <circle cx="0" cy="-20" r="7" fill="#141a24"/>
+          </g>
+        </svg>
+      </span>
+      <span class="top"><h2>Road Rumble</h2></span>
+      <p>A Road Rash-style brawler. Race five rivals down a pseudo-3D highway and punch your way past them.</p>
+      <span class="foot"><span class="meta">Solo &middot; Touch or keyboard</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+    </a>
+
+    <a class="card" href="dasanana/index.html" data-game="dasanana" data-cat="action">
+      <span class="thumb">
+        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A drawn bow with a flaming arrow">
+          <defs>
+            <linearGradient id="da-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2a1540"/><stop offset="0.55" stop-color="#7a2b52"/><stop offset="1" stop-color="#ff7a3a"/>
+            </linearGradient>
+            <radialGradient id="da-sun" cx="50%" cy="50%" r="50%">
+              <stop offset="0" stop-color="#ffe9a8"/><stop offset="1" stop-color="#ff7a3a" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="da-flame" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#ffe98a"/><stop offset="0.5" stop-color="#ff9a3d"/><stop offset="1" stop-color="#ff4d2e"/>
+            </linearGradient>
+            <filter id="da-glow" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="2.2" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <rect width="320" height="120" fill="url(#da-sky)"/>
+          <circle cx="232" cy="104" r="66" fill="url(#da-sun)"/>
+          <g fill="#170b20" opacity="0.8">
+            <path d="M262 120 Q300 82 320 96 L320 120 Z"/>
+            <g>
+              <circle cx="286" cy="82" r="5"/><circle cx="297" cy="78" r="5"/><circle cx="308" cy="76" r="5"/>
+              <circle cx="319" cy="76" r="5"/><circle cx="292" cy="88" r="5"/><circle cx="303" cy="85" r="5"/>
+              <circle cx="314" cy="83" r="5"/>
+            </g>
+          </g>
+          <g fill="none" stroke="#e8b25a" stroke-linecap="round">
+            <path d="M170 16 C 191 22, 200 33, 198 47 C 197 56, 183 55, 176 60 C 183 65, 197 64, 198 73 C 200 87, 191 98, 170 104" stroke-width="8"/>
+          </g>
+          <g fill="#e8b25a">
+            <ellipse cx="168" cy="12" rx="4.5" ry="7.5" transform="rotate(28 168 12)"/>
+            <ellipse cx="168" cy="108" rx="4.5" ry="7.5" transform="rotate(-28 168 108)"/>
+          </g>
+          <line x1="177" y1="51" x2="177" y2="69" stroke="#a9713a" stroke-width="8" stroke-linecap="round"/>
+          <path d="M169 15 L118 60 L169 105" fill="none" stroke="#fff0c4" stroke-width="1.6" stroke-opacity="0.9"/>
+          <g>
+            <line x1="118" y1="60" x2="252" y2="60" stroke="#6f4322" stroke-width="3.4" stroke-linecap="round"/>
+            <g fill="#ff6a4d">
+              <path d="M146 59 C 137 55, 129 50, 123 47 C 128 53, 133 58, 144 61 Z"/>
+              <path d="M144 61 C 135 65, 128 69, 122 72 C 128 66, 134 63, 146 60 Z"/>
+            </g>
+            <g stroke="#ffb199" stroke-width="1.4" stroke-linecap="round">
+              <line x1="129" y1="54" x2="137" y2="60"/><line x1="128" y1="66" x2="136" y2="60"/>
+            </g>
+            <path d="M244 49 L272 60 L244 71 L252 60 Z" fill="#ffd27a" stroke="#a9713a" stroke-width="1" stroke-linejoin="round"/>
+          </g>
+          <g filter="url(#da-glow)">
+            <path d="M262 60 C 279 43, 305 49, 314 60 C 305 71, 279 77, 262 60 Z" fill="url(#da-flame)"/>
+            <path d="M268 60 C 281 49, 297 53, 306 60 C 297 67, 281 71, 268 60 Z" fill="#ffe98a"/>
+            <path d="M308 60 C 314 53, 317 54, 318 50 C 318 58, 314 64, 308 60 Z" fill="#ff9a3d"/>
+          </g>
+        </svg>
+      </span>
+      <span class="top"><h2>Astra Duel</h2></span>
+      <p>A R&#257;m&#257;ya&#7751;a astra-duel. Counter R&#257;va&#7751;a's divine missiles, chant to restore your tejas, loose the Brahm&#257;stra.</p>
+      <span class="foot"><span class="meta">Solo &middot; Story mode</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+    </a>
+
+    <a class="card" href="chroma-blocks/index.html" data-game="chroma-blocks" data-cat="puzzle">
+      <span class="thumb">
+        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Neon falling blocks">
+          <defs>
+            <linearGradient id="cb-bg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#1a0f2e"/><stop offset="1" stop-color="#080510"/>
+            </linearGradient>
+            <pattern id="cb-grid" width="22" height="22" patternUnits="userSpaceOnUse">
+              <path d="M22 0H0V22" fill="none" stroke="#ffffff" stroke-opacity="0.05"/>
+            </pattern>
+            <filter id="cb-glow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.4" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <rect width="320" height="120" fill="url(#cb-bg)"/>
+          <rect width="320" height="120" fill="url(#cb-grid)"/>
+          <g filter="url(#cb-glow)">
+            <g fill="#ffd93d">
+              <rect x="36" y="12" width="20" height="20" rx="3"/><rect x="58" y="12" width="20" height="20" rx="3"/>
+              <rect x="36" y="34" width="20" height="20" rx="3"/><rect x="58" y="34" width="20" height="20" rx="3"/>
+            </g>
+            <g fill="#a239ff">
+              <rect x="150" y="14" width="20" height="20" rx="3"/><rect x="172" y="14" width="20" height="20" rx="3"/>
+              <rect x="194" y="14" width="20" height="20" rx="3"/><rect x="172" y="36" width="20" height="20" rx="3"/>
+            </g>
+            <g fill="#21e6ff">
+              <rect x="30" y="82" width="20" height="20" rx="3"/><rect x="52" y="82" width="20" height="20" rx="3"/>
+              <rect x="74" y="82" width="20" height="20" rx="3"/><rect x="96" y="82" width="20" height="20" rx="3"/>
+            </g>
+            <g fill="#ff4d6d">
+              <rect x="214" y="58" width="20" height="20" rx="3"/><rect x="214" y="80" width="20" height="20" rx="3"/>
+              <rect x="236" y="80" width="20" height="20" rx="3"/><rect x="258" y="80" width="20" height="20" rx="3"/>
+            </g>
+            <g fill="#5CFF6E"><rect x="266" y="20" width="20" height="20" rx="3"/></g>
+          </g>
+        </svg>
+      </span>
+      <span class="top"><h2>Falling Blocks</h2></span>
+      <p>Neon falling blocks. Hold queue, ghost piece, combo flashes and a soundtrack it makes up as it goes.</p>
+      <span class="foot"><span class="meta">Solo &middot; Touch or keyboard</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
+    </a>
+
+      </div>
+    </section>
 
     <section class="rail" id="rail-together" aria-label="Games to play together">
       <div class="rail-head">
@@ -741,7 +890,7 @@
         <h2>Head to head</h2>
         <span class="rail-note">Beat the AI or pass the phone</span>
       </div>
-      <div class="rail-row">
+      <div class="rail-row" data-also="blackjack last-16">
 
     <a class="card" href="carrom/index.html" data-game="carrom" data-cat="board">
       <span class="thumb">
@@ -857,7 +1006,7 @@
         <h2>Solo arcade</h2>
         <span class="rail-note">One player, endless retries</span>
       </div>
-      <div class="rail-row">
+      <div class="rail-row" data-also="chroma-blocks dasanana">
 
     <a class="card" href="apogee/index.html" data-game="apogee" data-cat="builder">
       <span class="thumb">
@@ -937,48 +1086,6 @@
       <span class="foot"><span class="meta">Solo &middot; Learn &amp; quiz</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
 
-    <a class="card" href="chroma-blocks/index.html" data-game="chroma-blocks" data-cat="puzzle">
-      <span class="thumb">
-        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Neon falling blocks">
-          <defs>
-            <linearGradient id="cb-bg" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#1a0f2e"/><stop offset="1" stop-color="#080510"/>
-            </linearGradient>
-            <pattern id="cb-grid" width="22" height="22" patternUnits="userSpaceOnUse">
-              <path d="M22 0H0V22" fill="none" stroke="#ffffff" stroke-opacity="0.05"/>
-            </pattern>
-            <filter id="cb-glow" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="2.4" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-          <rect width="320" height="120" fill="url(#cb-bg)"/>
-          <rect width="320" height="120" fill="url(#cb-grid)"/>
-          <g filter="url(#cb-glow)">
-            <g fill="#ffd93d">
-              <rect x="36" y="12" width="20" height="20" rx="3"/><rect x="58" y="12" width="20" height="20" rx="3"/>
-              <rect x="36" y="34" width="20" height="20" rx="3"/><rect x="58" y="34" width="20" height="20" rx="3"/>
-            </g>
-            <g fill="#a239ff">
-              <rect x="150" y="14" width="20" height="20" rx="3"/><rect x="172" y="14" width="20" height="20" rx="3"/>
-              <rect x="194" y="14" width="20" height="20" rx="3"/><rect x="172" y="36" width="20" height="20" rx="3"/>
-            </g>
-            <g fill="#21e6ff">
-              <rect x="30" y="82" width="20" height="20" rx="3"/><rect x="52" y="82" width="20" height="20" rx="3"/>
-              <rect x="74" y="82" width="20" height="20" rx="3"/><rect x="96" y="82" width="20" height="20" rx="3"/>
-            </g>
-            <g fill="#ff4d6d">
-              <rect x="214" y="58" width="20" height="20" rx="3"/><rect x="214" y="80" width="20" height="20" rx="3"/>
-              <rect x="236" y="80" width="20" height="20" rx="3"/><rect x="258" y="80" width="20" height="20" rx="3"/>
-            </g>
-            <g fill="#5CFF6E"><rect x="266" y="20" width="20" height="20" rx="3"/></g>
-          </g>
-        </svg>
-      </span>
-      <span class="top"><h2>Falling Blocks</h2></span>
-      <p>Neon falling blocks. Hold queue, ghost piece, combo flashes and a soundtrack it makes up as it goes.</p>
-      <span class="foot"><span class="meta">Solo &middot; Touch or keyboard</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
-    </a>
 
     <a class="card" href="blackjack/index.html" data-game="blackjack" data-cat="board">
       <span class="thumb">
@@ -1041,65 +1148,6 @@
       <span class="foot"><span class="meta">Solo &middot; Built for one hand</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
 
-    <a class="card" href="dasanana/index.html" data-game="dasanana" data-cat="action">
-      <span class="thumb">
-        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A drawn bow with a flaming arrow">
-          <defs>
-            <linearGradient id="da-sky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#2a1540"/><stop offset="0.55" stop-color="#7a2b52"/><stop offset="1" stop-color="#ff7a3a"/>
-            </linearGradient>
-            <radialGradient id="da-sun" cx="50%" cy="50%" r="50%">
-              <stop offset="0" stop-color="#ffe9a8"/><stop offset="1" stop-color="#ff7a3a" stop-opacity="0"/>
-            </radialGradient>
-            <linearGradient id="da-flame" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stop-color="#ffe98a"/><stop offset="0.5" stop-color="#ff9a3d"/><stop offset="1" stop-color="#ff4d2e"/>
-            </linearGradient>
-            <filter id="da-glow" x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="2.2" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-          <rect width="320" height="120" fill="url(#da-sky)"/>
-          <circle cx="232" cy="104" r="66" fill="url(#da-sun)"/>
-          <g fill="#170b20" opacity="0.8">
-            <path d="M262 120 Q300 82 320 96 L320 120 Z"/>
-            <g>
-              <circle cx="286" cy="82" r="5"/><circle cx="297" cy="78" r="5"/><circle cx="308" cy="76" r="5"/>
-              <circle cx="319" cy="76" r="5"/><circle cx="292" cy="88" r="5"/><circle cx="303" cy="85" r="5"/>
-              <circle cx="314" cy="83" r="5"/>
-            </g>
-          </g>
-          <g fill="none" stroke="#e8b25a" stroke-linecap="round">
-            <path d="M170 16 C 191 22, 200 33, 198 47 C 197 56, 183 55, 176 60 C 183 65, 197 64, 198 73 C 200 87, 191 98, 170 104" stroke-width="8"/>
-          </g>
-          <g fill="#e8b25a">
-            <ellipse cx="168" cy="12" rx="4.5" ry="7.5" transform="rotate(28 168 12)"/>
-            <ellipse cx="168" cy="108" rx="4.5" ry="7.5" transform="rotate(-28 168 108)"/>
-          </g>
-          <line x1="177" y1="51" x2="177" y2="69" stroke="#a9713a" stroke-width="8" stroke-linecap="round"/>
-          <path d="M169 15 L118 60 L169 105" fill="none" stroke="#fff0c4" stroke-width="1.6" stroke-opacity="0.9"/>
-          <g>
-            <line x1="118" y1="60" x2="252" y2="60" stroke="#6f4322" stroke-width="3.4" stroke-linecap="round"/>
-            <g fill="#ff6a4d">
-              <path d="M146 59 C 137 55, 129 50, 123 47 C 128 53, 133 58, 144 61 Z"/>
-              <path d="M144 61 C 135 65, 128 69, 122 72 C 128 66, 134 63, 146 60 Z"/>
-            </g>
-            <g stroke="#ffb199" stroke-width="1.4" stroke-linecap="round">
-              <line x1="129" y1="54" x2="137" y2="60"/><line x1="128" y1="66" x2="136" y2="60"/>
-            </g>
-            <path d="M244 49 L272 60 L244 71 L252 60 Z" fill="#ffd27a" stroke="#a9713a" stroke-width="1" stroke-linejoin="round"/>
-          </g>
-          <g filter="url(#da-glow)">
-            <path d="M262 60 C 279 43, 305 49, 314 60 C 305 71, 279 77, 262 60 Z" fill="url(#da-flame)"/>
-            <path d="M268 60 C 281 49, 297 53, 306 60 C 297 67, 281 71, 268 60 Z" fill="#ffe98a"/>
-            <path d="M308 60 C 314 53, 317 54, 318 50 C 318 58, 314 64, 308 60 Z" fill="#ff9a3d"/>
-          </g>
-        </svg>
-      </span>
-      <span class="top"><h2>Astra Duel</h2></span>
-      <p>A R&#257;m&#257;ya&#7751;a astra-duel. Counter R&#257;va&#7751;a's divine missiles, chant to restore your tejas, loose the Brahm&#257;stra.</p>
-      <span class="foot"><span class="meta">Solo &middot; Story mode</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
-    </a>
 
       </div>
     </section>
@@ -1107,9 +1155,9 @@
     <section class="rail" id="rail-sports" aria-label="Sports and racing games">
       <div class="rail-head">
         <h2>Sports &amp; racing</h2>
-        <span class="rail-note">Stadium, highway, fairway</span>
+        <span class="rail-note">Stadium, table, highway, fairway</span>
       </div>
-      <div class="rail-row">
+      <div class="rail-row" data-also="road-rumble carrom break-room drift">
 
     <a class="card" href="last-16/index.html" data-game="last-16" data-cat="sports">
       <span class="thumb">
@@ -1155,30 +1203,6 @@
       <span class="foot"><span class="meta">Solo &middot; Full tournament</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
 
-    <a class="card" href="road-rumble/index.html" data-game="road-rumble" data-cat="racing">
-      <span class="thumb">
-        <svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A motorbike racing down a highway toward the horizon">
-          <rect width="320" height="120" fill="#7ec2ff"/>
-          <circle cx="232" cy="30" r="16" fill="#fff6d6"/>
-          <path d="M0 66 C 60 50, 110 58, 160 52 C 210 46, 270 54, 320 60 L 320 68 L 0 72 Z" fill="#7cbf6e"/>
-          <rect y="66" width="320" height="54" fill="#5fa852"/>
-          <path d="M132 120 L152 66 L168 66 L188 120 Z" fill="#767e8c"/>
-          <path d="M132 120 L152 66 L149 66 L126 120 Z" fill="#c02b2b"/>
-          <path d="M188 120 L168 66 L171 66 L194 120 Z" fill="#c02b2b"/>
-          <path d="M160 70 L160 120" fill="none" stroke="#f4f6fa" stroke-width="3" stroke-dasharray="5 7"/>
-          <g transform="translate(150,64)"><ellipse cx="0" cy="4" rx="4" ry="1.4" fill="rgba(0,0,0,.25)"/><rect x="-2" y="-6" width="4" height="9" rx="2" fill="#4aa3ff"/><circle cx="0" cy="-7" r="2.2" fill="#dfe8f5"/></g>
-          <g transform="translate(160,104)">
-            <ellipse cx="0" cy="10" rx="16" ry="4" fill="rgba(0,0,0,.28)"/>
-            <ellipse cx="0" cy="6" rx="5" ry="8" fill="#12141a"/>
-            <rect x="-9" y="-16" width="18" height="20" rx="7" fill="#ff8a3d"/>
-            <circle cx="0" cy="-20" r="7" fill="#141a24"/>
-          </g>
-        </svg>
-      </span>
-      <span class="top"><h2>Road Rumble</h2></span>
-      <p>A Road Rash-style brawler. Race five rivals down a pseudo-3D highway and punch your way past them.</p>
-      <span class="foot"><span class="meta">Solo &middot; Touch or keyboard</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
-    </a>
 
     <a class="card" href="fairway-four/index.html" data-game="fairway-four" data-cat="sports">
       <span class="thumb">
@@ -1226,6 +1250,83 @@
 </div>
 
 <script src="analytics.js"></script>
+<script>
+/* ==================== shelves that know the visitor ====================
+   Two client-side layers over the static rails; with JS off the page is the
+   classic one-card-one-rail layout and loses nothing.
+
+   1. CROSS-LISTING. A rail borrows a game by naming it in its row's data-also;
+      the one physical card is cloned in. Clones drop the billboard treatment
+      ("featured" class, "Start here" badge) so a cloned Drift renders as an
+      ordinary card.
+   2. JUMP BACK IN. Game pages stamp kreeda.played.<slug> from analytics.js
+      whenever real active play is reported; older saves are recognised by
+      their per-game keys (<slug>.dbest, <slug>.best, windows.state…), dated
+      by the day-stamp when the value carries one. Played games are cloned
+      into #rail-resume, most recent first. Read-only — this script never
+      writes a key (see /DAILY.md).
+
+   Runs before the click-tracking and daily-state scripts below, so clones get
+   game_click listeners and Daily pills like every other card. */
+(function(){
+  var main = document.getElementById('rails');
+  if (!main) return;
+
+  function cloneCard(slug){
+    var src = main.querySelector('.card[data-game=' + JSON.stringify(slug) + ']');  /* selector built in two pieces so gen-sitemap.js's scrape can't match it */
+    if (!src) return null;
+    var c = src.cloneNode(true);
+    c.classList.remove('featured');
+    var badge = c.querySelector('.badge');
+    if (badge && /start here/i.test(badge.textContent)) badge.remove();
+    return c;
+  }
+
+  /* ---- cross-listing ---- */
+  [].forEach.call(main.querySelectorAll('.rail-row[data-also]'), function(row){
+    row.getAttribute('data-also').split(/\s+/).forEach(function(slug){
+      var c = slug && cloneCard(slug);
+      if (c) row.appendChild(c);
+    });
+  });
+
+  /* ---- jump back in ---- */
+  var resume = document.getElementById('rail-resume');
+  if (!resume) return;
+  function read(k){ try{ return localStorage.getItem(k) || ''; }catch(e){ return ''; } }
+  var slugs = [].map.call(main.querySelectorAll('.card[data-game]'), function(c){ return c.getAttribute('data-game'); });
+
+  var played = {}, n = 0;
+  try { n = localStorage.length; } catch(e) {}
+  for (var i = 0; i < n; i++) {
+    var key = '';
+    try { key = localStorage.key(i) || ''; } catch(e) { break; }
+    var m = key.match(/^kreeda\.played\.(.+)$/);
+    if (m && slugs.indexOf(m[1]) >= 0) {
+      var ts = +read(key) || 0;
+      if (ts > (played[m[1]] || 0)) played[m[1]] = ts;
+      continue;
+    }
+    var dot = key.indexOf('.');
+    if (dot > 0) {
+      var s = key.slice(0, dot);
+      if (slugs.indexOf(s) >= 0 && !(s in played)) {
+        var v = read(key), day = v.slice(0, v.indexOf('|'));
+        played[s] = /^\d{4}-\d{2}-\d{2}$/.test(day) ? (new Date(day).getTime() || 1) : 1;
+      }
+    }
+  }
+
+  var order = Object.keys(played).sort(function(a,b){ return played[b] - played[a]; }).slice(0, 8);
+  if (!order.length) return;
+  var row = resume.querySelector('.rail-row');
+  order.forEach(function(slug){
+    var c = cloneCard(slug);
+    if (c) row.appendChild(c);
+  });
+  resume.hidden = false;
+})();
+</script>
 <script>
 /* Service worker registration — same protocol guard as analytics.js and for the same
    reason: registering on file:// throws (a service worker requires an http/https

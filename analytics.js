@@ -199,6 +199,9 @@
     var whole=Math.floor(pending/1000);
     if(whole<1) return;                                      // nothing worth a hit
     pending-=whole*1000;
+    /* Real play just got recorded, so stamp the recency key the hub's "Jump
+       back in" shelf reads. The hub itself (game_id 'home') is browsing, not play. */
+    try{ if(GAME.game_id!=='home') localStorage.setItem('kreeda.played.'+GAME.game_id, String(Date.now())); }catch(e){}
     window.bgTrack('game_time', {
       active_seconds:whole,
       total_seconds:Math.round(active/1000),
