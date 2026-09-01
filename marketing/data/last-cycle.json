@@ -1,33 +1,27 @@
 {
-  "timestamp": "2026-08-31T16:38:33.034Z",
+  "timestamp": "2026-09-01T13:52:58.135Z",
   "mode": "draft",
   "actions": {
-    "plannedPosts": 0,
+    "plannedPosts": 7,
     "scoutedLeads": 4,
-    "publishedPosts": 1,
+    "publishedPosts": 2,
     "generatedCards": 21,
     "togetherVideo": {
-      "gameId": "sync",
-      "mode": "draft",
-      "postId": "sim-tweet-1788194448179",
-      "url": "https://twitter.com/intent/tweet?text=Find%20out%20where%20you%20and%20your%20partner%20(or%20best%20friend)%20are%20truly%20in%20sync%E2%80%94and%20where%20you%E2%80%99ve%20just%20been%20guessing.%20Ten%20questions%2C%20instant%20reveal%3A%20https%3A%2F%2Fkreeda.games%2Fsync%2Findex.html%20%23couples%20%23gamenight",
-      "text": "Find out where you and your partner (or best friend) are truly in sync—and where you’ve just been guessing. Ten questions, instant reveal: https://kreeda.games/sync/index.html #couples #gamenight",
-      "renderSeconds": 36.9,
-      "videoFile": "sync-together-1788194385270.mp4"
+      "skipped": "next due 2026-09-02 (every 2 days; last: sync)"
     },
     "metrics": {
       "fetched": 1,
       "summary": {
         "drift": {
           "posts": 1,
-          "impressions": 51,
+          "impressions": 57,
           "linkClicks": 5,
           "likes": 1,
           "replies": 0,
           "reposts": 0,
           "videoPosts": 0,
-          "ctrPercent": 9.8,
-          "engagementPercent": 11.76
+          "ctrPercent": 8.77,
+          "engagementPercent": 10.53
         }
       }
     }

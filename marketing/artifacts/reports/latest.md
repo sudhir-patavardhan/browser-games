@@ -1,14 +1,12 @@
-## Marketing agent — full_cycle · 2026-08-31 16:38 UTC · **DRAFT**
+## Marketing agent — full_cycle · 2026-09-01 13:52 UTC · **DRAFT**
 
 ### Content queue
-- Planned: **0** new item(s) · Published this run: **1** (draft — simulated, nothing went out)
+- Planned: **7** new item(s) · Published this run: **2** (draft — simulated, nothing went out)
 - Scout: **4** community lead(s) evaluated, replies drafted for review
 - Visual cards refreshed: **21**
 
 ### Play-together video
-- **Sync** — drafted (not posted) · 36.9s of footage
-- File: `sync-together-1788194385270.mp4` (+ square variant) — attached to this workflow run as an artifact; not committed
-- Copy: > Find out where you and your partner (or best friend) are truly in sync—and where you’ve just been guessing. Ten questions, instant reveal: https://kreeda.games/sync/index.html #couples #gamenight
+- Skipped: next due 2026-09-02 (every 2 days; last: sync)
 
 ### X Ads
 - Not enabled (set `X_ADS_ACCOUNT_ID`)
@@ -16,7 +14,7 @@
 ### Organic performance (our own tweets)
 | Game | Posts | Impressions | Link clicks | CTR | Engagement |
 |---|---:|---:|---:|---:|---:|
-| Drift | 1 | 51 | 5 | 9.8% | 11.76% |
+| Drift | 1 | 57 | 5 | 8.77% | 10.53% |
 
 ### Next steps
 - Everything above was a rehearsal. Run the workflow with mode=live (or set MARKETING_MODE=live) to post for real.

@@ -1,0 +1,6 @@
+{
+  "subreddit": "r/webgames",
+  "title": "[HTML5] Carrom – Classic tabletop disc-flicking board game with custom physics and 3-tier AI",
+  "bodyMarkdown": "Hey r/webgames,\n\nI built a lightweight, browser-based version of **Carrom** (the classic South Asian tabletop game that plays like a blend of pool/billiards and shuffleboard).\n\n**Play here:** https://kreeda.games/carrom/index.html\n\n### How to Play:\n1. Drag the slider along your baseline to position the striker.\n2. Drag back and release with slingshot controls to flick.\n3. Pocket your 9 pieces (white or black) and secure the red Queen with a follow-up cover shot.\n4. Avoid pocketing the striker (standard foul penalty returns a piece to the center).\n\n### Under the hood:\n- **Physics engine:** Built from scratch in pure 2D canvas with continuous sub-stepping so high-velocity striker flicks never phase or tunnel through pieces.\n- **AI tiers:** Easy, Medium, and Hard (calculates ghost-ball pocket trajectories and restitution-corrected bank shots off the cushions).\n- **Zero bloat:** Loads instantly, zero ads, no sign-ups, no tracking.\n\nWould love feedback on the flick sensitivity and whether Hard AI feels sufficiently challenging or too punishing on bank angles!",
+  "flair": "Developer"
+}
