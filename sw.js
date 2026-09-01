@@ -4,7 +4,7 @@
    just a bookmark that 404s the moment the network drops. This file is what makes
    the install real.
 
-   These are twenty self-contained games with no build step — a deploy replaces the
+   These are self-contained games with no build step — a deploy replaces the
    whole tree at once, nothing here ever changes in place. Freshness works in two
    tiers:
 
@@ -23,7 +23,7 @@
    dead entries accumulate forever, so it stays.
 */
 
-const CACHE = 'kreeda-v9';
+const CACHE = 'kreeda-v10';
 
 /* The whole app shell, spelled out by hand rather than discovered at runtime — a
    service worker has no directory listing to crawl, so this list IS the offline
@@ -55,7 +55,14 @@ const PRECACHE_URLS = [
   '/fathom/index.html',
   '/split/index.html',
   '/garage/index.html',
-  '/apogee/index.html'
+  '/apogee/index.html',
+  '/circle/index.html',
+  '/prism/index.html',
+  '/alibi/index.html',
+  '/herd/index.html',
+  '/alter/index.html',
+  '/lore/index.html',
+  '/capsule/index.html'
 ];
 
 self.addEventListener('install', function(event){

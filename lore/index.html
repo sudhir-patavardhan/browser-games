@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Memory Lane — Kreeda</title>
+<meta name="description" content="The trivia game only YOUR group can play — because you write it about yourselves. Each friend secretly writes a question about your shared history with the real answer hidden among two decoys, then everyone plays it as a quiz. 3–8 friends, one phone.">
+<link rel="canonical" href="https://kreeda.games/lore/">
+<meta name="theme-color" content="#1b1310">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/lore/">
+<meta property="og:title" content="Memory Lane — Kreeda">
+<meta property="og:description" content="The trivia game only your group can play — you write it about yourselves. One question each about your shared history, decoys and all. 3–8 friends, one phone.">
+<meta property="og:image" content="https://kreeda.games/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Memory Lane — Kreeda">
+<meta name="twitter:description" content="The trivia game only your group can play — you write it about yourselves. One question each about your shared history, decoys and all. 3–8 friends, one phone.">
+<meta name="twitter:image" content="https://kreeda.games/og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Memory Lane","description":"The trivia game only your group can play — because you write it about yourselves. Each friend secretly writes a question about the group's shared history with the real answer and two decoys, then everyone plays it as a quiz. 3–8 friends, one phone.","url":"https://kreeda.games/lore/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+<style>
+/* ============================ tokens ============================
+   Lamplight sepia: an old photo album open on the coffee table after dark. The game is a group
+   leafing through its own past, so the ground is the warm brown of album board, the ink is
+   cream, and amber is the lamplight — it marks the truth's glow at every reveal. One committed
+   dark look (a theme flip mid-hand-off would read as a glitch); the body is painted explicitly.
+   Player identity is a fixed 8-hue wheel (PAL in the script), used the same everywhere — name
+   dots, answer chips, leaderboard bars, question-strip marks — so ownership never needs a
+   label twice. */
+:root{
+  --ground:#1b1310;  --ground-2:#251a13;
+  --panel:#2a1f17;   --panel-2:#352922;  --rule:rgba(255,222,180,.14);
+  --ink:#f6ecdd;     --ink-dim:#b6a48e;
+  --amber:#ffb547;   --amber-soft:rgba(255,181,71,.15); --amber-deep:#c07f17; --amber-ink:#2a1c04;
+  --rose:#ff7d9c;
+  --ok:#7ed98a;      --ok-soft:rgba(126,217,138,.13);
+  --no:#ff8c7a;
+  --gold:#ffd166;    --gold-soft:rgba(255,209,102,.12);
+  --shade:rgba(14,8,4,.74);
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  /* explicit background is mandatory: a transparent body would borrow the host's theme */
+  background:
+    radial-gradient(120% 55% at 22% -8%, rgba(255,181,71,.14) 0%, transparent 55%),
+    radial-gradient(120% 55% at 85% -6%, rgba(255,125,156,.10) 0%, transparent 50%),
+    linear-gradient(180deg, var(--ground-2) 0%, var(--ground) 44%, #120c08 100%);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{ max-width:540px; margin:0 auto;
+  padding: max(14px, env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
+
+button{ font:inherit; color:inherit; cursor:pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible{
+  outline:3px solid var(--gold); outline-offset:2px; }
+
+/* ============================ shared chrome ============================ */
+.top{ display:flex; align-items:center; gap:10px; margin:2px 0 12px; min-height:44px; }
+.wordmark{ display:flex; align-items:center; gap:9px; }
+.wordmark svg{ width:34px; height:34px; flex:none; }
+.wordmark b{ font-size:19px; font-weight:900; letter-spacing:.8px; }
+.wordmark small{ display:block; font-size:10px; font-weight:700; letter-spacing:2.6px;
+  text-transform:uppercase; color:var(--ink-dim); }
+.homebtn{ margin-left:auto; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
+  min-width:44px; min-height:44px; padding:8px 12px; font-size:13px; font-weight:800; color:var(--ink-dim); }
+.soundbtn{ margin-left:auto; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
+  min-width:44px; min-height:44px; padding:8px 10px; font-size:17px; line-height:1; }
+.soundbtn + .homebtn{ margin-left:0; }
+
+.card{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:18px 16px; }
+.btn{
+  display:block; width:100%; min-height:52px; padding:14px 16px; margin-top:10px;
+  background:var(--panel-2); border:1px solid var(--rule); border-radius:14px;
+  font-size:16px; font-weight:800; letter-spacing:.2px; text-align:center;
+  transition:transform .1s ease, background .15s ease;
+}
+.btn:active{ transform:scale(.985); }
+.btn.primary{ background:linear-gradient(100deg, var(--amber) 0%, #ff9a4d 55%, var(--rose) 135%);
+  border-color:transparent; color:#2a1404; box-shadow:0 8px 24px rgba(255,181,71,.30); }
+.btn.ghost{ background:transparent; border-color:var(--rule); color:var(--ink-dim); font-weight:700; }
+.btn[disabled]{ opacity:.45; cursor:default; }
+.btnrow{ display:flex; gap:10px; }
+.btnrow .btn{ flex:1; }
+
+.dim{ color:var(--ink-dim); }
+.tiny{ font-size:12px; line-height:1.55; }
+
+/* ============================ title ============================ */
+.hero{ text-align:center; margin:20px 0 16px; }
+.hero svg{ width:130px; height:84px; }
+.hero h1{ font-size:37px; font-weight:900; letter-spacing:2px; margin:6px 0 4px;
+  background:linear-gradient(95deg, var(--amber), var(--rose)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.hero p{ margin:0; font-size:15px; color:var(--ink-dim); font-weight:600; line-height:1.45; }
+
+.lbl{ display:block; font-size:11px; font-weight:800; letter-spacing:1.4px;
+  text-transform:uppercase; color:var(--ink-dim); margin:14px 0 5px 2px; }
+.lbl:first-child{ margin-top:0; }
+.prow{ display:flex; align-items:center; gap:8px; margin-top:8px; }
+.prow .pdot{ width:12px; height:12px; border-radius:4px; flex:none; }
+.prow input{ flex:1; min-width:0; font:inherit; font-size:16px; font-weight:700;  /* 16px or iOS zooms */
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:12px 12px; min-height:46px; }
+.prow .rm{ flex:none; min-width:44px; min-height:44px; background:var(--panel-2);
+  border:1px solid var(--rule); border-radius:11px; color:var(--ink-dim); font-size:16px; font-weight:800; }
+.addbtn{ margin-top:10px; width:100%; min-height:46px; background:transparent; border:1px dashed var(--rule);
+  border-radius:12px; color:var(--ink-dim); font-size:14px; font-weight:800; }
+
+.seg{ display:flex; gap:8px; }
+.seg button{ flex:1; min-height:46px; padding:10px 8px; background:var(--panel-2);
+  border:1px solid var(--rule); border-radius:12px; font-size:14px; font-weight:800; }
+.seg button[aria-pressed="true"]{ background:var(--amber-soft); border-color:var(--amber);
+  color:#fff; box-shadow:inset 0 0 0 1px var(--amber); }
+.seghint{ font-size:12px; color:var(--ink-dim); margin:7px 2px 0; line-height:1.45; }
+
+details.how{ margin-top:14px; border:1px solid var(--rule); border-radius:14px;
+  background:var(--panel); padding:0 14px; }
+details.how summary{ cursor:pointer; font-size:14px; font-weight:800; padding:13px 0;
+  min-height:44px; list-style:none; display:flex; align-items:center; gap:8px; }
+details.how summary::-webkit-details-marker{ display:none; }
+details.how summary::before{ content:'▸'; color:var(--ink-dim); transition:transform .15s ease; }
+details.how[open] summary::before{ transform:rotate(90deg); }
+details.how ul{ margin:0 0 14px; padding-left:20px; font-size:13.5px; line-height:1.65;
+  color:var(--ink-dim); }
+details.how li b{ color:var(--ink); }
+
+.foot{ margin-top:20px; text-align:center; font-size:11px; line-height:1.7; color:var(--ink-dim); }
+.foot a{ color:var(--ink-dim); }
+
+/* ============================ hand-off ============================ */
+.handoff{ min-height:76vh; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; text-align:center; padding:20px 6px; }
+.handoff .pass{ font-size:13px; font-weight:800; letter-spacing:2.4px; text-transform:uppercase;
+  color:var(--ink-dim); }
+.handoff h2{ font-size:36px; font-weight:900; margin:12px 0 6px; overflow-wrap:anywhere; }
+.handoff .sub{ font-size:15px; color:var(--ink-dim); margin:0 0 26px; line-height:1.5; max-width:320px; }
+.handoff .btn{ max-width:340px; }
+.handoff .peek{ margin-top:22px; font-size:12.5px; color:var(--ink-dim); }
+@media (prefers-reduced-motion:no-preference){
+  .handoff h2{ animation:heartbeat 1.6s ease-in-out infinite; }
+  @keyframes heartbeat{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.03);} }
+}
+
+/* ============================ turn banner + progress ============================ */
+.turn{ display:flex; align-items:center; gap:10px; background:var(--panel-2); border:1px solid var(--rule);
+  border-radius:13px; padding:10px 12px; margin-bottom:12px; font-size:13px; line-height:1.4; }
+.turn .eye{ font-size:20px; flex:none; }
+.prog{ display:flex; align-items:center; gap:12px; background:var(--panel-2); border:1px solid var(--rule);
+  border-radius:999px; padding:9px 14px; margin-bottom:12px; }
+.prog .n{ font-size:13px; font-weight:800; white-space:nowrap; color:var(--ink-dim); }
+.prog .n b{ font-size:15px; color:var(--ink); }
+.bar{ flex:1; height:7px; border-radius:99px; background:var(--panel); overflow:hidden; }
+.bar i{ display:block; height:100%; border-radius:99px;
+  background:linear-gradient(90deg, var(--amber), var(--rose)); transition:width .3s ease; }
+
+/* ============================ authoring ============================ */
+.ptag{ display:inline-block; font-size:10.5px; font-weight:900; letter-spacing:1.6px;
+  text-transform:uppercase; border-radius:999px; padding:4px 10px; margin-bottom:8px;
+  background:var(--amber-soft); color:var(--amber); border:1px solid rgba(255,181,71,.4); }
+.acard h2{ margin:0 0 3px; font-size:20px; font-weight:900; line-height:1.25; overflow-wrap:anywhere; }
+.acard .sub{ margin:0 0 6px; color:var(--ink-dim); font-size:13.5px; line-height:1.5; }
+.field{ margin-top:12px; }
+.field label{ display:block; font-size:11px; font-weight:800; letter-spacing:1.4px;
+  text-transform:uppercase; color:var(--ink-dim); margin:0 0 5px 2px; }
+.field textarea, .field input{
+  width:100%; font:inherit; font-size:16px; font-weight:700;
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:12px 12px; min-height:48px; resize:none; }
+.field.truth label{ color:var(--ok); }
+.field.truth input{ border-left:4px solid var(--ok); }
+.field.decoy input{ border-left:4px solid var(--rule); }
+.inspo{ font-size:12.5px; font-style:italic; color:var(--ink-dim); margin:6px 2px 0;
+  min-height:2.8em; line-height:1.4; }
+.tip{ font-size:12.5px; color:var(--amber); margin:12px 2px 0; font-weight:700; line-height:1.45; }
+
+/* ============================ answering ============================ */
+.qcard{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:16px 16px 14px; }
+.qcard .askedby{ font-size:11px; font-weight:900; letter-spacing:1.4px; text-transform:uppercase;
+  color:var(--ink-dim); margin-bottom:8px; }
+.qcard .askedby b{ font-size:12px; letter-spacing:.6px; }
+.qcard .qtext{ font-size:21px; font-weight:900; line-height:1.35; margin:0; overflow-wrap:anywhere; }
+.opt{ display:block; width:100%; text-align:left; background:var(--panel-2); border:1px solid var(--rule);
+  border-radius:14px; padding:14px; min-height:52px; font-size:16px; font-weight:700; margin-top:10px;
+  overflow-wrap:anywhere; line-height:1.35;
+  transition:background .15s ease, border-color .15s ease, transform .1s ease; }
+.opt:active{ transform:scale(.985); }
+.opt[aria-pressed="true"]{ background:var(--amber-soft); border-color:var(--amber);
+  box-shadow:inset 0 0 0 1px var(--amber); color:#fff; }
+
+/* ============================ per-question reveal ============================ */
+.rrow{ border:1px solid var(--rule); border-radius:14px; padding:11px 12px; margin-top:9px;
+  background:var(--panel-2); }
+.rrow .rt{ font-size:15.5px; font-weight:800; line-height:1.35; overflow-wrap:anywhere; }
+.rrow .tag{ display:inline-block; font-size:10px; font-weight:900; letter-spacing:1.2px;
+  text-transform:uppercase; color:var(--gold); margin-bottom:4px; }
+.rrow.truth{ border-color:var(--gold); background:var(--gold-soft);
+  box-shadow:inset 0 0 0 1px var(--gold), 0 0 18px rgba(255,209,102,.18); }
+@media (prefers-reduced-motion:no-preference){
+  .rrow.truth{ animation:glowIn .8s ease backwards; }
+  @keyframes glowIn{ from{ box-shadow:inset 0 0 0 1px var(--gold), 0 0 0 rgba(255,209,102,0); } }
+}
+.rrow .chips{ display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+.rrow .chips:empty{ display:none; }
+.pchip{ font-size:11.5px; font-weight:800; border-radius:999px; padding:4px 9px; line-height:1.3;
+  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pchip .mk{ font-weight:900; margin-left:3px; }
+.pchip .mk.hit{ color:var(--ok); } .pchip .mk.miss{ color:var(--no); }
+
+/* one-liner callouts (shared by reveal and results) */
+.glance{ margin-top:12px; padding:12px 14px; }
+.gl{ display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-top:1px solid var(--rule);
+  font-size:13.5px; line-height:1.45; }
+.gl:first-child{ border-top:0; padding-top:0; } .gl:last-child{ padding-bottom:0; }
+.gl .gi{ flex:none; width:26px; text-align:center; font-size:18px; line-height:1.15; }
+.gl b{ font-weight:900; }
+.gl .lb{ font-weight:900; letter-spacing:.8px; text-transform:uppercase; font-size:10.5px; margin-right:5px;
+  color:var(--amber); }
+
+/* ============================ results ============================ */
+.results h2{ font-size:15px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--ink-dim); text-align:center; margin:4px 0 2px; }
+.names{ text-align:center; font-size:13px; font-weight:800; margin:0 0 12px; overflow-wrap:anywhere;
+  line-height:1.7; }
+.names .x{ color:var(--ink-dim); font-weight:600; padding:0 4px; }
+
+.info{ text-align:center; padding:16px 10px 16px; }
+.ring{ position:relative; display:inline-flex; flex-direction:column; align-items:center; min-width:0; }
+.ring svg{ width:156px; height:156px; transform:rotate(-90deg); }
+.ring .tr{ fill:none; stroke:var(--panel-2); stroke-width:10; }
+.ring .fl{ fill:none; stroke-width:10; stroke-linecap:round; stroke:url(#loGrad);
+  transition:stroke-dashoffset 1.2s cubic-bezier(.2,.7,.2,1); }
+.ring .rv{ position:absolute; top:0; left:0; width:100%; height:156px; display:flex; align-items:center;
+  justify-content:center; font-weight:900; font-size:44px; line-height:1; color:var(--amber); }
+.ring .rv i{ font-style:normal; font-size:.55em; opacity:.7; margin-left:1px; }
+.ring .rl{ margin-top:2px; font-size:13px; font-weight:800; color:var(--ink); line-height:1.25; }
+.ring .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+.ring{ display:flex; margin:0 auto; }
+.verdict{ margin-top:16px; }
+.verdict b{ display:block; font-size:26px; font-weight:900; line-height:1.15;
+  background:linear-gradient(95deg, var(--amber), var(--rose)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.verdict span{ display:block; margin-top:4px; font-size:13px; color:var(--ink-dim); line-height:1.45; }
+
+/* leaderboard: one bar per player, stars ride the bar */
+.board{ margin-top:12px; padding:14px 14px 12px; }
+.board h4, .strip h4{ margin:0 0 4px; font-size:11px; font-weight:900; letter-spacing:1.6px;
+  text-transform:uppercase; color:var(--ink-dim); }
+.board .sub, .strip .sub{ margin:0 0 8px; font-size:12px; color:var(--ink-dim); line-height:1.45; }
+.lbrow{ display:flex; align-items:center; gap:8px; margin-top:8px; }
+.lbrow .nm{ width:86px; flex:none; font-size:12px; font-weight:800; text-align:right;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lbrow .track{ flex:1; height:20px; border-radius:7px; background:var(--panel-2);
+  display:flex; align-items:center; overflow:hidden; }
+.lbrow .fill{ height:100%; border-radius:7px; flex:none; min-width:3px; }
+.lbrow .stars{ font-size:11px; line-height:20px; margin-left:4px; white-space:nowrap; }
+.lbrow .val{ width:44px; flex:none; font-size:13px; font-weight:900; text-align:right; }
+@media (prefers-reduced-motion:no-preference){
+  .lbrow .fill{ animation:grow .8s cubic-bezier(.2,.7,.2,1) backwards; }
+  @keyframes grow{ from{ width:0; } }
+}
+
+/* question strip: 📜 + question, then one ✓/✗ mark per player in their colour */
+.strip{ margin-top:12px; padding:14px 14px 12px; }
+.qsrow{ border-top:1px solid var(--rule); padding:9px 0 8px; }
+.qsrow:first-of-type{ border-top:0; }
+.qsrow .qq{ display:flex; gap:7px; align-items:flex-start; font-size:12.5px; line-height:1.4;
+  overflow-wrap:anywhere; }
+.qsrow .qq .ic{ flex:none; }
+.qsrow .dots{ display:flex; flex-wrap:wrap; gap:4px; margin:6px 0 0 23px; }
+.qd{ width:20px; height:20px; border-radius:7px; font-size:11px; font-weight:900;
+  display:flex; align-items:center; justify-content:center; }
+@media (prefers-reduced-motion:no-preference){
+  .qd{ animation:pop .3s ease backwards; }
+  @keyframes pop{ from{ transform:scale(.4); opacity:.3; } to{ transform:none; opacity:1; } }
+}
+
+.datefoot{ text-align:center; font-size:11.5px; color:var(--ink-dim); margin-top:14px; }
+.sharebox{ width:100%; margin-top:10px; font-size:13px; line-height:1.5;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:10px; resize:none; }
+@media (prefers-reduced-motion:no-preference){
+  .rcard, .qcard.rev, .glance, .board, .strip, .verdict{ opacity:0; transform:translateY(10px);
+    animation:rise .4s ease forwards; }
+  @keyframes rise{ to{ opacity:1; transform:none; } }
+}
+
+/* toast + confirm modal */
+.toast{ position:fixed; left:50%; bottom:calc(26px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(8px); background:var(--panel-2); color:var(--ink);
+  border:1px solid var(--rule); border-radius:12px; padding:11px 18px; font-size:14px;
+  font-weight:800; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:90;
+  box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:88vw; text-align:center; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+.scrim{ position:fixed; inset:0; background:var(--shade); z-index:70; display:none;
+  align-items:center; justify-content:center; padding:20px; }
+.scrim.show{ display:flex; }
+.confirmbox{ background:var(--panel); border:1px solid var(--rule); border-radius:18px;
+  padding:20px 18px; max-width:340px; width:100%; }
+.confirmbox h3{ margin:0 0 6px; font-size:18px; font-weight:900; }
+.confirmbox p{ margin:0 0 14px; font-size:13.5px; color:var(--ink-dim); line-height:1.5; }
+
+/* share: a WhatsApp link in WhatsApp's green, and a system share sheet where the browser has one */
+.btn.wa{ display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;
+  background:#25D366; color:#052e16; border-color:transparent; box-shadow:0 8px 24px rgba(37,211,102,.25); }
+.btn.wa svg{ width:20px; height:20px; flex:none; }
+.sharehint{ font-size:12px; color:var(--ink-dim); text-align:center; margin:6px 0 0; line-height:1.45; }
+
+@media (prefers-reduced-motion:reduce){
+  *{ animation:none !important; transition:none !important; }
+  .rcard, .qcard.rev, .glance, .board, .strip, .verdict{ opacity:1; transform:none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="scrim" id="scrim">
+  <div class="confirmbox" role="alertdialog" aria-modal="true" aria-labelledby="cfTitle" aria-describedby="cfBody">
+    <h3 id="cfTitle">Leave this game?</h3>
+    <p id="cfBody">The questions and answers so far will be discarded. Nothing is ever saved anywhere.</p>
+    <button class="btn primary" type="button" id="cfYes">Leave</button>
+    <button class="btn ghost" type="button" id="cfNo">Keep playing</button>
+  </div>
+</div>
+
+<!-- analytics.js before the game script: track() below fires synchronously and would otherwise
+     race the tag load and vanish. -->
+<script src="../analytics.js"></script>
+<script>
+'use strict';
+/* ============================================================================================
+   MEMORY LANE — the trivia game only YOUR group can play, because you write it about
+   yourselves. 3–8 friends, one phone. Each player secretly writes a question about the group's
+   shared history — the real answer plus two plausible decoys. Then the questions come back in
+   shuffled order as a quiz: everyone answers everyone else's questions (never their own), and
+   after each one the truth glows on a public reveal. Remembering scores a point; fooling the
+   majority earns the author a ⭐.
+
+   Privacy is a design constraint, not a feature flag: every question, answer and pick lives in
+   one in-memory session object (S) and NOTHING else. localStorage holds only names, a sound
+   preference and a play counter. Analytics gets counts, never content — no question or answer
+   text ever leaves the phone unless the players themselves tap Share. A refresh mid-game loses
+   the round by design; that is cheaper than the group's stories ever touching disk.
+   ============================================================================================ */
+
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+function esc(s){ return String(s).replace(/[&<>"']/g,
+  c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function shuffled(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; const t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+}
+
+/* ============================ player palette ============================
+   Eight fixed hues, one per seat, spaced around the wheel so neighbours never blur: amber,
+   teal, rose, sky, leaf, orchid, coral, violet. c is the full colour (names, marks, bars),
+   s the soft wash behind chips. Text set ON a full-colour chip is always dark album-brown. */
+const PAL=[
+  {c:'#ffb547', s:'rgba(255,181,71,.16)'},
+  {c:'#3fc9b5', s:'rgba(63,201,181,.16)'},
+  {c:'#ff7d9c', s:'rgba(255,125,156,.16)'},
+  {c:'#5fb6ff', s:'rgba(95,182,255,.16)'},
+  {c:'#8ed86c', s:'rgba(142,216,108,.16)'},
+  {c:'#d886f0', s:'rgba(216,134,240,.16)'},
+  {c:'#ff8b66', s:'rgba(255,139,102,.16)'},
+  {c:'#8f7dff', s:'rgba(143,125,255,.16)'}
+];
+const CHIP_INK='#241505';
+
+/* rotating inspiration for the question field — nudges, never requirements */
+const PROMPTS=[
+  'What did ___ order that made the waiter laugh?',
+  'Where were we when ___?',
+  'Who said “___”?',
+  'What went wrong on the ___ trip?',
+  'What did we swear never to talk about again?',
+  'Which song did we play to death that year?',
+  'Who fell asleep first at ___?',
+  'What was ___’s most legendary bad idea?'
+];
+
+/* verdict by group-memory percentage, warmest reading wins; thresholds descend to 0 */
+const VERDICTS=[
+  [90,'One shared brain','Between you, nothing is ever really lost.'],
+  [70,'A well-kept archive','Most of the story is safe in somebody’s head.'],
+  [50,'Patchy but precious','Half remembered, half rediscovered — the good ratio.'],
+  [30,'Soft focus','The feelings survived. The details did not.'],
+  [0,'Time for new stories','Clearly the old ones need a refresher trip.']
+];
+function verdictFor(pct){ for(const v of VERDICTS){ if(pct>=v[0]) return v; } return VERDICTS[VERDICTS.length-1]; }
+
+const MIN_P=3, MAX_P=8, Q_MAX=90, A_MAX=40;
+
+/* ============================ state ============================
+   S is the whole game and it lives only in memory. qs is built during the author phase; each
+   entry is {author, q, opts, ti, picks} where opts is the truth + two decoys shuffled ONCE at
+   creation (deterministic per question — every answerer sees the same order, and the truth is
+   never distinguishable except by remembering it). picks maps playerIdx → chosen option index.
+   order is the shuffled quiz order; qi walks it; ai walks the answerer list of the current
+   question. Every screen renders through show(), which wipes the DOM wholesale — a previous
+   player's typing cannot survive into a hand-off even for one frame. */
+let S=null;
+function newSession(nm,qper){
+  S={ names:nm.slice(), qper:qper, qs:[], order:[], qi:0, ai:0 };
+}
+function curQ(){ return S.qs[S.order[S.qi]]; }
+function answerersOf(q){ const a=[]; for(let p=0;p<S.names.length;p++) if(p!==q.author) a.push(p); return a; }
+function qstats(q){
+  const answ=answerersOf(q);
+  const right=answ.filter(p=>q.picks[p]===q.ti);
+  return { answ:answ, right:right, wrong:answ.filter(p=>q.picks[p]!==q.ti) };
+}
+function isStump(q){ const s=qstats(q); return s.wrong.length>s.right.length; }
+
+let names=['','',''], qper=1;
+try{ const n=JSON.parse(LS.get('lore.names')||'[]');
+  if(Array.isArray(n)&&n.length>=MIN_P&&n.length<=MAX_P) names=n.map(x=>String(x).slice(0,12)); }catch(e){}
+
+/* ============================ rendering core ============================
+   One container, innerHTML replaced wholesale per screen. GEN is a render generation counter:
+   every handler captures the generation it was bound in and no-ops if a render has happened
+   since — this is the double-tap guard. A fast second tap on any advancing button finds either
+   a disabled button or a stale generation; it can never advance the state machine twice. */
+const app=document.getElementById('app');
+let GEN=0;
+function show(html){
+  GEN++; app.innerHTML=html;
+  try{ window.scrollTo({top:0,left:0,behavior:'instant'}); }catch(e){ window.scrollTo(0,0); }
+}
+function on(id,fn){
+  const g=GEN, el=document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('click',function(e){
+    if(g!==GEN || el.disabled) return;
+    el.disabled=true;                       // released only if the handler chooses to re-render
+    try{ fn(e); }finally{ if(g===GEN) el.disabled=false; }
+  });
+}
+
+/* the motif: a stack of polaroids under string lights, the top one a question mark */
+const MOTIF='<svg viewBox="0 0 130 84" aria-hidden="true">'
+ +'<path d="M6 10 q59 16 118 0" fill="none" stroke="#6b5138" stroke-width="2"/>'
+ +'<g><circle cx="26" cy="15" r="4" fill="#ffb547"/><circle cx="52" cy="19" r="4" fill="#ff7d9c"/>'
+ +'<circle cx="78" cy="19" r="4" fill="#3fc9b5"/><circle cx="104" cy="15" r="4" fill="#8f7dff"/></g>'
+ +'<g transform="translate(24,30) rotate(-8)"><rect width="42" height="48" rx="3" fill="#efe3cc"/>'
+ +'<rect x="4" y="4" width="34" height="32" rx="2" fill="#7a5f43"/></g>'
+ +'<g transform="translate(66,32) rotate(7)"><rect width="42" height="48" rx="3" fill="#efe3cc"/>'
+ +'<rect x="4" y="4" width="34" height="32" rx="2" fill="#4f6b5a"/></g>'
+ +'<g transform="translate(43,26) rotate(-1)"><rect width="46" height="54" rx="3" fill="#f8ecd6"/>'
+ +'<rect x="4" y="4" width="38" height="38" rx="2" fill="#3b2c1e"/>'
+ +'<text x="23" y="33" font-size="26" font-weight="900" fill="#ffb547" text-anchor="middle" font-family="inherit">?</text></g>'
+ +'</svg>';
+const MARK='<svg viewBox="0 0 40 40" aria-hidden="true">'
+ +'<g transform="translate(6,5) rotate(-4)"><rect width="28" height="32" rx="3" fill="#f8ecd6"/>'
+ +'<rect x="3" y="3" width="22" height="21" rx="2" fill="#3b2c1e"/>'
+ +'<text x="14" y="19" font-size="15" font-weight="900" fill="#ffb547" text-anchor="middle" font-family="inherit">?</text></g></svg>';
+
+function header(showHome){
+  return '<header class="top"><span class="wordmark">'+MARK+'<span><b>Memory Lane</b>'
+   +'<small>Kreeda · Group</small></span></span>'
+   +(showHome
+      ? '<button class="soundbtn" type="button" id="bSound" aria-pressed="'+SND.on+'" aria-label="Sound">'+(SND.on?'🔊':'🔇')+'</button>'
+        +'<button class="homebtn" type="button" id="bHome" aria-label="Leave game and return to start">Home</button>'
+      : '')
+   +'</header>';
+}
+function bindHome(){
+  on('bHome',()=>{ openConfirm(()=>{ S=null; title(); }); });
+  const sb=document.getElementById('bSound');
+  if(sb) sb.addEventListener('click',()=>setSound(!SND.on));
+}
+
+/* ============================ sound ============================
+   Two synthesized cues, no audio files: a soft tick on every pick and a swish on each reveal.
+   The context is created on the first tap (a user gesture, which iOS requires), and the on/off
+   preference is the only thing besides names and a play count that touches storage. */
+const SND={ ctx:null, noise:null, on:LS.get('lore.sound')!=='0' };
+function audio(){
+  if(!SND.on) return null;
+  if(!SND.ctx){ try{ SND.ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(SND.ctx.state==='suspended'){ try{ SND.ctx.resume(); }catch(e){} }
+  return SND.ctx;
+}
+function tick(){
+  const ac=audio(); if(!ac) return;
+  try{
+    const t=ac.currentTime, o=ac.createOscillator(), g=ac.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(880,t); o.frequency.exponentialRampToValueAtTime(1320,t+0.03);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.09,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t+0.08);
+  }catch(e){}
+}
+function swish(){
+  const ac=audio(); if(!ac) return;
+  try{
+    const dur=0.3, t=ac.currentTime;
+    if(!SND.noise){ const n=Math.floor(ac.sampleRate*0.5), b=ac.createBuffer(1,n,ac.sampleRate), d=b.getChannelData(0);
+      for(let i=0;i<n;i++) d[i]=Math.random()*2-1; SND.noise=b; }
+    const src=ac.createBufferSource(); src.buffer=SND.noise;
+    const f=ac.createBiquadFilter(); f.type='bandpass'; f.Q.value=1.4;      // filtered noise, swept up then down
+    f.frequency.setValueAtTime(500,t); f.frequency.exponentialRampToValueAtTime(3400,t+dur*0.45);
+    f.frequency.exponentialRampToValueAtTime(700,t+dur);
+    const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.32,t+0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(f).connect(g).connect(ac.destination); src.start(t); src.stop(t+dur+0.02);
+  }catch(e){}
+}
+function setSound(onv){
+  SND.on=onv; LS.set('lore.sound',onv?'1':'0');
+  const b=document.getElementById('bSound');
+  if(b){ b.textContent=onv?'🔊':'🔇'; b.setAttribute('aria-pressed',String(onv)); }
+  if(onv) tick();
+}
+
+/* confirm modal — the only way out of a live session other than finishing it */
+const scrim=document.getElementById('scrim');
+let confirmCb=null;
+document.getElementById('cfYes').addEventListener('click',()=>{ scrim.classList.remove('show');
+  const cb=confirmCb; confirmCb=null; if(cb) cb(); });
+document.getElementById('cfNo').addEventListener('click',()=>{ scrim.classList.remove('show'); confirmCb=null; });
+function openConfirm(cb){ confirmCb=cb; scrim.classList.add('show'); }
+
+let toastT=null;
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+const REDUCED=()=>!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+/* ============================ title ============================ */
+function title(){
+  show(
+   '<div class="hero">'+MOTIF+'<h1>MEMORY LANE</h1>'
+   +'<p>The trivia game only your group can play —<br>because you write it about yourselves.</p></div>'
+   +'<div class="card">'
+   +'<span class="lbl" id="plLbl">Who’s here? (3–8)</span>'
+   +'<div id="rows" role="group" aria-labelledby="plLbl"></div>'
+   +'<span class="lbl" id="qpLbl">Questions each</span>'
+   +'<div class="seg" role="group" aria-labelledby="qpLbl">'
+   +'<button type="button" id="q1" aria-pressed="true">1 each</button>'
+   +'<button type="button" id="q2" aria-pressed="false">2 each</button>'
+   +'</div>'
+   +'<p class="seghint" id="segHint"></p>'
+   +'<button class="btn primary" type="button" id="bStart"></button>'
+   +'</div>'
+   +'<details class="how"><summary>How it works</summary><ul>'
+   +'<li>Each of you <b>secretly writes a question</b> about the group’s shared history — the real answer plus <b>two decoys</b>. Only stuff that actually happened.</li>'
+   +'<li>Then it’s a quiz. The questions come back shuffled, and <b>everyone answers everyone else’s</b> — never their own.</li>'
+   +'<li>After each question the truth glows: who remembered, who invented a new past. Fool the majority and you earn a <b>⭐ stumper</b>.</li>'
+   +'<li>One page at the end: the group’s <b>memory score</b>, the leaderboard, and who the Group Historian is.</li>'
+   +'</ul></details>'
+   +'<footer class="foot">For fun and conversation — a game, not a psychological assessment.<br>'
+   +'Answers stay on this phone and are never uploaded.<br><a href="../">Kreeda</a></footer>'
+  );
+
+  const rowsEl=document.getElementById('rows'), startBtn=document.getElementById('bStart');
+  const segHint=document.getElementById('segHint');
+  const refresh=()=>{
+    const first=(names[0]||'').trim().slice(0,12)||'Player 1';
+    startBtn.textContent='Start · '+first+' writes first';
+    segHint.textContent = qper===2
+      ? 'Two memories each — great for a circle of 3–4.'
+      : (names.length<=4 ? 'One each. Small group? Try 2 each for a longer lane.' : 'One memory each is plenty.');
+  };
+  const renderRows=()=>{
+    rowsEl.innerHTML=names.map((v,i)=>
+      '<div class="prow">'
+      +'<span class="pdot" style="background:'+PAL[i].c+'"></span>'
+      +'<input type="text" maxlength="12" autocomplete="off" placeholder="Player '+(i+1)+'" '
+      +'aria-label="Player '+(i+1)+' name" data-i="'+i+'" value="'+esc(v)+'">'
+      +(names.length>MIN_P?'<button class="rm" type="button" data-rm="'+i+'" aria-label="Remove player '+(i+1)+'">✕</button>':'')
+      +'</div>').join('')
+      +(names.length<MAX_P?'<button class="addbtn" type="button" id="bAdd">+ Add a friend</button>':'');
+    rowsEl.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('input',()=>{ names[+inp.getAttribute('data-i')]=inp.value; refresh(); });
+    });
+    rowsEl.querySelectorAll('.rm').forEach(b=>{
+      b.addEventListener('click',()=>{ names.splice(+b.getAttribute('data-rm'),1); renderRows(); refresh(); });
+    });
+    const add=document.getElementById('bAdd');
+    if(add) add.addEventListener('click',()=>{ names.push(''); renderRows(); refresh();
+      const last=rowsEl.querySelectorAll('input'); if(last.length) last[last.length-1].focus(); });
+  };
+  const setQper=n=>{
+    qper=n;
+    document.getElementById('q1').setAttribute('aria-pressed',String(n===1));
+    document.getElementById('q2').setAttribute('aria-pressed',String(n===2));
+    refresh();
+  };
+  document.getElementById('q1').addEventListener('click',()=>setQper(1));
+  document.getElementById('q2').addEventListener('click',()=>setQper(2));
+  renderRows(); refresh();
+
+  on('bStart',()=>{
+    const nm=names.map((v,i)=>String(v).trim().slice(0,12)||'Player '+(i+1));
+    names=nm.slice();
+    LS.set('lore.names',JSON.stringify(nm));
+    newSession(nm,qper);
+    track('game_start',{player_count:nm.length, q_each:qper});
+    /* the first writer is already holding the phone — no interstitial; the author screen
+       carries the "look away" banner instead */
+    author(0,0);
+  });
+}
+
+/* ============================ hand-off ============================
+   Renders through show(), which has already destroyed the previous screen — so by the time
+   this paints there is nothing underneath to peek at, however fast the tap. */
+function handoffTo(p,sub,next){
+  show(
+   '<div class="handoff">'
+   +'<div class="pass">Pass the phone to</div>'
+   +'<h2 style="color:'+PAL[p].c+'">'+esc(S.names[p])+'</h2>'
+   +'<p class="sub">'+sub+'</p>'
+   +'<button class="btn primary" type="button" id="bReady">I’m '+esc(S.names[p])+' — show me</button>'
+   +'<p class="peek">👀 tilt the phone away from the others</p>'
+   +'</div>'
+  );
+  on('bReady',next);
+}
+
+/* ============================ author phase ============================
+   Each player in turn writes qper questions: the question (90 chars), the TRUE answer and two
+   decoys (40 each). The three answers are shuffled ONCE the moment the question is locked in,
+   so the truth's position is fixed per question and indistinguishable to every answerer. */
+function author(pi,k){
+  const me=S.names[pi], N=S.names.length;
+  const tag='Writer '+(pi+1)+' of '+N+(S.qper===2?' · question '+(k+1)+' of 2':'');
+  show(
+   header(true)
+   +'<div class="turn"><span class="eye">👀</span><span><b style="color:'+PAL[pi].c+'">'+esc(me)+'’s</b>'
+   +' turn to write. Everyone else, look away — this is a secret until the quiz.</span></div>'
+   +'<div class="card acard">'
+   +'<span class="ptag">'+tag+'</span>'
+   +'<h2>'+esc(me)+', ask about a shared memory</h2>'
+   +'<p class="sub">Something that really happened, that this group was there for.</p>'
+   +'<div class="field"><label for="inQ">Your question</label>'
+   +'<textarea id="inQ" rows="2" maxlength="'+Q_MAX+'" autocomplete="off"></textarea>'
+   +'<p class="inspo" id="inspo"></p></div>'
+   +'<div class="field truth"><label for="inT">The real answer</label>'
+   +'<input id="inT" type="text" maxlength="'+A_MAX+'" autocomplete="off"></div>'
+   +'<div class="field decoy"><label for="inD1">Decoy answer 1</label>'
+   +'<input id="inD1" type="text" maxlength="'+A_MAX+'" autocomplete="off"></div>'
+   +'<div class="field decoy"><label for="inD2">Decoy answer 2</label>'
+   +'<input id="inD2" type="text" maxlength="'+A_MAX+'" autocomplete="off"></div>'
+   +'<p class="tip">Make the decoys plausible — that’s the whole game.</p>'
+   +'<button class="btn primary" type="button" id="bLock">Lock this memory in</button>'
+   +'</div>'
+  );
+  bindHome();
+
+  /* the inspiration line rotates under the question field; the interval dies with the screen */
+  const g=GEN, inspo=document.getElementById('inspo');
+  let hi=Math.random()*PROMPTS.length|0;
+  const setHint=()=>{ inspo.textContent='Try: “'+PROMPTS[hi]+'”'; };
+  setHint();
+  const iv=setInterval(()=>{ if(g!==GEN){ clearInterval(iv); return; }
+    hi=(hi+1)%PROMPTS.length; setHint(); },3400);
+
+  on('bLock',()=>{
+    const q=document.getElementById('inQ').value.trim();
+    const t=document.getElementById('inT').value.trim();
+    const d1=document.getElementById('inD1').value.trim();
+    const d2=document.getElementById('inD2').value.trim();
+    if(!q){ toast('Write the question first'); return; }
+    if(!t){ toast('It needs the real answer'); return; }
+    if(!d1||!d2){ toast('Both decoys needed — that’s the quiz'); return; }
+    const lc=s=>s.toLowerCase();
+    if(lc(d1)===lc(t)||lc(d2)===lc(t)){ toast('A decoy can’t match the real answer'); return; }
+    if(lc(d1)===lc(d2)){ toast('The two decoys should differ'); return; }
+    const opts=shuffled([t,d1,d2]);
+    S.qs.push({ author:pi, q:q, opts:opts, ti:opts.indexOf(t), picks:{} });
+    tick();
+    if(k+1<S.qper){ author(pi,k+1); return; }           // same hands — no interstitial needed
+    if(pi+1<S.names.length){
+      handoffTo(pi+1,
+        esc(me)+' has planted '+(S.qper===2?'two memories':'a memory')+'.<br>Your turn to write — in secret.',
+        ()=>author(pi+1,0));
+      return;
+    }
+    beginQuiz();
+  });
+}
+
+/* ============================ quiz phase ============================ */
+function beginQuiz(){
+  S.order=shuffled(S.qs.map((_,i)=>i));
+  S.qi=0; S.ai=0;
+  answerHandoff(true);
+}
+function answerHandoff(first){
+  const q=curQ(), who=answerersOf(q)[S.ai];
+  handoffTo(who,
+    (first?'The writing is done — <b>quiz time</b>.<br>':'')
+    +'Memory '+(S.qi+1)+' of '+S.qs.length+', asked by <b style="color:'
+    +PAL[q.author].c+'">'+esc(S.names[q.author])+'</b>.',
+    ()=>answerScreen());
+}
+function answerScreen(){
+  const q=curQ(), answ=answerersOf(q), who=answ[S.ai], last=S.ai===answ.length-1;
+  const Qn=S.qs.length;
+  show(
+   header(true)
+   +'<div class="turn"><span class="eye">👀</span><span>Only <b style="color:'+PAL[who].c+'">'
+   +esc(S.names[who])+'</b> should be looking. One of these really happened.</span></div>'
+   +'<div class="prog"><span class="n">Memory <b>'+(S.qi+1)+'</b> of '+Qn+'</span>'
+   +'<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="'+Qn+'" aria-valuenow="'+(S.qi+1)+'">'
+   +'<i style="width:'+((S.qi+1)/Qn*100)+'%"></i></div></div>'
+   +'<div class="qcard">'
+   +'<div class="askedby">📜 Asked by <b style="color:'+PAL[q.author].c+'">'+esc(S.names[q.author])+'</b></div>'
+   +'<p class="qtext">'+esc(q.q)+'</p>'
+   +q.opts.map((o,i)=>'<button class="opt" type="button" data-i="'+i+'" aria-pressed="false">'+esc(o)+'</button>').join('')
+   +'<button class="btn" type="button" id="bPick" disabled>Pick an answer</button>'
+   +'</div>'
+  );
+  bindHome();
+  const g=GEN, pickBtn=document.getElementById('bPick');
+  let sel=-1;
+  document.querySelectorAll('.opt').forEach(el=>{
+    el.addEventListener('click',()=>{
+      if(g!==GEN) return;
+      sel=+el.getAttribute('data-i');
+      document.querySelectorAll('.opt').forEach(x=>x.setAttribute('aria-pressed',
+        String(+x.getAttribute('data-i')===sel)));
+      pickBtn.disabled=false;
+      pickBtn.className='btn primary';
+      pickBtn.textContent=last?'Lock in & reveal to everyone':'Lock in & pass on';
+      tick();
+    });
+  });
+  on('bPick',()=>{
+    if(sel<0) return;
+    q.picks[who]=sel;
+    if(last){ reveal(); }
+    else{ S.ai++; answerHandoff(false); }
+  });
+}
+
+/* ============================ per-question reveal ============================
+   Public by design: reached only after the last answerer locks in. The truth glows gold, every
+   pick sits as a coloured chip on the option it landed on, and the author gets a ⭐ if the
+   majority got it wrong. */
+function reveal(){
+  const q=curQ(), st=qstats(q), lastQ=S.qi===S.qs.length-1;
+  swish();
+  const chip=(p,hit)=>'<span class="pchip" style="background:'+PAL[p].s+';color:'+PAL[p].c
+   +';box-shadow:inset 0 0 0 1px '+PAL[p].c+'">'+esc(S.names[p])
+   +'<span class="mk '+(hit?'hit':'miss')+'">'+(hit?'✓':'✗')+'</span></span>';
+  const rows=q.opts.map((o,i)=>{
+    const pickers=st.answ.filter(p=>q.picks[p]===i);
+    return '<div class="rrow'+(i===q.ti?' truth':'')+'">'
+     +(i===q.ti?'<span class="tag">✓ what really happened</span>':'')
+     +'<div class="rt">'+esc(o)+'</div>'
+     +'<div class="chips">'+pickers.map(p=>chip(p,i===q.ti)).join('')+'</div>'
+     +'</div>';
+  }).join('');
+  const stump=isStump(q);
+  show(
+   header(true)
+   +'<div class="turn"><span class="eye">📣</span><span>Everyone can look now.</span></div>'
+   +'<div class="qcard rev">'
+   +'<div class="askedby">📜 Memory '+(S.qi+1)+' of '+S.qs.length+' · asked by <b style="color:'
+   +PAL[q.author].c+'">'+esc(S.names[q.author])+'</b></div>'
+   +'<p class="qtext">'+esc(q.q)+'</p>'
+   +rows
+   +'</div>'
+   +'<div class="card glance">'
+   +'<div class="gl"><span class="gi">🧠</span><span><b>'+st.right.length+' of '+st.answ.length
+   +'</b> remembered it.</span></div>'
+   +(stump?'<div class="gl"><span class="gi">⭐</span><span><span class="lb">Stumper</span><b style="color:'
+     +PAL[q.author].c+'">'+esc(S.names[q.author])+'</b> fooled the majority.</span></div>':'')
+   +(st.right.length===st.answ.length?'<div class="gl"><span class="gi">💫</span><span><span class="lb">Core memory</span>Everyone remembered.</span></div>':'')
+   +'</div>'
+   +'<button class="btn primary" type="button" id="bNext">'
+   +(lastQ?'See the final reveal':'Next memory')+'</button>'
+  );
+  bindHome();
+  on('bNext',()=>{
+    if(lastQ){ results(); return; }
+    S.qi++; S.ai=0;
+    answerHandoff(false);
+  });
+}
+
+/* ============================ results — one page ============================
+   Numbers first: one big ring for the group's memory, a leaderboard of bars with ⭐ stumper
+   stars riding them, a strip of every question with per-player marks, and superlative
+   one-liners — everybody leaves holding something. */
+let completeSent=false;
+function results(){
+  if(!S||!S.qs.length){ title(); return; }
+  const N=S.names.length, Q=S.qs.length, poss=Q-S.qper;
+  const pts=new Array(N).fill(0), stars=new Array(N).fill(0);
+  let totalRight=0, totalAns=0;
+  S.qs.forEach(q=>{
+    const st=qstats(q);
+    totalAns+=st.answ.length; totalRight+=st.right.length;
+    st.right.forEach(p=>pts[p]++);
+    if(isStump(q)) stars[q.author]++;
+  });
+  const pct=totalAns?Math.round(totalRight*100/totalAns):0;
+  const vd=verdictFor(pct);
+  const maxPts=Math.max.apply(null,pts), minPts=Math.min.apply(null,pts);
+  const topNames=S.names.filter((_,p)=>pts[p]===maxPts);
+  const lowIdx=[]; S.names.forEach((_,p)=>{ if(pts[p]===minPts) lowIdx.push(p); });
+  /* most-missed question (best stumper), and the core memory everyone got right — both taken
+     in quiz order so replays of the screen agree with themselves */
+  let bestStumpQ=null, bestWrong=0, coreQ=null;
+  S.order.forEach(qi2=>{
+    const q=S.qs[qi2], st=qstats(q);
+    if(st.wrong.length>bestWrong){ bestWrong=st.wrong.length; bestStumpQ=q; }
+    if(coreQ===null&&st.right.length===st.answ.length) coreQ=q;
+  });
+  const totalStars=stars.reduce((a,b)=>a+b,0);
+  const today=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+
+  if(!completeSent){
+    completeSent=true;
+    track('game_complete',{player_count:N, questions:Q, memory_pct:pct,
+      stumpers:totalStars, core_memories:S.qs.filter(q=>{ const s=qstats(q); return s.right.length===s.answ.length; }).length});
+    const plays=(+LS.get('lore.plays')||0)+1; LS.set('lore.plays',String(plays));
+  }
+
+  const dl=n=>'style="animation-delay:'+n+'ms"';
+  const C=2*Math.PI*70;
+  const nameHtml=S.names.map((nm,p)=>'<span style="color:'+PAL[p].c+'">'+esc(nm)+'</span>')
+    .join('<span class="x">·</span>');
+
+  /* leaderboard bars: width relative to the top scorer so the winner always fills the track */
+  const bars=S.names.map((nm,p)=>{
+    const w=maxPts?Math.round(pts[p]*100/maxPts):0;
+    return '<div class="lbrow">'
+     +'<span class="nm" style="color:'+PAL[p].c+'">'+esc(nm)+'</span>'
+     +'<span class="track"><span class="fill" style="width:'+Math.max(w,3)+'%;background:'+PAL[p].c
+     +';animation-delay:'+(150+p*90)+'ms"></span>'
+     +(stars[p]?'<span class="stars" aria-label="'+stars[p]+' stumper star'+(stars[p]>1?'s':'')+'">'+'⭐'.repeat(stars[p])+'</span>':'')
+     +'</span>'
+     +'<span class="val" style="color:'+PAL[p].c+'">'+pts[p]+'/'+poss+'</span>'
+     +'</div>';
+  }).join('');
+
+  /* the strip: 📜 + question, then one mark per player — filled ✓ remembered, hollow ✗ fooled,
+     ✍ wrote it (⭐ if it stumped the majority) */
+  const stripRows=S.order.map((qi2,row)=>{
+    const q=S.qs[qi2];
+    const dots=S.names.map((nm,p)=>{
+      if(p===q.author){
+        const stmp=isStump(q);
+        return '<span class="qd" style="'+(stmp?'background:var(--gold-soft);box-shadow:inset 0 0 0 1.5px var(--gold);':'box-shadow:inset 0 0 0 1.5px '+PAL[p].c+';opacity:.75;')
+         +'color:'+PAL[p].c+';animation-delay:'+(row*60+p*30)+'ms" aria-label="'+esc(nm)+': wrote it'+(stmp?', stumped the majority':'')+'">'+(stmp?'⭐':'✍')+'</span>';
+      }
+      const hit=q.picks[p]===q.ti;
+      return hit
+       ? '<span class="qd" style="background:'+PAL[p].c+';color:'+CHIP_INK+';animation-delay:'+(row*60+p*30)+'ms" aria-label="'+esc(nm)+': remembered">✓</span>'
+       : '<span class="qd" style="box-shadow:inset 0 0 0 1.5px '+PAL[p].c+';color:'+PAL[p].c+';animation-delay:'+(row*60+p*30)+'ms" aria-label="'+esc(nm)+': fooled">✗</span>';
+    }).join('');
+    return '<div class="qsrow"><div class="qq"><span class="ic">📜</span><span>'+esc(q.q)+'</span></div>'
+     +'<div class="dots">'+dots+'</div></div>';
+  }).join('');
+
+  /* superlatives — ties resolve toward the warmer reading, nobody is roasted */
+  const two=list=>list.slice(0,2).map(esc).join(' & ')+(list.length>2?' & co.':'');
+  const gl=[];
+  if(maxPts===minPts){
+    gl.push(['🤝','<span class="lb">Dead heat</span>The past belongs to all of you equally — '+maxPts+' each.']);
+  }else{
+    gl.push(['🏛️','<span class="lb">Group Historian</span><b>'+two(topNames)+'</b> — '+maxPts+' of '+poss+' remembered.']);
+  }
+  if(bestStumpQ&&bestWrong>0){
+    gl.push(['🧨','<span class="lb">Best Stumper</span><b style="color:'+PAL[bestStumpQ.author].c+'">'
+      +esc(S.names[bestStumpQ.author])+'</b> — “'+esc(bestStumpQ.q)+'” fooled '+bestWrong+'.']);
+  }else{
+    gl.push(['🛡️','<span class="lb">Unstumpable</span>Not one decoy fooled this group.']);
+  }
+  if(maxPts!==minPts){
+    gl.push(['🐟','<span class="lb">Goldfish</span><b>'+two(lowIdx.map(p=>S.names[p]))
+      +'</b> — living gloriously in the present.']);
+  }
+  if(coreQ){
+    gl.push(['💫','<span class="lb">Core memory</span>“'+esc(coreQ.q)+'” — everyone remembered.']);
+  }
+
+  show(
+   header(false)
+   +'<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>'
+   +'<linearGradient id="loGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb547"/><stop offset="1" stop-color="#ff7d9c"/></linearGradient>'
+   +'</defs></svg>'
+   +'<div class="results">'
+   +'<h2>The final reveal</h2>'
+   +'<p class="names">'+nameHtml+'</p>'
+   +'<div class="card info">'
+   +'<div class="ring"><svg viewBox="0 0 152 152" aria-hidden="true">'
+   +'<circle class="tr" cx="76" cy="76" r="70"/>'
+   +'<circle class="fl" cx="76" cy="76" r="70" style="stroke-dasharray:'+C.toFixed(1)+';stroke-dashoffset:'+C.toFixed(1)+'" '
+   +'data-off="'+(C*(1-pct/100)).toFixed(1)+'"/></svg>'
+   +'<div class="rv" aria-hidden="true"><b data-n="'+pct+'">0</b><i>%</i></div>'
+   +'<div class="rl" aria-hidden="true">group memory</div>'
+   +'<span class="sr">Group memory: '+pct+'%</span></div>'
+   +'<div class="verdict" '+dl(500)+'><b>'+vd[1]+'</b><span>'+vd[2]+'</span></div>'
+   +'</div>'
+   +'<div class="card board" '+dl(650)+'>'
+   +'<h4>Leaderboard</h4><p class="sub">+1 per memory remembered · ⭐ fooled the majority</p>'
+   +bars
+   +'</div>'
+   +'<div class="card glance" '+dl(800)+'>'
+   +gl.map(x=>'<div class="gl"><span class="gi">'+x[0]+'</span><span>'+x[1]+'</span></div>').join('')
+   +'</div>'
+   +'<div class="card strip" '+dl(950)+'>'
+   +'<h4>Every memory</h4><p class="sub">✓ remembered · ✗ fooled · ✍ wrote it (⭐ if it stumped)</p>'
+   +stripRows
+   +'</div>'
+   +'<p class="datefoot">'+esc(today)+' · kreeda.games/lore</p>'
+   +'<button class="btn primary" type="button" id="bAgain">Play again</button>'
+   +'<a class="btn wa" id="bWa" href="#" target="_blank" rel="noopener">'+WA_ICON+'Share on WhatsApp</a>'
+   +'<p class="sharehint">Send it to the group chat — everyone keeps a copy.</p>'
+   +'<div class="btnrow"><button class="btn" type="button" id="bCopy">Copy result</button>'
+   +(navigator.share?'<button class="btn" type="button" id="bShare">Share…</button>':'')+'</div>'
+   +'<button class="btn ghost" type="button" id="bChange">Change players</button>'
+   +'<div id="shareSlot"></div>'
+   +'</div>'
+   +'<footer class="foot">Forgetting isn’t losing — it’s a reason to retell the story.<br>'
+   +'<a href="../">Kreeda</a></footer>'
+  );
+
+  const g=GEN;
+  /* the ring fills and the number counts up after first paint; reduced motion lands instantly */
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(g!==GEN) return;
+    document.querySelectorAll('.ring .fl').forEach(el=>{ el.style.strokeDashoffset=el.getAttribute('data-off'); });
+    const nums=Array.prototype.slice.call(document.querySelectorAll('.ring .rv b'));
+    if(REDUCED()){ nums.forEach(b=>{ b.textContent=b.getAttribute('data-n'); }); return; }
+    const t0=performance.now(), D=1100;
+    (function step(){
+      if(g!==GEN) return;
+      const k=Math.min(1,(performance.now()-t0)/D), e=1-Math.pow(1-k,3);
+      nums.forEach(b=>{ b.textContent=Math.round(+b.getAttribute('data-n')*e); });
+      if(k<1) requestAnimationFrame(step);
+    })();
+  }));
+
+  on('bAgain',()=>{ completeSent=false; const nm=S.names.slice(), qp=S.qper;
+    newSession(nm,qp); track('game_start',{player_count:nm.length, q_each:qp}); author(0,0); });
+  on('bChange',()=>{ completeSent=false; S=null; title(); });
+
+  /* the share text may carry the questions — sharing is the players' own explicit act,
+     unlike analytics, which only ever gets counts */
+  const text=shareText(pts,stars,poss,pct,vd,topNames,bestStumpQ,coreQ,maxPts===minPts,today);
+  const wa=document.getElementById('bWa');
+  wa.href=waLink(text);
+  wa.addEventListener('click',()=>track('share',{via:'whatsapp'}));
+  on('bShare',()=>{ track('share',{via:'system'});
+    try{ navigator.share({title:'Memory Lane — '+S.names.join(' · '), text:text}).catch(()=>{}); }catch(e){} });
+  on('bCopy',()=>{
+    let done=false;
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(()=>toast('Copied!'),()=>showShareBox(text));
+        done=true;
+      }
+    }catch(e){}
+    if(!done) showShareBox(text);   // clipboard is unavailable on file:// — show it to copy by hand
+  });
+}
+
+/* ============================ share ============================ */
+const WA_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.8-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.2-.2-.2-.5-.4z"/></svg>';
+function waLink(text){ return 'https://wa.me/?text='+encodeURIComponent(text); }
+function shareText(pts,stars,poss,pct,vd,topNames,bestStumpQ,coreQ,tied,today){
+  const lines=[
+    '*Memory Lane* · '+S.names.length+' friends · '+S.qs.length+' memories',
+    '_'+vd[1]+'_ — '+vd[2],
+    '',
+    '🧠 Group memory: *'+pct+'%*'
+  ];
+  /* one emoji row per player across the quiz in play order: 🟩 remembered, ⬛ fooled, 📜 wrote it */
+  S.names.forEach((nm,p)=>{
+    let row='';
+    S.order.forEach(qi2=>{ const q=S.qs[qi2];
+      row+= q.author===p ? '📜' : (q.picks[p]===q.ti?'🟩':'⬛'); });
+    lines.push(nm+' '+row+' '+pts[p]+'/'+poss+(stars[p]?' '+'⭐'.repeat(stars[p]):''));
+  });
+  lines.push('');
+  if(coreQ) lines.push('💫 Core memory: “'+coreQ.q+'” — everyone remembered');
+  if(bestStumpQ) lines.push('🧨 Best stumper: '+S.names[bestStumpQ.author]);
+  lines.push(tied ? '🤝 Dead heat — the past belongs to everyone'
+                  : '🏛️ Group Historian: '+topNames.join(' & '));
+  lines.push('', today+' · kreeda.games/lore');
+  return lines.join('\n');
+}
+function showShareBox(text){
+  const slot=document.getElementById('shareSlot');
+  if(!slot) return;
+  slot.innerHTML='<textarea class="sharebox" rows="6" readonly aria-label="Result text to copy manually"></textarea>';
+  const ta=slot.querySelector('textarea'); ta.value=text;
+  ta.focus(); try{ ta.select(); }catch(e){}
+  toast('Copy it from the box below');
+}
+
+/* ============================ boot self-test ============================
+   Cheap invariants that would otherwise only fail in a player's hands. Runs once, logs only. */
+(function audit(){
+  try{
+    if(PAL.length!==MAX_P) console.warn('lore: palette has '+PAL.length+' hues, need '+MAX_P);
+    if(PROMPTS.length<4) console.warn('lore: only '+PROMPTS.length+' inspiration prompts');
+    let prev=101;
+    VERDICTS.forEach(v=>{
+      if(!(v.length===3&&typeof v[0]==='number')) console.warn('lore: malformed verdict',v);
+      if(v[0]>=prev) console.warn('lore: verdict thresholds must descend'); prev=v[0];
+    });
+    if(VERDICTS[VERDICTS.length-1][0]!==0) console.warn('lore: verdicts must cover 0%');
+    for(const p of [0,33,50,77,100]) if(!verdictFor(p)) console.warn('lore: no verdict for '+p+'%');
+    if(esc('<a "b">')!== '&lt;a &quot;b&quot;&gt;') console.warn('lore: esc() broken');
+  }catch(e){}
+})();
+
+title();
+</script>
+</body>
+</html>

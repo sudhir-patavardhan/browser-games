@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Herd Mind — Kreeda</title>
+<meta name="description" content="The zero-vulnerability warm-up for 3–8 friends on one phone. Everyone secretly answers the same prompt trying to match the majority — land in the biggest cluster and score, stand alone and wear the black sheep with pride.">
+<link rel="canonical" href="https://kreeda.games/herd/">
+<meta name="theme-color" content="#0e1712">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/herd/">
+<meta property="og:title" content="Herd Mind — Kreeda">
+<meta property="og:description" content="Think WITH the room, not for yourself. 3–8 friends, one phone: everyone secretly answers the same prompt trying to match the majority. Biggest cluster scores; the lone answer wears the black sheep.">
+<meta property="og:image" content="https://kreeda.games/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Herd Mind — Kreeda">
+<meta name="twitter:description" content="Think WITH the room, not for yourself. 3–8 friends, one phone: match the majority and score — stand alone and wear the black sheep with pride.">
+<meta name="twitter:image" content="https://kreeda.games/og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Herd Mind","description":"The zero-vulnerability warm-up for 3–8 friends on one phone. Everyone secretly answers the same prompt trying to match the majority — the biggest cluster scores, the lone answer wears the black sheep with pride.","url":"https://kreeda.games/herd/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+<style>
+/* ============================ tokens ============================
+   Night meadow: this is the after-dinner warm-up game, lights low, everyone loud. The ground is
+   the green-black of a pasture at night, the ink is moonlit-wool cream, gold is the lantern the
+   majority gathers under and mint is the score growing. One committed dark look — a theme flip
+   mid-hand-off would read as a glitch. Eight fixed player hues, chosen to stay apart on the dark
+   green; a player keeps their hue everywhere — name rows, inputs, cluster dots, bars. */
+:root{
+  --ground:#0e1712;  --ground-2:#152219;
+  --panel:#1a2a20;   --panel-2:#233529;  --rule:rgba(200,235,210,.15);
+  --ink:#eef5ee;     --ink-dim:#9db3a2;
+  --mint:#7de3b2;    --mint-soft:rgba(125,227,178,.16);
+  --gold:#ffd166;    --gold-soft:rgba(255,209,102,.15);
+  --wool:#f2efe4;    --no:#ff8c7a;
+  --shade:rgba(6,12,8,.74);
+  --p0:#ffd166; --p1:#6ecbff; --p2:#ff8fa3; --p3:#7de3b2;
+  --p4:#c9a0ff; --p5:#ffab73; --p6:#a8e05f; --p7:#ff9de2;
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  /* explicit background is mandatory: a transparent body would borrow the host's theme */
+  background:
+    radial-gradient(120% 55% at 82% -8%, rgba(244,233,191,.10) 0%, transparent 55%),
+    radial-gradient(120% 60% at 12% -10%, rgba(125,227,178,.12) 0%, transparent 55%),
+    linear-gradient(180deg, var(--ground-2) 0%, var(--ground) 45%, #0a110d 100%);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{ max-width:540px; margin:0 auto;
+  padding: max(14px, env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
+
+button{ font:inherit; color:inherit; cursor:pointer; }
+button:focus-visible, input:focus-visible, summary:focus-visible{
+  outline:3px solid var(--gold); outline-offset:2px; }
+
+/* ============================ shared chrome ============================ */
+.top{ display:flex; align-items:center; gap:10px; margin:2px 0 12px; min-height:44px; }
+.wordmark{ display:flex; align-items:center; gap:9px; }
+.wordmark svg{ width:34px; height:34px; flex:none; }
+.wordmark b{ font-size:21px; font-weight:900; letter-spacing:.6px; }
+.wordmark small{ display:block; font-size:10px; font-weight:700; letter-spacing:2.6px;
+  text-transform:uppercase; color:var(--ink-dim); }
+.homebtn{ margin-left:auto; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
+  min-width:44px; min-height:44px; padding:8px 12px; font-size:13px; font-weight:800; color:var(--ink-dim); }
+.soundbtn{ margin-left:auto; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
+  min-width:44px; min-height:44px; padding:8px 10px; font-size:17px; line-height:1; }
+.soundbtn + .homebtn{ margin-left:0; }
+
+.card{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:18px 16px; }
+.btn{
+  display:block; width:100%; min-height:52px; padding:14px 16px; margin-top:10px;
+  background:var(--panel-2); border:1px solid var(--rule); border-radius:14px;
+  font-size:16px; font-weight:800; letter-spacing:.2px; text-align:center;
+  transition:transform .1s ease, background .15s ease;
+}
+.btn:active{ transform:scale(.985); }
+.btn.primary{ background:linear-gradient(100deg, var(--mint) 0%, #b9e788 60%, var(--gold) 135%);
+  border-color:transparent; color:#11241a; box-shadow:0 8px 24px rgba(125,227,178,.28); }
+.btn.ghost{ background:transparent; border-color:var(--rule); color:var(--ink-dim); font-weight:700; }
+.btn[disabled]{ opacity:.45; cursor:default; }
+.btnrow{ display:flex; gap:10px; }
+.btnrow .btn{ flex:1; }
+
+.dim{ color:var(--ink-dim); }
+.tiny{ font-size:12px; line-height:1.55; }
+
+/* ============================ title ============================ */
+.hero{ text-align:center; margin:20px 0 16px; }
+.hero svg{ width:150px; height:88px; }
+.hero h1{ font-size:42px; font-weight:900; letter-spacing:2px; margin:6px 0 4px;
+  background:linear-gradient(95deg, var(--mint), var(--gold)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.hero p{ margin:0; font-size:15px; color:var(--ink-dim); font-weight:600; line-height:1.45; }
+
+.field{ margin-top:12px; }
+.field label{ display:block; font-size:11px; font-weight:800; letter-spacing:1.4px;
+  text-transform:uppercase; color:var(--ink-dim); margin:0 0 5px 2px; }
+.prow{ display:flex; align-items:center; gap:8px; margin-top:8px; }
+.prow .pd{ width:12px; height:12px; border-radius:4px; flex:none; }
+.prow input{
+  flex:1; min-width:0; font:inherit; font-size:16px; font-weight:700;   /* 16px or iOS zooms on focus */
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:12px 12px; min-height:48px;
+}
+.prow .rm{ flex:none; min-width:44px; min-height:44px; background:var(--panel-2);
+  border:1px solid var(--rule); border-radius:11px; color:var(--ink-dim); font-size:16px; font-weight:800; }
+.prow .rm[disabled]{ opacity:.3; }
+.addbtn{ margin-top:10px; min-height:48px; }
+
+.packs{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.pack{ flex:1 1 28%; min-height:46px; padding:10px 8px; background:var(--panel-2);
+  border:1px solid var(--rule); border-radius:12px; font-size:13.5px; font-weight:800; }
+.pack[aria-pressed="true"]{ background:var(--mint-soft); border-color:var(--mint); color:#fff;
+  box-shadow:inset 0 0 0 1px var(--mint); }
+
+details.how{ margin-top:14px; border:1px solid var(--rule); border-radius:14px;
+  background:var(--panel); padding:0 14px; }
+details.how summary{ cursor:pointer; font-size:14px; font-weight:800; padding:13px 0;
+  min-height:44px; list-style:none; display:flex; align-items:center; gap:8px; }
+details.how summary::-webkit-details-marker{ display:none; }
+details.how summary::before{ content:'▸'; color:var(--ink-dim); transition:transform .15s ease; }
+details.how[open] summary::before{ transform:rotate(90deg); }
+details.how ul{ margin:0 0 14px; padding-left:20px; font-size:13.5px; line-height:1.65;
+  color:var(--ink-dim); }
+details.how li b{ color:var(--ink); }
+
+.foot{ margin-top:20px; text-align:center; font-size:11px; line-height:1.7; color:var(--ink-dim); }
+.foot a{ color:var(--ink-dim); }
+
+/* ============================ hand-off ============================ */
+.handoff{ min-height:76vh; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; text-align:center; padding:20px 6px; }
+.handoff .pass{ font-size:13px; font-weight:800; letter-spacing:2.4px; text-transform:uppercase;
+  color:var(--ink-dim); }
+.handoff h2{ font-size:36px; font-weight:900; margin:12px 0 6px; overflow-wrap:anywhere; }
+.handoff .sub{ font-size:15px; color:var(--ink-dim); margin:0 0 26px; line-height:1.5; }
+.handoff .btn{ max-width:340px; }
+.handoff .peek{ margin-top:22px; font-size:12.5px; color:var(--ink-dim); }
+@media (prefers-reduced-motion:no-preference){
+  .handoff h2{ animation:heartbeat 1.6s ease-in-out infinite; }
+  @keyframes heartbeat{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.03);} }
+}
+
+/* ============================ answering ============================ */
+.turn{ display:flex; align-items:center; gap:10px; background:var(--panel-2); border:1px solid var(--rule);
+  border-radius:13px; padding:10px 12px; margin-bottom:12px; font-size:13px; line-height:1.4; }
+.turn .eye{ font-size:20px; flex:none; }
+.prog{ display:flex; align-items:center; gap:12px; background:var(--panel-2); border:1px solid var(--rule);
+  border-radius:999px; padding:9px 14px; margin-bottom:12px; }
+.prog .n{ font-size:13px; font-weight:800; white-space:nowrap; color:var(--ink-dim); }
+.prog .n b{ font-size:16px; color:var(--ink); }
+.bar{ flex:1; height:7px; border-radius:99px; background:var(--panel); overflow:hidden; }
+.bar i{ display:block; height:100%; border-radius:99px;
+  background:linear-gradient(90deg, var(--mint), var(--gold)); }
+
+.rlabel{ margin:0; font-size:11px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--ink-dim); }
+.prompt{ font-size:24px; font-weight:900; line-height:1.28; margin:7px 0 8px; overflow-wrap:anywhere; }
+.ansfield input{
+  width:100%; font:inherit; font-size:16px; font-weight:800;
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:13px 12px; min-height:50px;
+}
+
+/* ============================ clustering — the open step ============================ */
+.chipbox{ display:flex; flex-wrap:wrap; gap:10px; margin:12px 0 4px; }
+.clus{ display:inline-flex; flex-direction:column; align-items:flex-start; gap:6px;
+  background:var(--panel-2); border:2px solid var(--rule); border-radius:16px; padding:10px 14px;
+  max-width:100%; text-align:left; transition:border-color .15s ease, transform .12s ease; }
+.clus:active{ transform:scale(.97); }
+.clus .l1{ display:flex; align-items:baseline; gap:7px; max-width:100%; }
+.clus b{ font-size:16px; font-weight:900; line-height:1.25; overflow-wrap:anywhere; min-width:0; }
+.clus .cnt{ flex:none; font-size:12px; font-weight:900; color:var(--gold); }
+.clus .dots{ display:flex; gap:4px; }
+.clus .dots i{ width:10px; height:10px; border-radius:99px; display:inline-block; }
+.clus.multi{ border-style:dashed; }
+.clus.multi .split{ font-size:10px; font-weight:800; letter-spacing:.6px; text-transform:uppercase;
+  color:var(--ink-dim); }
+.clus.sel{ border-color:var(--gold); border-style:solid;
+  box-shadow:0 0 0 3px rgba(255,209,102,.25); transform:scale(1.03); }
+@media (prefers-reduced-motion:no-preference){
+  .clus.pop{ animation:pop .28s cubic-bezier(.2,.8,.3,1); }
+  @keyframes pop{ 0%{ transform:scale(.9);} 55%{ transform:scale(1.06);} 100%{ transform:none;} }
+}
+.mergehint{ font-size:12px; color:var(--ink-dim); line-height:1.5; margin:8px 0 0; }
+
+/* ============================ round reveal ============================ */
+.crow{ margin-top:13px; }
+.crow .chead{ display:flex; align-items:center; gap:8px; }
+.crow .clab{ flex:1; min-width:0; font-size:15px; font-weight:900; overflow-wrap:anywhere; }
+.crow.win .clab{ color:var(--gold); }
+.crow .plus{ flex:none; font-size:11px; font-weight:900; letter-spacing:.6px; border-radius:999px;
+  padding:3px 8px; background:var(--gold-soft); color:var(--gold); }
+.crow .lone{ flex:none; font-size:14px; }
+.crow .cn{ flex:none; font-size:13px; font-weight:900; color:var(--ink-dim); }
+.cbar{ height:14px; background:var(--panel-2); border-radius:99px; overflow:hidden; margin-top:5px; }
+.cbar i{ display:block; height:100%; width:0; border-radius:99px;
+  background:linear-gradient(90deg, #4aa87e, var(--mint)); transition:width .8s cubic-bezier(.2,.7,.2,1); }
+.crow.win .cbar i{ background:linear-gradient(90deg, #d9a940, var(--gold)); }
+.mnames{ margin-top:6px; display:flex; flex-wrap:wrap; gap:5px; }
+.mname{ font-size:11px; font-weight:800; border-radius:99px; padding:3px 9px; background:var(--panel-2); }
+.scatline{ margin:10px 0 0; font-size:13.5px; line-height:1.5; color:var(--ink-dim); }
+.cardh{ margin:0 0 4px; font-size:12px; font-weight:900; letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--ink-dim); }
+.scstrip{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.pchip{ font-size:12.5px; font-weight:800; border-radius:999px; padding:6px 11px; background:var(--panel-2); }
+.pchip small{ font-size:11px; font-weight:700; opacity:.8; }
+
+/* ============================ results — one page ============================
+   Numbers first: one big ring for the hive, bars for the flock, a strip of rounds, and four
+   one-line superlatives. Prose is rationed. */
+.results h2{ font-size:15px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--ink-dim); text-align:center; margin:4px 0 2px; }
+.results .meta{ text-align:center; font-size:13px; font-weight:700; color:var(--ink-dim); margin:0 0 12px; }
+.info{ text-align:center; padding:16px 10px 16px; }
+.ring{ position:relative; display:inline-flex; flex-direction:column; align-items:center; min-width:0; }
+.ring svg{ width:92px; height:92px; transform:rotate(-90deg); }
+.ring .tr{ fill:none; stroke:var(--panel-2); stroke-width:10; }
+.ring .fl{ fill:none; stroke:var(--mint); stroke-width:10; stroke-linecap:round;
+  transition:stroke-dashoffset 1.2s cubic-bezier(.2,.7,.2,1); }
+.ring.big .fl{ stroke:url(#ringGrad); }
+.ring .rv{ position:absolute; top:0; left:0; width:100%; height:92px; display:flex; align-items:center;
+  justify-content:center; font-weight:900; font-size:22px; line-height:1; }
+.ring .rv i{ font-style:normal; font-size:.55em; opacity:.7; margin-left:1px; }
+.ring .rl{ margin-top:5px; font-size:11px; font-weight:800; color:var(--ink-dim); line-height:1.25; }
+.ring .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+.ring.big{ display:flex; margin:0 auto; }
+.ring.big svg{ width:156px; height:156px; }
+.ring.big .rv{ height:156px; font-size:44px; color:var(--gold); }
+.ring.big .rl{ font-size:13px; color:var(--ink); margin-top:2px; }
+.verdict{ margin-top:16px; }
+.verdict b{ display:block; font-size:27px; font-weight:900; line-height:1.15;
+  background:linear-gradient(95deg, var(--mint), var(--gold)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.verdict span{ display:block; margin-top:4px; font-size:13px; color:var(--ink-dim); line-height:1.45; }
+
+.lrow{ display:flex; align-items:center; gap:8px; margin-top:9px; }
+.lrow .lname{ width:86px; flex:none; font-size:12.5px; font-weight:900; text-align:right;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lrow .lbar{ flex:1; height:20px; background:var(--panel-2); border-radius:8px; overflow:hidden; }
+.lrow .lbar i{ display:block; height:100%; width:0; border-radius:8px; opacity:.92;
+  transition:width .9s cubic-bezier(.2,.7,.2,1); }
+.lrow .lpts{ width:24px; flex:none; text-align:right; font-size:16px; font-weight:900; }
+.lrow .lsheep{ flex:none; font-size:12px; min-width:20px; line-height:1; }
+
+.rrow{ display:flex; align-items:center; gap:9px; padding:9px 0; border-top:1px solid var(--rule); }
+.rrow:first-of-type{ border-top:0; padding-top:2px; }
+.rrow .rn{ flex:none; width:22px; height:22px; border-radius:99px; background:var(--panel-2);
+  font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center;
+  color:var(--ink-dim); }
+.rrow .rq{ flex:1; min-width:0; font-size:12.5px; color:var(--ink-dim); line-height:1.35;
+  overflow-wrap:anywhere; }
+.wchip{ flex:none; font-size:12px; font-weight:800; background:var(--gold-soft); color:var(--gold);
+  border-radius:999px; padding:4px 10px; max-width:42%; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap; }
+.wchip.scat{ background:var(--panel-2); color:var(--ink-dim); }
+
+.glance{ margin-top:12px; padding:12px 14px; }
+.gl{ display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-top:1px solid var(--rule);
+  font-size:13.5px; line-height:1.45; }
+.gl:first-child{ border-top:0; padding-top:0; } .gl:last-child{ padding-bottom:0; }
+.gl .gi{ flex:none; width:26px; text-align:center; font-size:18px; line-height:1.15; }
+.gl b{ font-weight:900; }
+.gl .lb{ font-weight:900; letter-spacing:.8px; text-transform:uppercase; font-size:10.5px;
+  margin-right:5px; color:var(--mint); }
+.gl.sheepy .lb{ color:var(--wool); } .gl.king .lb{ color:var(--gold); } .gl.wild .lb{ color:var(--p4); }
+@media (prefers-reduced-motion:no-preference){
+  .rcard{ opacity:0; transform:translateY(10px); animation:rise .4s ease forwards; }
+  @keyframes rise{ to{ opacity:1; transform:none; } }
+}
+.rcard{ margin-top:12px; }
+
+.datefoot{ text-align:center; font-size:11.5px; color:var(--ink-dim); margin-top:14px; }
+.sharebox{ width:100%; margin-top:10px; font-size:13px; line-height:1.5;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:10px; resize:none; }
+
+/* toast + confirm modal */
+.toast{ position:fixed; left:50%; bottom:calc(26px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(8px); background:var(--panel-2); color:var(--ink);
+  border:1px solid var(--rule); border-radius:12px; padding:11px 18px; font-size:14px;
+  font-weight:800; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:90;
+  box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:88vw; text-align:center; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+.scrim{ position:fixed; inset:0; background:var(--shade); z-index:70; display:none;
+  align-items:center; justify-content:center; padding:20px; }
+.scrim.show{ display:flex; }
+.confirmbox{ background:var(--panel); border:1px solid var(--rule); border-radius:18px;
+  padding:20px 18px; max-width:340px; width:100%; }
+.confirmbox h3{ margin:0 0 6px; font-size:18px; font-weight:900; }
+.confirmbox p{ margin:0 0 14px; font-size:13.5px; color:var(--ink-dim); line-height:1.5; }
+
+/* share: a WhatsApp link in WhatsApp's green, and a system share sheet where the browser has one */
+.btn.wa{ display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;
+  background:#25D366; color:#052e16; border-color:transparent; box-shadow:0 8px 24px rgba(37,211,102,.25); }
+.btn.wa svg{ width:20px; height:20px; flex:none; }
+.sharehint{ font-size:12px; color:var(--ink-dim); text-align:center; margin:6px 0 0; line-height:1.45; }
+
+@media (prefers-reduced-motion:reduce){
+  *{ animation:none !important; transition:none !important; }
+  .rcard{ opacity:1; transform:none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="scrim" id="scrim">
+  <div class="confirmbox" role="alertdialog" aria-modal="true" aria-labelledby="cfTitle" aria-describedby="cfBody">
+    <h3 id="cfTitle">Leave this game?</h3>
+    <p id="cfBody">The round in progress will be discarded. Answers are never saved anywhere.</p>
+    <button class="btn primary" type="button" id="cfYes">Leave</button>
+    <button class="btn ghost" type="button" id="cfNo">Keep playing</button>
+  </div>
+</div>
+
+<!-- analytics.js before the game script: track() below fires synchronously and would otherwise
+     race the tag load and vanish. -->
+<script src="../analytics.js"></script>
+<script>
+'use strict';
+/* ============================================================================================
+   HERD MIND — the zero-vulnerability warm-up. 3–8 friends, one phone. Every round the whole
+   room secretly answers the same prompt, each trying to match the majority. Then the answers go
+   up as chips, obvious synonyms get merged by hand in the open, and everyone in the biggest
+   cluster scores. Stand alone and you are the round's black sheep — a badge, not a wound.
+
+   Privacy is a design constraint, not a feature flag: answers live in one in-memory session
+   object (S) and NOTHING else. localStorage holds only names, a sound preference and a play
+   counter. Analytics gets counts, never content. A page refresh mid-game loses the round by
+   design — that is cheaper than answers ever touching disk.
+   ============================================================================================ */
+
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+
+/* Seeded PRNG so a session's draw is deterministic given its seed — the deck is dealt once at
+   Start and can never disagree with itself mid-session — while each new session reshuffles. */
+function mulberry32(a){ return function(){ a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a);
+  t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+
+function esc(s){ return String(s).replace(/[&<>"']/g,
+  c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============================================================================================
+   PROMPT BANK — 56 original prompts. Each has a natural "most people will say…" pull with room
+   for surprises: there is no correct answer, only a popular one. Deterministic draw per session,
+   no repeats (Fisher–Yates on the seeded PRNG, take the first R).
+   ============================================================================================ */
+const PROMPTS=[
+ 'A food that’s overrated',
+ 'The worst household chore',
+ 'A sound everyone hates',
+ 'Something you’d grab in a fire (after people & pets)',
+ 'The best decade for music',
+ 'A pizza topping that should be illegal',
+ 'The best superpower to have',
+ 'An animal you would not fight',
+ 'The worst place to forget your phone',
+ 'A smell that means childhood',
+ 'Something everyone pretends to like',
+ 'The best breakfast food',
+ 'A movie absolutely everyone has seen',
+ 'The scariest animal alive',
+ 'Something you always lose at home',
+ 'The best season of the year',
+ 'A word that’s fun to say out loud',
+ 'The most boring sport to watch',
+ 'Something in every fridge',
+ 'The best ice-cream flavour',
+ 'A country everyone wants to visit',
+ 'The most annoying insect',
+ 'A skill people fake having',
+ 'The best day of the week',
+ 'A job every kid dreams about',
+ 'The worst thing to step on barefoot',
+ 'One thing you’d take to a desert island',
+ 'The best animal sidekick',
+ 'A colour that means danger',
+ 'The most famous scientist ever',
+ 'Something that gets better with age',
+ 'The worst kind of weather',
+ 'A snack you can’t eat just one of',
+ 'The best thing about weekends',
+ 'Something everyone forgets to do',
+ 'The most famous painting in the world',
+ 'An excuse everyone has used',
+ 'The best smell from a kitchen',
+ 'Something that lives in every junk drawer',
+ 'The worst place to get hiccups',
+ 'A game every family knows',
+ 'The best pizza topping',
+ 'Something that always breaks first',
+ 'The most famous building on Earth',
+ 'The best thing to dip a biscuit in',
+ 'Something everyone hates waiting for',
+ 'The most famous wizard',
+ 'An instrument that’s hard to carry',
+ 'The worst reply to a long message',
+ 'Something in every hotel room',
+ 'The ultimate comfort food',
+ 'A superhero everyone can name',
+ 'The loudest animal',
+ 'Something people love to collect',
+ 'The first app you open in the morning',
+ 'A vegetable kids refuse to eat'
+];
+const ROUND_OPTS=[5,7,10];
+const MINP=3, MAXP=8, MAXANS=24;
+
+/* ============================ state ============================
+   S is the whole game and it lives only in memory. Every screen renders through show(), which
+   wipes the DOM wholesale, so a previous player's typed answer cannot survive into a hand-off
+   even for one frame. */
+let S=null;
+let roundsPick=7;                       // session-only, deliberately not persisted
+let names=['','',''];                   // title-screen values; resolved names saved on Start
+try{ const n=JSON.parse(LS.get('herd.names')||'[]');
+  if(Array.isArray(n)&&n.length>=MINP&&n.length<=MAXP)
+    names=n.map(x=>String(x).slice(0,12)); }catch(e){}
+
+function newSession(){
+  const rnd=mulberry32((Date.now() ^ (Math.random()*0xffffffff))>>>0);
+  const deck=PROMPTS.slice();
+  for(let i=deck.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=deck[i]; deck[i]=deck[j]; deck[j]=t; }
+  S={ names:names.slice(), R:roundsPick, deck:deck.slice(0,roundsPick), r:0,
+      answers:[],                            // current round: raw text per player index
+      rounds:[],                             // finished round records
+      pts:names.map(()=>0), sheep:names.map(()=>0),
+      pattern:names.map(()=>[]),             // per player, per round: 'w' | 'o' | 'l'
+      merges:0 };
+}
+const pc=i=>'var(--p'+(i%8)+')';           // the player's fixed hue
+
+/* ============================ rendering core ============================
+   One container, innerHTML replaced wholesale per screen. GEN is a render generation counter:
+   every handler captures the generation it was bound in and no-ops if a render has happened
+   since — this is the double-tap guard. A fast second tap on any advancing button finds either
+   a disabled button or a stale generation; it can never advance the state machine twice. */
+const app=document.getElementById('app');
+let GEN=0;
+function show(html){
+  GEN++; app.innerHTML=html;
+  try{ window.scrollTo({top:0,left:0,behavior:'instant'}); }catch(e){ window.scrollTo(0,0); }
+}
+function on(id,fn){
+  const g=GEN, el=document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('click',function(e){
+    if(g!==GEN || el.disabled) return;
+    el.disabled=true;
+    try{ fn(e); }finally{ if(g===GEN) el.disabled=false; }
+  });
+}
+
+/* ============================ art ============================
+   One drawing of a sheep, stamped around: wool is three bumps on a body, the head leads the
+   way it faces. flip mirrors it; black turns it into the confident one. */
+function sheepG(x,y,s,black,flip){
+  const body=black?'#252c25':'#f2efe4', face=black?'#11150f':'#3a4a3e', eye=black?'#ffd166':'#f2efe4';
+  return '<g transform="translate('+x+' '+y+') scale('+(flip?-s:s)+' '+s+')">'
+   +'<line x1="-6" y1="8" x2="-6" y2="15" stroke="'+face+'" stroke-width="2.4" stroke-linecap="round"/>'
+   +'<line x1="6" y1="8" x2="6" y2="15" stroke="'+face+'" stroke-width="2.4" stroke-linecap="round"/>'
+   +'<ellipse cx="0" cy="0" rx="14" ry="9" fill="'+body+'"/>'
+   +'<circle cx="-9" cy="-6" r="5.5" fill="'+body+'"/><circle cx="0" cy="-8" r="6" fill="'+body+'"/>'
+   +'<circle cx="9" cy="-6" r="5.5" fill="'+body+'"/>'
+   +'<circle cx="14" cy="-4" r="5" fill="'+face+'"/>'
+   +'<ellipse cx="11" cy="-9" rx="2.4" ry="1.5" fill="'+face+'"/>'
+   +'<circle cx="15.5" cy="-5.5" r="1" fill="'+eye+'"/>'
+   +'</g>';
+}
+const MOTIF='<svg viewBox="0 0 150 88" aria-hidden="true">'
+ +'<circle cx="128" cy="16" r="9" fill="#f4e9bf" opacity=".9"/>'
+ +'<circle cx="20" cy="12" r="1.4" fill="#f4e9bf" opacity=".6"/><circle cx="52" cy="7" r="1.1" fill="#f4e9bf" opacity=".5"/>'
+ +'<circle cx="88" cy="14" r="1.2" fill="#f4e9bf" opacity=".55"/>'
+ +'<path d="M0 76 q38-10 75 0 t75 0 v12 h-150 z" fill="#1c3527"/>'
+ +sheepG(28,58,.9,false,false)+sheepG(62,66,1,false,false)+sheepG(96,56,.82,false,false)
+ +sheepG(128,64,1,true,true)
+ +'</svg>';
+const MARK='<svg viewBox="0 0 40 40" aria-hidden="true">'
+ +'<circle cx="20" cy="20" r="13" fill="#f2efe4"/>'
+ +'<circle cx="10" cy="14" r="6" fill="#f2efe4"/><circle cx="30" cy="14" r="6" fill="#f2efe4"/>'
+ +'<circle cx="20" cy="8" r="6" fill="#f2efe4"/>'
+ +'<ellipse cx="20" cy="24" rx="8" ry="9" fill="#3a4a3e"/>'
+ +'<circle cx="17" cy="21" r="1.6" fill="#f2efe4"/><circle cx="23" cy="21" r="1.6" fill="#f2efe4"/>'
+ +'<ellipse cx="10" cy="20" rx="3.4" ry="2" fill="#3a4a3e" transform="rotate(-25 10 20)"/>'
+ +'<ellipse cx="30" cy="20" rx="3.4" ry="2" fill="#3a4a3e" transform="rotate(25 30 20)"/>'
+ +'</svg>';
+
+function header(showHome){
+  return '<header class="top"><span class="wordmark">'+MARK+'<span><b>Herd Mind</b>'
+   +'<small>Kreeda · Group</small></span></span>'
+   +(showHome
+      ? '<button class="soundbtn" type="button" id="bSound" aria-pressed="'+SND.on+'" aria-label="Sound">'+(SND.on?'🔊':'🔇')+'</button>'
+        +'<button class="homebtn" type="button" id="bHome" aria-label="Leave game and return to start">Home</button>'
+      : '')
+   +'</header>';
+}
+function bindHome(){
+  on('bHome',()=>{ openConfirm(()=>{ S=null; title(); }); });
+  const sb=document.getElementById('bSound');
+  if(sb) sb.addEventListener('click',()=>setSound(!SND.on));
+}
+
+/* ============================ sound ============================
+   Two synthesized cues, no audio files: a soft tick on taps and a swish when a round turns
+   over. The context is created on the first tap (a user gesture, which iOS requires), and the
+   on/off preference is the only thing besides names and a play count that touches storage. */
+const SND={ ctx:null, noise:null, on:LS.get('herd.sound')!=='0' };
+function audio(){
+  if(!SND.on) return null;
+  if(!SND.ctx){ try{ SND.ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(SND.ctx.state==='suspended'){ try{ SND.ctx.resume(); }catch(e){} }
+  return SND.ctx;
+}
+function tick(){
+  const ac=audio(); if(!ac) return;
+  try{
+    const t=ac.currentTime, o=ac.createOscillator(), g=ac.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(880,t); o.frequency.exponentialRampToValueAtTime(1320,t+0.03);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.09,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t+0.08);
+  }catch(e){}
+}
+function swish(){
+  const ac=audio(); if(!ac) return;
+  try{
+    const dur=0.3, t=ac.currentTime;
+    if(!SND.noise){ const n=Math.floor(ac.sampleRate*0.5), b=ac.createBuffer(1,n,ac.sampleRate), d=b.getChannelData(0);
+      for(let i=0;i<n;i++) d[i]=Math.random()*2-1; SND.noise=b; }
+    const src=ac.createBufferSource(); src.buffer=SND.noise;
+    const f=ac.createBiquadFilter(); f.type='bandpass'; f.Q.value=1.4;      // filtered noise, swept up then down
+    f.frequency.setValueAtTime(500,t); f.frequency.exponentialRampToValueAtTime(3400,t+dur*0.45);
+    f.frequency.exponentialRampToValueAtTime(700,t+dur);
+    const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.32,t+0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(f).connect(g).connect(ac.destination); src.start(t); src.stop(t+dur+0.02);
+  }catch(e){}
+}
+function setSound(on){
+  SND.on=on; LS.set('herd.sound',on?'1':'0');
+  const b=document.getElementById('bSound');
+  if(b){ b.textContent=on?'🔊':'🔇'; b.setAttribute('aria-pressed',String(on)); }
+  if(on) tick();
+}
+
+/* confirm modal — the only way out of a live session other than finishing it */
+const scrim=document.getElementById('scrim');
+let confirmCb=null;
+document.getElementById('cfYes').addEventListener('click',()=>{ scrim.classList.remove('show');
+  const cb=confirmCb; confirmCb=null; if(cb) cb(); });
+document.getElementById('cfNo').addEventListener('click',()=>{ scrim.classList.remove('show'); confirmCb=null; });
+function openConfirm(cb){ confirmCb=cb; scrim.classList.add('show'); }
+
+let toastT=null;
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ============================ title ============================ */
+function collectNames(){
+  for(let i=0;i<names.length;i++){
+    const el=document.getElementById('nm'+i);
+    if(el) names[i]=el.value.slice(0,12);
+  }
+}
+function title(){
+  show(
+   '<div class="hero">'+MOTIF+'<h1>HERD MIND</h1>'
+   +'<p>Think WITH the room, not for yourself.<br>Match the majority and score — stand alone and you’re the 🐑.</p></div>'
+   +'<div class="card">'
+   +'<div class="field"><label id="plLbl">Players (3–8)</label>'
+   +'<div role="group" aria-labelledby="plLbl">'
+   +names.map((v,i)=>'<div class="prow">'
+     +'<span class="pd" style="background:'+pc(i)+'"></span>'
+     +'<input id="nm'+i+'" type="text" maxlength="12" autocomplete="off" placeholder="Player '+(i+1)+'" value="'+esc(v)+'">'
+     +'<button class="rm" type="button" data-i="'+i+'" aria-label="Remove player '+(i+1)+'"'
+     +(names.length<=MINP?' disabled':'')+'>✕</button>'
+     +'</div>').join('')
+   +'</div>'
+   +(names.length<MAXP?'<button class="btn ghost addbtn" type="button" id="bAdd">+ Add player</button>':'')
+   +'</div>'
+   +'<div class="field"><label id="rndLbl">Rounds</label>'
+   +'<div class="packs" role="group" aria-labelledby="rndLbl">'
+   +ROUND_OPTS.map(r=>'<button class="pack" type="button" data-r="'+r+'" aria-pressed="'
+     +(r===roundsPick)+'">'+r+' rounds</button>').join('')
+   +'</div></div>'
+   +'<button class="btn primary" type="button" id="bStart"></button>'
+   +'<details class="how"><summary>How it works</summary><ul>'
+   +'<li>Every round, everyone secretly types <b>one short answer</b> to the same prompt — pass the phone around. The trick: <b>match the herd, not your heart</b>.</li>'
+   +'<li>Then the answers go up as chips for the whole room: tap two chips to <b>merge synonyms</b> (“soda” + “coke”), tap a combined chip to split it.</li>'
+   +'<li>Everyone in the <b>biggest cluster</b> scores +1 (ties all score). A lone answer earns the round’s <b>🐑 black sheep</b> — worn with pride.</li>'
+   +'<li>At the end: the hive-mind %, the leaderboard, every round’s winning answer, and four superlatives.</li>'
+   +'</ul></details>'
+   +'<footer class="foot">For fun and conversation — a game, not a psychological assessment.<br>'
+   +'Answers stay on this phone and are never uploaded.<br><a href="../">Kreeda</a></footer>'
+  );
+  const startBtn=document.getElementById('bStart');
+  const refresh=()=>{
+    const a=(document.getElementById('nm0').value.trim()||'Player 1').slice(0,12);
+    startBtn.textContent='Start · '+roundsPick+' rounds — '+a+' answers first';
+  };
+  refresh();
+  document.getElementById('nm0').addEventListener('input',refresh);
+  document.querySelectorAll('.pack').forEach(el=>{
+    el.addEventListener('click',()=>{
+      roundsPick=+el.getAttribute('data-r');
+      document.querySelectorAll('.pack').forEach(x=>x.setAttribute('aria-pressed',
+        String(+x.getAttribute('data-r')===roundsPick)));
+      refresh();
+    });
+  });
+  document.querySelectorAll('.prow .rm').forEach(el=>{
+    el.addEventListener('click',()=>{
+      if(names.length<=MINP) return;
+      collectNames(); names.splice(+el.getAttribute('data-i'),1); title();
+    });
+  });
+  on('bAdd',()=>{ if(names.length>=MAXP) return; collectNames(); names.push(''); title(); });
+  on('bStart',()=>{
+    collectNames();
+    names=names.map((v,i)=>v.trim().slice(0,12)||'Player '+(i+1));
+    LS.set('herd.names',JSON.stringify(names));
+    newSession();
+    completeSent=false;
+    track('game_start',{player_count:S.names.length, rounds:S.R});
+    handoff(0);
+  });
+}
+
+/* ============================ hand-off ============================
+   Every answer turn opens with this interstitial — in a circle of up to eight, whoever tapped
+   the last button is rarely the next to answer. It renders through show(), which has already
+   destroyed the previous screen, so there is nothing underneath to peek at, however fast the
+   tap. */
+function handoff(p){
+  const nm=S.names[p];
+  show(
+   '<div class="handoff">'
+   +'<div class="pass">Round '+(S.r+1)+' of '+S.R+' · pass the phone to</div>'
+   +'<h2 style="color:'+pc(p)+'">'+esc(nm)+'</h2>'
+   +'<p class="sub">'+(p===0
+      ?'A fresh prompt for the whole room.<br>Same question, secret answers.'
+      :esc(S.names[p-1])+' has answered.<br>Your turn — same prompt, one short answer.')+'</p>'
+   +'<button class="btn primary" type="button" id="bReady">I’m '+esc(nm)+' — show me</button>'
+   +'<p class="peek">👀 tilt the phone away while you type</p>'
+   +'</div>'
+  );
+  on('bReady',()=>answer(p));
+}
+
+/* ============================ answering ============================ */
+function answer(p){
+  const n=S.names.length, last=p===n-1;
+  show(
+   header(true)
+   +'<div class="turn"><span class="eye">👀</span><span><b style="color:'+pc(p)+'">'+esc(S.names[p])
+   +'’s turn.</b> Everyone can know the prompt — nobody peeks at the typing.</span></div>'
+   +'<div class="prog"><span class="n"><b>'+p+'</b> of '+n+' answered</span>'
+   +'<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="'+n+'" aria-valuenow="'+p+'">'
+   +'<i style="width:'+(p/n*100)+'%"></i></div></div>'
+   +'<div class="card">'
+   +'<p class="rlabel">Round '+(S.r+1)+' of '+S.R+'</p>'
+   +'<h2 class="prompt">'+esc(S.deck[S.r])+'</h2>'
+   +'<p class="dim tiny">Match the herd, not your heart — you score by landing in the biggest group.</p>'
+   +'<div class="field ansfield"><label for="ans">Your answer</label>'
+   +'<input id="ans" type="text" maxlength="'+MAXANS+'" autocomplete="off" '
+   +'style="border-left:4px solid '+pc(p)+'" placeholder="One short answer…"></div>'
+   +'<button class="btn primary" type="button" id="bLock">'
+   +(last?'Lock it in — reveal the herd':'Lock it in — pass to '+esc(S.names[p+1]))+'</button>'
+   +'</div>'
+  );
+  bindHome();
+  const inp=document.getElementById('ans');
+  const g=GEN;
+  inp.addEventListener('keydown',e=>{
+    if(g!==GEN) return;
+    if(e.key==='Enter'){ e.preventDefault(); const b=document.getElementById('bLock'); if(b) b.click(); }
+  });
+  try{ inp.focus(); }catch(e){}
+  on('bLock',()=>{
+    const v=inp.value.trim().replace(/\s+/g,' ').slice(0,MAXANS);
+    if(!v){ toast('Type a short answer first'); return; }
+    S.answers[p]=v;
+    tick();
+    if(last) cluster(); else handoff(p+1);
+  });
+}
+
+/* ============================ clustering — the open step ============================
+   Auto-grouping first: case-insensitive, trimmed, spaces collapsed, a leading "the/a/an" and
+   trailing punctuation stripped. Then the 5-second human step, in the open: the current
+   phone-holder taps two chips to merge obvious synonyms, taps a combined chip to split it back.
+   Nothing here is secret — the reveal has already happened; this is the room agreeing on what
+   counts as the same answer. */
+function normKey(s){
+  let t=String(s).toLowerCase().trim().replace(/\s+/g,' ');
+  t=t.replace(/^(the|a|an)\s+/,'').replace(/[.!?]+$/,'').trim();
+  return t||String(s).toLowerCase().trim();
+}
+function buildAutos(){
+  const autos=[], byKey={};
+  S.answers.forEach((raw,pi)=>{
+    const k=normKey(raw);
+    if(byKey[k]===undefined){ byKey[k]=autos.length; autos.push({key:k,label:raw,members:[]}); }
+    autos[byKey[k]].members.push(pi);
+  });
+  return autos;
+}
+function cluster(){
+  const autos=buildAutos();
+  let groups=autos.map((a,i)=>[i]);       // each entry: a list of auto-cluster indexes
+  let sel=-1;
+  show(
+   header(true)
+   +'<div class="turn"><span class="eye">📣</span><span><b>Everyone look!</b> The answers are in. '
+   +'Merge chips that mean the same thing, then score it.</span></div>'
+   +'<div class="card">'
+   +'<p class="rlabel">Round '+(S.r+1)+' of '+S.R+'</p>'
+   +'<h2 class="prompt">'+esc(S.deck[S.r])+'</h2>'
+   +'<div class="chipbox" id="chipBox"></div>'
+   +'<p class="mergehint">Tap one chip, then another, to <b>merge</b> synonyms. Tap a dashed combined chip to <b>split</b> it back.</p>'
+   +'<button class="btn primary" type="button" id="bScore">Looks right — score it</button>'
+   +'</div>'
+  );
+  bindHome();
+  const g=GEN, box=document.getElementById('chipBox');
+  const glabel=grp=>grp.map(ai=>autos[ai].label).join(' + ');
+  const gcount=grp=>grp.reduce((s,ai)=>s+autos[ai].members.length,0);
+  const gmembers=grp=>grp.reduce((s,ai)=>s.concat(autos[ai].members),[]);
+  const render=()=>{
+    box.innerHTML=groups.map((grp,i)=>{
+      const multi=grp.length>1, count=gcount(grp);
+      return '<button type="button" class="clus'+(multi?' multi':'')+(i===sel?' sel':'')+'" data-i="'+i+'" '
+       +'aria-pressed="'+(i===sel)+'" aria-label="'+esc(glabel(grp))+', '+count
+       +(count===1?' answer':' answers')+(multi?', combined — tap to split':'')+'">'
+       +'<span class="l1"><b>'+esc(glabel(grp))+'</b><span class="cnt">×'+count+'</span></span>'
+       +'<span class="dots" aria-hidden="true">'
+       +gmembers(grp).map(m=>'<i style="background:'+pc(m)+'"></i>').join('')+'</span>'
+       +(multi?'<span class="split">tap to split</span>':'')
+       +'</button>';
+    }).join('');
+  };
+  render();
+  box.addEventListener('click',e=>{
+    if(g!==GEN) return;
+    const c=e.target.closest('button.clus'); if(!c) return;
+    const i=+c.getAttribute('data-i');
+    if(sel===-1){
+      if(groups[i].length>1){                    // tap a combined chip → split it back
+        const parts=groups[i].map(ai=>[ai]);
+        groups.splice.apply(groups,[i,1].concat(parts));
+        tick();
+      }else sel=i;
+    }else if(sel===i){
+      sel=-1;                                    // tap the selected chip again → deselect
+    }else{                                       // second chip → merge
+      const merged=groups[sel].concat(groups[i]);
+      const lo=Math.min(sel,i), hi=Math.max(sel,i);
+      groups.splice(hi,1); groups.splice(lo,1,merged);
+      sel=-1; S.merges++;
+      tick();
+      render();
+      const el=box.querySelector('[data-i="'+lo+'"]');
+      if(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+      return;
+    }
+    render();
+  });
+  on('bScore',()=>{ scoreRound(autos,groups); });
+}
+
+/* ============================ scoring ============================
+   A cluster needs at least 2 people to be a majority: if every answer stands alone, nobody
+   scores and everyone is a black sheep — the herd scattered. Ties: all tied clusters score.
+   "Decisive" marks a round won by exactly one voice (unique winner, margin of one) — that is
+   the Kingmaker's raw material. */
+function scoreRound(autos,groups){
+  const n=S.names.length;
+  const clus=groups.map(grp=>({
+    label:grp.map(ai=>autos[ai].label).join(' + '),
+    count:grp.reduce((s,ai)=>s+autos[ai].members.length,0),
+    members:grp.reduce((s,ai)=>s.concat(autos[ai].members),[])
+  })).sort((a,b)=>b.count-a.count);
+  const winSize=clus[0].count;
+  const scattered=winSize<2;
+  const winners=scattered?[]:clus.filter(c=>c.count===winSize);
+  const winset=[]; winners.forEach(c=>c.members.forEach(m=>winset.push(m)));
+  const runner=(clus.find(c=>c.count<winSize)||{count:0}).count;
+  const decisive=winners.length===1 && !scattered && (winSize-runner)===1;
+  const rec={ prompt:S.deck[S.r], clus:clus, winSize:winSize, scattered:scattered,
+              winLabels:winners.map(c=>c.label), winset:winset,
+              decisive:decisive, fraction:winSize/n };
+  for(let i=0;i<n;i++){
+    const mine=clus.find(c=>c.members.indexOf(i)>=0);
+    let st='o';
+    if(winset.indexOf(i)>=0){ st='w'; S.pts[i]++; }
+    else if(mine.count===1){ st='l'; S.sheep[i]++; }
+    S.pattern[i].push(st);
+  }
+  S.rounds.push(rec);
+  swish();
+  roundReveal(rec);
+}
+
+/* ============================ round reveal ============================ */
+function roundReveal(rec){
+  const n=S.names.length, last=S.r===S.R-1;
+  show(
+   header(true)
+   +'<div class="card">'
+   +'<p class="rlabel">Round '+(S.r+1)+' of '+S.R+' · the herd has spoken</p>'
+   +'<h2 class="prompt">'+esc(rec.prompt)+'</h2>'
+   +(rec.scattered
+     ?'<p class="scatline">🐑 <b>Everybody scattered.</b> No majority, no points — sheep all round, worn with pride.</p>'
+     :'')
+   +rec.clus.map((c,ci)=>{
+      const win=!rec.scattered&&c.count===rec.winSize;
+      return '<div class="crow'+(win?' win':'')+'">'
+       +'<div class="chead"><span class="clab">'+esc(c.label)+'</span>'
+       +(win?'<span class="plus">+1</span>':'')
+       +(c.count===1?'<span class="lone" aria-label="lone answer">🐑</span>':'')
+       +'<span class="cn">×'+c.count+'</span></div>'
+       +'<div class="cbar"><i data-w="'+(c.count/n*100)+'"></i></div>'
+       +'<div class="mnames">'+c.members.map(m=>'<span class="mname" style="color:'+pc(m)
+         +';box-shadow:inset 0 0 0 1px '+pc(m)+'">'+esc(S.names[m])+'</span>').join('')+'</div>'
+       +'</div>';
+    }).join('')
+   +'</div>'
+   +'<div class="card" style="margin-top:12px">'
+   +'<h3 class="cardh">Scores so far</h3>'
+   +'<div class="scstrip">'+S.names.map((nm,i)=>'<span class="pchip" style="color:'+pc(i)
+     +';box-shadow:inset 0 0 0 1px '+pc(i)+'">'+esc(nm)+' '+S.pts[i]
+     +(S.sheep[i]?' <small>🐑×'+S.sheep[i]+'</small>':'')+'</span>').join('')+'</div>'
+   +'</div>'
+   +'<button class="btn primary" type="button" id="bNext">'
+   +(last?'See the final verdict':'Round '+(S.r+2)+' — pass to '+esc(S.names[0]))+'</button>'
+  );
+  bindHome();
+  const g=GEN;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(g!==GEN) return;
+    document.querySelectorAll('.cbar i[data-w]').forEach(el=>{ el.style.width=el.getAttribute('data-w')+'%'; });
+  }));
+  on('bNext',()=>{
+    if(last){ finale(); return; }
+    S.r++; S.answers=[];
+    handoff(0);
+  });
+}
+
+/* ============================ verdicts ============================ */
+function verdictFor(h){
+  if(h>=78) return ['One brain, many bodies','You could finish each other’s grocery lists.'];
+  if(h>=62) return ['Proper herd','Most rounds, most of you moved as one.'];
+  if(h>=48) return ['Herd-ish','A real majority most rounds — with a healthy fringe.'];
+  if(h>=34) return ['Herding cats','Clusters formed, barely. The fringe kept winning.'];
+  return ['Beautiful chaos','Same prompts, wildly different heads. Magnificent.'];
+}
+function joinNames(idx){
+  const ns=idx.map(i=>S.names[i]);
+  if(ns.length<=1) return ns[0]||'';
+  if(ns.length<=3) return ns.slice(0,-1).join(', ')+' & '+ns[ns.length-1];
+  return ns[0]+', '+ns[1]+' & '+(ns.length-2)+' more';
+}
+function argmaxAll(arr){
+  const m=Math.max.apply(null,arr), out=[];
+  arr.forEach((v,i)=>{ if(v===m) out.push(i); });
+  return {max:m, idx:out};
+}
+/* the four superlative lines — computed once, used by both the page and the share text */
+function superlatives(){
+  const R=S.R;
+  const king=S.names.map(()=>0);
+  S.rounds.forEach(rec=>{ if(rec.decisive) rec.winset.forEach(i=>king[i]++); });
+  const flips=S.pattern.map(pat=>{
+    let f=0; for(let r=1;r<pat.length;r++){ if((pat[r]==='w')!==(pat[r-1]==='w')) f++; } return f;
+  });
+  const top=argmaxAll(S.pts), sh=argmaxAll(S.sheep), kg=argmaxAll(king), wc=argmaxAll(flips);
+  return [
+    { cls:'', gi:'🧠', lb:'Hive Mind',
+      txt: top.max>0
+        ? joinNames(top.idx)+' — in the majority '+top.max+' of '+R+' rounds.'
+        : 'no one — the herd never once agreed.' },
+    { cls:'sheepy', gi:'🐑', lb:'Black Sheep',
+      txt: sh.max>0
+        ? joinNames(sh.idx)+' — '+sh.max+' lone answer'+(sh.max>1?'s':'')+'. The free thinker of the flock.'
+        : 'nobody — the herd never left anyone alone.' },
+    { cls:'king', gi:'🎯', lb:'Kingmaker',
+      txt: kg.max>0
+        ? joinNames(kg.idx)+' — their voice tipped the majority in '+kg.max+' round'+(kg.max>1?'s':'')+'.'
+        : 'no one — no round hung on a single voice.' },
+    { cls:'wild', gi:'🃏', lb:'Wildcard',
+      txt: wc.max>0
+        ? joinNames(wc.idx)+' — swung between herd and fringe '+wc.max+' time'+(wc.max>1?'s':'')+'.'
+        : 'nobody swung — everyone held their lane all game.' }
+  ];
+}
+
+/* ============================ results — one page ============================ */
+function ring(pct,cls,label,big){
+  const r=big?70:40, s=2*r+12, c=s/2, C=2*Math.PI*r, v=Math.round(pct);
+  return '<div class="ring '+cls+(big?' big':'')+'"><svg viewBox="0 0 '+s+' '+s+'" aria-hidden="true">'
+   +'<circle class="tr" cx="'+c+'" cy="'+c+'" r="'+r+'"/>'
+   +'<circle class="fl" cx="'+c+'" cy="'+c+'" r="'+r+'" style="stroke-dasharray:'+C.toFixed(1)+';stroke-dashoffset:'+C.toFixed(1)+'" '
+   +'data-off="'+(C*(1-v/100)).toFixed(1)+'"/></svg>'
+   +'<div class="rv" aria-hidden="true"><b data-n="'+v+'">0</b><i>%</i></div>'
+   +'<div class="rl" aria-hidden="true">'+label+'</div>'
+   +'<span class="sr">'+label+': '+v+'%</span></div>';
+}
+
+let completeSent=false;
+function finale(){
+  if(!S){ title(); return; }
+  if(S.rounds.length!==S.R){ handoff(0); return; }   // a state bug fails loudly to the hand-off
+  const n=S.names.length, R=S.R;
+  const hive=Math.round(S.rounds.reduce((s,rec)=>s+rec.fraction,0)/R*100);
+  const v=verdictFor(hive);
+  const sup=superlatives();
+  const today=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+  const order=S.names.map((_,i)=>i).sort((a,b)=>S.pts[b]-S.pts[a]);
+  const maxPts=Math.max(1,Math.max.apply(null,S.pts));
+  const sheepIcons=k=>k===0?'':(k<=3?'🐑'.repeat(k):'🐑×'+k);
+  const dl=n2=>'style="animation-delay:'+n2+'ms"';
+
+  if(!completeSent){
+    completeSent=true;
+    track('game_complete',{player_count:n, rounds:R, hive_pct:hive, merges:S.merges,
+      top_pts:Math.max.apply(null,S.pts), sheep_total:S.sheep.reduce((a,b)=>a+b,0)});
+    const plays=(+LS.get('herd.plays')||0)+1; LS.set('herd.plays',String(plays));
+  }
+
+  show(
+   header(false)
+   +'<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>'
+   +'<linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">'
+   +'<stop offset="0" stop-color="#7de3b2"/><stop offset="1" stop-color="#ffd166"/></linearGradient>'
+   +'</defs></svg>'
+   +'<div class="results">'
+   +'<h2>The verdict</h2>'
+   +'<p class="meta">'+n+' players · '+R+' rounds</p>'
+   +'<div class="card info">'
+   +ring(hive,'rh','Hive mind',true)
+   +'<div class="verdict" '+dl(500)+'><b>'+v[0]+'</b><span>'+v[1]+'</span></div>'
+   +'</div>'
+   +'<div class="card rcard" '+dl(650)+'>'
+   +'<h3 class="cardh">The flock</h3>'
+   +order.map((i,k)=>'<div class="lrow">'
+     +'<span class="lname" style="color:'+pc(i)+'">'+esc(S.names[i])+'</span>'
+     +'<div class="lbar"><i data-w="'+(S.pts[i]/maxPts*100)+'" style="background:'+pc(i)+'"></i></div>'
+     +'<span class="lpts">'+S.pts[i]+'</span>'
+     +'<span class="lsheep" aria-label="'+S.sheep[i]+' lone answers">'+sheepIcons(S.sheep[i])+'</span>'
+     +'</div>').join('')
+   +'</div>'
+   +'<div class="card rcard glance" '+dl(800)+'>'
+   +sup.map(s2=>'<div class="gl '+s2.cls+'"><span class="gi">'+s2.gi+'</span>'
+     +'<span><span class="lb">'+s2.lb+'</span>'+esc(s2.txt)+'</span></div>').join('')
+   +'</div>'
+   +'<div class="card rcard" '+dl(950)+'>'
+   +'<h3 class="cardh">Round by round</h3>'
+   +S.rounds.map((rec,i)=>'<div class="rrow"><span class="rn">'+(i+1)+'</span>'
+     +'<span class="rq">'+esc(rec.prompt)+'</span>'
+     +(rec.scattered
+       ?'<span class="wchip scat">🐑 scattered</span>'
+       :rec.winLabels.slice(0,2).map(l=>'<span class="wchip">'+esc(l)+' ×'+rec.winSize+'</span>').join(''))
+     +'</div>').join('')
+   +'</div>'
+   +'<p class="datefoot">'+esc(today)+' · kreeda.games/herd</p>'
+   +'<button class="btn primary" type="button" id="bAgain">Play again</button>'
+   +'<a class="btn wa" id="bWa" href="#" target="_blank" rel="noopener">'+WA_ICON+'Share on WhatsApp</a>'
+   +'<p class="sharehint">Send it to the group chat — everyone keeps a copy.</p>'
+   +'<div class="btnrow"><button class="btn" type="button" id="bCopy">Copy result</button>'
+   +(navigator.share?'<button class="btn" type="button" id="bShare">Share…</button>':'')+'</div>'
+   +'<button class="btn ghost" type="button" id="bChange">Change players</button>'
+   +'<div id="shareSlot"></div>'
+   +'</div>'
+   +'<footer class="foot">Black sheep aren’t wrong — they’re the interesting ones.<br>'
+   +'<a href="../">Kreeda</a></footer>'
+  );
+  const g=GEN;
+  /* the ring fills and its number counts up after first paint; bars grow alongside. Reduced
+     motion gets the final state at once. Clocked off performance.now(), not the frame timestamp,
+     so it lands on the final figure even if the tab was hidden when the page rendered. */
+  const reduced=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(g!==GEN) return;
+    document.querySelectorAll('.ring .fl').forEach(el=>{ el.style.strokeDashoffset=el.getAttribute('data-off'); });
+    document.querySelectorAll('.lbar i[data-w]').forEach(el=>{ el.style.width=el.getAttribute('data-w')+'%'; });
+    const nums=Array.prototype.slice.call(document.querySelectorAll('.ring .rv b'));
+    if(reduced){ nums.forEach(b=>{ b.textContent=b.getAttribute('data-n'); }); return; }
+    const t0=performance.now(), D=1100;
+    (function step(){
+      if(g!==GEN) return;
+      const k=Math.min(1,(performance.now()-t0)/D), e=1-Math.pow(1-k,3);
+      nums.forEach(b=>{ b.textContent=Math.round(+b.getAttribute('data-n')*e); });
+      if(k<1) requestAnimationFrame(step);
+    })();
+  }));
+  on('bAgain',()=>{ completeSent=false; newSession();
+    track('game_start',{player_count:S.names.length, rounds:S.R}); handoff(0); });
+  on('bChange',()=>{ completeSent=false; S=null; title(); });
+  const text=shareText(hive,v,sup,today);
+  const wa=document.getElementById('bWa');
+  wa.href=waLink(text);
+  wa.addEventListener('click',()=>track('share',{via:'whatsapp'}));
+  on('bShare',()=>{ track('share',{via:'system'});
+    try{ navigator.share({title:'Herd Mind — '+S.names.length+' players', text:text}).catch(()=>{}); }catch(e){} });
+  on('bCopy',()=>{
+    let done=false;
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(()=>toast('Copied!'),()=>showShareBox(text));
+        done=true;
+      }
+    }catch(e){}
+    if(!done) showShareBox(text);   // clipboard is unavailable on file:// — show it to copy by hand
+  });
+}
+
+/* ============================ share ============================
+   The verdict, the hive figure, one emoji row per player across the rounds (🟩 in the majority,
+   ⬛ out of it, 🐑 lone), and the four superlatives. Sharing is the players' own explicit act,
+   so unlike analytics it may carry names and figures. */
+const WA_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.8-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.2-.2-.2-.5-.4z"/></svg>';
+function waLink(text){ return 'https://wa.me/?text='+encodeURIComponent(text); }
+function shareText(hive,v,sup,today){
+  const cell={w:'🟩', o:'⬛', l:'🐑'};
+  const lines=[
+    '*Herd Mind* · '+S.names.length+' players · '+S.R+' rounds',
+    '_'+v[0]+'_ — '+v[1],
+    '',
+    '🧠 Hive mind: *'+hive+'%*',
+    ''
+  ];
+  S.names.forEach((nm,i)=>{
+    lines.push(S.pattern[i].map(c=>cell[c]||'⬛').join('')+' '+nm+' — '+S.pts[i]+' pt'+(S.pts[i]===1?'':'s')
+      +(S.sheep[i]?' · 🐑×'+S.sheep[i]:''));
+  });
+  lines.push('');
+  sup.forEach(s2=>{ lines.push(s2.gi+' '+s2.lb+': '+s2.txt); });
+  lines.push('', today+' · kreeda.games/herd');
+  return lines.join('\n');
+}
+function showShareBox(text){
+  const slot=document.getElementById('shareSlot');
+  if(!slot) return;
+  slot.innerHTML='<textarea class="sharebox" rows="6" readonly aria-label="Result text to copy manually"></textarea>';
+  const ta=slot.querySelector('textarea'); ta.value=text;
+  ta.focus(); try{ ta.select(); }catch(e){}
+  toast('Copy it from the box below');
+}
+
+/* ============================ boot self-test ============================
+   Cheap invariants that would otherwise only fail in a player's hands. Runs once, logs only. */
+(function audit(){
+  try{
+    if(PROMPTS.length<55) console.warn('herd: prompt bank has only '+PROMPTS.length+' prompts');
+    if(new Set(PROMPTS.map(p=>p.toLowerCase())).size!==PROMPTS.length)
+      console.warn('herd: duplicate prompts in the bank');
+    PROMPTS.forEach((p,i)=>{
+      if(typeof p!=='string'||!p.trim()||p.length>64) console.warn('herd: prompt '+i+' has a bad shape');
+    });
+    if(Math.max.apply(null,ROUND_OPTS)>PROMPTS.length)
+      console.warn('herd: a rounds option exceeds the prompt bank');
+    if(normKey('  The   Beach! ')!=='beach') console.warn('herd: normKey failed the article test');
+    if(normKey('A  coffee')!=='coffee') console.warn('herd: normKey failed the collapse test');
+    if(ROUND_OPTS.indexOf(roundsPick)<0) console.warn('herd: default rounds not an option');
+  }catch(e){}
+})();
+
+title();
+</script>
+</body>
+</html>

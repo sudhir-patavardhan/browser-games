@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Who Said That — Kreeda</title>
+<meta name="description" content="Anonymous honesty for 3–8 friends on one phone. Everyone secretly answers the same prompt; the answers come back shuffled; the circle pins each answer on its author. Right pins score detective points — every friend you fool scores you chameleon points.">
+<link rel="canonical" href="https://kreeda.games/alibi/">
+<meta name="theme-color" content="#12141c">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/alibi/">
+<meta property="og:title" content="Who Said That — Kreeda">
+<meta property="og:description" content="Anonymous honesty for 3–8 friends on one phone. Everyone answers the same prompt in secret, the answers come back shuffled, and the circle guesses who said what.">
+<meta property="og:image" content="https://kreeda.games/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Who Said That — Kreeda">
+<meta name="twitter:description" content="Anonymous honesty for 3–8 friends on one phone. Everyone answers the same prompt in secret, the answers come back shuffled, and the circle guesses who said what.">
+<meta name="twitter:image" content="https://kreeda.games/og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Who Said That","description":"Anonymous honesty for 3–8 friends on one phone. Everyone secretly answers the same prompt; the answers come back shuffled; the circle pins each answer on its author. Detective points for right pins, chameleon points for every friend you fool.","url":"https://kreeda.games/alibi/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+<style>
+/* ============================ tokens ============================
+   Interrogation-room noir: cold slate-blue walls and one warm lamp. This game is a friendly
+   line-up — the room itself stays nearly neutral so that EIGHT player hues (assigned in JS,
+   painted inline) can do all the talking without ever clashing with the walls. The lamp gold is
+   reserved for "you are holding this" moments: the selected answer, focus rings, the chameleon
+   score. One committed dark look — the write phase depends on the screen reading as private,
+   and the reveal depends on colors popping out of the dark. */
+:root{
+  --ground:#12141c;  --ground-2:#181b26;
+  --panel:#1e2230;   --panel-2:#272c3e;  --rule:rgba(180,195,235,.15);
+  --ink:#eef1fb;     --ink-dim:#99a1bd;
+  --gold:#ffd166;
+  --det:#57d9a3;     --det-soft:rgba(87,217,163,.14);   /* detective green — right pins  */
+  --cham:#ffd166;    --cham-soft:rgba(255,209,102,.13); /* chameleon gold — fools landed */
+  --no:#ff8c7a;      --no-soft:rgba(255,140,122,.13);
+  --acc:#8fb4ff;     --acc-2:#ff6b9d;                    /* title gradient: lamplight through smoke */
+  --shade:rgba(6,8,14,.74);
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  /* explicit background is mandatory: a transparent body would borrow the host's theme */
+  background:
+    radial-gradient(110% 52% at 50% -8%, rgba(143,180,255,.14) 0%, transparent 58%),
+    radial-gradient(90% 40% at 85% 0%, rgba(255,107,157,.08) 0%, transparent 55%),
+    linear-gradient(180deg, var(--ground-2) 0%, var(--ground) 40%, #0c0e15 100%);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{ max-width:540px; margin:0 auto;
+  padding: max(14px, env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
+
+button{ font:inherit; color:inherit; cursor:pointer; }
+button:focus-visible, input:focus-visible, summary:focus-visible{
+  outline:3px solid var(--gold); outline-offset:2px; }
+
+/* ============================ shared chrome ============================ */
+.top{ display:flex; align-items:center; gap:10px; margin:2px 0 12px; min-height:44px; }
+.wordmark{ display:flex; align-items:center; gap:9px; min-width:0; }
+.wordmark svg{ width:34px; height:34px; flex:none; }
+.wordmark b{ font-size:17px; font-weight:900; letter-spacing:.6px; white-space:nowrap; }
+.wordmark small{ display:block; font-size:10px; font-weight:700; letter-spacing:2.4px;
+  text-transform:uppercase; color:var(--ink-dim); }
+.homebtn{ margin-left:auto; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
+  min-width:44px; min-height:44px; padding:8px 12px; font-size:13px; font-weight:800; color:var(--ink-dim); }
+.soundbtn{ margin-left:auto; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
+  min-width:44px; min-height:44px; padding:8px 10px; font-size:17px; line-height:1; }
+.soundbtn + .homebtn{ margin-left:0; }
+
+.card{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:16px 15px; }
+.btn{
+  display:block; width:100%; min-height:52px; padding:14px 16px; margin-top:10px;
+  background:var(--panel-2); border:1px solid var(--rule); border-radius:14px;
+  font-size:16px; font-weight:800; letter-spacing:.2px; text-align:center;
+  transition:transform .1s ease, background .15s ease;
+}
+.btn:active{ transform:scale(.985); }
+.btn.primary{ background:linear-gradient(100deg, var(--acc) 0%, #a58bff 55%, var(--acc-2) 130%);
+  border-color:transparent; color:#0c0e18; box-shadow:0 8px 24px rgba(143,180,255,.28); }
+.btn.ghost{ background:transparent; border-color:var(--rule); color:var(--ink-dim); font-weight:700; }
+.btn[disabled]{ opacity:.45; cursor:default; }
+.btnrow{ display:flex; gap:10px; }
+.btnrow .btn{ flex:1; }
+.dim{ color:var(--ink-dim); }
+
+/* ============================ title ============================ */
+.hero{ text-align:center; margin:18px 0 16px; }
+.hero svg{ width:150px; height:84px; }
+.hero h1{ font-size:34px; font-weight:900; letter-spacing:1.5px; margin:6px 0 4px;
+  background:linear-gradient(95deg, var(--acc), var(--acc-2)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.hero p{ margin:0; font-size:14.5px; color:var(--ink-dim); font-weight:600; line-height:1.5; }
+
+.card h3.sec{ margin:0 0 4px; font-size:11px; font-weight:800; letter-spacing:1.4px;
+  text-transform:uppercase; color:var(--ink-dim); }
+.prow{ display:flex; align-items:center; gap:8px; margin-top:8px; }
+.prow .pdot{ width:12px; height:12px; border-radius:4px; flex:none; }
+.prow input{ flex:1; min-width:0; font:inherit; font-size:16px; font-weight:700;   /* 16px or iOS zooms */
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule);
+  border-left-width:4px; border-radius:12px; padding:11px 12px; min-height:46px; }
+.prow .xbtn{ flex:none; width:44px; height:44px; border-radius:11px; background:transparent;
+  border:1px solid var(--rule); color:var(--ink-dim); font-size:16px; font-weight:800; }
+.prow .xbtn[disabled]{ opacity:.3; }
+.addbtn{ margin-top:10px; min-height:46px; width:100%; background:transparent; border:1px dashed var(--rule);
+  border-radius:12px; color:var(--ink-dim); font-size:14px; font-weight:800; }
+.addbtn[disabled]{ opacity:.35; }
+.sweet{ margin:8px 2px 0; font-size:12px; color:var(--ink-dim); }
+
+.packs{ display:flex; gap:8px; margin-top:8px; }
+.pack{ flex:1; min-height:46px; padding:9px 6px; background:var(--panel-2);
+  border:1px solid var(--rule); border-radius:12px; font-size:13.5px; font-weight:800; line-height:1.25; }
+.pack small{ display:block; font-size:10.5px; font-weight:700; color:var(--ink-dim); }
+.pack[aria-pressed="true"]{ background:rgba(143,180,255,.16); border-color:var(--acc); color:#fff;
+  box-shadow:inset 0 0 0 1px var(--acc); }
+.pack[aria-pressed="true"] small{ color:var(--acc); }
+
+details.how{ margin-top:14px; border:1px solid var(--rule); border-radius:14px;
+  background:var(--panel); padding:0 14px; }
+details.how summary{ cursor:pointer; font-size:14px; font-weight:800; padding:13px 0;
+  min-height:44px; list-style:none; display:flex; align-items:center; gap:8px; }
+details.how summary::-webkit-details-marker{ display:none; }
+details.how summary::before{ content:'▸'; color:var(--ink-dim); transition:transform .15s ease; }
+details.how[open] summary::before{ transform:rotate(90deg); }
+details.how ul{ margin:0 0 14px; padding-left:20px; font-size:13.5px; line-height:1.65; color:var(--ink-dim); }
+details.how li b{ color:var(--ink); }
+
+.foot{ margin-top:20px; text-align:center; font-size:11px; line-height:1.7; color:var(--ink-dim); }
+.foot a{ color:var(--ink-dim); }
+
+/* ============================ hand-off ============================ */
+.handoff{ min-height:76vh; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; text-align:center; padding:20px 6px; }
+.handoff .pass{ font-size:13px; font-weight:800; letter-spacing:2.4px; text-transform:uppercase;
+  color:var(--ink-dim); }
+.handoff h2{ font-size:36px; font-weight:900; margin:12px 0 6px; overflow-wrap:anywhere; }
+.handoff .sub{ font-size:15px; color:var(--ink-dim); margin:0 0 26px; line-height:1.5; max-width:320px; }
+.handoff .btn{ max-width:340px; }
+.handoff .peek{ margin-top:22px; font-size:12.5px; color:var(--ink-dim); }
+@media (prefers-reduced-motion:no-preference){
+  .handoff h2{ animation:heartbeat 1.6s ease-in-out infinite; }
+  @keyframes heartbeat{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.03);} }
+}
+
+.turn{ display:flex; align-items:center; gap:10px; background:var(--panel-2); border:1px solid var(--rule);
+  border-radius:13px; padding:10px 12px; margin-bottom:12px; font-size:13px; line-height:1.4; }
+.turn .eye{ font-size:20px; flex:none; }
+
+/* ============================ write phase ============================ */
+.rtag{ display:inline-block; font-size:10.5px; font-weight:900; letter-spacing:1.6px;
+  text-transform:uppercase; border-radius:999px; padding:4px 10px; margin-bottom:8px;
+  background:rgba(143,180,255,.14); color:var(--acc); border:1px solid rgba(143,180,255,.4); }
+.prompt h2{ margin:0 0 4px; font-size:23px; font-weight:900; line-height:1.3; }
+.prompt p{ margin:0; font-size:13px; color:var(--ink-dim); line-height:1.5; }
+.ansinput{ width:100%; margin-top:14px; font:inherit; font-size:16px; font-weight:700;
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:13px 12px; min-height:50px; }
+.charhint{ margin:8px 2px 0; font-size:11.5px; color:var(--ink-dim); }
+
+/* ============================ guess phase ============================
+   Tap an answer (it takes the lamp — a gold ring), then tap a name chip to pin it. One-to-one is
+   enforced: a name already spent elsewhere moves, and the card it left flashes so the swap is
+   seen, not suspected. The chips + lock button ride a sticky bar so pinning eight answers never
+   means scrolling to commit. */
+.ghint{ margin:0 2px 10px; font-size:12.5px; color:var(--ink-dim); line-height:1.5; }
+.ans{ display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--rule);
+  border-radius:14px; padding:10px 12px; margin-top:8px; cursor:pointer;
+  transition:border-color .15s ease, background .15s ease; }
+.ans.sel{ border-color:var(--gold); box-shadow:0 0 0 1.5px var(--gold); background:var(--panel-2); }
+.ans.mine{ opacity:.62; cursor:default; }
+.ltr{ flex:none; width:30px; height:30px; border-radius:9px; background:var(--panel-2);
+  border:1px solid var(--rule); display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:900; color:var(--ink-dim); }
+.atext{ flex:1; min-width:0; font-size:15px; font-weight:700; line-height:1.35; overflow-wrap:anywhere; }
+.tag{ flex:none; max-width:42%; font-size:11.5px; font-weight:900; border-radius:999px; padding:5px 10px;
+  line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tag.empty{ background:transparent; border:1px dashed var(--rule); color:var(--ink-dim); font-weight:700; }
+.gbar{ position:sticky; bottom:0; z-index:5; margin-top:10px;
+  padding:12px 0 calc(6px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg, transparent 0%, var(--ground) 32%); }
+.chips{ display:flex; flex-wrap:wrap; gap:7px; justify-content:center; }
+.nchip{ min-height:44px; border-radius:999px; padding:9px 14px; font-size:14px; font-weight:800;
+  background:var(--panel); border:1.5px solid var(--rule);
+  transition:background .15s ease, opacity .15s ease, transform .1s ease; }
+.nchip:active{ transform:scale(.95); }
+.gbar .btn{ margin-top:10px; }
+@media (prefers-reduced-motion:no-preference){
+  .ans.flash{ animation:flash .8s ease; }
+  @keyframes flash{ 0%,100%{ box-shadow:none; } 30%{ box-shadow:0 0 0 3px var(--gold); } }
+}
+
+/* ============================ round reveal ============================
+   Public screen: every answer flips over to show its author, painted in the author's hue, with
+   the guess tally beneath — who nailed it, who was fooled. */
+.rev{ background:var(--panel); border:1px solid var(--rule); border-radius:14px;
+  padding:11px 12px; margin-top:8px; }
+.rev .rowa{ display:flex; align-items:center; gap:10px; }
+.rev .who{ flex:none; font-size:12px; font-weight:900; border-radius:999px; padding:5px 10px;
+  max-width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rev .fools{ flex:none; margin-left:auto; font-size:12px; font-weight:900; color:var(--cham); }
+.gchips{ display:flex; flex-wrap:wrap; gap:5px; margin:9px 0 0 40px; }
+.gchip{ font-size:11px; font-weight:800; border-radius:999px; padding:4px 8px; line-height:1.2; }
+.gchip.hit{ background:var(--det-soft); color:var(--det); }
+.gchip.fool{ background:var(--no-soft); color:var(--no); }
+@media (prefers-reduced-motion:no-preference){
+  .rev{ animation:flipIn .5s cubic-bezier(.2,.8,.3,1) backwards; }
+  @keyframes flipIn{ from{ opacity:0; transform:perspective(700px) rotateX(-58deg); }
+                     to{ opacity:1; transform:none; } }
+}
+.stand{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.schip{ font-size:12px; font-weight:800; border-radius:999px; padding:6px 10px;
+  background:var(--panel-2); border:1px solid var(--rule); }
+.schip b.d{ color:var(--det); } .schip b.c{ color:var(--cham); }
+
+/* ============================ final reveal — one page ============================
+   Numbers first: one big ring for the circle's read, then the leaderboard as stacked two-color
+   bars, three superlative one-liners, the fooled-everyone quote, and a small identification
+   grid. Prose is rationed to one sentence under the verdict. */
+.results h2{ font-size:15px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--ink-dim); text-align:center; margin:4px 0 6px; }
+.circlist{ text-align:center; font-size:13px; font-weight:800; margin:0 0 12px; line-height:1.8; }
+.circlist .x{ color:var(--ink-dim); font-weight:600; padding:0 4px; }
+
+.info{ text-align:center; padding:16px 10px; }
+.ring{ position:relative; display:flex; flex-direction:column; align-items:center; margin:0 auto; }
+.ring svg{ width:156px; height:156px; transform:rotate(-90deg); }
+.ring .tr{ fill:none; stroke:var(--panel-2); stroke-width:11; }
+.ring .fl{ fill:none; stroke-width:11; stroke-linecap:round; stroke:url(#alRing);
+  transition:stroke-dashoffset 1.2s cubic-bezier(.2,.7,.2,1); }
+.ring .rv{ position:absolute; top:0; left:0; width:100%; height:156px; display:flex; align-items:center;
+  justify-content:center; font-weight:900; font-size:44px; line-height:1; color:var(--ink); }
+.ring .rv i{ font-style:normal; font-size:.5em; opacity:.7; margin-left:2px; }
+.ring .rl{ margin-top:4px; font-size:13px; font-weight:800; color:var(--ink); }
+.ring .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+.verdict{ margin-top:14px; }
+.verdict b{ display:block; font-size:26px; font-weight:900; line-height:1.15;
+  background:linear-gradient(95deg, var(--acc), var(--acc-2)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.verdict span{ display:block; margin-top:4px; font-size:13px; color:var(--ink-dim); line-height:1.45; }
+
+/* leaderboard: one stacked bar per player — detective green + chameleon gold */
+.lb{ margin-top:12px; padding:14px 14px 10px; }
+.lbrow{ display:flex; align-items:center; gap:8px; margin-top:9px; }
+.lbrow .lbn{ width:82px; flex:none; font-size:12px; font-weight:900; text-align:right;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lbrow .lbt{ flex:1; height:20px; border-radius:7px; background:var(--panel-2); overflow:hidden;
+  display:flex; }
+.lbrow .seg{ display:block; height:100%; width:0; transition:width .9s cubic-bezier(.2,.7,.2,1); }
+.lbrow .seg.det{ background:var(--det); }
+.lbrow .seg.cham{ background:var(--cham); }
+.lbrow .lbv{ flex:none; width:52px; font-size:13px; font-weight:900; text-align:left; white-space:nowrap; }
+.lbrow .lbv b.d{ color:var(--det); } .lbrow .lbv b.c{ color:var(--cham); }
+.lblegend{ display:flex; justify-content:center; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.lblegend span{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-dim); font-weight:700; }
+.lblegend .sw{ width:10px; height:10px; border-radius:3px; flex:none; }
+
+/* superlatives: one line, one emoji each */
+.glance{ margin-top:12px; padding:12px 14px; }
+.gl{ display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-top:1px solid var(--rule);
+  font-size:13.5px; line-height:1.45; }
+.gl:first-child{ border-top:0; padding-top:0; } .gl:last-child{ padding-bottom:0; }
+.gl .gi{ flex:none; width:26px; text-align:center; font-size:18px; line-height:1.15; }
+.gl .lb2{ font-weight:900; letter-spacing:.8px; text-transform:uppercase; font-size:10.5px; margin-right:5px; }
+.gl.d .lb2{ color:var(--det); } .gl.c .lb2{ color:var(--cham); } .gl.o .lb2{ color:var(--acc); }
+
+/* the answer that fooled everyone */
+.quote{ margin-top:12px; text-align:center; padding:18px 16px 14px; position:relative; }
+.quote .qm{ font-size:38px; font-weight:900; line-height:.6; color:var(--cham); opacity:.85; }
+.quote .qt{ margin:6px 0 8px; font-size:19px; font-weight:900; line-height:1.35; overflow-wrap:anywhere; }
+.quote .qw{ margin:0; font-size:13px; color:var(--ink-dim); font-weight:700; }
+.quote .ql{ margin:10px 0 0; font-size:10.5px; font-weight:900; letter-spacing:1.6px;
+  text-transform:uppercase; color:var(--cham); }
+
+/* identification grid: rows = players, cells = rounds, number = friends who pinned that answer */
+.idg{ margin-top:12px; padding:14px 14px 12px; }
+.idwrap{ overflow-x:auto; }
+.idrow{ display:flex; align-items:center; gap:6px; margin-top:6px; }
+.idrow .idn{ width:82px; flex:none; font-size:12px; font-weight:900; text-align:right;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.idcell{ flex:none; width:36px; height:28px; border-radius:8px; display:flex; align-items:center;
+  justify-content:center; font-size:12px; font-weight:900; }
+.idcell.hd{ background:transparent; color:var(--ink-dim); font-size:10.5px; letter-spacing:.5px; }
+.idcell.lv0{ background:var(--panel-2); color:var(--ink-dim); }
+.idcell.lv1{ background:rgba(87,217,163,.18); color:var(--det); }
+.idcell.lv2{ background:rgba(87,217,163,.45); color:#eafff5; }
+.idcell.lv3{ background:var(--det); color:#06281c; }
+.idhint{ margin:10px 0 0; font-size:11px; color:var(--ink-dim); text-align:center; }
+
+@media (prefers-reduced-motion:no-preference){
+  /* .rev keeps its flipIn from above — it must NOT be listed here or rise would override it */
+  .results .card, .verdict, .stand{ opacity:0; transform:translateY(10px);
+    animation:rise .4s ease forwards; }
+  @keyframes rise{ to{ opacity:1; transform:none; } }
+}
+
+.datefoot{ text-align:center; font-size:11.5px; color:var(--ink-dim); margin-top:14px; }
+.sharebox{ width:100%; margin-top:10px; font-size:13px; line-height:1.5;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:10px; resize:none; }
+
+/* toast + confirm modal */
+.toast{ position:fixed; left:50%; bottom:calc(26px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(8px); background:var(--panel-2); color:var(--ink);
+  border:1px solid var(--rule); border-radius:12px; padding:11px 18px; font-size:14px;
+  font-weight:800; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:90;
+  box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:88vw; text-align:center; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+.scrim{ position:fixed; inset:0; background:var(--shade); z-index:70; display:none;
+  align-items:center; justify-content:center; padding:20px; }
+.scrim.show{ display:flex; }
+.confirmbox{ background:var(--panel); border:1px solid var(--rule); border-radius:18px;
+  padding:20px 18px; max-width:340px; width:100%; }
+.confirmbox h3{ margin:0 0 6px; font-size:18px; font-weight:900; }
+.confirmbox p{ margin:0 0 14px; font-size:13.5px; color:var(--ink-dim); line-height:1.5; }
+
+/* share: a WhatsApp link in WhatsApp's green, and a system share sheet where the browser has one */
+.btn.wa{ display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;
+  background:#25D366; color:#052e16; border-color:transparent; box-shadow:0 8px 24px rgba(37,211,102,.25); }
+.btn.wa svg{ width:20px; height:20px; flex:none; }
+.sharehint{ font-size:12px; color:var(--ink-dim); text-align:center; margin:6px 0 0; line-height:1.45; }
+
+@media (prefers-reduced-motion:reduce){
+  *{ animation:none !important; transition:none !important; }
+  .results .card, .verdict, .rev, .stand{ opacity:1; transform:none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="scrim" id="scrim">
+  <div class="confirmbox" role="alertdialog" aria-modal="true" aria-labelledby="cfTitle" aria-describedby="cfBody">
+    <h3 id="cfTitle">Leave this game?</h3>
+    <p id="cfBody">The round in progress will be discarded. Answers are never saved anywhere.</p>
+    <button class="btn primary" type="button" id="cfYes">Leave</button>
+    <button class="btn ghost" type="button" id="cfNo">Keep playing</button>
+  </div>
+</div>
+
+<!-- analytics.js before the game script: track() below fires synchronously and would otherwise
+     race the tag load and vanish. -->
+<script src="../analytics.js"></script>
+<script>
+'use strict';
+/* ============================================================================================
+   WHO SAID THAT — anonymous honesty for a circle of 3–8 friends on one phone. Everyone secretly
+   answers the same prompt; the answers come back shuffled and nameless; each player in turn pins
+   a name on every answer that isn't theirs. Right pins score detective points; every friend your
+   answer fools scores YOU chameleon points. People write truer things when the reveal is a guess,
+   not a spotlight — and the misattributions are the comedy.
+
+   Privacy is a design constraint, not a feature flag: every typed answer lives in ONE in-memory
+   session object (S) and nothing else. localStorage holds only names, a sound preference and a
+   plays counter. Analytics gets counts, never content. A refresh mid-game loses the round by
+   design — cheaper than answers ever touching disk.
+   ============================================================================================ */
+
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+
+/* Seeded PRNG so a session's draws are deterministic given its seed — the prompt deal and each
+   round's shuffle can never disagree with themselves mid-session — while every new session still
+   gets a fresh seed. */
+function mulberry32(a){ return function(){ a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a);
+  t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+
+function esc(s){ return String(s).replace(/[&<>"']/g,
+  c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function plain(html){ return String(html).replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<')
+  .replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'"); }
+
+/* ============================================================================================
+   PROMPT BANK — 46 original prompts. Each invites a SHORT, personal, funny-or-true one-liner,
+   and each passes the said-to-your-face-kindly test: nothing here fishes for cruelty about a
+   person in the room. A session deals `rounds` of them with no repeats.
+   ============================================================================================ */
+const PROMPTS=[
+  "A hill I will die on",
+  "My most irrational fear",
+  "The purchase I regret most",
+  "Something I pretend to understand",
+  "My red flag, honestly",
+  "A food opinion I keep to myself",
+  "My guilty-pleasure song or show",
+  "The app that eats my screen time",
+  "A tiny thing that makes me unreasonably happy",
+  "The compliment I secretly want more of",
+  "My weirdest habit when nobody's watching",
+  "A rule I break without guilt",
+  "The thing I keep saying I'll start Monday",
+  "My most useless talent",
+  "The lie I tell most often",
+  "With a free year and full pay, I would…",
+  "The chore I secretly enjoy",
+  "A smell that takes me straight back to childhood",
+  "My go-to move for leaving a party early",
+  "The fictional character I am, basically",
+  "What I was known for in school",
+  "My controversial breakfast take",
+  "The petty thing I'd use a superpower for",
+  "A word I can never spell on the first try",
+  "My celebrity crush, no shame",
+  "The last thing I looked up at 2 a.m.",
+  "My most irrational grudge",
+  "A trend I refuse to accept",
+  "Something I do purely for the aesthetic",
+  "My comfort rewatch",
+  "Advice I give but never follow",
+  "If I had to rename myself, I'd pick…",
+  "My airport ritual",
+  "The thing I hoard for no reason",
+  "My most niche pet peeve",
+  "What I rehearse saying in the shower",
+  "The emoji I definitely overuse",
+  "My in-case-of-emergency snack",
+  "A skill I claim but barely have",
+  "My most repeated sentence",
+  "A dream I keep having",
+  "What I actually do on boring video calls",
+  "The smallest thing that can ruin my day",
+  "My unpopular movie opinion",
+  "The superstition I secretly honor",
+  "What my search history says about me"
+];
+
+/* 8 fixed player hues, assigned by seat and used everywhere — name inputs, chips, reveal cards,
+   the final grid — so ownership never needs a label twice. Painted inline (the palette lives in
+   JS, not CSS, because the player count is dynamic). */
+const PAL=[
+  {c:'#ff6b9d', ink:'#ffb6cd', soft:'rgba(255,107,157,.16)'},
+  {c:'#7c5cff', ink:'#c7b6ff', soft:'rgba(124,92,255,.18)'},
+  {c:'#2bb3a3', ink:'#8fe6db', soft:'rgba(43,179,163,.16)'},
+  {c:'#ffb020', ink:'#ffd58a', soft:'rgba(255,176,32,.15)'},
+  {c:'#57d980', ink:'#a5f0bd', soft:'rgba(87,217,128,.15)'},
+  {c:'#4aa8ff', ink:'#a8d2ff', soft:'rgba(74,168,255,.16)'},
+  {c:'#ff8c5a', ink:'#ffc4a6', soft:'rgba(255,140,90,.15)'},
+  {c:'#d96fd0', ink:'#f0b5ea', soft:'rgba(217,111,208,.16)'}
+];
+const LTRS='ABCDEFGH';
+const MIN_P=3, MAX_P=8;
+const ROUND_OPTS=[2,3,4];
+
+/* ============================ state ============================
+   S is the whole game and it lives only in memory. Every screen renders through show(), which
+   wipes the DOM wholesale — a previous player's typed answer or private pins cannot survive
+   into a hand-off even for one frame.
+     answers[r][p]  — what player p wrote in round r
+     disp[r]        — the round's shuffle: disp[slot] = author index
+     guesses[r][g]  — player g's pins: guesses[r][g][slot] = guessed author (own slot = g) */
+let S=null;
+let rounds=3;                          // session-only, deliberately not persisted
+let names=['','','',''];               // title-screen working copy (raw, may be empty)
+try{ const n=JSON.parse(LS.get('alibi.names')||'[]');
+  if(Array.isArray(n)&&n.length>=MIN_P&&n.length<=MAX_P) names=n.map(x=>String(x).slice(0,12)); }catch(e){}
+
+function newSession(finalNames){
+  const rnd=mulberry32((Date.now() ^ (Math.random()*0xffffffff))>>>0);
+  /* Fisher–Yates on a copy, take the first `rounds` — no prompt repeats within a session */
+  const deck=PROMPTS.slice();
+  for(let i=deck.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=deck[i]; deck[i]=deck[j]; deck[j]=t; }
+  S={ names:finalNames.slice(), n:finalNames.length, R:rounds,
+      prompts:deck.slice(0,rounds), rnd:rnd,
+      round:0, wIdx:0, gIdx:0,
+      answers:[], disp:[], guesses:[] };
+}
+/* the writer/guesser order rotates each round so the same person isn't always first or last */
+function seat(i){ return (S.round+i)%S.n; }
+
+/* ============================ rendering core ============================
+   One container, innerHTML replaced wholesale per screen. GEN is a render generation counter:
+   every handler captures the generation it was bound in and no-ops if a render has happened
+   since — this is the double-tap guard. A fast second tap on any advancing button finds either
+   a disabled button or a stale generation; it can never advance the state machine twice. */
+const app=document.getElementById('app');
+let GEN=0;
+function show(html){
+  GEN++; app.innerHTML=html;
+  try{ window.scrollTo({top:0,left:0,behavior:'instant'}); }catch(e){ window.scrollTo(0,0); }
+}
+function on(id,fn){
+  const g=GEN, el=document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('click',function(e){
+    if(g!==GEN || el.disabled) return;
+    el.disabled=true;                       // released only if the handler chooses to re-render
+    try{ fn(e); }finally{ if(g===GEN) el.disabled=false; }
+  });
+}
+const REDUCED=()=>!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+/* the motif: a line-up of silhouettes, one glowing speech bubble, one big question mark */
+const MOTIF='<svg viewBox="0 0 150 84" aria-hidden="true">'
+ +'<g opacity=".3" stroke="#99a1bd" stroke-width="1"><path d="M6 14h138M6 34h138M6 54h138"/></g>'
+ +'<g><circle cx="30" cy="52" r="11" fill="#7c5cff"/><path d="M14 84 q2-20 16-20 t16 20z" fill="#7c5cff"/>'
+ +'<circle cx="75" cy="48" r="12" fill="#2bb3a3"/><path d="M57 84 q2-22 18-22 t18 22z" fill="#2bb3a3"/>'
+ +'<circle cx="120" cy="52" r="11" fill="#ffb020"/><path d="M104 84 q2-20 16-20 t16 20z" fill="#ffb020"/></g>'
+ +'<g><rect x="52" y="4" width="46" height="26" rx="10" fill="#ffd166"/>'
+ +'<path d="M70 30 l-5 9 l13 -9z" fill="#ffd166"/>'
+ +'<text x="75" y="24" text-anchor="middle" font-size="19" font-weight="900" fill="#1c1608">?</text></g></svg>';
+const MARK='<svg viewBox="0 0 40 40" aria-hidden="true">'
+ +'<rect x="7" y="6" width="26" height="17" rx="7" fill="#ffd166"/>'
+ +'<path d="M16 23 l-3 6 l9 -6z" fill="#ffd166"/>'
+ +'<text x="20" y="19" text-anchor="middle" font-size="13" font-weight="900" fill="#1c1608">?</text>'
+ +'<circle cx="13" cy="33" r="4" fill="#7c5cff"/><circle cx="22" cy="33" r="4" fill="#2bb3a3"/>'
+ +'<circle cx="31" cy="33" r="4" fill="#ff6b9d"/></svg>';
+
+function header(showHome){
+  return '<header class="top"><span class="wordmark">'+MARK+'<span><b>Who Said That</b>'
+   +'<small>Kreeda · Group</small></span></span>'
+   +(showHome
+      ? '<button class="soundbtn" type="button" id="bSound" aria-pressed="'+SND.on+'" aria-label="Sound">'+(SND.on?'🔊':'🔇')+'</button>'
+        +'<button class="homebtn" type="button" id="bHome" aria-label="Leave game and return to start">Home</button>'
+      : '')
+   +'</header>';
+}
+function bindHome(){
+  on('bHome',()=>{ openConfirm(()=>{ S=null; title(); }); });
+  const sb=document.getElementById('bSound');
+  if(sb) sb.addEventListener('click',()=>setSound(!SND.on));
+}
+
+/* ============================ sound ============================
+   Two synthesized cues, no audio files: a soft tick on every pin and a swish when a phase
+   leaves the page. The context is created on the first tap (a user gesture, which iOS
+   requires), and the on/off preference is the only thing besides names and a play counter
+   that touches storage. */
+const SND={ ctx:null, noise:null, on:LS.get('alibi.sound')!=='0' };
+function audio(){
+  if(!SND.on) return null;
+  if(!SND.ctx){ try{ SND.ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(SND.ctx.state==='suspended'){ try{ SND.ctx.resume(); }catch(e){} }
+  return SND.ctx;
+}
+function tick(){
+  const ac=audio(); if(!ac) return;
+  try{
+    const t=ac.currentTime, o=ac.createOscillator(), g=ac.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(880,t); o.frequency.exponentialRampToValueAtTime(1320,t+0.03);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.09,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t+0.08);
+  }catch(e){}
+}
+function swish(){
+  const ac=audio(); if(!ac) return;
+  try{
+    const dur=0.3, t=ac.currentTime;
+    if(!SND.noise){ const n=Math.floor(ac.sampleRate*0.5), b=ac.createBuffer(1,n,ac.sampleRate), d=b.getChannelData(0);
+      for(let i=0;i<n;i++) d[i]=Math.random()*2-1; SND.noise=b; }
+    const src=ac.createBufferSource(); src.buffer=SND.noise;
+    const f=ac.createBiquadFilter(); f.type='bandpass'; f.Q.value=1.4;      // filtered noise, swept up then down
+    f.frequency.setValueAtTime(500,t); f.frequency.exponentialRampToValueAtTime(3400,t+dur*0.45);
+    f.frequency.exponentialRampToValueAtTime(700,t+dur);
+    const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.32,t+0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(f).connect(g).connect(ac.destination); src.start(t); src.stop(t+dur+0.02);
+  }catch(e){}
+}
+function setSound(on){
+  SND.on=on; LS.set('alibi.sound',on?'1':'0');
+  const b=document.getElementById('bSound');
+  if(b){ b.textContent=on?'🔊':'🔇'; b.setAttribute('aria-pressed',String(on)); }
+  if(on) tick();
+}
+
+/* confirm modal — the only way out of a live session other than finishing it */
+const scrim=document.getElementById('scrim');
+let confirmCb=null;
+document.getElementById('cfYes').addEventListener('click',()=>{ scrim.classList.remove('show');
+  const cb=confirmCb; confirmCb=null; if(cb) cb(); });
+document.getElementById('cfNo').addEventListener('click',()=>{ scrim.classList.remove('show'); confirmCb=null; });
+function openConfirm(cb){ confirmCb=cb; scrim.classList.add('show'); }
+
+let toastT=null;
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ============================ title ============================ */
+function collectNames(){
+  document.querySelectorAll('.prow input').forEach((el,i)=>{ names[i]=el.value.slice(0,12); });
+}
+function title(){
+  if(names.length<MIN_P) names=names.concat(Array(MIN_P-names.length).fill(''));
+  show(
+   '<div class="hero">'+MOTIF+'<h1>WHO SAID THAT</h1>'
+   +'<p>Anonymous honesty. Everyone answers the same prompt in secret —<br>then the circle guesses who said what.</p></div>'
+   +'<div class="card">'
+   +'<h3 class="sec">The circle · 3–8 players</h3>'
+   +'<div id="rows">'
+   +names.map((nm,i)=>
+     '<div class="prow"><span class="pdot" style="background:'+PAL[i].c+'"></span>'
+     +'<input type="text" maxlength="12" autocomplete="off" placeholder="Player '+(i+1)+'" '
+     +'style="border-left-color:'+PAL[i].c+'" value="'+esc(nm)+'" aria-label="Player '+(i+1)+' name">'
+     +'<button class="xbtn" type="button" data-x="'+i+'" aria-label="Remove player '+(i+1)+'" '
+     +(names.length<=MIN_P?'disabled':'')+'>✕</button></div>').join('')
+   +'</div>'
+   +'<button class="addbtn" type="button" id="bAdd" '+(names.length>=MAX_P?'disabled':'')+'>+ Add player</button>'
+   +'<p class="sweet">Best with 4–6. One phone, passed around.</p>'
+   +'<h3 class="sec" id="rndLbl" style="margin-top:14px">Prompts</h3>'
+   +'<div class="packs" role="group" aria-labelledby="rndLbl">'
+   +ROUND_OPTS.map(r=>'<button class="pack" type="button" data-r="'+r+'" aria-pressed="'+(r===rounds)+'">'
+     +r+' prompts<small>'+(r===2?'quick':r===3?'classic':'the works')+'</small></button>').join('')
+   +'</div>'
+   +'<button class="btn primary" type="button" id="bStart">Start</button>'
+   +'</div>'
+   +'<details class="how"><summary>How it works</summary><ul>'
+   +'<li>Same prompt for everyone. Each of you types <b>one short line</b> — privately, phone passed around.</li>'
+   +'<li>The answers come back <b>shuffled and nameless</b>. On your turn, pin a name on every answer that isn’t yours.</li>'
+   +'<li>Right pins score 🕵️ <b>detective points</b>. Every friend your answer fools scores <b>you</b> 🦎 <b>chameleon points</b>.</li>'
+   +'<li>After the last round: who reads the room — and who’s unreadable.</li>'
+   +'</ul></details>'
+   +'<footer class="foot">For fun and conversation — a game, not a psychological assessment.<br>'
+   +'Answers stay on this phone and are never uploaded.<br><a href="../">Kreeda</a></footer>'
+  );
+  document.querySelectorAll('.pack').forEach(el=>{
+    el.addEventListener('click',()=>{
+      rounds=+el.getAttribute('data-r');
+      document.querySelectorAll('.pack').forEach(x=>x.setAttribute('aria-pressed',
+        String(+x.getAttribute('data-r')===rounds)));
+    });
+  });
+  on('bAdd',()=>{ if(names.length>=MAX_P) return; collectNames(); names.push(''); title(); });
+  document.querySelectorAll('.xbtn').forEach(el=>{
+    el.addEventListener('click',()=>{ if(names.length<=MIN_P) return;
+      collectNames(); names.splice(+el.getAttribute('data-x'),1); title(); });
+  });
+  on('bStart',()=>{
+    collectNames();
+    /* fill blanks, cap length, and de-dupe — the guess phase pins by NAME, so two identical
+       names would be indistinguishable on the chips */
+    const used=new Set();
+    const finals=names.map((v,i)=>{
+      let m=(v.trim()||'Player '+(i+1)).slice(0,12); const base=m; let k=2;
+      while(used.has(m.toLowerCase())){ m=base.slice(0,10)+' '+k; k++; }
+      used.add(m.toLowerCase()); return m;
+    });
+    names=finals.slice();
+    LS.set('alibi.names',JSON.stringify(names));
+    newSession(finals);
+    track('game_start',{player_count:S.n, rounds:S.R});
+    /* the first writer is whoever tapped Start — no interstitial for them */
+    writeScreen();
+  });
+}
+
+/* ============================ hand-off ============================
+   Every change of hands gets this full-screen interstitial. It renders through show(), which has
+   already destroyed the previous screen — so by the time it paints there is nothing underneath
+   to peek at, however fast the tap. */
+function handoff(pIdx,sub,next){
+  const nm=S.names[pIdx];
+  show(
+   '<div class="handoff">'
+   +'<div class="pass">Pass the phone to</div>'
+   +'<h2 style="color:'+PAL[pIdx].ink+'">'+esc(nm)+'</h2>'
+   +'<p class="sub">'+sub+'</p>'
+   +'<button class="btn primary" type="button" id="bReady">I’m '+esc(nm)+' — show me</button>'
+   +'<p class="peek">👀 tilt the phone away while it’s your turn</p>'
+   +'</div>'
+  );
+  on('bReady',next);
+}
+
+/* ============================ write phase ============================ */
+function startRound(){
+  S.wIdx=0;
+  const p=seat(0);
+  /* after a reveal everyone was looking together, so the round's first writer gets a hand-off */
+  handoff(p,'Round '+(S.round+1)+' of '+S.R+' · a fresh prompt, your line, in secret.',writeScreen);
+}
+function writeScreen(){
+  const p=seat(S.wIdx), nm=S.names[p], last=S.wIdx===S.n-1;
+  show(
+   header(true)
+   +'<div class="turn"><span class="eye">👀</span><span><b style="color:'+PAL[p].ink+'">'+esc(nm)+'’s turn to write.</b> '
+   +'Everyone else, look away — answers come back shuffled and nameless.</span></div>'
+   +'<div class="card prompt">'
+   +'<span class="rtag">Round '+(S.round+1)+' of '+S.R+'</span>'
+   +'<h2>'+esc(S.prompts[S.round])+'</h2>'
+   +'<p>One line. True, funny, or both — nobody will know it’s yours until they guess.</p>'
+   +'<input class="ansinput" id="inAns" type="text" maxlength="60" autocomplete="off" '
+   +'autocapitalize="sentences" aria-label="Your answer" placeholder="Type your answer…">'
+   +'<p class="charhint">Up to 60 characters. Short bites are harder to pin.</p>'
+   +'<button class="btn primary" type="button" id="bDone" disabled>'
+   +(last?'Seal it — time to guess':'Seal it &amp; pass on')+'</button>'
+   +'</div>'
+  );
+  bindHome();
+  const inp=document.getElementById('inAns'), btn=document.getElementById('bDone');
+  const refresh=()=>{ btn.disabled=!inp.value.trim(); };
+  inp.addEventListener('input',refresh);
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!btn.disabled) btn.click(); });
+  refresh();
+  try{ inp.focus(); }catch(e){}
+  on('bDone',()=>{
+    const v=inp.value.replace(/\s+/g,' ').trim().slice(0,60);
+    if(!v) return;
+    if(!S.answers[S.round]) S.answers[S.round]=[];
+    S.answers[S.round][p]=v;
+    swish();
+    S.wIdx++;
+    /* show() inside handoff/guess wipes this input from the DOM before anything else paints */
+    if(S.wIdx<S.n){
+      const nx=seat(S.wIdx);
+      handoff(nx,'Round '+(S.round+1)+' of '+S.R+' · same prompt, your line, in secret.',writeScreen);
+    }else{
+      buildShuffle();
+      S.gIdx=0;
+      guessHandoffNext();
+    }
+  });
+}
+
+/* the round's shuffle: disp[slot] = author. Dealt from the session PRNG once per round. */
+function buildShuffle(){
+  const perm=[]; for(let i=0;i<S.n;i++) perm.push(i);
+  for(let i=perm.length-1;i>0;i--){ const j=Math.floor(S.rnd()*(i+1)); const t=perm[i]; perm[i]=perm[j]; perm[j]=t; }
+  S.disp[S.round]=perm;
+  S.guesses[S.round]=[];
+}
+
+/* ============================ guess phase ============================ */
+function guessHandoffNext(){
+  const g=seat(S.gIdx);
+  handoff(g,'The answers are in — shuffled, nameless. Pin a name on every one that isn’t yours.',guessScreen);
+}
+function guessScreen(){
+  const r=S.round, n=S.n, g=seat(S.gIdx), disp=S.disp[r];
+  const ownSlot=disp.indexOf(g);
+  const assign=Array(n).fill(-1); assign[ownSlot]=g;   // own answer pre-locked
+  show(
+   header(true)
+   +'<div class="turn"><span class="eye">👀</span><span><b style="color:'+PAL[g].ink+'">'+esc(S.names[g])+'’s turn to pin.</b> '
+   +'The rest of you — poker faces, no hints.</span></div>'
+   +'<div class="card prompt" style="padding:12px 15px">'
+   +'<span class="rtag">Round '+(S.round+1)+' of '+S.R+'</span>'
+   +'<h2 style="font-size:18px">'+esc(S.prompts[r])+'</h2>'
+   +'</div>'
+   +'<p class="ghint" style="margin-top:10px">Tap an answer, then tap the name you think wrote it. Yours is already tagged.</p>'
+   +'<div id="anslist">'
+   +disp.map((author,s)=>{
+      const mine=s===ownSlot;
+      return '<div class="ans'+(mine?' mine':'')+'" data-s="'+s+'" '+(mine?'aria-disabled="true"':'role="button" tabindex="0"')+'>'
+       +'<span class="ltr">'+LTRS[s]+'</span>'
+       +'<span class="atext">'+esc(S.answers[r][author])+'</span>'
+       +(mine
+          ? '<span class="tag" style="background:'+PAL[g].soft+';color:'+PAL[g].ink+'">yours</span>'
+          : '<span class="tag empty" id="tag'+s+'">—</span>')
+       +'</div>';
+    }).join('')
+   +'</div>'
+   +'<div class="gbar">'
+   +'<div class="chips" id="chips">'
+   +S.names.map((nm,p)=>p===g?'':'<button class="nchip" type="button" data-p="'+p+'" '
+     +'style="border-color:'+PAL[p].c+';color:'+PAL[p].ink+'" aria-pressed="false">'+esc(nm)+'</button>').join('')
+   +'</div>'
+   +'<button class="btn" type="button" id="bLock"></button>'
+   +'</div>'
+  );
+  bindHome();
+  const gen=GEN;
+  let sel=assign.indexOf(-1);                 // first unpinned answer starts selected
+
+  const nextUn=from=>{
+    for(let k=1;k<=n;k++){ const s=(from+k)%n; if(assign[s]<0) return s; }
+    return -1;
+  };
+  const paint=()=>{
+    for(let s=0;s<n;s++){
+      const card=document.querySelector('.ans[data-s="'+s+'"]');
+      if(!card) continue;
+      card.classList.toggle('sel',s===sel);
+      if(s===ownSlot) continue;
+      const tag=document.getElementById('tag'+s), a=assign[s];
+      if(a>=0){ tag.className='tag'; tag.style.background=PAL[a].soft; tag.style.color=PAL[a].ink;
+        tag.textContent=S.names[a]; }
+      else{ tag.className='tag empty'; tag.style.background=''; tag.style.color=''; tag.textContent='—'; }
+    }
+    document.querySelectorAll('.nchip').forEach(ch=>{
+      const p=+ch.getAttribute('data-p'), s=assign.indexOf(p);
+      const usedHere=s>=0&&s!==ownSlot;
+      ch.setAttribute('aria-pressed',String(usedHere));
+      ch.textContent=usedHere?S.names[p]+' · '+LTRS[s]:S.names[p];
+      if(usedHere){ ch.style.background=PAL[p].c; ch.style.color='#101322'; ch.style.borderColor=PAL[p].c; }
+      else{ ch.style.background=''; ch.style.color=PAL[p].ink; ch.style.borderColor=PAL[p].c; }
+    });
+    const left=assign.filter(v=>v<0).length, lock=document.getElementById('bLock');
+    lock.className='btn'+(left?'':' primary');
+    lock.textContent=left?('Pin '+left+' more'):'Lock in my pins';
+  };
+  const flash=s=>{
+    const card=document.querySelector('.ans[data-s="'+s+'"]');
+    if(card){ card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash'); }
+  };
+
+  document.getElementById('anslist').addEventListener('click',e=>{
+    if(gen!==GEN) return;
+    const card=e.target.closest('.ans'); if(!card) return;
+    const s=+card.getAttribute('data-s');
+    if(s===ownSlot){ toast('That one’s yours'); return; }
+    sel=s; paint(); tick();
+  });
+  document.getElementById('anslist').addEventListener('keydown',e=>{
+    if(gen!==GEN) return;
+    if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('ans')){
+      e.preventDefault(); e.target.click(); }
+  });
+  document.getElementById('chips').addEventListener('click',e=>{
+    if(gen!==GEN) return;
+    const ch=e.target.closest('.nchip'); if(!ch) return;
+    const p=+ch.getAttribute('data-p');
+    if(sel<0){
+      /* everything pinned: tapping a used chip re-opens the answer it sits on */
+      const cur=assign.indexOf(p);
+      if(cur>=0&&cur!==ownSlot){ sel=cur; paint(); tick(); }
+      else toast('Tap an answer first');
+      return;
+    }
+    const prev=assign.indexOf(p);
+    if(prev>=0&&prev!==ownSlot&&prev!==sel){
+      /* one-to-one: the name moves, and the card it left flashes so the swap is seen */
+      assign[prev]=-1; flash(prev);
+      toast(S.names[p]+' moved from '+LTRS[prev]);
+    }
+    assign[sel]=p; flash(sel); tick();
+    sel=nextUn(sel);
+    paint();
+  });
+  on('bLock',()=>{
+    const left=assign.filter(v=>v<0).length;
+    if(left){ const s=assign.indexOf(-1); sel=s; paint(); flash(s);
+      toast(left+' answer'+(left>1?'s':'')+' still unpinned'); return; }
+    S.guesses[S.round][g]=assign.slice();
+    swish();
+    S.gIdx++;
+    if(S.gIdx<S.n) guessHandoffNext();
+    else roundReveal();
+  });
+  paint();
+}
+
+/* ============================ scoring ============================
+   Pure functions over the recorded guesses, so standings mid-game and totals at the end can
+   never disagree. det[g]  = right pins by g. cham[a] = wrong pins of a's answers (each fooled
+   friend is a point for the author). pins[a][r] = friends who pinned a's round-r answer right. */
+function totals(){
+  const n=S.n, R=S.R;
+  const det=Array(n).fill(0), cham=Array(n).fill(0);
+  const pins=[]; for(let p=0;p<n;p++){ pins.push(Array(R).fill(0)); }
+  let done=0;
+  for(let r=0;r<R;r++){
+    const disp=S.disp[r], gr=S.guesses[r];
+    if(!disp||!gr) continue;
+    let full=true;
+    for(let g=0;g<n;g++){
+      const arr=gr[g];
+      if(!arr){ full=false; continue; }
+      for(let s=0;s<n;s++){
+        const author=disp[s];
+        if(author===g) continue;                       // own slot is pre-locked, not a guess
+        if(arr[s]===author){ det[g]++; pins[author][r]++; }
+        else cham[author]++;
+      }
+    }
+    if(full) done++;
+  }
+  const hits=det.reduce((a,b)=>a+b,0), total=done*n*(n-1);
+  return {det,cham,pins,hits,total,done,acc:total?Math.round(hits*100/total):0};
+}
+function tops(arr){
+  let v=-1; arr.forEach(x=>{ if(x>v) v=x; });
+  const who=[]; arr.forEach((x,i)=>{ if(x===v) who.push(i); });
+  return {v,who};
+}
+function nameList(idxs){
+  return idxs.map(i=>'<b style="color:'+PAL[i].ink+'">'+esc(S.names[i])+'</b>').join(' &amp; ');
+}
+/* the single answer that fooled the most friends, quoted with its author */
+function bestDisguise(t){
+  let best=null;
+  for(let r=0;r<S.R;r++){
+    const disp=S.disp[r]; if(!disp||!S.guesses[r]) continue;
+    for(let s=0;s<S.n;s++){
+      const a=disp[s], f=(S.n-1)-t.pins[a][r];
+      if(f>0&&(!best||f>best.f)) best={r,a,f,of:S.n-1,text:S.answers[r][a]};
+    }
+  }
+  return best;
+}
+function verdictFor(acc){
+  if(acc>=80) return ['Open books','This circle reads each other like open tabs.'];
+  if(acc>=62) return ['Well read','Most answers found their authors — hard to hide here.'];
+  if(acc>=45) return ['Half unmasked','Plenty of right pins, plenty of clean getaways.'];
+  if(acc>=28) return ['Slippery circle','More disguises landed than guesses did.'];
+  return ['Masters of disguise','Almost nothing got pinned. Who ARE you people?'];
+}
+
+/* ============================ round reveal ============================
+   Public screen — the payoff of the round. Every answer flips to its author's color, with the
+   tally underneath: green ✓ for the friends who nailed it, red ✗ for the fooled (hover/long-
+   press a ✗ to see who they thought it was). */
+function roundReveal(){
+  const r=S.round, n=S.n, disp=S.disp[r], t=totals();
+  const lastRound=r===S.R-1;
+  show(
+   header(true)
+   +'<div class="card prompt" style="padding:12px 15px">'
+   +'<span class="rtag">Round '+(r+1)+' of '+S.R+' · the authors</span>'
+   +'<h2 style="font-size:18px">'+esc(S.prompts[r])+'</h2>'
+   +'</div>'
+   +disp.map((a,s)=>{
+      let hits=0, chips='';
+      for(let i=0;i<n;i++){
+        const g=seat(i); if(g===a) continue;
+        const guess=S.guesses[r][g][s], hit=guess===a;
+        if(hit) hits++;
+        chips+='<span class="gchip '+(hit?'hit':'fool')+'" title="'
+          +esc(S.names[g])+(hit?' nailed it':' thought it was '+esc(S.names[guess]))+'">'
+          +(hit?'✓ ':'✗ ')+esc(S.names[g])+'</span>';
+      }
+      const fools=(n-1)-hits;
+      return '<div class="rev" style="animation-delay:'+(s*140)+'ms">'
+       +'<div class="rowa"><span class="ltr" style="background:'+PAL[a].soft+';border-color:'+PAL[a].c+';color:'+PAL[a].ink+'">'+LTRS[s]+'</span>'
+       +'<span class="atext">'+esc(S.answers[r][a])+'</span>'
+       +'<span class="who" style="background:'+PAL[a].c+';color:#101322">'+esc(S.names[a])+'</span>'
+       +(fools?'<span class="fools">🦎+'+fools+'</span>':'')
+       +'</div><div class="gchips">'+chips+'</div></div>';
+    }).join('')
+   +'<div class="card" style="margin-top:12px;padding:12px 14px">'
+   +'<h3 class="sec">Standings · 🕵️ pins right · 🦎 friends fooled</h3>'
+   +'<div class="stand" style="animation-delay:'+(n*140)+'ms">'
+   +S.names.map((nm,p)=>({p,tot:t.det[p]+t.cham[p]})).sort((x,y)=>y.tot-x.tot)
+     .map(o=>'<span class="schip"><span style="color:'+PAL[o.p].ink+'">'+esc(S.names[o.p])+'</span> '
+       +'<b class="d">'+t.det[o.p]+'</b>+<b class="c">'+t.cham[o.p]+'</b></span>').join('')
+   +'</div></div>'
+   +'<button class="btn primary" type="button" id="bNext">'
+   +(lastRound?'The final reveal':'Next round')+'</button>'
+  );
+  bindHome();
+  on('bNext',()=>{
+    if(lastRound){ results(); }
+    else{ S.round++; startRound(); }
+  });
+}
+
+/* ============================ final reveal — one page ============================ */
+let completeSent=false;
+function results(){
+  if(!S){ title(); return; }
+  const t=totals();
+  if(t.done<S.R){ startRound(); return; }    // a state-machine bug fails loudly, never leaks early
+  const n=S.n, R=S.R, per=R*(n-1);
+  const v=verdictFor(t.acc), best=bestDisguise(t);
+  const topD=tops(t.det), topC=tops(t.cham);
+  const idTot=t.pins.map(row=>row.reduce((a,b)=>a+b,0));
+  const topO=tops(idTot);
+  const today=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+
+  if(!completeSent){
+    completeSent=true;
+    track('game_complete',{player_count:n, rounds:R, accuracy:t.acc,
+      top_det:topD.v, top_cham:topC.v});
+    const plays=(+LS.get('alibi.plays')||0)+1; LS.set('alibi.plays',String(plays));
+  }
+
+  const dl=ms=>'style="animation-delay:'+ms+'ms"';
+  const maxTot=Math.max.apply(null,S.names.map((nm,p)=>t.det[p]+t.cham[p]).concat([1]));
+  const order=S.names.map((nm,p)=>p).sort((a,b)=>(t.det[b]+t.cham[b])-(t.det[a]+t.cham[a]));
+  const C=2*Math.PI*70;
+
+  const lv=(k,max)=>k===0?'lv0':k===max?'lv3':(k*2>=max?'lv2':'lv1');
+
+  show(
+   header(false)
+   +'<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>'
+   +'<linearGradient id="alRing" x1="0" y1="0" x2="1" y2="1">'
+   +'<stop offset="0" stop-color="#8fb4ff"/><stop offset="1" stop-color="#ff6b9d"/></linearGradient>'
+   +'</defs></svg>'
+   +'<div class="results">'
+   +'<h2>The circle’s read</h2>'
+   +'<p class="circlist">'+S.names.map((nm,p)=>'<span style="color:'+PAL[p].ink+'">'+esc(nm)+'</span>')
+     .join('<span class="x">·</span>')+'</p>'
+
+   +'<div class="card info">'
+   +'<div class="ring"><svg viewBox="0 0 152 152" aria-hidden="true">'
+   +'<circle class="tr" cx="76" cy="76" r="70"/>'
+   +'<circle class="fl" cx="76" cy="76" r="70" style="stroke-dasharray:'+C.toFixed(1)+';stroke-dashoffset:'+C.toFixed(1)+'" '
+   +'data-off="'+(C*(1-t.acc/100)).toFixed(1)+'"/></svg>'
+   +'<div class="rv" aria-hidden="true"><b data-n="'+t.acc+'">0</b><i>%</i></div>'
+   +'<div class="rl" aria-hidden="true">answers pinned to their authors</div>'
+   +'<span class="sr">Overall attribution accuracy: '+t.acc+'%</span></div>'
+   +'<div class="verdict" '+dl(500)+'><b>'+v[0]+'</b><span>'+v[1]+'</span></div>'
+   +'</div>'
+
+   +'<div class="card lb" '+dl(650)+'>'
+   +'<h3 class="sec">The leaderboard</h3>'
+   +order.map(p=>{
+      const d=t.det[p], c=t.cham[p];
+      return '<div class="lbrow">'
+       +'<span class="lbn" style="color:'+PAL[p].ink+'">'+esc(S.names[p])+'</span>'
+       +'<div class="lbt" role="img" aria-label="'+esc(S.names[p])+': '+d+' detective, '+c+' chameleon">'
+       +'<i class="seg det" data-w="'+(d*100/maxTot)+'"></i>'
+       +'<i class="seg cham" data-w="'+(c*100/maxTot)+'"></i></div>'
+       +'<span class="lbv"><b class="d">'+d+'</b>+<b class="c">'+c+'</b></span>'
+       +'</div>';
+    }).join('')
+   +'<div class="lblegend">'
+   +'<span><span class="sw" style="background:var(--det)"></span>🕵️ detective — right pins</span>'
+   +'<span><span class="sw" style="background:var(--cham)"></span>🦎 chameleon — friends fooled</span>'
+   +'</div></div>'
+
+   +'<div class="card glance" '+dl(800)+'>'
+   +'<div class="gl d"><span class="gi">🕵️</span><span><span class="lb2">Sharpest detective</span>'
+   +nameList(topD.who)+' — '+topD.v+' of '+per+' pins landed</span></div>'
+   +'<div class="gl c"><span class="gi">🦎</span><span><span class="lb2">Master chameleon</span>'
+   +nameList(topC.who)+' — fooled friends '+topC.v+' time'+(topC.v===1?'':'s')+'</span></div>'
+   +'<div class="gl o"><span class="gi">🪟</span><span><span class="lb2">Open book</span>'
+   +nameList(topO.who)+' — the circle just knows ('+topO.v+' of '+per+' pinned right)</span></div>'
+   +'</div>'
+
+   +(best
+     ? '<div class="card quote" '+dl(950)+'>'
+       +'<div class="qm">“</div>'
+       +'<p class="qt">'+esc(best.text)+'</p>'
+       +'<p class="qw">— <b style="color:'+PAL[best.a].ink+'">'+esc(S.names[best.a])+'</b> · fooled '
+       +best.f+' of '+best.of+(best.f===best.of?' — everyone':'')+'</p>'
+       +'<p class="ql">'+(best.f===best.of?'the answer that fooled everyone':'the best disguise')+'</p>'
+       +'</div>'
+     : '<div class="card glance" '+dl(950)+'><div class="gl o"><span class="gi">🧊</span>'
+       +'<span>Not one disguise landed — every single answer got pinned. Terrifyingly well-read.</span></div></div>')
+
+   +'<div class="card idg" '+dl(1100)+'>'
+   +'<h3 class="sec">Who got seen through</h3>'
+   +'<div class="idwrap">'
+   +'<div class="idrow"><span class="idn"></span>'
+   +S.prompts.map((q,r)=>'<span class="idcell hd">R'+(r+1)+'</span>').join('')+'</div>'
+   +S.names.map((nm,p)=>'<div class="idrow"><span class="idn" style="color:'+PAL[p].ink+'">'+esc(nm)+'</span>'
+     +t.pins[p].map(k=>'<span class="idcell '+lv(k,n-1)+'">'+k+'</span>').join('')+'</div>').join('')
+   +'</div>'
+   +'<p class="idhint">Per round: how many friends pinned that answer right (out of '+(n-1)+').</p>'
+   +'</div>'
+
+   +'<p class="datefoot">'+esc(today)+' · kreeda.games/alibi</p>'
+   +'<button class="btn primary" type="button" id="bAgain">Play again</button>'
+   +'<a class="btn wa" id="bWa" href="#" target="_blank" rel="noopener">'+WA_ICON+'Share on WhatsApp</a>'
+   +'<p class="sharehint">Send it to the group chat — everyone keeps the verdict.</p>'
+   +'<div class="btnrow"><button class="btn" type="button" id="bCopy">Copy result</button>'
+   +(navigator.share?'<button class="btn" type="button" id="bShare">Share…</button>':'')+'</div>'
+   +'<button class="btn ghost" type="button" id="bChange">Change players</button>'
+   +'<div id="shareSlot"></div>'
+   +'</div>'
+   +'<footer class="foot">Misreads aren’t mistakes — they’re the conversation.<br><a href="../">Kreeda</a></footer>'
+  );
+  const g=GEN, reduced=REDUCED();
+  /* the ring fills and its number counts up after first paint; the bars grow in the same beat.
+     Reduced motion (transitions killed by CSS) lands on the final state at once. */
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(g!==GEN) return;
+    document.querySelectorAll('.ring .fl').forEach(el=>{ el.style.strokeDashoffset=el.getAttribute('data-off'); });
+    document.querySelectorAll('.lbrow .seg').forEach(el=>{ el.style.width=el.getAttribute('data-w')+'%'; });
+    const nums=Array.prototype.slice.call(document.querySelectorAll('.ring .rv b'));
+    if(reduced){ nums.forEach(b=>{ b.textContent=b.getAttribute('data-n'); }); return; }
+    const t0=performance.now(), D=1100;
+    /* clocked off performance.now(), not the frame timestamp, so a backgrounded tab still lands
+       on the final figure */
+    (function step(){
+      if(g!==GEN) return;
+      const k=Math.min(1,(performance.now()-t0)/D), e=1-Math.pow(1-k,3);
+      nums.forEach(b=>{ b.textContent=Math.round(+b.getAttribute('data-n')*e); });
+      if(k<1) requestAnimationFrame(step);
+    })();
+  }));
+  on('bAgain',()=>{ completeSent=false; newSession(S.names);
+    track('game_start',{player_count:S.n, rounds:S.R}); writeScreen(); });
+  on('bChange',()=>{ completeSent=false; S=null; title(); });
+  /* sharing is the players' own explicit act, so unlike analytics it may quote the one answer */
+  const text=shareText(t,v,best,today);
+  const wa=document.getElementById('bWa');
+  wa.href=waLink(text);
+  wa.addEventListener('click',()=>track('share',{via:'whatsapp'}));
+  on('bShare',()=>{ track('share',{via:'system'});
+    try{ navigator.share({title:'Who Said That — '+S.n+' friends', text:text}).catch(()=>{}); }catch(e){} });
+  on('bCopy',()=>{
+    let done=false;
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(()=>toast('Copied!'),()=>showShareBox(text));
+        done=true;
+      }
+    }catch(e){}
+    if(!done) showShareBox(text);   // clipboard is unavailable on file:// — show it to copy by hand
+  });
+}
+
+/* ============================ share ============================
+   The verdict in WhatsApp's own markup: the accuracy figure, one emoji-block row per player
+   (🟩 detective hits · 🟨 fools landed), the best-disguise quote, the date. Counts and one
+   quote — never the full transcript. */
+const WA_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.8-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.2-.2-.2-.5-.4z"/></svg>';
+function waLink(text){ return 'https://wa.me/?text='+encodeURIComponent(text); }
+function shareText(t,v,best,today){
+  const blocks=(k,e)=>e.repeat(Math.min(k,14))+(k>14?'+':'');
+  const order=S.names.map((nm,p)=>p).sort((a,b)=>(t.det[b]+t.cham[b])-(t.det[a]+t.cham[a]));
+  const lines=[
+    '*Who Said That* · '+S.n+' friends · '+S.R+' prompts',
+    '_'+v[0]+'_ — '+v[1],
+    '',
+    '🎯 The circle’s read: *'+t.acc+'%* pinned right',
+    ''
+  ];
+  order.forEach(p=>{
+    const d=t.det[p], c=t.cham[p];
+    lines.push(S.names[p]+' · 🕵️'+d+' 🦎'+c);
+    lines.push((blocks(d,'🟩')+blocks(c,'🟨'))||'⬛');
+  });
+  if(best) lines.push('','🎭 “'+best.text+'” — '+S.names[best.a]+', fooled '+best.f+' of '+best.of);
+  lines.push('',today+' · kreeda.games/alibi');
+  return lines.join('\n');
+}
+function showShareBox(text){
+  const slot=document.getElementById('shareSlot');
+  if(!slot) return;
+  slot.innerHTML='<textarea class="sharebox" rows="7" readonly aria-label="Result text to copy manually"></textarea>';
+  const ta=slot.querySelector('textarea'); ta.value=text;
+  ta.focus(); try{ ta.select(); }catch(e){}
+  toast('Copy it from the box below');
+}
+
+/* ============================ boot self-test ============================
+   Cheap invariants that would otherwise only fail in a player's hands. Runs once, warns only. */
+(function audit(){
+  try{
+    if(PROMPTS.length<45) console.warn('alibi: prompt bank has only '+PROMPTS.length+' prompts');
+    PROMPTS.forEach((q,i)=>{
+      if(typeof q!=='string'||!q.trim()||q.length>64) console.warn('alibi: bad prompt at '+i);
+    });
+    if(new Set(PROMPTS).size!==PROMPTS.length) console.warn('alibi: duplicate prompts in bank');
+    if(PAL.length!==MAX_P) console.warn('alibi: palette has '+PAL.length+' hues, need '+MAX_P);
+    if(LTRS.length<MAX_P) console.warn('alibi: not enough letters for '+MAX_P+' answers');
+    if(Math.max.apply(null,ROUND_OPTS)>PROMPTS.length) console.warn('alibi: rounds exceed bank');
+  }catch(e){}
+})();
+
+title();
+</script>
+</body>
+</html>

@@ -44,7 +44,26 @@ Five psychology games for **two people on one phone**. All five share one mechan
 | [Deep Talk](fathom/index.html) | The closeness dive. A guided descent through three depths of questions answered out loud — Surface, Below, Deep — with two swap tokens each and a "surface for air" break between depths. Before and after, each player privately picks the pair of overlapping circles that feels like the two of you; the ending shows how much closer you surfaced than you began. | [kreeda.games/fathom](https://kreeda.games/fathom/) |
 | [Share or Take](split/index.html) | Trust as a playing field. Ten hidden rounds of Share or Take (3/3 · 1/1 · 5/0), with double- and triple-stakes event rounds and a delayed-reveal silent round. The score says who won; the mirror at the end says how you each played — cooperation, retaliation, forgiveness, endgame — and names both archetypes. | [kreeda.games/split](https://kreeda.games/split/) |
 
-All twenty are also playable offline straight from the file system — clone the repo and open any `<game>/index.html` directly, no server required.
+### Friends circle
+
+Seven group games for **3–8 friends on one phone** — the two-player family's mechanics, rebuilt for a
+whole room: the same hidden-input loop (hand-off screen, private answer, reveal only when everyone has
+committed), but the interesting object is no longer a pair's score — it's the **group**: who knows whom,
+who thinks with the room, who fools it, what only this circle remembers. Every reveal is
+infographics-first — rings, matrices, bars, superlatives, a title for every player — and every results
+page shares to WhatsApp. Answers stay on the phone; analytics gets counts, never content.
+
+| Game | Description | Play |
+|---|---|---|
+| [Circle Quiz](circle/index.html) | Duo Quiz for the whole circle. One friend in the spotlight at a time — they secretly answer questions about themselves, everyone else secretly predicts. Mini-reveals keep the energy up; the finale is the **knowledge matrix** of the friend group: an N×N heatmap of who reads whom, Best Reader per player, Mind Reader, Open Book, Enigma and Closest Pair titles. | [kreeda.games/circle](https://kreeda.games/circle/) |
+| [Group Blind Spots](prism/index.html) | The consensus Johari Window. One friend at a time picks six words for themselves; every other friend independently picks six for them. One person's "stubborn" is an opinion — five people choosing it independently is a portrait. The reveal weights every pane's words by vote count, crowns the clearest-eyed rater and the kindest eye, and draws self vs group-average Big Five. | [kreeda.games/prism](https://kreeda.games/prism/) |
+| [Who Said That](alibi/index.html) | Anonymous honesty. Everyone secretly answers the same prompt; the answers come back shuffled; the group pins each answer to its author. Detective points for correct attributions, chameleon points for fooling the room — people write truer things when the reveal is a guess, not a spotlight. | [kreeda.games/alibi](https://kreeda.games/alibi/) |
+| [Herd Mind](herd/index.html) | Think WITH the room. Everyone secretly answers the same prompt trying to match the majority — land in the biggest cluster and score, stand alone and wear the 🐑. The zero-vulnerability warm-up of the family: fast, loud, funny, with a hive-mind ring and a lovingly framed Black Sheep title. | [kreeda.games/herd](https://kreeda.games/herd/) |
+| [Impressions](alter/index.html) | Answer as your friend — and let them grade the impression. A casting rotation gives everyone one role and one impersonator; three questions answered as the target, then answered truthfully by them. The centerpiece is the casting circle: arrows around the group, each labeled with how uncanny the impression was. | [kreeda.games/alter](https://kreeda.games/alter/) |
+| [Memory Lane](lore/index.html) | The trivia game only your group can play, because you write it about yourselves. Each friend secretly writes one question about the group's shared history — real answer plus two decoys — and everyone else plays it as a quiz. Group Historian, Best Stumper, and the core memory everyone still gets right. | [kreeda.games/lore](https://kreeda.games/lore/) |
+| [Time Capsule](capsule/index.html) | Seal tonight's predictions about each other; open them at the next reunion. Who's most likely to move cities, go viral, be late? A sealed capsule persists in this phone's localStorage (disclosed in-game — the family's one deliberate exception to answers-never-touch-disk), with a backup code for a second phone, a countdown to the open date, and a prophecy-score reveal when the day comes. | [kreeda.games/capsule](https://kreeda.games/capsule/) |
+
+Every game here is also playable offline straight from the file system — clone the repo and open any `<game>/index.html` directly, no server required.
 
 ## Running a game
 

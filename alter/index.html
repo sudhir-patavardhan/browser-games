@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Impressions — Kreeda</title>
+<meta name="description" content="Answer as your friend — and let them grade the impression. 3–8 players, one phone: everyone plays the next person in the circle for three questions, the real person answers the same three, and the room sees impression vs reality, arrow by arrow.">
+<link rel="canonical" href="https://kreeda.games/alter/">
+<meta name="theme-color" content="#181119">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/alter/">
+<meta property="og:title" content="Impressions — Kreeda">
+<meta property="og:description" content="Answer as your friend — and let them grade the impression. 3–8 players, one phone, a casting circle, and a reveal that shows impression vs reality.">
+<meta property="og:image" content="https://kreeda.games/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Impressions — Kreeda">
+<meta name="twitter:description" content="Answer as your friend — and let them grade the impression. 3–8 players, one phone.">
+<meta name="twitter:image" content="https://kreeda.games/og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Impressions","description":"Answer as your friend — and let them grade the impression. 3–8 players, one phone: everyone plays the next person in the circle for three questions, the real person answers the same three, and the room sees impression vs reality.","url":"https://kreeda.games/alter/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+<style>
+/* ============================ tokens ============================
+   Backstage velvet: the dark of a small theatre just before the lights come up. This game is a
+   round of amateur dramatics — everyone plays somebody — so the ground is a curtain-dark plum,
+   the accent is spotlight gold, and each player keeps one fixed hue from an 8-colour cast list
+   (set in JS as PC/PINK, threaded inline) so ownership never needs a label twice. One committed
+   dark look: the hand-off ritual reads as "private", and a theme flip mid-show would be a
+   dropped prop. */
+:root{
+  --ground:#181119;  --ground-2:#241729;
+  --panel:#251b28;   --panel-2:#2f2233;  --rule:rgba(240,220,250,.15);
+  --ink:#f5eef6;     --ink-dim:#ab9cae;
+  --spot:#ffd166;    --spot-soft:rgba(255,209,102,.14);
+  --rose:#ff6b9d;
+  --ok:#57d9a3;      --ok-soft:rgba(87,217,163,.14);
+  --no:#ff8c7a;      --no-soft:rgba(255,140,122,.12);
+  --shade:rgba(11,6,13,.74);
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  /* explicit background is mandatory: a transparent body would borrow the host's theme */
+  background:
+    radial-gradient(110% 55% at 24% -8%, rgba(255,209,102,.10) 0%, transparent 55%),
+    radial-gradient(110% 55% at 82% -6%, rgba(255,107,157,.10) 0%, transparent 52%),
+    linear-gradient(180deg, var(--ground-2) 0%, var(--ground) 40%, #100a12 100%);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{ max-width:540px; margin:0 auto;
+  padding: max(14px, env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
+
+button{ font:inherit; color:inherit; cursor:pointer; }
+button:focus-visible, input:focus-visible, summary:focus-visible{
+  outline:3px solid var(--spot); outline-offset:2px; }
+
+/* ============================ shared chrome ============================ */
+.top{ display:flex; align-items:center; gap:10px; margin:2px 0 12px; min-height:44px; }
+.wordmark{ display:flex; align-items:center; gap:9px; }
+.wordmark svg{ width:34px; height:34px; flex:none; }
+.wordmark b{ font-size:21px; font-weight:900; letter-spacing:1px; }
+.wordmark small{ display:block; font-size:10px; font-weight:700; letter-spacing:2.6px;
+  text-transform:uppercase; color:var(--ink-dim); }
+.homebtn{ margin-left:auto; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
+  min-width:44px; min-height:44px; padding:8px 12px; font-size:13px; font-weight:800; color:var(--ink-dim); }
+.soundbtn{ margin-left:auto; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
+  min-width:44px; min-height:44px; padding:8px 10px; font-size:17px; line-height:1; }
+.soundbtn + .homebtn{ margin-left:0; }
+
+.card{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:18px 16px; }
+.btn{
+  display:block; width:100%; min-height:52px; padding:14px 16px; margin-top:10px;
+  background:var(--panel-2); border:1px solid var(--rule); border-radius:14px;
+  font-size:16px; font-weight:800; letter-spacing:.2px; text-align:center;
+  transition:transform .1s ease, background .15s ease;
+}
+.btn:active{ transform:scale(.985); }
+.btn.primary{ background:linear-gradient(100deg, #b3437a 0%, #7d3fb0 55%, #4b3fb0 130%);
+  border-color:transparent; color:#fff; box-shadow:0 8px 24px rgba(150,63,160,.35); }
+.btn.ghost{ background:transparent; border-color:var(--rule); color:var(--ink-dim); font-weight:700; }
+.btn[disabled]{ opacity:.45; cursor:default; }
+.btnrow{ display:flex; gap:10px; }
+.btnrow .btn{ flex:1; }
+
+.dim{ color:var(--ink-dim); }
+
+/* ============================ title ============================ */
+.hero{ text-align:center; margin:20px 0 16px; }
+.hero svg{ width:128px; height:78px; }
+.hero h1{ font-size:42px; font-weight:900; letter-spacing:3px; margin:6px 0 4px;
+  background:linear-gradient(95deg, var(--spot), var(--rose)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.hero p{ margin:0; font-size:15px; color:var(--ink-dim); font-weight:600; line-height:1.45; }
+
+.castlabel{ font-size:11px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase;
+  color:var(--ink-dim); margin:0 0 8px 2px; }
+.prow{ display:flex; align-items:center; gap:9px; margin-top:8px; }
+.prow .dot{ width:14px; height:14px; border-radius:5px; flex:none; }
+.prow input{ flex:1; min-width:0; font:inherit; font-size:16px; font-weight:700;   /* 16px or iOS zooms */
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:11px 12px; min-height:48px; }
+.prow .rm{ flex:none; width:44px; min-height:44px; background:transparent; border:1px solid var(--rule);
+  border-radius:11px; color:var(--ink-dim); font-size:17px; font-weight:800; }
+.addbtn{ margin-top:10px; width:100%; min-height:48px; background:transparent; border:1.5px dashed var(--rule);
+  border-radius:12px; color:var(--ink-dim); font-size:14px; font-weight:800; }
+
+details.how{ margin-top:14px; border:1px solid var(--rule); border-radius:14px;
+  background:var(--panel); padding:0 14px; }
+details.how summary{ cursor:pointer; font-size:14px; font-weight:800; padding:13px 0;
+  min-height:44px; list-style:none; display:flex; align-items:center; gap:8px; }
+details.how summary::-webkit-details-marker{ display:none; }
+details.how summary::before{ content:'▸'; color:var(--ink-dim); transition:transform .15s ease; }
+details.how[open] summary::before{ transform:rotate(90deg); }
+details.how ul{ margin:0 0 14px; padding-left:20px; font-size:13.5px; line-height:1.65;
+  color:var(--ink-dim); }
+details.how li b{ color:var(--ink); }
+
+.foot{ margin-top:20px; text-align:center; font-size:11px; line-height:1.7; color:var(--ink-dim); }
+.foot a{ color:var(--ink-dim); }
+
+/* ============================ casting pre-screen ============================ */
+.castcard{ text-align:center; padding:16px 12px; }
+.castcard h2{ margin:2px 0 2px; font-size:22px; font-weight:900; letter-spacing:2px;
+  background:linear-gradient(95deg, var(--spot), var(--rose)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.castcard .sub{ margin:0 0 4px; font-size:13px; color:var(--ink-dim); font-weight:600; }
+.castsvg{ width:100%; max-width:400px; height:auto; margin:0 auto; display:block; }
+.castlist{ margin-top:6px; text-align:center; }
+.castlist .cl{ font-size:14.5px; font-weight:700; padding:4px 0; }
+.castlist .cl .as{ color:var(--ink-dim); font-weight:600; padding:0 6px; }
+
+/* ============================ hand-off ============================ */
+.handoff{ min-height:76vh; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; text-align:center; padding:20px 6px; }
+.handoff .pass{ font-size:13px; font-weight:800; letter-spacing:2.4px; text-transform:uppercase;
+  color:var(--ink-dim); }
+.handoff h2{ font-size:36px; font-weight:900; margin:12px 0 6px; overflow-wrap:anywhere; }
+.handoff .sub{ font-size:15px; color:var(--ink-dim); margin:0 0 26px; line-height:1.5; }
+.handoff .btn{ max-width:340px; }
+.handoff .peek{ margin-top:22px; font-size:12.5px; color:var(--ink-dim); }
+@media (prefers-reduced-motion:no-preference){
+  .handoff h2{ animation:heartbeat 1.6s ease-in-out infinite; }
+  @keyframes heartbeat{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.03);} }
+}
+
+/* ============================ answering sheets ============================
+   The sheet carries the current pair's colour as CSS vars (--pc / --pc-soft / --pc-ink), set
+   inline by JS, so option states and banners follow the TARGET's hue without a class per player. */
+.turn{ display:flex; align-items:center; gap:10px; background:var(--panel-2); border:1px solid var(--rule);
+  border-radius:13px; padding:10px 12px; margin-bottom:12px; font-size:13px; line-height:1.4; }
+.turn .eye{ font-size:20px; flex:none; }
+
+.role{ background:var(--pc-soft); border:1px solid var(--pc); border-radius:18px;
+  padding:14px 16px 13px; margin-bottom:12px; text-align:center; }
+.role .tag{ font-size:10.5px; font-weight:900; letter-spacing:2px; text-transform:uppercase;
+  color:var(--ink-dim); }
+.role h2{ margin:3px 0 3px; font-size:30px; font-weight:900; color:var(--pc-ink); overflow-wrap:anywhere; }
+.role p{ margin:0; font-size:13.5px; color:var(--ink-dim); line-height:1.5; }
+.role .nudge{ margin-top:8px; font-size:12.5px; font-style:italic; color:var(--pc-ink); line-height:1.45; }
+
+.qcard{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:14px 14px 12px;
+  margin-top:10px; scroll-margin-top:12px; }
+.qcard .qhead{ display:flex; gap:9px; align-items:flex-start; margin-bottom:8px; }
+.qcard .qn{ flex:none; width:24px; height:24px; border-radius:99px; background:var(--panel-2); margin-top:2px;
+  font-size:11.5px; font-weight:900; display:flex; align-items:center; justify-content:center;
+  color:var(--ink-dim); transition:background .2s ease, color .2s ease; }
+.qcard.done .qn{ background:var(--pc-soft); color:var(--pc-ink); box-shadow:inset 0 0 0 1.5px var(--pc); }
+.qtext{ flex:1; font-size:18px; font-weight:900; line-height:1.3; margin:0; }
+.opt{ display:block; width:100%; text-align:left; min-height:48px; padding:11px 13px; margin-top:7px;
+  background:var(--panel-2); border:1px solid var(--rule); border-radius:12px;
+  font-size:15px; font-weight:700; line-height:1.3; overflow-wrap:anywhere;
+  transition:background .15s ease, box-shadow .15s ease, transform .1s ease; }
+.opt:active{ transform:scale(.985); }
+.opt[aria-pressed="true"]{ background:var(--pc-soft); box-shadow:inset 0 0 0 1.5px var(--pc); color:#fff; }
+@media (prefers-reduced-motion:no-preference){
+  .qcard.flash{ animation:flash .9s ease; }
+  @keyframes flash{ 0%,100%{ box-shadow:none; } 30%{ box-shadow:0 0 0 3px var(--spot); } }
+}
+
+.lockbar{ position:sticky; bottom:0; z-index:5; padding:14px 0 calc(6px + env(safe-area-inset-bottom));
+  margin-top:6px; background:linear-gradient(180deg, transparent 0%, var(--ground) 38%); }
+.lockbar .btn{ margin-top:0; }
+
+/* ============================ pair reveal & finale ============================ */
+.results h2{ font-size:15px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--ink-dim); text-align:center; margin:4px 0 10px; }
+.roomline{ text-align:center; font-size:12.5px; color:var(--ink-dim); margin:-4px 0 10px; }
+
+.info{ text-align:center; padding:16px 10px 16px; }
+.ring{ position:relative; display:inline-flex; flex-direction:column; align-items:center; min-width:0; }
+.ring svg{ width:104px; height:104px; transform:rotate(-90deg); }
+.ring .tr{ fill:none; stroke:var(--panel-2); stroke-width:10; }
+.ring .fl{ fill:none; stroke-width:10; stroke-linecap:round;
+  transition:stroke-dashoffset 1.2s cubic-bezier(.2,.7,.2,1); }
+.ring .rv{ position:absolute; top:0; left:0; width:100%; height:104px; display:flex; align-items:center;
+  justify-content:center; font-weight:900; font-size:24px; line-height:1; }
+.ring .rv i{ font-style:normal; font-size:.55em; opacity:.7; margin-left:1px; }
+.ring .rl{ margin-top:5px; font-size:11.5px; font-weight:800; color:var(--ink-dim); line-height:1.25;
+  overflow-wrap:anywhere; }
+.ring .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+.ring.big{ display:flex; margin:0 auto; }
+.ring.big svg{ width:156px; height:156px; }
+.ring.big .rv{ height:156px; font-size:44px; }
+.ring.big .rl{ font-size:13px; color:var(--ink); margin-top:2px; }
+.verdict{ margin-top:14px; }
+.verdict b{ display:block; font-size:26px; font-weight:900; line-height:1.15;
+  background:linear-gradient(95deg, var(--spot), var(--rose)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.verdict span{ display:block; margin-top:4px; font-size:13px; color:var(--ink-dim); line-height:1.45; }
+
+/* impression vs reality rows — the pair reveal and the finale recap share these */
+.vrow{ padding:11px 0 10px; border-top:1px solid var(--rule); }
+.vrow:first-child{ border-top:0; padding-top:2px; }
+.vrow .vq{ font-size:13.5px; font-weight:800; line-height:1.35; margin:0 0 7px; }
+.vrow .vs{ display:flex; gap:8px; align-items:stretch; }
+.vrow .vc{ flex:1; min-width:0; border-radius:11px; padding:7px 10px 8px; }
+.vrow .vc .who{ font-size:9.5px; font-weight:900; letter-spacing:.8px; text-transform:uppercase;
+  margin-bottom:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.vrow .vc .said{ font-size:13.5px; font-weight:800; line-height:1.3; overflow-wrap:anywhere; }
+.vrow .m{ flex:none; align-self:center; width:22px; font-size:17px; font-weight:900; text-align:center; }
+.m.hit{ color:var(--ok); } .m.miss{ color:var(--no); }
+
+/* the casting circle — finale centerpiece */
+.circlecard{ padding:14px 8px 12px; text-align:center; }
+.circlecard h3{ margin:0 0 2px; font-size:14px; font-weight:900; letter-spacing:1.4px; text-transform:uppercase; }
+.circlecard .sub{ margin:0; font-size:12px; color:var(--ink-dim); }
+.circlecard svg{ width:100%; max-width:400px; height:auto; display:block; margin:0 auto; }
+.circlecard .lg{ font-size:11px; color:var(--ink-dim); margin:2px 0 0; }
+
+/* one-line callouts */
+.glance{ margin-top:12px; padding:12px 14px; }
+.gl{ display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-top:1px solid var(--rule);
+  font-size:13.5px; line-height:1.45; }
+.gl:first-child{ border-top:0; padding-top:0; } .gl:last-child{ padding-bottom:0; }
+.gl .gi{ flex:none; width:26px; text-align:center; font-size:18px; line-height:1.15; }
+.gl b{ font-weight:900; }
+.gl .lb{ font-weight:900; letter-spacing:.8px; text-transform:uppercase; font-size:10.5px; margin-right:5px;
+  color:var(--spot); }
+
+/* the pair scoreboard: one row per arrow, three squares (square i = question i) */
+.scorecard{ margin-top:12px; padding:14px 14px 12px; }
+.srow{ display:flex; align-items:center; gap:8px; margin-top:8px; }
+.srow:first-child{ margin-top:0; }
+.srow .sl{ flex:1; min-width:0; font-size:12px; font-weight:800; line-height:1.25;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.srow .sl .ar{ color:var(--ink-dim); font-weight:700; padding:0 3px; }
+.srow .sq{ flex:none; display:flex; gap:4px; }
+.srow .sq i{ width:24px; height:20px; border-radius:5px; background:var(--panel-2); display:block; }
+.srow .sq i.on{ background:var(--ok); }
+.srow .sn{ flex:none; width:34px; text-align:right; font-size:14px; font-weight:900; }
+@media (prefers-reduced-motion:no-preference){
+  .srow .sq i.on{ animation:pop .35s ease backwards; }
+  @keyframes pop{ from{ transform:scale(.4); opacity:.3; } to{ transform:none; opacity:1; } }
+}
+
+.sect{ margin:22px 0 8px; }
+.sect h3{ margin:0; font-size:14px; font-weight:900; letter-spacing:1.4px; text-transform:uppercase; }
+.sect span{ display:block; font-size:12px; color:var(--ink-dim); margin-top:2px; }
+.paircard{ background:var(--panel); border:1px solid var(--rule); border-radius:14px; padding:12px 12px 8px;
+  margin-top:9px; }
+.paircard .ph{ display:flex; align-items:baseline; gap:8px; margin-bottom:8px; }
+.paircard .ph .t{ flex:1; min-width:0; font-size:14.5px; font-weight:900; overflow-wrap:anywhere; }
+.paircard .ph .s{ flex:none; font-size:13px; font-weight:900; }
+
+.datefoot{ text-align:center; font-size:11.5px; color:var(--ink-dim); margin-top:14px; }
+.sharebox{ width:100%; margin-top:10px; font-size:13px; line-height:1.5;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:10px; resize:none; }
+
+/* staggered arrivals on reveal pages */
+@media (prefers-reduced-motion:no-preference){
+  .rise{ opacity:0; transform:translateY(10px); animation:riseIn .4s ease forwards; }
+  @keyframes riseIn{ to{ opacity:1; transform:none; } }
+  .castsvg .arr, .castsvg .pctl{ animation:fadeArr .5s ease backwards; }
+  @keyframes fadeArr{ from{ opacity:0; } }
+}
+
+/* toast + confirm modal */
+.toast{ position:fixed; left:50%; bottom:calc(26px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(8px); background:var(--panel-2); color:var(--ink);
+  border:1px solid var(--rule); border-radius:12px; padding:11px 18px; font-size:14px;
+  font-weight:800; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:90;
+  box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:88vw; text-align:center; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+.scrim{ position:fixed; inset:0; background:var(--shade); z-index:70; display:none;
+  align-items:center; justify-content:center; padding:20px; }
+.scrim.show{ display:flex; }
+.confirmbox{ background:var(--panel); border:1px solid var(--rule); border-radius:18px;
+  padding:20px 18px; max-width:340px; width:100%; }
+.confirmbox h3{ margin:0 0 6px; font-size:18px; font-weight:900; }
+.confirmbox p{ margin:0 0 14px; font-size:13.5px; color:var(--ink-dim); line-height:1.5; }
+
+/* share: a WhatsApp link in WhatsApp's green, and a system share sheet where the browser has one */
+.btn.wa{ display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;
+  background:#25D366; color:#052e16; border-color:transparent; box-shadow:0 8px 24px rgba(37,211,102,.25); }
+.btn.wa svg{ width:20px; height:20px; flex:none; }
+.sharehint{ font-size:12px; color:var(--ink-dim); text-align:center; margin:6px 0 0; line-height:1.45; }
+
+@media (prefers-reduced-motion:reduce){
+  *{ animation:none !important; transition:none !important; }
+  .rise{ opacity:1; transform:none; }
+  .castsvg .arr, .castsvg .pctl{ opacity:1; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="scrim" id="scrim">
+  <div class="confirmbox" role="alertdialog" aria-modal="true" aria-labelledby="cfTitle" aria-describedby="cfBody">
+    <h3 id="cfTitle">Leave this show?</h3>
+    <p id="cfBody">The round in progress will be discarded. Answers are never saved anywhere.</p>
+    <button class="btn primary" type="button" id="cfYes">Leave</button>
+    <button class="btn ghost" type="button" id="cfNo">Keep playing</button>
+  </div>
+</div>
+
+<!-- analytics.js before the game script: track() below fires synchronously and would otherwise
+     race the tag load and vanish. -->
+<script src="../analytics.js"></script>
+<script>
+'use strict';
+/* ============================================================================================
+   IMPRESSIONS — answer as your friend, and let them grade the impression. 3–8 players, one
+   phone. The casting is a rotation: player i plays player i+1, so everyone impersonates exactly
+   once and is impersonated exactly once. Each pair gets three questions: the impersonator taps
+   answers AS the target, then the target answers the same three truthfully, and the pair's
+   mini-reveal puts impression and reality side by side. After the full circle: one reveal page
+   led by the casting-circle graphic — every arrow labelled with how close it got.
+
+   Privacy is a design constraint, not a feature flag: all answers live in one in-memory session
+   object (S) and NOTHING else. localStorage holds only names, a sound preference and a play
+   counter (all "alter."-prefixed). Analytics gets counts, never content. A refresh mid-game
+   loses the round by design — cheaper than answers ever touching disk.
+   ============================================================================================ */
+
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+
+/* Seeded PRNG so a session's draw is deterministic given its seed while each new session still
+   gets a fresh one. */
+function mulberry32(a){ return function(){ a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a);
+  t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+
+function esc(s){ return String(s).replace(/[&<>"']/g,
+  c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============================ the cast palette ============================
+   Eight fixed hues; player i keeps PC[i] everywhere — name rows, role banners, chips, the
+   casting circle. PINK[i] is the readable tint of the same hue for text on the dark ground. */
+const PC  =['#ff6b9d','#7c5cff','#2bb3a3','#ffb020','#57d9a3','#5aa9ff','#ff8c5a','#d977e8'];
+const PINK=['#ffb3cb','#c9b8ff','#9fe8df','#ffd98a','#a8ecd0','#a9d0ff','#ffc4a8','#eebbf5'];
+function soft(i,a){ const h=PC[i], r=parseInt(h.slice(1,3),16), g=parseInt(h.slice(3,5),16),
+  b=parseInt(h.slice(5,7),16); return 'rgba('+r+','+g+','+b+','+(a||0.16)+')'; }
+/* accuracy 0..3 → colour, cold miss to warm hit */
+const SCOL=['#ff8c7a','#ffb37a','#ffd166','#57d9a3'];
+
+/* ============================ question bank ============================
+   40 original person-centric questions. There is no correct answer, only a true one — every
+   question is answerable ABOUT a person: habits, instincts, tastes, reactions. Options are
+   short enough to sit as one-line tap rows. A session deals 3 per pair (max 8 pairs = 24). */
+const QPP=3;   // questions per pair
+const BANK=[
+ {q:"The group can’t decide where to eat. You…", o:["Had a place in mind all along","Are fine with anything, truly","Veto until one survives","Start a poll"]},
+ {q:"Your alarm goes off. The honest truth:", o:["Up on the first ring","One snooze, always","Snooze until actual danger","What alarm — I just wake"]},
+ {q:"A spider appears on the wall. You…", o:["Catch and release it","End it, no ceremony","Call for backup","Name it and move on"]},
+ {q:"You find cash in an old jacket. It’s…", o:["Spent within the hour","Straight into savings","Everyone’s dinner tonight","Lost again by Tuesday"]},
+ {q:"The wifi dies for a whole evening. You feel…", o:["Secretly relieved","Mildly feral","Fine — hotspot exists","Ready to read a real book"]},
+ {q:"Someone cooks you a bad meal, with love. You…", o:["Finish every bite","Push it around politely","Gently confess","Season it in secret"]},
+ {q:"Your ideal party exit:", o:["Long goodbyes to everyone","Vanish without a word","Last one standing","Left early, texting from bed"]},
+ {q:"A friend is 40 minutes late. You’ve…", o:["Already ordered","Texted three times","Been later before, so fine","Honestly left"]},
+ {q:"New gadget, fresh out of the box. You…", o:["Read the manual first","Wing it entirely","Watch a video about it","Hand it to someone else"]},
+ {q:"Rain cancels the plan. Inside, you feel…", o:["Genuinely crushed","Quietly delighted","Already replanning","Asleep within the hour"]},
+ {q:"The dessert menu lands. You…", o:["Knew your order at the door","Split something, always","Take one bite of theirs","Skip it — truly"]},
+ {q:"A stranger’s dog approaches. You…", o:["Drop everything to greet it","Ask before petting","Admire from a distance","Sidestep it smoothly"]},
+ {q:"Someone spoils a show you love.", o:["Genuine grief","Couldn’t care less","Watch it anyway tonight","A slow revenge begins"]},
+ {q:"Board game night turns competitive. You…", o:["Started it","Play to win, quietly","Are here for the snacks","Keep the peace"]},
+ {q:"You’re handed the aux cord. First feeling:", o:["Power","Pressure","Panic","The playlist was ready"]},
+ {q:"Vacation style:", o:["Itinerary by the hour","One plan a day","Zero plans, pure drift","Wherever the group goes"]},
+ {q:"Your notification badges are…", o:["Zero, always","Under ten","In the hundreds","Turned off entirely"]},
+ {q:"Midnight snack of choice:", o:["Something sweet","Something salty","Cold leftovers","Sleep is the snack"]},
+ {q:"You trip in public. You…", o:["Laugh the loudest","Style it out","Scan for witnesses","Replay it for weeks"]},
+ {q:"A haircut goes wrong. You…", o:["Say it’s fine, grieve later","Ask for a fix right there","Begin the hat era","Wouldn’t notice, honestly"]},
+ {q:"Someone compliments your outfit. You…", o:["Say “this old thing?”","Give the full breakdown","Glow for the whole day","Get a little suspicious"]},
+ {q:"Grocery shopping style:", o:["A list, strictly obeyed","A list, loosely ignored","Vibes and hunger","The same 12 items forever"]},
+ {q:"You get a gift you hate. Your face…", o:["Performs award-level joy","Flickers, just once","Asks “what… is it?”","They’d never, ever know"]},
+ {q:"Your wedding toast would be…", o:["Rehearsed for weeks","Improvised and perfect","Short and teary","Politely declined"]},
+ {q:"Flat-pack furniture time. You…", o:["Follow steps like scripture","Freestyle, extra screws","Delegate immediately","Secretly love it"]},
+ {q:"Someone says “we need to talk.” You…", o:["Assume the worst instantly","Assume nothing","Rehearse every scenario","Say “so talk” and wait"]},
+ {q:"Your umbrella situation:", o:["Always have one","Never have one","Own several, carry none","I simply get wet"]},
+ {q:"First on the dance floor:", o:["My natural habitat","After exactly one song","Only in a group","Never happening"]},
+ {q:"Quiz question you don’t know. You…", o:["Guess with full confidence","Pass immediately","Think out loud","Bluff an explanation"]},
+ {q:"Leftovers in your fridge are…", o:["Tomorrow’s lunch, labelled","Gone by midnight","Future science projects","Shared property, apparently"]},
+ {q:"Surprise guests at the door. You…", o:["Fling it open — welcome!","Panic-clean for 20 minutes","Go very, very quiet","Meet them outside"]},
+ {q:"On a group trip, you’re carrying…", o:["Snacks for everyone","The first-aid kit","The whole itinerary","Just the vibes"]},
+ {q:"The bill arrives. You…", o:["Grab it first","Split it to the last coin","Do the math for the table","Reach for it… slowly"]},
+ {q:"Your browser tabs right now:", o:["Under five, tidy","Dozens, sorted chaos","Hundreds — don’t judge","One. Always one."]},
+ {q:"Plants under your care tend to…", o:["Thrive","Survive, barely","Be plastic","Enter hospice"]},
+ {q:"Ten minutes into a long queue. You…", o:["Chat with strangers","Stand in silent peace","Quietly narrate complaints","Give up and leave"]},
+ {q:"A song you love comes on in public. You…", o:["Sing, audibly","Mouth every word","Nod, internally on fire","Note it down — again"]},
+ {q:"Making plans, you’re the friend who…", o:["Suggests the thing","Books the thing","Shows up to the thing","Cancels the thing, sorry"]},
+ {q:"You lose your phone in the house. You…", o:["Retrace your steps calmly","Ring it instantly","Accuse the household","Find it in your hand"]},
+ {q:"Hungry, with nothing decided. You become…", o:["A menu researcher","A cupboard improviser","Dramatically weak","Someone else’s problem"]}
+];
+
+/* ============================ state ============================
+   S is the whole show and lives only in memory. imp/tru are option indexes, -1 = unanswered.
+   Pair k = (impersonator k, target (k+1)%N). Every transition goes through show(), which wipes
+   the DOM — a previous player's taps cannot survive into a hand-off even for one frame. */
+let S=null;
+function newSession(){
+  const N=names.length;
+  const rnd=mulberry32((Date.now() ^ (Math.random()*0xffffffff))>>>0);
+  const deck=BANK.slice();
+  for(let i=deck.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=deck[i]; deck[i]=deck[j]; deck[j]=t; }
+  S={ names:names.slice(), N:N,
+      qs:[], imp:[], tru:[] };
+  for(let k=0;k<N;k++){
+    S.qs.push(deck.slice(k*QPP,(k+1)*QPP));
+    S.imp.push([-1,-1,-1]); S.tru.push([-1,-1,-1]);
+  }
+}
+const tgt=k=>(k+1)%S.N;
+function pairScore(k){ let n=0; for(let i=0;i<QPP;i++) if(S.imp[k][i]===S.tru[k][i]) n++; return n; }
+function allScores(){ const a=[]; for(let k=0;k<S.N;k++) a.push(pairScore(k)); return a; }
+
+let names=['','',''];
+try{ const n=JSON.parse(LS.get('alter.names')||'[]');
+  if(Array.isArray(n)&&n.length>=3&&n.length<=8) names=n.map(x=>String(x).slice(0,12)); }catch(e){}
+
+/* ============================ rendering core ============================
+   One container, innerHTML replaced wholesale per screen. GEN is a render generation counter:
+   every handler captures the generation it was bound in and no-ops if a render has happened
+   since — the double-tap guard. A fast second tap on any advancing button finds either a
+   disabled button or a stale generation; it can never advance the state machine twice. */
+const app=document.getElementById('app');
+let GEN=0;
+function show(html){
+  GEN++; app.innerHTML=html;
+  try{ window.scrollTo({top:0,left:0,behavior:'instant'}); }catch(e){ window.scrollTo(0,0); }
+}
+function on(id,fn){
+  const g=GEN, el=document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('click',function(e){
+    if(g!==GEN || el.disabled) return;
+    el.disabled=true;
+    try{ fn(e); }finally{ if(g===GEN) el.disabled=false; }
+  });
+}
+
+/* two masks — the wordmark and the hero motif */
+const MARK='<svg viewBox="0 0 40 40" aria-hidden="true">'
+ +'<g transform="rotate(-10 15 20)"><ellipse cx="15" cy="20" rx="10" ry="13" fill="#ffd166"/>'
+ +'<ellipse cx="11.5" cy="16" rx="2.2" ry="2.8" fill="#181119"/><ellipse cx="18.5" cy="16" rx="2.2" ry="2.8" fill="#181119"/>'
+ +'<path d="M10.5 24 q4.5 4.5 9 0" fill="none" stroke="#181119" stroke-width="2" stroke-linecap="round"/></g>'
+ +'<g transform="rotate(10 26 20)"><ellipse cx="26" cy="21" rx="10" ry="13" fill="#ff6b9d"/>'
+ +'<ellipse cx="22.5" cy="17" rx="2.2" ry="2.8" fill="#181119"/><ellipse cx="29.5" cy="17" rx="2.2" ry="2.8" fill="#181119"/>'
+ +'<path d="M21.5 27.5 q4.5 -4 9 0" fill="none" stroke="#181119" stroke-width="2" stroke-linecap="round"/></g></svg>';
+const MOTIF='<svg viewBox="0 0 128 78" aria-hidden="true">'
+ +'<path d="M30 2 L52 66 L8 66 Z" fill="rgba(255,209,102,.12)"/>'
+ +'<path d="M98 2 L120 66 L76 66 Z" fill="rgba(255,107,157,.12)"/>'
+ +'<g transform="rotate(-8 48 40)"><ellipse cx="48" cy="40" rx="20" ry="26" fill="#ffd166"/>'
+ +'<ellipse cx="41" cy="32" rx="4" ry="5.5" fill="#181119"/><ellipse cx="55" cy="32" rx="4" ry="5.5" fill="#181119"/>'
+ +'<path d="M39 48 q9 9 18 0" fill="none" stroke="#181119" stroke-width="3.5" stroke-linecap="round"/></g>'
+ +'<g transform="rotate(8 82 42)"><ellipse cx="82" cy="42" rx="20" ry="26" fill="#ff6b9d"/>'
+ +'<ellipse cx="75" cy="34" rx="4" ry="5.5" fill="#181119"/><ellipse cx="89" cy="34" rx="4" ry="5.5" fill="#181119"/>'
+ +'<path d="M73 55 q9 -8 18 0" fill="none" stroke="#181119" stroke-width="3.5" stroke-linecap="round"/></g></svg>';
+
+function header(showHome){
+  return '<header class="top"><span class="wordmark">'+MARK+'<span><b>Impressions</b>'
+   +'<small>Kreeda · Group</small></span></span>'
+   +(showHome
+      ? '<button class="soundbtn" type="button" id="bSound" aria-pressed="'+SND.on+'" aria-label="Sound">'+(SND.on?'🔊':'🔇')+'</button>'
+        +'<button class="homebtn" type="button" id="bHome" aria-label="Leave game and return to start">Home</button>'
+      : '')
+   +'</header>';
+}
+function bindHome(){
+  on('bHome',()=>{ openConfirm(()=>{ S=null; title(); }); });
+  const sb=document.getElementById('bSound');
+  if(sb) sb.addEventListener('click',()=>setSound(!SND.on));
+}
+
+/* ============================ sound ============================
+   Two synthesized cues, no audio files: a soft tick on every pick and a swish when a pass
+   leaves the page. Context created on first tap (a user gesture, which iOS requires). */
+const SND={ ctx:null, noise:null, on:LS.get('alter.sound')!=='0' };
+function audio(){
+  if(!SND.on) return null;
+  if(!SND.ctx){ try{ SND.ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(SND.ctx.state==='suspended'){ try{ SND.ctx.resume(); }catch(e){} }
+  return SND.ctx;
+}
+function tick(){
+  const ac=audio(); if(!ac) return;
+  try{
+    const t=ac.currentTime, o=ac.createOscillator(), g=ac.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(880,t); o.frequency.exponentialRampToValueAtTime(1320,t+0.03);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.09,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t+0.08);
+  }catch(e){}
+}
+function swish(){
+  const ac=audio(); if(!ac) return;
+  try{
+    const dur=0.3, t=ac.currentTime;
+    if(!SND.noise){ const n=Math.floor(ac.sampleRate*0.5), b=ac.createBuffer(1,n,ac.sampleRate), d=b.getChannelData(0);
+      for(let i=0;i<n;i++) d[i]=Math.random()*2-1; SND.noise=b; }
+    const src=ac.createBufferSource(); src.buffer=SND.noise;
+    const f=ac.createBiquadFilter(); f.type='bandpass'; f.Q.value=1.4;
+    f.frequency.setValueAtTime(500,t); f.frequency.exponentialRampToValueAtTime(3400,t+dur*0.45);
+    f.frequency.exponentialRampToValueAtTime(700,t+dur);
+    const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.32,t+0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(f).connect(g).connect(ac.destination); src.start(t); src.stop(t+dur+0.02);
+  }catch(e){}
+}
+function setSound(on){
+  SND.on=on; LS.set('alter.sound',on?'1':'0');
+  const b=document.getElementById('bSound');
+  if(b){ b.textContent=on?'🔊':'🔇'; b.setAttribute('aria-pressed',String(on)); }
+  if(on) tick();
+}
+
+/* confirm modal — the only way out of a live session other than finishing it */
+const scrim=document.getElementById('scrim');
+let confirmCb=null;
+document.getElementById('cfYes').addEventListener('click',()=>{ scrim.classList.remove('show');
+  const cb=confirmCb; confirmCb=null; if(cb) cb(); });
+document.getElementById('cfNo').addEventListener('click',()=>{ scrim.classList.remove('show'); confirmCb=null; });
+function openConfirm(cb){ confirmCb=cb; scrim.classList.add('show'); }
+
+let toastT=null;
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ============================ title ============================ */
+function readNameInputs(){
+  const rows=document.querySelectorAll('.prow input');
+  if(rows.length) names=Array.prototype.map.call(rows,el=>el.value.slice(0,12));
+}
+function title(){
+  if(names.length<3) names=names.concat(['','','']).slice(0,3);
+  show(
+   '<div class="hero">'+MOTIF+'<h1>IMPRESSIONS</h1>'
+   +'<p>Answer as your friend — and let them grade it.<br>3–8 players. One phone. Everyone plays somebody.</p></div>'
+   +'<div class="card">'
+   +'<p class="castlabel">Tonight’s cast · 3–8 names</p>'
+   +'<div id="rows">'
+   +names.map((n,i)=>
+     '<div class="prow"><span class="dot" style="background:'+PC[i]+'"></span>'
+     +'<input type="text" maxlength="12" autocomplete="off" placeholder="Player '+(i+1)+'" '
+     +'aria-label="Player '+(i+1)+' name" value="'+esc(n)+'">'
+     +(names.length>3?'<button class="rm" type="button" data-i="'+i+'" aria-label="Remove player '+(i+1)+'">✕</button>':'')
+     +'</div>').join('')
+   +'</div>'
+   +(names.length<8?'<button class="addbtn" type="button" id="bAdd">+ Add a player</button>':'')
+   +'<button class="btn primary" type="button" id="bStart">Start · cast of '+names.length+'</button>'
+   +'</div>'
+   +'<details class="how"><summary>How it works</summary><ul>'
+   +'<li><b>Everyone plays somebody.</b> The casting wheel hands each player the next person in the circle — you’ll see who plays whom before the show starts.</li>'
+   +'<li>On your turn you get <b>3 questions, answered as them</b> — their instincts, not yours. Then the phone goes to the real person, who answers the same 3 truthfully.</li>'
+   +'<li>Each pair gets an instant <b>impression vs reality</b> reveal for the room, with an accuracy ring.</li>'
+   +'<li>At the end: the <b>casting circle</b> — every arrow scored — plus the night’s superlatives: best impression, most imitable, most unpredictable.</li>'
+   +'</ul></details>'
+   +'<footer class="foot">For fun and conversation — a game, not a psychological assessment.<br>'
+   +'Answers stay on this phone and are never uploaded.<br><a href="../">Kreeda</a></footer>'
+  );
+  on('bAdd',()=>{ readNameInputs(); if(names.length<8){ names.push(''); title(); } });
+  document.querySelectorAll('.rm').forEach(el=>{
+    el.addEventListener('click',()=>{ readNameInputs();
+      if(names.length>3){ names.splice(+el.getAttribute('data-i'),1); title(); } });
+  });
+  on('bStart',()=>{
+    readNameInputs();
+    names=names.map((n,i)=>n.trim().slice(0,12)||('Player '+(i+1)));
+    LS.set('alter.names',JSON.stringify(names));
+    newSession();
+    track('game_start',{player_count:S.N});
+    casting();
+  });
+}
+
+/* ============================ the casting circle SVG ============================
+   The one graphic drawn twice: plain on the pre-screen (who plays whom), scored on the finale
+   (every arrow coloured and labelled by its accuracy). Dots sit on a ring; arrow i curves from
+   dot i to dot i+1 with its control point pulled toward the centre, so adjacent arrows never
+   cross and the middle stays clear. Sized to stay legible at 360px for N up to 8. */
+function castSVG(scores){
+  const N=S.N, CX=180, CY=170, R=108, TAU=Math.PI*2;
+  const ang=i=>-Math.PI/2 + (i%N)*TAU/N;
+  const px=(a,r)=>CX+r*Math.cos(a), py=(a,r)=>CY+r*Math.sin(a);
+  let defs='', body='';
+  /* arrowheads: one marker per accuracy colour (plus a dim one for the pre-screen) */
+  const cols=scores?SCOL.slice():['rgba(171,156,174,.7)'];
+  cols.forEach((c,i)=>{ defs+='<marker id="ah'+i+'" viewBox="0 0 10 10" refX="8" refY="5" '
+    +'markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">'
+    +'<path d="M0 0 L10 5 L0 10 z" fill="'+c+'"/></marker>'; });
+  /* arrows first, under the dots */
+  for(let k=0;k<N;k++){
+    const a1=ang(k), a2=ang(k)+TAU/N, gap=27/R;
+    const s1=a1+gap, s2=a2-gap, mid=(a1+a2)/2;
+    const rc=R*Math.cos(Math.PI/N)*0.88;
+    const x0=px(s1,R), y0=py(s1,R), x1=px(s2,R), y1=py(s2,R);
+    const cx=px(mid,rc), cy=py(mid,rc);
+    const col=scores?SCOL[scores[k]]:cols[0];
+    const mk=scores?('ah'+scores[k]):'ah0';
+    body+='<path class="arr" style="animation-delay:'+(300+k*140)+'ms" d="M'+x0.toFixed(1)+' '+y0.toFixed(1)
+      +' Q'+cx.toFixed(1)+' '+cy.toFixed(1)+' '+x1.toFixed(1)+' '+y1.toFixed(1)
+      +'" fill="none" stroke="'+col+'" stroke-width="'+(scores?3.5:2.5)+'" stroke-linecap="round" marker-end="url(#'+mk+')"/>';
+    if(scores){
+      /* label at the quadratic's midpoint: 0.25·P0 + 0.5·C + 0.25·P1 */
+      const lx=0.25*x0+0.5*cx+0.25*x1, ly=0.25*y0+0.5*cy+0.25*y1;
+      const pct=Math.round(scores[k]*100/QPP);
+      body+='<text class="pctl" style="animation-delay:'+(420+k*140)+'ms;paint-order:stroke" x="'+lx.toFixed(1)+'" y="'+(ly+4.5).toFixed(1)
+        +'" text-anchor="middle" font-size="13" font-weight="900" fill="'+SCOL[scores[k]]
+        +'" stroke="#181119" stroke-width="4" stroke-linejoin="round">'+pct+'%</text>';
+    }
+  }
+  /* dots + short name labels; anchors follow the angle so labels always point outward */
+  for(let i=0;i<N;i++){
+    const a=ang(i), x=px(a,R), y=py(a,R);
+    const c=Math.cos(a), s=Math.sin(a);
+    const nm=S.names[i], nmS=nm.length>8?nm.slice(0,7)+'…':nm;
+    const lx=px(a,R+26), lyB=py(a,R+26)+(s>0.5?12:(s<-0.5?-6:4));
+    const anchor=c>0.35?'start':(c<-0.35?'end':'middle');
+    body+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="16" fill="'+PC[i]+'" stroke="#181119" stroke-width="2.5"/>'
+      +'<text x="'+x.toFixed(1)+'" y="'+(y+5).toFixed(1)+'" text-anchor="middle" font-size="15" font-weight="900" fill="#1c1320">'
+      +esc(nm.charAt(0).toUpperCase())+'</text>'
+      +'<text x="'+lx.toFixed(1)+'" y="'+lyB.toFixed(1)+'" text-anchor="'+anchor+'" font-size="11.5" font-weight="800" fill="'+PINK[i]+'">'
+      +esc(nmS)+'</text>';
+  }
+  return '<svg class="castsvg" viewBox="0 0 360 340" role="img" aria-label="The casting circle: '
+    +'each arrow points from an actor to the player they impersonate'
+    +(scores?', labelled with the impression’s accuracy':'')+'"><defs>'+defs+'</defs>'+body+'</svg>';
+}
+
+/* ============================ casting pre-screen ============================ */
+function casting(){
+  show(
+   header(true)
+   +'<div class="card castcard">'
+   +'<h2>TONIGHT’S CASTING</h2>'
+   +'<p class="sub">Everyone plays somebody. Nobody plays themselves.</p>'
+   +castSVG(null)
+   +'<div class="castlist">'
+   +S.names.map((n,i)=>'<div class="cl"><b style="color:'+PINK[i]+'">'+esc(n)+'</b>'
+     +'<span class="as">plays</span><b style="color:'+PINK[tgt(i)]+'">'+esc(S.names[tgt(i)])+'</b> 🎭</div>').join('')
+   +'</div>'
+   +'<button class="btn primary" type="button" id="bGo">Places, everyone — begin</button>'
+   +'</div>'
+  );
+  bindHome();
+  on('bGo',()=>{ swish(); impGate(0); });
+}
+
+/* ============================ hand-off gates ============================
+   Rendered through show(), which has already destroyed the previous screen — by the time a gate
+   paints there is nothing underneath to peek at, however fast the tap. After a pair's reveal the
+   target is holding the phone, and the next pair's impersonator IS that target — so gates for
+   k>0 say "stay put, new role" instead of asking them to pass the phone to themselves. */
+function impGate(k){
+  const p=k, nm=S.names[p], first=k===0;
+  show(
+   '<div class="handoff">'
+   +'<div class="pass">'+(first?'Pass the phone to':'The phone stays with')+'</div>'
+   +'<h2 style="color:'+PINK[p]+'">'+esc(nm)+'</h2>'
+   +'<p class="sub">'+(first?'First up in tonight’s casting.':'New role for you.')
+   +'<br>Three questions, answered as <b style="color:'+PINK[tgt(k)]+'">'+esc(S.names[tgt(k)])+'</b>.</p>'
+   +'<button class="btn primary" type="button" id="bReady">I’m '+esc(nm)+' — show me</button>'
+   +'<p class="peek">👀 tilt the phone away while you answer</p>'
+   +'</div>'
+  );
+  on('bReady',()=>impSheet(k));
+}
+function tgtGate(k){
+  const p=tgt(k), nm=S.names[p];
+  show(
+   '<div class="handoff">'
+   +'<div class="pass">Pass the phone to</div>'
+   +'<h2 style="color:'+PINK[p]+'">'+esc(nm)+'</h2>'
+   +'<p class="sub">'+esc(S.names[k])+' has locked in an impression of you.<br>Now the truth — same three questions.</p>'
+   +'<button class="btn primary" type="button" id="bReady">I’m '+esc(nm)+' — show me</button>'
+   +'<p class="peek">👀 the impression stays hidden until you’ve answered</p>'
+   +'</div>'
+  );
+  on('bReady',()=>tgtSheet(k));
+}
+
+/* ============================ the two passes ============================ */
+function qBlock(k,qi,ans){
+  const q=S.qs[k][qi];
+  return '<div class="qcard'+(ans[qi]>=0?' done':'')+'" id="blk'+qi+'">'
+   +'<div class="qhead"><span class="qn">'+(qi+1)+'</span><p class="qtext">'+esc(q.q)+'</p></div>'
+   +q.o.map((opt,i)=>'<button class="opt" type="button" data-qi="'+qi+'" data-i="'+i+'" '
+     +'aria-pressed="'+(ans[qi]===i)+'">'+esc(opt)+'</button>').join('')
+   +'</div>';
+}
+function sheet(k,mode){
+  const isImp=mode==='imp', p=isImp?k:tgt(k), t=tgt(k);
+  const ans=isImp?S.imp[k]:S.tru[k];
+  const vars='--pc:'+PC[t]+';--pc-soft:'+soft(t,0.16)+';--pc-ink:'+PINK[t];
+  show(
+   header(true)
+   +'<div style="'+vars+'">'
+   +(isImp
+     ? '<div class="turn"><span class="eye">👀</span><span><b style="color:'+PINK[t]+'">'+esc(S.names[t])
+       +'</b>, no peeking at the taps — and no coaching. The truth is still yours to tell.</span></div>'
+       +'<div class="role"><span class="tag">You are now</span><h2>'+esc(S.names[t])+' 🎭</h2>'
+       +'<p>Answer as '+esc(S.names[t])+' would — instincts, habits, tells.</p>'
+       +'<p class="nudge">Feel free to answer out loud in their voice first. The room deserves it.</p></div>'
+     : '<div class="turn"><span class="eye">🤫</span><span>The impression is locked and hidden. '
+       +'<b style="color:'+PINK[t]+'">'+esc(S.names[t])+'</b>, answer as yourself.</span></div>'
+       +'<div class="role"><span class="tag">The truth pass</span><h2>'+esc(S.names[t])+' 🙋</h2>'
+       +'<p>Same three questions. Set the record straight — honestly.</p></div>')
+   +'<div id="sheet">'
+   +[0,1,2].map(qi=>qBlock(k,qi,ans)).join('')
+   +'</div>'
+   +'<div class="lockbar"><button class="btn" type="button" id="bLock"></button></div>'
+   +'</div>'
+  );
+  bindHome();
+  const g=GEN, lockBtn=document.getElementById('bLock');
+  const refresh=()=>{
+    const n=ans.filter(a=>a>=0).length, all=n===QPP;
+    lockBtn.className='btn'+(all?' primary':'');
+    lockBtn.textContent=all
+      ? (isImp?'Lock the impression · pass to '+S.names[t]:'Lock in · reveal this pair')
+      : (QPP-n)+' of 3 still to answer';
+  };
+  refresh();
+  document.getElementById('sheet').addEventListener('click',e=>{
+    if(g!==GEN) return;
+    const b=e.target.closest('.opt[data-qi]');
+    if(!b) return;
+    const qi=+b.getAttribute('data-qi'), i=+b.getAttribute('data-i');
+    ans[qi]=i;
+    const blk=document.getElementById('blk'+qi);
+    blk.querySelectorAll('.opt').forEach(o=>o.setAttribute('aria-pressed',
+      String(+o.getAttribute('data-i')===i)));
+    blk.classList.add('done');
+    tick(); refresh();
+  });
+  on('bLock',()=>{
+    const first=ans.indexOf(-1);
+    if(first>=0){
+      const blk=document.getElementById('blk'+first);
+      blk.scrollIntoView({behavior:'smooth',block:'start'});
+      blk.classList.remove('flash'); void blk.offsetWidth; blk.classList.add('flash');
+      toast((QPP-ans.filter(a=>a>=0).length)+' still unanswered');
+      return;
+    }
+    swish();
+    if(isImp) tgtGate(k); else pairReveal(k);
+  });
+}
+const impSheet=k=>sheet(k,'imp');
+const tgtSheet=k=>sheet(k,'tru');
+
+/* ============================ ring helper ============================ */
+function ring(pct,color,label,big){
+  const r=big?70:44, s=2*r+12, c=s/2, C=2*Math.PI*r, v=Math.round(pct);
+  const stroke=big?'url(#ringGrad)':color;
+  return '<div class="ring'+(big?' big':'')+'"><svg viewBox="0 0 '+s+' '+s+'" aria-hidden="true">'
+   +'<circle class="tr" cx="'+c+'" cy="'+c+'" r="'+r+'"/>'
+   +'<circle class="fl" cx="'+c+'" cy="'+c+'" r="'+r+'" style="stroke:'+stroke
+   +';stroke-dasharray:'+C.toFixed(1)+';stroke-dashoffset:'+C.toFixed(1)+'" '
+   +'data-off="'+(C*(1-v/100)).toFixed(1)+'"/></svg>'
+   +'<div class="rv" aria-hidden="true" style="color:'+(big?'var(--spot)':color)+'"><b data-n="'+v+'">0</b><i>%</i></div>'
+   +'<div class="rl" aria-hidden="true">'+label+'</div>'
+   +'<span class="sr">'+label+': '+v+'%</span></div>';
+}
+/* rings fill and numbers count up after first paint; reduced motion lands the final state at
+   once. Clocked off performance.now() so a hidden tab still lands on the final figure. */
+function runRings(){
+  const g=GEN;
+  const reduced=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(g!==GEN) return;
+    document.querySelectorAll('.ring .fl').forEach(el=>{ el.style.strokeDashoffset=el.getAttribute('data-off'); });
+    const nums=Array.prototype.slice.call(document.querySelectorAll('.ring .rv b'));
+    if(reduced){ nums.forEach(b=>{ b.textContent=b.getAttribute('data-n'); }); return; }
+    const t0=performance.now(), D=1100;
+    (function step(){
+      if(g!==GEN) return;
+      const kk=Math.min(1,(performance.now()-t0)/D), e=1-Math.pow(1-kk,3);
+      nums.forEach(b=>{ b.textContent=Math.round(+b.getAttribute('data-n')*e); });
+      if(kk<1) requestAnimationFrame(step);
+    })();
+  }));
+}
+
+/* impression-vs-reality rows, shared by the pair reveal and the finale recap */
+function vsRows(k,delayBase){
+  const it=k, tt=tgt(k);
+  return [0,1,2].map(qi=>{
+    const q=S.qs[k][qi], hit=S.imp[k][qi]===S.tru[k][qi];
+    return '<div class="vrow rise" style="animation-delay:'+(delayBase+qi*140)+'ms">'
+     +'<p class="vq">'+esc(q.q)+'</p>'
+     +'<div class="vs">'
+     +'<div class="vc" style="background:'+soft(it,0.13)+'"><div class="who" style="color:'+PINK[it]+'">🎭 '
+       +esc(S.names[it])+'’s impression</div><div class="said">'+esc(q.o[S.imp[k][qi]])+'</div></div>'
+     +'<span class="m '+(hit?'hit':'miss')+'" aria-label="'+(hit?'match':'different')+'">'+(hit?'✓':'✗')+'</span>'
+     +'<div class="vc" style="background:'+soft(tt,0.13)+'"><div class="who" style="color:'+PINK[tt]+'">🙋 '
+       +esc(S.names[tt])+' really</div><div class="said">'+esc(q.o[S.tru[k][qi]])+'</div></div>'
+     +'</div></div>';
+  }).join('');
+}
+
+/* ============================ pair mini-reveal ============================
+   Held by the target, meant for the room. Guarded: unreachable unless both passes are done. */
+const PAIR_LINES=[
+  'A bold work of fiction. The original stands alone.',
+  'Caught a glimpse — invented the rest.',
+  'A strong impression. One tell gave it away.',
+  'Uncanny. Are you two the same person?'
+];
+function pairReveal(k){
+  if(S.imp[k].indexOf(-1)>=0||S.tru[k].indexOf(-1)>=0){ impGate(k); return; }
+  const sc=pairScore(k), pct=sc*100/QPP, tt=tgt(k), last=k===S.N-1;
+  show(
+   header(true)
+   +'<div class="results">'
+   +'<h2>Impression vs reality</h2>'
+   +'<p class="roomline">📣 '+esc(S.names[tt])+' holds the phone — but this one’s for the room.</p>'
+   +'<div class="card info">'
+   +ring(pct,PC[tt],esc(S.names[k])+' as '+esc(S.names[tt]))
+   +'<div class="verdict rise" style="animation-delay:500ms"><b>'+sc+' of 3</b><span>'+PAIR_LINES[sc]+'</span></div>'
+   +'</div>'
+   +'<div class="card" style="margin-top:12px; padding:14px 14px 8px">'+vsRows(k,250)+'</div>'
+   +'<button class="btn primary" type="button" id="bNext">'
+   +(last?'The final reveal 🎭':'Next pair → '+esc(S.names[k+1])+' plays '+esc(S.names[tgt(k+1)]))
+   +'</button>'
+   +'</div>'
+  );
+  bindHome();
+  runRings();
+  on('bNext',()=>{ swish(); if(last) finale(); else impGate(k+1); });
+}
+
+/* ============================ finale ============================ */
+function verdictFor(pct){
+  if(pct>=85) return ['Mind readers, the lot of you','This circle could finish each other’s sentences.'];
+  if(pct>=65) return ['The circle sees itself clearly','Most impressions landed. You’ve all been paying attention.'];
+  if(pct>=45) return ['Half mirror, half mystery','Some uncanny hits, some beautiful fiction.'];
+  if(pct>=25) return ['A cast of originals','Hard to imitate, every one of you. Take the compliment.'];
+  return ['Gloriously unknowable','Nobody landed anybody — which is an hour of conversation, minimum.'];
+}
+/* superlatives: three awards spread across the room where ties allow */
+function superlatives(sc){
+  let mx=-1, mn=4;
+  sc.forEach(s=>{ if(s>mx)mx=s; if(s<mn)mn=s; });
+  const b1=sc.indexOf(mx);                                        // best impression: the actor
+  let k2=b1;                                                      // most imitable: a max pair's target
+  for(let k=0;k<sc.length;k++) if(sc[k]===mx&&k!==b1){ k2=k; break; }
+  let k3=-1;                                                      // most unpredictable: a min pair's target
+  for(let k=0;k<sc.length;k++) if(sc[k]===mn&&k!==k2){ k3=k; break; }
+  if(k3<0) k3=sc.indexOf(mn);
+  return {mx:mx,mn:mn,best:b1,imitable:k2,unpred:k3};
+}
+let completeSent=false;
+function finale(){
+  if(!S){ title(); return; }
+  for(let k=0;k<S.N;k++) if(S.imp[k].indexOf(-1)>=0||S.tru[k].indexOf(-1)>=0){ impGate(k); return; }
+  const sc=allScores(), total=sc.reduce((a,b)=>a+b,0), pct=Math.round(total*100/(QPP*S.N));
+  const v=verdictFor(pct), sup=superlatives(sc);
+  const today=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+
+  if(!completeSent){
+    completeSent=true;
+    track('game_complete',{player_count:S.N, accuracy:pct, best:sup.mx, worst:sup.mn});
+    const plays=(+LS.get('alter.plays')||0)+1; LS.set('alter.plays',String(plays));
+  }
+
+  const nameB=i=>'<b style="color:'+PINK[i]+'">'+esc(S.names[i])+'</b>';
+  const dl=n=>'style="animation-delay:'+n+'ms"';
+  show(
+   header(false)
+   +'<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>'
+   +'<linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd166"/><stop offset="1" stop-color="#ff6b9d"/></linearGradient>'
+   +'</defs></svg>'
+   +'<div class="results">'
+   +'<h2>The final reveal</h2>'
+   +'<p class="roomline">'+S.N+' friends · '+S.N+' impressions · one phone</p>'
+   +'<div class="card info">'
+   +ring(pct,'',"the circle’s impression accuracy",true)
+   +'<div class="verdict rise" '+dl(600)+'><b>'+v[0]+'</b><span>'+v[1]+'</span></div>'
+   +'</div>'
+   +'<div class="card circlecard rise" style="margin-top:12px;animation-delay:200ms">'
+   +'<h3>The casting circle</h3>'
+   +'<p class="sub">actor → role · the number is how close they got</p>'
+   +castSVG(sc)
+   +'</div>'
+   +'<div class="card glance rise" '+dl(700)+'>'
+   +'<div class="gl"><span class="gi">🎭</span><span><span class="lb">Best impression</span>'
+     +nameB(sup.best)+' as '+nameB(tgt(sup.best))+' — '+sc[sup.best]+'/3. Take a bow.</span></div>'
+   +'<div class="gl"><span class="gi">🪞</span><span><span class="lb">Most imitable</span>'
+     +nameB(tgt(sup.imitable))+' — the circle knows them by heart.</span></div>'
+   +'<div class="gl"><span class="gi">🃏</span><span><span class="lb">Most unpredictable</span>'
+     +nameB(tgt(sup.unpred))+' — impossible to imitate. An original.</span></div>'
+   +'</div>'
+   +'<div class="card scorecard rise" '+dl(800)+'>'
+   +sc.map((s,k)=>'<div class="srow"><span class="sl">'
+     +'<span style="color:'+PINK[k]+'">'+esc(S.names[k])+'</span><span class="ar">→</span>'
+     +'<span style="color:'+PINK[tgt(k)]+'">'+esc(S.names[tgt(k)])+'</span></span>'
+     +'<span class="sq" aria-label="'+s+' of 3 matched">'
+     +[0,1,2].map(qi=>'<i class="'+(S.imp[k][qi]===S.tru[k][qi]?'on':'')
+       +'" style="animation-delay:'+(900+k*90+qi*60)+'ms"></i>').join('')
+     +'</span><span class="sn" style="color:'+SCOL[s]+'">'+s+'/3</span></div>').join('')
+   +'</div>'
+   +'<div class="sect"><h3>Every question</h3><span>impression vs reality, pair by pair</span></div>'
+   +sc.map((s,k)=>'<div class="paircard rise" style="animation-delay:'+(1000+k*90)+'ms">'
+     +'<div class="ph"><span class="t">🎭 '+nameB(k)+' as '+nameB(tgt(k))+'</span>'
+     +'<span class="s" style="color:'+SCOL[s]+'">'+s+'/3</span></div>'
+     +vsRows(k,1000+k*90)
+     +'</div>').join('')
+   +'<p class="datefoot">'+esc(today)+' · kreeda.games/alter</p>'
+   +'<button class="btn primary" type="button" id="bAgain">Play again</button>'
+   +'<a class="btn wa" id="bWa" href="#" target="_blank" rel="noopener">'+WA_ICON+'Share on WhatsApp</a>'
+   +'<p class="sharehint">Send it to the group chat — everyone keeps the night’s scorecard.</p>'
+   +'<div class="btnrow"><button class="btn" type="button" id="bCopy">Copy result</button>'
+   +(navigator.share?'<button class="btn" type="button" id="bShare">Share…</button>':'')+'</div>'
+   +'<button class="btn ghost" type="button" id="bChange">Change players</button>'
+   +'<div id="shareSlot"></div>'
+   +'</div>'
+   +'<footer class="foot">Impressions aren’t exams — the misses are the stories.<br>'
+   +'<a href="../">Kreeda</a></footer>'
+  );
+  runRings();
+  on('bAgain',()=>{ completeSent=false; newSession();
+    track('game_start',{player_count:S.N}); casting(); });
+  on('bChange',()=>{ completeSent=false; S=null; title(); });
+  const text=shareText(sc,pct,v,sup,today);
+  const wa=document.getElementById('bWa');
+  wa.href=waLink(text);
+  wa.addEventListener('click',()=>track('share',{via:'whatsapp'}));
+  on('bShare',()=>{ track('share',{via:'system'});
+    try{ navigator.share({title:'Impressions — cast of '+S.N, text:text}).catch(()=>{}); }catch(e){} });
+  on('bCopy',()=>{
+    let done=false;
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(()=>toast('Copied!'),()=>showShareBox(text));
+        done=true;
+      }
+    }catch(e){}
+    if(!done) showShareBox(text);   // clipboard is unavailable on file:// — show it to copy by hand
+  });
+}
+
+/* ============================ share ============================
+   The night in words, for WhatsApp (its *bold* and _italic_ marks) and the clipboard. Sharing
+   is the players' own explicit act, so unlike analytics it may carry names and scores. */
+const WA_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.8-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.2-.2-.2-.5-.4z"/></svg>';
+function waLink(text){ return 'https://wa.me/?text='+encodeURIComponent(text); }
+function shareText(sc,pct,v,sup,today){
+  const strip=s=>'🟩'.repeat(s)+'⬛'.repeat(QPP-s);
+  const lines=[
+    '*Impressions* · cast of '+S.N+' · one phone',
+    '_'+v[0]+'_ — '+v[1],
+    '',
+    '🎯 The circle’s impression accuracy: *'+pct+'%*',
+    ''
+  ];
+  sc.forEach((s,k)=>lines.push('🎭 '+S.names[k]+' → '+S.names[tgt(k)]+': '+s+'/3 '+strip(s)));
+  lines.push('',
+    '🎭 Best impression: '+S.names[sup.best]+' as '+S.names[tgt(sup.best)]+' ('+sc[sup.best]+'/3)',
+    '🪞 Most imitable: '+S.names[tgt(sup.imitable)],
+    '🃏 Most unpredictable: '+S.names[tgt(sup.unpred)]+' — an original');
+  lines.push('', today+' · kreeda.games/alter');
+  return lines.join('\n');
+}
+function showShareBox(text){
+  const slot=document.getElementById('shareSlot');
+  if(!slot) return;
+  slot.innerHTML='<textarea class="sharebox" rows="6" readonly aria-label="Result text to copy manually"></textarea>';
+  const ta=slot.querySelector('textarea'); ta.value=text;
+  ta.focus(); try{ ta.select(); }catch(e){}
+  toast('Copy it from the box below');
+}
+
+/* ============================ boot self-test ============================
+   Cheap invariants that would otherwise only fail in a player's hands. Runs once, warns only. */
+(function audit(){
+  try{
+    if(BANK.length<8*QPP) console.warn('alter: bank has only '+BANK.length+' questions; 8 players need '+(8*QPP));
+    BANK.forEach((x,i)=>{
+      if(!(x.o.length>=2&&x.o.length<=4)) console.warn('alter: question '+i+' has '+x.o.length+' options');
+      x.o.forEach(o=>{ if(o.length>32) console.warn('alter: question '+i+' option too long: '+o); });
+      if(!x.q) console.warn('alter: question '+i+' has no text');
+    });
+    if(PC.length!==8||PINK.length!==8) console.warn('alter: palette must have 8 hues');
+    if(SCOL.length!==QPP+1) console.warn('alter: SCOL must have '+(QPP+1)+' entries');
+  }catch(e){}
+})();
+
+title();
+</script>
+</body>
+</html>
