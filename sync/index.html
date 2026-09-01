@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sync — Kreeda</title>
+<title>Duo Quiz — Kreeda</title>
 <meta name="description" content="How well do you actually know each other? Two players, one phone: all ten questions on one page — pick your own answer and the one you think they'd give. Then one page shows everything — similarity, insight, and all ten questions side by side.">
 <link rel="canonical" href="https://kreeda.games/sync/">
 <meta name="theme-color" content="#14101f">
@@ -11,13 +11,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/sync/">
-<meta property="og:title" content="Sync — Kreeda">
+<meta property="og:title" content="Duo Quiz — Kreeda">
 <meta property="og:description" content="How well do you actually know each other? Answer for yourself, guess for them, reveal on one page. Two players, one phone.">
 <meta property="og:image" content="https://kreeda.games/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Sync — Kreeda">
+<meta name="twitter:title" content="Duo Quiz — Kreeda">
 <meta name="twitter:description" content="How well do you actually know each other? Answer for yourself, guess for them, reveal on one page. Two players, one phone.">
 <meta name="twitter:image" content="https://kreeda.games/og.png">
 
@@ -26,7 +26,7 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Sync","description":"How well do you actually know each other? Two players, one phone: all ten questions on one page — pick your own answer and the one you think they'd give, then reveal everything on one page.","url":"https://kreeda.games/sync/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Duo Quiz","description":"How well do you actually know each other? Two players, one phone: all ten questions on one page — pick your own answer and the one you think they'd give, then reveal everything on one page.","url":"https://kreeda.games/sync/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <style>
 /* ============================ tokens ============================
@@ -564,7 +564,7 @@ const MARK='<svg viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke-li
 const TICK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 function header(showHome){
-  return '<header class="top"><span class="wordmark">'+MARK+'<span><b>Sync</b>'
+  return '<header class="top"><span class="wordmark">'+MARK+'<span><b>Duo Quiz</b>'
    +'<small>Kreeda · Together</small></span></span>'
    +(showHome
       ? '<button class="soundbtn" type="button" id="bSound" aria-pressed="'+SND.on+'" aria-label="Sound">'+(SND.on?'🔊':'🔇')+'</button>'
@@ -643,7 +643,7 @@ let pack='n';
 
 function title(){
   show(
-   '<div class="hero">'+MOTIF+'<h1>SYNC</h1>'
+   '<div class="hero">'+MOTIF+'<h1>DUO QUIZ</h1>'
    +'<p>How well do you actually know each other?<br>Two players. One phone. Ten questions, one page.</p></div>'
    +'<div class="card">'
    +'<div class="names2">'
@@ -1080,7 +1080,7 @@ function results(){
   wa.href=waLink(text);
   wa.addEventListener('click',()=>track('share',{via:'whatsapp'}));
   on('bShare',()=>{ track('share',{via:'system'});
-    try{ navigator.share({title:'Sync — '+S.names[0]+' × '+S.names[1], text:text}).catch(()=>{}); }catch(e){} });
+    try{ navigator.share({title:'Duo Quiz — '+S.names[0]+' × '+S.names[1], text:text}).catch(()=>{}); }catch(e){} });
   on('bCopy',()=>{
     let done=false;
     try{
@@ -1106,7 +1106,7 @@ function shareText(t,pt,bm,asym,packName,today){
   const pct=n=>Math.round(n*100/ROUNDS), know=Math.round((t.ia+t.ib)*50/ROUNDS);
   const row=(fn,y)=>{ let s=''; for(let i=0;i<ROUNDS;i++) s+=fn(scoreQ(i))?y:'⚫'; return s; };
   const lines=[
-    '*Sync* · '+A+' × '+B+' · '+packName+' pack',
+    '*Duo Quiz* · '+A+' × '+B+' · '+packName+' pack',
     '_'+pt[0]+'_ — '+pt[1],
     '',
     '🔮 Know each other: *'+know+'%*',

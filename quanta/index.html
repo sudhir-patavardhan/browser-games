@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Quanta — Kreeda</title>
+<title>Physics Grid — Kreeda</title>
 <meta name="description" content="A daily physics grid. Three criteria down, three across, nine cells, nine guesses — name a physical quantity for every square. Vectors, SI units, dimensional formulae, and every answer revealed at the end.">
 <link rel="canonical" href="https://kreeda.games/quanta/">
 <meta name="theme-color" content="#1b1f4b">
@@ -11,13 +11,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/quanta/">
-<meta property="og:title" content="Quanta — Kreeda">
+<meta property="og:title" content="Physics Grid — Kreeda">
 <meta property="og:description" content="A daily physics grid. Three criteria down, three across, nine cells, nine guesses — name a physical quantity for every square.">
 <meta property="og:image" content="https://kreeda.games/assets/quanta-og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Quanta — Kreeda">
+<meta name="twitter:title" content="Physics Grid — Kreeda">
 <meta name="twitter:description" content="A daily physics grid. Three criteria down, three across, nine cells, nine guesses — name a physical quantity for every square.">
 <meta name="twitter:image" content="https://kreeda.games/assets/quanta-og.png">
 
@@ -26,7 +26,7 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Quanta","description":"A daily physics grid. Three criteria down, three across, nine cells, nine guesses — name a physical quantity for every square before the guesses run out.","url":"https://kreeda.games/quanta/","image":"https://kreeda.games/assets/quanta-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Physics Grid","description":"A daily physics grid. Three criteria down, three across, nine cells, nine guesses — name a physical quantity for every square before the guesses run out.","url":"https://kreeda.games/quanta/","image":"https://kreeda.games/assets/quanta-og.png","playMode":"SinglePlayer","applicationCategory":"Game","genre":"Puzzle","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <style>
 /* ============================ tokens ============================
@@ -262,7 +262,7 @@ footer.foot a{ color:var(--ink); }
   </div>
 
   <header class="top">
-    <h1>Quanta<small>Kreeda · Daily</small></h1>
+    <h1>Physics Grid<small>Kreeda · Daily</small></h1>
     <span class="datechip" id="datechip"></span>
   </header>
 
@@ -1699,7 +1699,7 @@ function submit(){
   $('disamb').hidden=true;
   if(r.kind==='none'){
     if(r.tooShort) return;                              // mid-typo: ignore silently, cost nothing
-    sheetMsg('Quanta doesn’t know that name. The roster is '+N+' physical quantities and named '+
+    sheetMsg('Physics Grid doesn’t know that name. The roster is '+N+' physical quantities and named '+
              'constants from school and A-level physics. No guess spent.');
     return;
   }
@@ -1820,7 +1820,7 @@ function showReveal(){
     parts.push('</ul>');
   }
   parts.push('<h3>About this dataset</h3>');
-  parts.push('<p class="note"><b>Every criterion in Quanta is a stable fact</b> — a definition, an SI '+
+  parts.push('<p class="note"><b>Every criterion in Physics Grid is a stable fact</b> — a definition, an SI '+
     'classification, a dimensional formula. Never a ranking, never "most" or "largest", because those '+
     'flip and a criterion that flips turns the game into a liar. Three things are worth spelling out, '+
     'because they are the traps: whether a quantity is a <i>vector</i> is about how it adds, not '+
@@ -1837,13 +1837,13 @@ function showReveal(){
     'build a fair cell from. They are printed above instead, on the entries that carry them.</p>');
   parts.push('<p class="note"><b>Weight is not rarity scoring.</b> Immaculate Grid’s rarity is a '+
     '<i>social</i> measurement — it tells you how few of the other players thought of your answer, and '+
-    'knowing that requires a server counting everybody. Quanta has no server and never phones home. '+
+    'knowing that requires a server counting everybody. Physics Grid has no server and never phones home. '+
     'Its Weight is an <i>editorial</i> measurement: a number assigned to each quantity when the '+
     'dataset was written, reflecting roughly how early in a physics course you meet it. It is the same '+
     'on day one as on day one thousand, and it works on a plane. It can never surprise you by '+
     'revealing that everybody else also thought of impulse.</p>');
   parts.push('<p class="note">Definitions, SI units and dimensional formulae are facts and facts are '+
-    'not copyrightable. Quanta ships <b>zero image files</b> and makes no network request of any kind. '+
+    'not copyrightable. Physics Grid ships <b>zero image files</b> and makes no network request of any kind. '+
     'Compiled by hand from multiple public references, never copied from any single table.</p>');
   parts.push('<p class="note">Something wrong here? Corrections are welcome — this is a hand-built '+
     'table and it will have gaps. <a href="../">kreeda.games</a></p>');
@@ -1866,7 +1866,7 @@ function showReveal(){
    like a nice idea in review. It isn't. */
 function shareText(){
   const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const a=KEY.split('-'), head='Kreeda · Quanta · '+(+a[2])+' '+MON[+a[1]-1];
+  const a=KEY.split('-'), head='Kreeda · Physics Grid · '+(+a[2])+' '+MON[+a[1]-1];
   let rows='';
   for(let i=0;i<3;i++){
     for(let j=0;j<3;j++){

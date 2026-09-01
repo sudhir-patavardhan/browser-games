@@ -170,7 +170,9 @@
     -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity;
   }
   .rail-row::-webkit-scrollbar{ display:none; }
-  .rail-row .card{ flex:none; width:168px; scroll-snap-align:start; }
+  /* 200px, up from 168: with the caption row gone the card is basically the art,
+     and at 168 the art read as a squeezed letterbox strip on phones. */
+  .rail-row .card{ flex:none; width:200px; scroll-snap-align:start; }
   @media (min-width:560px){ .rail-row .card{ width:240px; } .rail-row{ gap:14px; } }
   @media (min-width:760px){ .rail-row{ gap:18px; } }
 
@@ -196,28 +198,34 @@
     position:relative;
   }
   .thumb svg{ display:block; width:100%; height:100%; }
+  /* Bottom scrim so the overlaid name reads on any art. ::after paints above the
+     svg but below the z-indexed corner pills, and overflow:hidden clips it to the
+     rounded corners. */
+  .thumb::after{
+    content:""; position:absolute; left:0; right:0; bottom:0; height:62%;
+    background:linear-gradient(180deg, rgba(6,7,12,0), rgba(6,7,12,.78));
+    pointer-events:none;
+  }
 
-  .card .top{ margin:8px 3px 0; }
-  .card h2{ margin:0; font-size:15px; font-weight:800; letter-spacing:-.2px; }
-  /* Used to sit inline next to the title, competing with it for width — a
-     two-word name like "The Auction" wrapped to a second line, and because
-     .rail-row's cards stretch to match the tallest one in the row, that single
-     wrap padded out every other card alongside it too. Overlaid on the thumb
-     instead (bottom-right — top-left is .badge's corner, top-right is
-     .dstat's), it costs the layout nothing and the title gets the card's full
-     width to itself. */
-  .tag{
-    position:absolute; z-index:2; right:8px; bottom:8px;
-    font-size:9.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
-    color:var(--ink); background:rgba(7,7,13,.72); border:1px solid rgba(255,255,255,.14);
-    border-radius:999px; padding:3px 7px;
+  /* The name sits ON the art over a bottom scrim — poster-style, the way every
+     streaming shelf does it — not in a caption row below. The .top wrapper stays
+     in the DOM for the h2's semantics but takes no height: the h2 anchors to the
+     wrapper's zero-height box, which sits exactly at the thumb's bottom edge, so
+     bottom:12px lands the name 12px inside the art at every card width without
+     touching a single SVG. The category pill that used to ride the art is gone
+     entirely — now that names say what a game IS, the pill just said it twice. */
+  .card .top{ position:relative; z-index:2; height:0; margin:0; }
+  .card h2{
+    position:absolute; left:10px; right:10px; bottom:12px; margin:0;
+    font-size:15px; font-weight:800; letter-spacing:-.2px; line-height:1.15;
+    color:#fff; text-shadow:0 1px 6px rgba(0,0,0,.7);
   }
   /* The blurb and the Play button are both cut on phones. Nobody reads two lines of
      prose about thirteen games while deciding which to tap — the art and the name do
      that work — and the whole card is already a link, so a Play button inside it is
      40px of chrome that adds no affordance. Both return above 560px, where the space
      is free. */
-  .card p{ display:none; margin:5px 3px 0; font-size:13px; line-height:1.42; color:var(--ink-dim); }
+  .card p{ display:none; margin:10px 3px 0; font-size:13px; line-height:1.42; color:var(--ink-dim); }
   @media (min-width:560px){
     .card p{
       display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
@@ -342,7 +350,6 @@
             <circle cx="-8" cy="-19" r="2.4" fill="#fff3c4"/><circle cx="8" cy="-19" r="2.4" fill="#fff3c4"/>
           </g>
         </svg>
-        <span class="tag">Racing</span>
       </span>
       <span class="top"><h2>Drift</h2></span>
       <p>Endless drifting from behind the wheel. No handbrake — just throttle, brake and a grip budget. Chain slides to claw charge back, thread the oncoming traffic, and run down the zombies on the verge for bounty money.</p>
@@ -392,9 +399,8 @@
                 <circle cx="204" cy="65" r="4.5"/><circle cx="220" cy="65" r="4.5"/><circle cx="236" cy="65" r="4.5"/>
               </g>
             </svg>
-            <span class="tag">Duo quiz</span>
           </span>
-          <span class="top"><h2>Sync</h2></span>
+          <span class="top"><h2>Duo Quiz</h2></span>
           <p>All ten questions on one page — your answer and your guess for them on every one. Then one page reveals who really knows whom.</p>
           <span class="foot"><span class="meta">2 players &middot; One phone</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
         </a>
@@ -434,9 +440,8 @@
                 <text x="248" y="40">guarded</text><text x="256" y="66">dreamy</text><text x="250" y="92">loyal</text>
               </g>
             </svg>
-            <span class="tag">Traits</span>
           </span>
-          <span class="top"><h2>Windows</h2></span>
+          <span class="top"><h2>Blind Spots</h2></span>
           <p>Pick six words for yourself and six for them. One page shows how clearly you see each other — and your blind spots.</p>
           <span class="foot"><span class="meta">2 players &middot; One phone</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
         </a>
@@ -476,9 +481,8 @@
                 <line x1="284" y1="26" x2="294" y2="16"/><line x1="292" y1="34" x2="304" y2="30"/><line x1="276" y1="20" x2="280" y2="8"/>
               </g>
             </svg>
-            <span class="tag">Values</span>
           </span>
-          <span class="top"><h2>The Auction</h2></span>
+          <span class="top"><h2>Life Auction</h2></span>
           <p>100 coins, ten things people want from life — and you can't fund them all. See where your maps line up.</p>
           <span class="foot"><span class="meta">2 players &middot; One phone</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
         </a>
@@ -512,9 +516,8 @@
                 <circle cx="246" cy="58" r="2"/><circle cx="286" cy="40" r="2.5"/><circle cx="292" cy="28" r="2"/>
               </g>
             </svg>
-            <span class="tag">Deep talk</span>
           </span>
-          <span class="top"><h2>Fathom</h2></span>
+          <span class="top"><h2>Deep Talk</h2></span>
           <p>A guided dive through three depths of questions, answered out loud — then measure how much closer you surfaced.</p>
           <span class="foot"><span class="meta">2 players &middot; One phone</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
         </a>
@@ -547,9 +550,8 @@
                 <text x="252" y="29" font-size="14" fill="#101f3a">5</text>
               </g>
             </svg>
-            <span class="tag">Trust</span>
           </span>
-          <span class="top"><h2>Split</h2></span>
+          <span class="top"><h2>Share or Take</h2></span>
           <p>Share or take, ten hidden rounds. The score says who won — the pattern says who you both are.</p>
           <span class="foot"><span class="meta">2 players &middot; One phone</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
         </a>
@@ -606,9 +608,8 @@
             <circle cx="268" cy="60" r="4"/><circle cx="199" cy="21" r="4"/><circle cx="199" cy="99" r="4"/>
           </g>
         </svg>
-        <span class="tag">Chemistry</span>
       </span>
-      <span class="top"><h2>Valence</h2></span>
+      <span class="top"><h2>Chemistry Grid</h2></span>
       <p>Nine cells, and every one wants an element that fits both its row and its column. Answer with the name or the symbol &mdash; and whatever you score, the reveal shows every element that would have worked.</p>
       <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -644,9 +645,8 @@
             <rect x="250" y="40" width="20" height="20" rx="4"/><rect x="274" y="40" width="20" height="20" rx="4"/>
           </g>
         </svg>
-        <span class="tag">Physics</span>
       </span>
-      <span class="top"><h2>Quanta</h2></span>
+      <span class="top"><h2>Physics Grid</h2></span>
       <p>Vector or scalar, base unit or derived, which branch it belongs to &mdash; nine cells of physical quantities, and a reveal that gives you the SI unit for every answer you missed.</p>
       <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -680,9 +680,8 @@
             <rect x="290" y="82" width="18" height="18" rx="4"/>
           </g>
         </svg>
-        <span class="tag">Trigonometry</span>
       </span>
-      <span class="top"><h2>Radian</h2></span>
+      <span class="top"><h2>Trigonometry Grid</h2></span>
       <p>Quadrants, signs, reference angles and exact values. Answer in degrees or radians &mdash; 30, 30&deg; and &pi;/6 are all the same angle, and the reveal shows every one in both.</p>
       <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -705,9 +704,8 @@
             <circle cx="80" cy="40" r="9"/><circle cx="180" cy="30" r="9"/><circle cx="280" cy="25" r="9"/>
           </g>
         </svg>
-        <span class="tag">Organic chemistry</span>
       </span>
-      <span class="top"><h2>Isomer</h2></span>
+      <span class="top"><h2>Organic Chemistry Grid</h2></span>
       <p>Nine cells, and every one wants an organic compound that fits both its row and its column &mdash; alkane or acid, gas or solid, fuel or household product. The reveal shows every compound that would have worked.</p>
       <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -729,9 +727,8 @@
           <circle cx="60" cy="34" r="16" fill="none" stroke="#ffcc33" stroke-width="3" opacity="0.8"/>
           <path d="M255 40 a20 20 0 1 1 0 40" fill="none" stroke="#e9f6ff" stroke-width="3" opacity="0.7"/>
         </svg>
-        <span class="tag">Energy sources</span>
       </span>
-      <span class="top"><h2>Wattage</h2></span>
+      <span class="top"><h2>Energy Grid</h2></span>
       <p>Nine cells, and every one wants an energy source that fits both its row and its column &mdash; renewable or not, burned or not, mined or drilled. The reveal shows every source that would have worked.</p>
       <span class="foot"><span class="meta">Daily &middot; High school</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -769,7 +766,6 @@
           <circle cx="60" cy="100" r="6" fill="none" stroke="#b03a30" stroke-width="1.6"/>
           <circle cx="57" cy="97" r="2.6" fill="rgba(255,255,255,.8)"/>
         </svg>
-        <span class="tag">Board</span>
       </span>
       <span class="top"><h2>Carrom</h2></span>
       <p>The Indian classic, flick-perfect. Pull the striker back, pocket your nine and the red queen.</p>
@@ -812,9 +808,8 @@
             <circle cx="193" cy="71" r="2.4"/><circle cx="229" cy="53" r="2.4"/>
           </g>
         </svg>
-        <span class="tag">Pool</span>
       </span>
-      <span class="top"><h2>Break Room</h2></span>
+      <span class="top"><h2>8-Ball Pool</h2></span>
       <p>8-ball with real physics — spin, fouls, ball-in-hand, and an AI that punishes a loose safety.</p>
       <span class="foot"><span class="meta">vs AI &middot; 2-player</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -848,9 +843,8 @@
           </g>
           <rect x="114" y="14" width="92" height="92" rx="8" fill="none" stroke="#6b76a8" stroke-width="2" opacity="0.5"/>
         </svg>
-        <span class="tag">Strategy</span>
       </span>
-      <span class="top"><h2>Ennead</h2></span>
+      <span class="top"><h2>Tic Tac Toe</h2></span>
       <p>Tic-tac-toe taken seriously — 3&times;3 up to 9&times;9 gomoku, plus Ultimate's nine nested boards.</p>
       <span class="foot"><span class="meta">vs AI &middot; 2-player</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -902,10 +896,9 @@
           <path d="M92 70 Q120 56 142 52" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="5 6" stroke-linecap="round" opacity="0.85"/>
           <path d="M232 80 Q206 84 182 82" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="5 6" stroke-linecap="round" opacity="0.85"/>
         </svg>
-        <span class="tag">Educational</span>
       </span>
       <span class="badge">New</span>
-      <span class="top"><h2>Apogee</h2></span>
+      <span class="top"><h2>Rocket Builder</h2></span>
       <p>Build a rocket from twelve real parts — every one fitted teaches what it does. Launch through max-Q and the atmosphere&rsquo;s layers, read your gravity and drag losses in the mission log, and pass the 100&nbsp;km K&aacute;rm&aacute;n line into space.</p>
       <span class="foot"><span class="meta">Solo &middot; Build, learn &amp; launch</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -938,9 +931,8 @@
           <path d="M240 46 Q 228 56 222 58" fill="none" stroke="#21e6ff" stroke-width="2" stroke-dasharray="3 4" opacity="0.8"/>
           <path d="M224 54 l-5 5 l7 1 z" fill="#21e6ff" opacity="0.8"/>
         </svg>
-        <span class="tag">Educational</span>
       </span>
-      <span class="top"><h2>Garage</h2></span>
+      <span class="top"><h2>Car Builder</h2></span>
       <p>Build a car from 19 real parts &mdash; chassis, carburetor, alternator, driveshaft &mdash; and learn what every one does.</p>
       <span class="foot"><span class="meta">Solo &middot; Learn &amp; quiz</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -982,9 +974,8 @@
             <g fill="#5CFF6E"><rect x="266" y="20" width="20" height="20" rx="3"/></g>
           </g>
         </svg>
-        <span class="tag">Puzzle</span>
       </span>
-      <span class="top"><h2>Chroma Blocks</h2></span>
+      <span class="top"><h2>Falling Blocks</h2></span>
       <p>Neon falling blocks. Hold queue, ghost piece, combo flashes and a soundtrack it makes up as it goes.</p>
       <span class="foot"><span class="meta">Solo &middot; Touch or keyboard</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -1044,7 +1035,6 @@
             <text x="292" y="74" font-size="8" fill="#f4d35e" text-anchor="middle" font-weight="bold">100</text>
           </g>
         </svg>
-        <span class="tag">Cards</span>
       </span>
       <span class="top"><h2>Blackjack</h2></span>
       <p>Casino blackjack on green felt — bet the chips, split, double, and take your 3:2 on a natural.</p>
@@ -1105,9 +1095,8 @@
             <path d="M308 60 C 314 53, 317 54, 318 50 C 318 58, 314 64, 308 60 Z" fill="#ff9a3d"/>
           </g>
         </svg>
-        <span class="tag">Mythic</span>
       </span>
-      <span class="top"><h2>Da&#347;&#257;nana</h2></span>
+      <span class="top"><h2>Astra Duel</h2></span>
       <p>A R&#257;m&#257;ya&#7751;a astra-duel. Counter R&#257;va&#7751;a's divine missiles, chant to restore your tejas, loose the Brahm&#257;stra.</p>
       <span class="foot"><span class="meta">Solo &middot; Story mode</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -1160,9 +1149,8 @@
             </g>
           </g>
         </svg>
-        <span class="tag">Football</span>
       </span>
-      <span class="top"><h2>Last 16</h2></span>
+      <span class="top"><h2>Knockout Football</h2></span>
       <p>World Cup Round of 16. Pick a nation, control one star player, and fight through the real bracket.</p>
       <span class="foot"><span class="meta">Solo &middot; Full tournament</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -1186,7 +1174,6 @@
             <circle cx="0" cy="-20" r="7" fill="#141a24"/>
           </g>
         </svg>
-        <span class="tag">Racing</span>
       </span>
       <span class="top"><h2>Road Rumble</h2></span>
       <p>A Road Rash-style brawler. Race five rivals down a pseudo-3D highway and punch your way past them.</p>
@@ -1218,9 +1205,8 @@
           <circle cx="62" cy="86" r="8" fill="#ffffff" stroke="#c7d8bd" stroke-width="1"/>
           <g fill="#d8e4d0"><circle cx="60" cy="84" r="1"/><circle cx="64" cy="84" r="1"/><circle cx="62" cy="87" r="1"/></g>
         </svg>
-        <span class="tag">Golf</span>
       </span>
-      <span class="top"><h2>Fairway Four</h2></span>
+      <span class="top"><h2>Golf</h2></span>
       <p>Four holes of full-3D golf. Three-click swing, wind and shape, then read the break on a sloped green.</p>
       <span class="foot"><span class="meta">Solo &middot; Best on a laptop</span><span class="play">Play <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M2 1l8 5-8 5z"/></svg></span></span>
     </a>
@@ -1476,7 +1462,7 @@
         "position": 3,
         "item": {
           "@type": "VideoGame",
-          "name": "Break Room",
+          "name": "8-Ball Pool",
           "url": "https://kreeda.games/break-room/",
           "genre": "Sports",
           "applicationCategory": "GameApplication",
@@ -1493,7 +1479,7 @@
         "position": 4,
         "item": {
           "@type": "VideoGame",
-          "name": "Chroma Blocks",
+          "name": "Falling Blocks",
           "url": "https://kreeda.games/chroma-blocks/",
           "genre": "Puzzle",
           "applicationCategory": "GameApplication",
@@ -1527,7 +1513,7 @@
         "position": 6,
         "item": {
           "@type": "VideoGame",
-          "name": "Last 16",
+          "name": "Knockout Football",
           "url": "https://kreeda.games/last-16/",
           "genre": "Sports",
           "applicationCategory": "GameApplication",
@@ -1561,7 +1547,7 @@
         "position": 8,
         "item": {
           "@type": "VideoGame",
-          "name": "Fairway Four",
+          "name": "Golf",
           "url": "https://kreeda.games/fairway-four/",
           "genre": "Sports",
           "applicationCategory": "GameApplication",
@@ -1578,7 +1564,7 @@
         "position": 9,
         "item": {
           "@type": "VideoGame",
-          "name": "Ennead",
+          "name": "Tic Tac Toe",
           "url": "https://kreeda.games/ennead/",
           "genre": "Strategy",
           "applicationCategory": "GameApplication",
@@ -1595,7 +1581,7 @@
         "position": 10,
         "item": {
           "@type": "VideoGame",
-          "name": "Daśānana",
+          "name": "Astra Duel",
           "url": "https://kreeda.games/dasanana/",
           "genre": "Action",
           "applicationCategory": "GameApplication",
@@ -1612,7 +1598,7 @@
         "position": 11,
         "item": {
           "@type": "VideoGame",
-          "name": "Valence",
+          "name": "Chemistry Grid",
           "url": "https://kreeda.games/valence/",
           "genre": "Educational",
           "applicationCategory": "GameApplication",
@@ -1632,7 +1618,7 @@
         "position": 12,
         "item": {
           "@type": "VideoGame",
-          "name": "Quanta",
+          "name": "Physics Grid",
           "url": "https://kreeda.games/quanta/",
           "genre": "Educational",
           "applicationCategory": "GameApplication",
@@ -1652,7 +1638,7 @@
         "position": 13,
         "item": {
           "@type": "VideoGame",
-          "name": "Radian",
+          "name": "Trigonometry Grid",
           "url": "https://kreeda.games/radian/",
           "genre": "Educational",
           "applicationCategory": "GameApplication",
@@ -1672,7 +1658,7 @@
         "position": 14,
         "item": {
           "@type": "VideoGame",
-          "name": "Sync",
+          "name": "Duo Quiz",
           "url": "https://kreeda.games/sync/",
           "genre": "Party",
           "applicationCategory": "GameApplication",
@@ -1690,7 +1676,7 @@
         "position": 15,
         "item": {
           "@type": "VideoGame",
-          "name": "Windows",
+          "name": "Blind Spots",
           "url": "https://kreeda.games/windows/",
           "genre": "Party",
           "applicationCategory": "GameApplication",
@@ -1708,7 +1694,7 @@
         "position": 16,
         "item": {
           "@type": "VideoGame",
-          "name": "The Auction",
+          "name": "Life Auction",
           "url": "https://kreeda.games/auction/",
           "genre": "Party",
           "applicationCategory": "GameApplication",
@@ -1726,7 +1712,7 @@
         "position": 17,
         "item": {
           "@type": "VideoGame",
-          "name": "Fathom",
+          "name": "Deep Talk",
           "url": "https://kreeda.games/fathom/",
           "genre": "Party",
           "applicationCategory": "GameApplication",
@@ -1744,7 +1730,7 @@
         "position": 18,
         "item": {
           "@type": "VideoGame",
-          "name": "Split",
+          "name": "Share or Take",
           "url": "https://kreeda.games/split/",
           "genre": "Party",
           "applicationCategory": "GameApplication",
@@ -1762,7 +1748,7 @@
         "position": 19,
         "item": {
           "@type": "VideoGame",
-          "name": "Garage",
+          "name": "Car Builder",
           "url": "https://kreeda.games/garage/",
           "genre": "Educational",
           "applicationCategory": "GameApplication",
@@ -1780,7 +1766,7 @@
         "position": 20,
         "item": {
           "@type": "VideoGame",
-          "name": "Isomer",
+          "name": "Organic Chemistry Grid",
           "url": "https://kreeda.games/isomer/",
           "genre": "Educational",
           "applicationCategory": "GameApplication",
@@ -1800,7 +1786,7 @@
         "position": 21,
         "item": {
           "@type": "VideoGame",
-          "name": "Wattage",
+          "name": "Energy Grid",
           "url": "https://kreeda.games/wattage/",
           "genre": "Educational",
           "applicationCategory": "GameApplication",

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>The Auction — Kreeda</title>
+<title>Life Auction — Kreeda</title>
 <meta name="description" content="100 coins. Ten things people want from life. You can't fund them all. A two-player pass-the-phone game about what you value — bid in private, reveal together.">
 <link rel="canonical" href="https://kreeda.games/auction/">
 <meta name="theme-color" content="#0e2a1f">
@@ -11,13 +11,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kreeda">
 <meta property="og:url" content="https://kreeda.games/auction/">
-<meta property="og:title" content="The Auction — Kreeda">
+<meta property="og:title" content="Life Auction — Kreeda">
 <meta property="og:description" content="100 coins. Ten things people want from life. You can't fund them all. Bid in private, reveal together.">
 <meta property="og:image" content="https://kreeda.games/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="The Auction — Kreeda">
+<meta name="twitter:title" content="Life Auction — Kreeda">
 <meta name="twitter:description" content="100 coins. Ten things people want from life. You can't fund them all. Bid in private, reveal together.">
 <meta name="twitter:image" content="https://kreeda.games/og.png">
 
@@ -26,7 +26,7 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"The Auction","description":"100 coins. Ten things people want from life. You can't fund them all. A two-player pass-the-phone game about what you value — bid in private, reveal together.","url":"https://kreeda.games/auction/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Life Auction","description":"100 coins. Ten things people want from life. You can't fund them all. A two-player pass-the-phone game about what you value — bid in private, reveal together.","url":"https://kreeda.games/auction/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <style>
 /* ============================ tokens ============================
@@ -300,7 +300,7 @@ details.how ul{ margin:0; padding:0 16px 14px 30px; font-size:13.5px; line-heigh
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="wordmark">The Auction<small>Kreeda · Together</small></div>
+    <div class="wordmark">Life Auction<small>Kreeda · Together</small></div>
     <button class="homebtn" id="homeBtn" aria-label="Home / restart" hidden>⌂</button>
   </header>
   <main id="stage"></main>
@@ -419,7 +419,7 @@ function showTitle(){
   const [a,b] = S.names;
   render(`
     <div class="hero">${GAVEL_SVG}
-      <h1 class="gametitle">The Auction<small>values under scarcity</small></h1>
+      <h1 class="gametitle">Life Auction<small>values under scarcity</small></h1>
     </div>
     <p class="pitch"><b>100 coins.</b> Ten things people want from life. You can't fund them all —
       so what you bid on says who you are.</p>
@@ -705,7 +705,7 @@ function showResults(){
         ${mir}
       </div>
       ${proxyBlock}
-      <p class="resultdate">The Auction · ${new Date().toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"})}</p>
+      <p class="resultdate">Life Auction · ${new Date().toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"})}</p>
     </div>
     ${S.proxyPlayed ? "" : `
     <div class="card" style="margin-top:12px;">
@@ -855,7 +855,7 @@ function resultText(R){
     return gap <= 10 ? "🟢" : gap >= 20 ? "🔴" : "🟠";
   }).join("");
   const lines = [
-    `The Auction — ${nA} & ${nB}`,
+    `Life Auction — ${nA} & ${nB}`,
     `Alignment ${R.alignment} · ${ph.t}`,
     glyphs,
     R.topShared >= 0 ? `Top shared: ${LOTS[R.topShared].n}` : `No shared top pick`,
