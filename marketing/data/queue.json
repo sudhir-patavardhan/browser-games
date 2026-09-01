@@ -74,7 +74,7 @@
   },
   {
     "id": "plan-wednesday-1788019306067-2",
-    "status": "scheduled",
+    "status": "draft_published",
     "channel": "reddit",
     "gameId": "carrom",
     "scheduledDate": "2026-08-31",
@@ -85,8 +85,17 @@
       "flair": "Developer"
     },
     "createdAt": "2026-08-29T16:01:46.067Z",
-    "publishedAt": null,
-    "publishResult": null
+    "publishedAt": "2026-08-31T16:39:08.047Z",
+    "publishResult": {
+      "success": true,
+      "channel": "reddit",
+      "subreddit": "r/webgames",
+      "mode": "draft",
+      "postId": "sim-reddit-1788194348047",
+      "url": "https://www.reddit.com/r/webgames/submit?title=%5BHTML5%5D%20Carrom%20%E2%80%93%20Classic%20tabletop%20carrom%20board%20game%20with%20rigid%20disc%20physics%20and%203%20AI%20difficulty%20levels",
+      "publishedAt": "2026-08-31T16:39:08.047Z"
+    },
+    "updatedAt": "2026-08-31T16:39:08.047Z"
   },
   {
     "id": "plan-thursday-1788019317743-3",
@@ -230,5 +239,29 @@
       "publishedAt": "2026-08-29T16:17:37.785Z"
     },
     "updatedAt": "2026-08-29T16:17:37.790Z"
+  },
+  {
+    "id": "post-1788194448180-ahze",
+    "status": "draft_published",
+    "channel": "twitter",
+    "gameId": "sync",
+    "scheduledDate": "2026-08-31",
+    "content": {
+      "kind": "together-video",
+      "text": "Find out where you and your partner (or best friend) are truly in sync—and where you’ve just been guessing. Ten questions, instant reveal: https://kreeda.games/sync/index.html #couples #gamenight",
+      "altText": "Two people sit together sharing a single smartphone, laughing as they reveal their matched answers in a game of Sync.",
+      "videoPath": "/home/runner/work/browser-games/browser-games/marketing/artifacts/videos/sync-together-1788194385270.mp4",
+      "squarePath": "/home/runner/work/browser-games/browser-games/marketing/artifacts/videos/sync-together-1788194385270-square.mp4"
+    },
+    "createdAt": "2026-08-31T16:40:48.180Z",
+    "publishedAt": "2026-08-31T16:40:48.180Z",
+    "publishResult": {
+      "success": true,
+      "channel": "twitter",
+      "mode": "draft",
+      "postId": "sim-tweet-1788194448179",
+      "url": "https://twitter.com/intent/tweet?text=Find%20out%20where%20you%20and%20your%20partner%20(or%20best%20friend)%20are%20truly%20in%20sync%E2%80%94and%20where%20you%E2%80%99ve%20just%20been%20guessing.%20Ten%20questions%2C%20instant%20reveal%3A%20https%3A%2F%2Fkreeda.games%2Fsync%2Findex.html%20%23couples%20%23gamenight",
+      "publishedAt": "2026-08-31T16:40:48.180Z"
+    }
   }
 ]
