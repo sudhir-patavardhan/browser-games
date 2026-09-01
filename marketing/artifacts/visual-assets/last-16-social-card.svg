@@ -47,7 +47,7 @@
   </g>
 
   <!-- Game Title -->
-  <text x="80" y="220" fill="url(#textGrad)" font-family="-apple-system, system-ui, sans-serif" font-weight="900" font-size="76" letter-spacing="-1" filter="url(#shadow)">Last 16</text>
+  <text x="80" y="220" fill="url(#textGrad)" font-family="-apple-system, system-ui, sans-serif" font-weight="900" font-size="76" letter-spacing="-1" filter="url(#shadow)">Knockout Football</text>
 
   <!-- Tagline -->
   <text x="80" y="280" fill="#f4f4f8" font-family="-apple-system, system-ui, sans-serif" font-weight="700" font-size="28" letter-spacing="0">16 nations. 4 real stars each. Lift the trophy.</text>
