@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Time Capsule — Kreeda</title>
+<meta name="description" content="Seal tonight's predictions about each other — who'll move abroad, who'll go viral, who'll be late to the reunion — then open them together months later and find out who called it. 2–8 friends, one phone. The game plays twice.">
+<link rel="canonical" href="https://kreeda.games/capsule/">
+<meta name="theme-color" content="#0d1322">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/capsule/">
+<meta property="og:title" content="Time Capsule — Kreeda">
+<meta property="og:description" content="Seal tonight's predictions about each other; open them at the next reunion. The game plays twice — once when you seal it, and once when you find out who called it.">
+<meta property="og:image" content="https://kreeda.games/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Time Capsule — Kreeda">
+<meta name="twitter:description" content="Seal tonight's predictions about each other; open them at the next reunion. The game plays twice.">
+<meta name="twitter:image" content="https://kreeda.games/og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Time Capsule","description":"Seal tonight's predictions about each other — then open them together months later and find out who called it. 2–8 friends, one phone. The game plays twice.","url":"https://kreeda.games/capsule/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+<style>
+/* ============================ tokens ============================
+   Midnight brass: the last clear night of a trip, when someone says "same time next year".
+   Deep indigo ground with a faint starfield; brass is the capsule metal and the game's single
+   accent — seals, countdowns, crowns. One committed dark look: this game is sealed at night and
+   opened at a reunion, and both moments want the same sky. Eight fixed player hues (in JS, PCOL)
+   ride on top for identity — a player keeps their colour from the seal to the opening, months
+   apart, so the reveal reads instantly. color-scheme:dark keeps the native date picker and
+   range slider from flashing white. */
+:root{
+  color-scheme:dark;
+  --ground:#0d1322;  --ground-2:#131c33;
+  --panel:#182238;   --panel-2:#202c49;  --rule:rgba(190,205,255,.15);
+  --ink:#eef2ff;     --ink-dim:#96a3c7;
+  --brass:#e0aa4e;   --brass-2:#f5cd7e;  --brass-soft:rgba(224,170,78,.16); --brass-ink:#2a1d05;
+  --ok:#57d9a3;      --ok-soft:rgba(87,217,163,.14);
+  --no:#ff8c7a;      --no-soft:rgba(255,140,122,.12);
+  --gold:#ffd166;
+  --shade:rgba(5,8,16,.76);
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  /* explicit paint is mandatory — a transparent body would borrow the host's theme.
+     The tiny radial dots are the starfield; they cost nothing and sell the night. */
+  background:
+    radial-gradient(1.5px 1.5px at 12% 18%, rgba(255,255,255,.55) 50%, transparent 51%),
+    radial-gradient(1px 1px at 78% 9%,  rgba(255,255,255,.45) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 55% 30%, rgba(255,255,255,.35) 50%, transparent 51%),
+    radial-gradient(1px 1px at 30% 55%, rgba(255,255,255,.28) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 90% 42%, rgba(255,255,255,.30) 50%, transparent 51%),
+    radial-gradient(1px 1px at 8% 80%,  rgba(255,255,255,.22) 50%, transparent 51%),
+    radial-gradient(120% 55% at 50% -10%, rgba(224,170,78,.12) 0%, transparent 55%),
+    linear-gradient(180deg, var(--ground-2) 0%, var(--ground) 45%, #0a0e1a 100%);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{ max-width:540px; margin:0 auto;
+  padding: max(14px, env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
+
+button{ font:inherit; color:inherit; cursor:pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible{
+  outline:3px solid var(--gold); outline-offset:2px; }
+[hidden]{ display:none !important; }
+
+/* ============================ shared chrome ============================ */
+.top{ display:flex; align-items:center; gap:10px; margin:2px 0 12px; min-height:44px; }
+.wordmark{ display:flex; align-items:center; gap:9px; }
+.wordmark svg{ width:34px; height:34px; flex:none; }
+.wordmark b{ font-size:22px; font-weight:900; letter-spacing:1px; }
+.wordmark small{ display:block; font-size:10px; font-weight:700; letter-spacing:2.6px;
+  text-transform:uppercase; color:var(--ink-dim); }
+.homebtn{ margin-left:auto; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
+  min-width:44px; min-height:44px; padding:8px 12px; font-size:13px; font-weight:800; color:var(--ink-dim); }
+.soundbtn{ margin-left:auto; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
+  min-width:44px; min-height:44px; padding:8px 10px; font-size:17px; line-height:1; }
+.soundbtn + .homebtn{ margin-left:0; }
+
+.card{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:18px 16px; }
+.btn{
+  display:block; width:100%; min-height:52px; padding:14px 16px; margin-top:10px;
+  background:var(--panel-2); border:1px solid var(--rule); border-radius:14px;
+  font-size:16px; font-weight:800; letter-spacing:.2px; text-align:center;
+  transition:transform .1s ease, background .15s ease;
+}
+.btn:active{ transform:scale(.985); }
+.btn.primary{ background:linear-gradient(100deg, var(--brass) 0%, var(--brass-2) 60%, #caa14b 130%);
+  border-color:transparent; color:var(--brass-ink); box-shadow:0 8px 24px rgba(224,170,78,.30); }
+.btn.ghost{ background:transparent; border-color:var(--rule); color:var(--ink-dim); font-weight:700; }
+.btn[disabled]{ opacity:.45; cursor:default; }
+.btnrow{ display:flex; gap:10px; }
+.btnrow .btn{ flex:1; }
+
+.dim{ color:var(--ink-dim); }
+.tiny{ font-size:12px; line-height:1.55; }
+
+/* ============================ title ============================ */
+.hero{ text-align:center; margin:18px 0 16px; }
+.hero svg{ width:130px; height:80px; }
+.hero h1{ font-size:40px; font-weight:900; letter-spacing:2px; margin:6px 0 4px;
+  background:linear-gradient(95deg, var(--brass-2), var(--brass) 55%, #9fb4ff);
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.hero p{ margin:0; font-size:15px; color:var(--ink-dim); font-weight:600; line-height:1.5; }
+
+.sect{ margin:20px 0 6px; }
+.sect h3{ margin:0; font-size:14px; font-weight:900; letter-spacing:1.4px; text-transform:uppercase; }
+.sect span{ display:block; font-size:12px; color:var(--ink-dim); margin-top:2px; }
+
+/* capsule cards on the title: label, sealed date, crew, and either a live countdown or a
+   glowing READY pill. The whole row opens the capsule; the ✕ is its own small button. */
+.cap{ display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--rule);
+  border-radius:16px; padding:10px 10px 10px 12px; margin-top:10px; }
+.cap .body{ flex:1; min-width:0; display:flex; align-items:center; gap:12px; background:none; border:0;
+  padding:6px 0; text-align:left; }
+.cap .ic{ flex:none; width:40px; height:40px; }
+.cap .info{ flex:1; min-width:0; }
+.cap .lbl{ font-size:16px; font-weight:900; line-height:1.25; overflow-wrap:anywhere; }
+.cap .sub{ font-size:12px; color:var(--ink-dim); margin-top:2px; line-height:1.4; overflow-wrap:anywhere; }
+.cap .st{ display:inline-block; margin-top:6px; font-size:11px; font-weight:900; letter-spacing:.6px;
+  border-radius:999px; padding:4px 10px; }
+.cap .st.wait{ background:var(--panel-2); color:var(--ink-dim); }
+.cap .st.ready{ background:linear-gradient(100deg, var(--brass), var(--brass-2)); color:var(--brass-ink); }
+.cap .st.open{ background:var(--ok-soft); color:var(--ok); }
+.cap .del{ flex:none; min-width:44px; min-height:44px; background:transparent; border:0;
+  border-radius:11px; color:var(--ink-dim); font-size:16px; }
+@media (prefers-reduced-motion:no-preference){
+  .cap .st.ready{ animation:readyGlow 1.8s ease-in-out infinite; }
+  @keyframes readyGlow{ 0%,100%{ box-shadow:0 0 0 0 rgba(224,170,78,.0);} 50%{ box-shadow:0 0 14px 2px rgba(224,170,78,.45);} }
+}
+
+/* name entry: 2–8 rows, each with the player's fixed colour dot */
+.nrow{ display:flex; align-items:center; gap:9px; margin-top:9px; }
+.nrow .pdot{ flex:none; width:13px; height:13px; border-radius:5px; }
+.nrow input{ flex:1; min-width:0; font:inherit; font-size:16px; font-weight:700;  /* 16px or iOS zooms */
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:12px 12px; min-height:48px; }
+.nrow .rm{ flex:none; min-width:44px; min-height:44px; background:transparent; border:0;
+  border-radius:11px; color:var(--ink-dim); font-size:15px; }
+.addbtn{ margin-top:10px; width:100%; min-height:46px; background:transparent; border:1.5px dashed var(--rule);
+  border-radius:12px; font-size:14px; font-weight:800; color:var(--ink-dim); }
+
+.field{ margin-top:14px; }
+.field label{ display:block; font-size:11px; font-weight:800; letter-spacing:1.4px;
+  text-transform:uppercase; color:var(--ink-dim); margin:0 0 5px 2px; }
+.field input, .field textarea{
+  width:100%; font:inherit; font-size:16px; font-weight:700;
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:12px 12px; min-height:48px; }
+.field textarea{ resize:none; line-height:1.45; }
+
+.packs{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.pack{ flex:1 1 22%; min-height:46px; padding:10px 8px; background:var(--panel-2);
+  border:1px solid var(--rule); border-radius:12px; font-size:13.5px; font-weight:800; }
+.pack[aria-pressed="true"]{ background:var(--brass-soft); border-color:var(--brass); color:var(--brass-2);
+  box-shadow:inset 0 0 0 1px var(--brass); }
+
+details.how, details.imp{ margin-top:14px; border:1px solid var(--rule); border-radius:14px;
+  background:var(--panel); padding:0 14px; }
+details.how summary, details.imp summary{ cursor:pointer; font-size:14px; font-weight:800; padding:13px 0;
+  min-height:44px; list-style:none; display:flex; align-items:center; gap:8px; }
+details.how summary::-webkit-details-marker, details.imp summary::-webkit-details-marker{ display:none; }
+details.how summary::before, details.imp summary::before{ content:'▸'; color:var(--ink-dim);
+  transition:transform .15s ease; }
+details.how[open] summary::before, details.imp[open] summary::before{ transform:rotate(90deg); }
+details.how ul{ margin:0 0 14px; padding-left:20px; font-size:13.5px; line-height:1.65; color:var(--ink-dim); }
+details.how li b{ color:var(--ink); }
+details.imp .impbody{ padding:0 0 14px; }
+details.imp textarea{ width:100%; font-size:16px; line-height:1.5; min-height:84px;  /* 16px or iOS zooms */
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:10px; resize:none; }
+details.imp p{ margin:8px 0 0; font-size:12px; color:var(--ink-dim); line-height:1.5; }
+
+.foot{ margin-top:20px; text-align:center; font-size:11px; line-height:1.7; color:var(--ink-dim); }
+.foot a{ color:var(--ink-dim); }
+.keepline{ margin-top:12px; font-size:12px; line-height:1.6; color:var(--ink-dim); text-align:center; }
+.keepline b{ color:var(--brass-2); font-weight:800; }
+
+/* ============================ hand-off ============================ */
+.handoff{ min-height:76vh; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; text-align:center; padding:20px 6px; }
+.handoff .pass{ font-size:13px; font-weight:800; letter-spacing:2.4px; text-transform:uppercase;
+  color:var(--ink-dim); }
+.handoff h2{ font-size:36px; font-weight:900; margin:12px 0 6px; overflow-wrap:anywhere; }
+.handoff .sub{ font-size:15px; color:var(--ink-dim); margin:0 0 26px; line-height:1.5; max-width:320px; }
+.handoff .btn{ max-width:340px; }
+.handoff .peek{ margin-top:22px; font-size:12.5px; color:var(--ink-dim); }
+@media (prefers-reduced-motion:no-preference){
+  .handoff h2{ animation:heartbeat 1.6s ease-in-out infinite; }
+  @keyframes heartbeat{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.03);} }
+}
+
+/* ============================ sealing sheet ============================ */
+.turn{ display:flex; align-items:center; gap:10px; background:var(--panel-2); border:1px solid var(--rule);
+  border-radius:13px; padding:10px 12px; margin-bottom:12px; font-size:13px; line-height:1.4; }
+.turn .eye{ font-size:20px; flex:none; }
+
+.qcard{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:14px 14px 12px;
+  margin-top:10px; }
+.qcard .qhead{ display:flex; gap:9px; align-items:flex-start; margin-bottom:10px; }
+.qcard .qn{ flex:none; width:24px; height:24px; border-radius:99px; background:var(--panel-2); margin-top:2px;
+  font-size:11.5px; font-weight:900; display:flex; align-items:center; justify-content:center;
+  color:var(--ink-dim); transition:background .2s ease, color .2s ease; }
+.qcard.done .qn{ background:var(--ok-soft); color:var(--ok); box-shadow:inset 0 0 0 1.5px var(--ok); }
+.qtext{ flex:1; font-size:17.5px; font-weight:900; line-height:1.3; margin:0; }
+.qtext b{ color:var(--brass-2); }
+
+.chips{ display:flex; flex-wrap:wrap; gap:8px; }
+.nchip{ flex:1 0 auto; min-height:46px; padding:10px 14px; background:var(--panel-2); color:var(--ink);
+  border:1.5px solid var(--rule); border-radius:999px; font-size:14.5px; font-weight:800;
+  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  transition:background .15s ease, border-color .15s ease, transform .1s ease; }
+.nchip:active{ transform:scale(.96); }
+.nchip[aria-pressed="true"]{ background:var(--pc); border-color:var(--pc); color:#1a1408; font-weight:900; }
+
+.sliderbox{ text-align:center; padding:4px 4px 2px; }
+.sliderbox output{ display:block; font-size:44px; font-weight:900; color:var(--brass-2); line-height:1.1; }
+.sliderbox .of{ font-size:12px; color:var(--ink-dim); font-weight:700; margin-bottom:10px; }
+.sliderbox input[type="range"]{ width:100%; accent-color:var(--brass); height:44px; margin:0; }
+
+.charhint{ text-align:right; font-size:11px; color:var(--ink-dim); margin-top:4px; }
+
+.lockbar{ position:sticky; bottom:0; z-index:5; padding:14px 0 calc(6px + env(safe-area-inset-bottom));
+  margin-top:6px; background:linear-gradient(180deg, transparent 0%, var(--ground) 38%); }
+.lockbar .btn{ margin-top:0; }
+
+/* ============================ ceremonies ============================
+   One capsule drawing serves both rituals. Its natural (attribute) state is the FINAL state of
+   whichever ceremony is playing — closed for sealing, lid raised for opening — and the keyframes
+   animate FROM the other pose. Reduced motion kills the animation and correctly lands on the end. */
+.cerwrap{ text-align:center; padding:12px 0 4px; }
+.cerwrap svg{ width:200px; height:180px; }
+.cersvg .beam, .cersvg .spark{ opacity:0; }
+.cersvg.open .beam{ opacity:.8; } .cersvg.open .spark{ opacity:1; }
+@media (prefers-reduced-motion:no-preference){
+  .cersvg.seal .clid{ animation:lidClose .9s cubic-bezier(.3,1.4,.4,1) both; }
+  @keyframes lidClose{ from{ transform:translateY(-46px); } }
+  .cersvg.seal .glowc{ animation:glowIn 1.5s ease .7s both; }
+  @keyframes glowIn{ from{ opacity:0; } }
+  .cersvg.open .clid{ animation:lidOpen 1s cubic-bezier(.3,1.3,.4,1) both; }
+  @keyframes lidOpen{ from{ transform:translateY(0); } }
+  .cersvg.open .beam{ animation:beamIn 1.2s ease .5s both; }
+  @keyframes beamIn{ from{ opacity:0; } to{ opacity:.8; } }
+  .cersvg.open .spark{ animation:beamIn 1.2s ease .7s both; }
+  .cer-late{ opacity:0; animation:riseIn .5s ease 1.1s forwards; }
+  @keyframes riseIn{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:none; } }
+}
+@media (prefers-reduced-motion:reduce){ .cer-late{ opacity:1; } }
+.captag{ display:inline-block; margin-top:4px; background:var(--brass-soft); border:1px solid var(--brass);
+  color:var(--brass-2); border-radius:10px; padding:7px 14px; font-size:14px; font-weight:900; }
+.captag::before{ content:''; display:block; width:1px; height:14px; background:var(--brass);
+  margin:-21px auto 7px; opacity:.7; }
+.cerh{ font-size:30px; font-weight:900; text-align:center; margin:12px 0 4px;
+  background:linear-gradient(95deg, var(--brass-2), var(--brass)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.cersub{ text-align:center; font-size:14px; color:var(--ink-dim); line-height:1.5; margin:0 0 8px; }
+
+/* ============================ opening reveals ============================ */
+.stepnote{ text-align:center; font-size:11px; font-weight:800; letter-spacing:1.6px;
+  text-transform:uppercase; color:var(--ink-dim); margin:4px 0 10px; }
+.bigq{ text-align:center; font-size:21px; font-weight:900; line-height:1.3; margin:0 0 4px; }
+.bigq b{ color:var(--brass-2); }
+
+.tallyrow{ margin-top:12px; }
+.tallyrow .tname{ display:flex; justify-content:space-between; align-items:baseline; font-size:13.5px;
+  font-weight:800; margin-bottom:4px; }
+.tallyrow .tname .tv{ font-size:12px; color:var(--ink-dim); font-weight:700; }
+.tallyrow .tbar{ height:26px; border-radius:8px; background:var(--panel-2); overflow:hidden; }
+.tallyrow .tbar i{ display:block; height:100%; width:0; border-radius:8px; background:var(--tc);
+  transition:width .9s cubic-bezier(.2,.7,.2,1); }
+.tallyrow .voters{ display:flex; gap:4px; margin-top:4px; }
+.tallyrow .voters span{ width:9px; height:9px; border-radius:50%; }
+.crownline{ text-align:center; font-size:18px; font-weight:900; margin:16px 0 2px; line-height:1.4; }
+.crownline .cn{ font-size:22px; }
+@media (prefers-reduced-motion:no-preference){
+  .crownline{ opacity:0; animation:riseIn .5s ease 1s forwards; }
+}
+@media (prefers-reduced-motion:reduce){ .crownline{ opacity:1; } }
+
+/* the reunion-count number line: everyone's guess as stacked dots over the numbers */
+.numline{ display:flex; gap:4px; margin-top:14px; align-items:flex-end; }
+.numcol{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:5px; }
+.numcol .stack{ display:flex; flex-direction:column; justify-content:flex-end; gap:3px; min-height:66px; }
+.numcol .gdot{ width:13px; height:13px; border-radius:50%; }
+.numcol .nl{ font-size:12px; font-weight:800; color:var(--ink-dim); min-width:24px; text-align:center;
+  padding:3px 0; border-radius:8px; }
+.numcol.actual .nl{ background:var(--brass); color:var(--brass-ink); }
+.pickrow{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.pchip{ flex:1 0 44px; min-height:48px; background:var(--panel-2); border:1.5px solid var(--rule);
+  border-radius:12px; font-size:16px; font-weight:900; }
+.pchip[aria-pressed="true"]{ background:var(--brass); border-color:var(--brass); color:var(--brass-ink); }
+
+.postcard{ background:linear-gradient(155deg, var(--panel-2) 0%, var(--panel) 100%);
+  border:1px solid var(--rule); border-left:6px solid var(--pc); border-radius:16px;
+  padding:18px 16px; margin-top:12px; cursor:pointer; }
+.postcard .stamp{ float:right; font-size:20px; background:var(--brass-soft); border:1px dashed var(--brass);
+  border-radius:8px; padding:4px 7px; margin:-4px -2px 6px 10px; transform:rotate(4deg); }
+.postcard .msg{ font-size:18px; font-weight:700; line-height:1.5; overflow-wrap:anywhere; }
+.postcard .from{ margin-top:12px; font-size:12.5px; font-weight:900; color:var(--pc); }
+@media (prefers-reduced-motion:no-preference){
+  .postcard{ animation:cardIn .4s cubic-bezier(.2,.8,.3,1); }
+  @keyframes cardIn{ from{ opacity:0; transform:translateY(14px) rotate(1deg);} }
+}
+
+/* the truth pass: one row per crowned prediction, ✓ came true / ✗ nope */
+.trow{ display:flex; gap:8px; align-items:center; background:var(--panel); border:1px solid var(--rule);
+  border-radius:14px; padding:10px 10px 10px 12px; margin-top:8px; }
+.trow .tx{ flex:1; min-width:0; font-size:13.5px; font-weight:700; line-height:1.4; overflow-wrap:anywhere; }
+.trow .tx b{ font-weight:900; }
+.tbtn{ flex:none; width:52px; min-height:46px; border-radius:12px; background:var(--panel-2);
+  border:1.5px solid var(--rule); font-size:18px; font-weight:900; }
+.tbtn.yes[aria-pressed="true"]{ background:var(--ok); border-color:var(--ok); color:#052e16; }
+.tbtn.no[aria-pressed="true"]{ background:var(--no); border-color:var(--no); color:#3d0f05; }
+
+/* ============================ results ============================ */
+.results h2{ font-size:15px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--ink-dim); text-align:center; margin:4px 0 2px; }
+.names{ text-align:center; font-size:14px; font-weight:800; margin:0 0 12px; overflow-wrap:anywhere;
+  color:var(--ink-dim); }
+.names b{ color:var(--brass-2); }
+
+.info{ text-align:center; padding:16px 10px 16px; }
+.ring{ position:relative; display:flex; flex-direction:column; align-items:center; margin:0 auto; }
+.ring svg{ width:156px; height:156px; transform:rotate(-90deg); }
+.ring .tr{ fill:none; stroke:var(--panel-2); stroke-width:10; }
+.ring .fl{ fill:none; stroke-width:10; stroke-linecap:round; stroke:url(#ringGrad);
+  transition:stroke-dashoffset 1.2s cubic-bezier(.2,.7,.2,1); }
+.ring .rv{ position:absolute; top:0; left:0; width:100%; height:156px; display:flex; align-items:center;
+  justify-content:center; font-weight:900; font-size:44px; line-height:1; color:var(--brass-2); }
+.ring .rv i{ font-style:normal; font-size:.55em; opacity:.7; margin-left:1px; }
+.ring .rl{ margin-top:5px; font-size:13px; font-weight:800; color:var(--ink); line-height:1.25; }
+.ring .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+.verdict{ margin-top:14px; }
+.verdict b{ display:block; font-size:26px; font-weight:900; line-height:1.15;
+  background:linear-gradient(95deg, var(--brass-2), #9fb4ff); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.verdict span{ display:block; margin-top:4px; font-size:13px; color:var(--ink-dim); line-height:1.45; }
+.pstrip{ display:flex; gap:5px; justify-content:center; margin-top:12px; }
+.pstrip i{ width:26px; height:12px; border-radius:4px; background:var(--panel-2); }
+.pstrip i.y{ background:var(--ok); } .pstrip i.n{ background:var(--no); }
+@media (prefers-reduced-motion:no-preference){
+  .pstrip i.y, .pstrip i.n{ animation:pop .35s ease backwards; }
+  @keyframes pop{ from{ transform:scale(.4); opacity:.3; } }
+}
+
+.glance{ margin-top:12px; padding:12px 14px; }
+.gl{ display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-top:1px solid var(--rule);
+  font-size:13.5px; line-height:1.45; overflow-wrap:anywhere; }
+.gl:first-child{ border-top:0; padding-top:0; } .gl:last-child{ padding-bottom:0; }
+.gl .gi{ flex:none; width:26px; text-align:center; font-size:18px; line-height:1.15; }
+.gl b{ font-weight:900; }
+.gl .pd{ display:inline-block; width:10px; height:10px; border-radius:4px; margin-right:6px; }
+.gl .ok{ color:var(--ok); font-weight:900; } .gl .no{ color:var(--no); font-weight:900; }
+@media (prefers-reduced-motion:no-preference){
+  .rise{ opacity:0; transform:translateY(10px); animation:rise2 .4s ease forwards; }
+  @keyframes rise2{ to{ opacity:1; transform:none; } }
+}
+
+.datefoot{ text-align:center; font-size:11.5px; color:var(--ink-dim); margin-top:14px; }
+.sharebox{ width:100%; margin-top:10px; font-size:13px; line-height:1.5;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:10px; resize:none; }
+
+/* toast + confirm modal */
+.toast{ position:fixed; left:50%; bottom:calc(26px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(8px); background:var(--panel-2); color:var(--ink);
+  border:1px solid var(--rule); border-radius:12px; padding:11px 18px; font-size:14px;
+  font-weight:800; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:90;
+  box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:88vw; text-align:center; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+.scrim{ position:fixed; inset:0; background:var(--shade); z-index:70; display:none;
+  align-items:center; justify-content:center; padding:20px; }
+.scrim.show{ display:flex; }
+.confirmbox{ background:var(--panel); border:1px solid var(--rule); border-radius:18px;
+  padding:20px 18px; max-width:340px; width:100%; }
+.confirmbox h3{ margin:0 0 6px; font-size:18px; font-weight:900; }
+.confirmbox p{ margin:0 0 14px; font-size:13.5px; color:var(--ink-dim); line-height:1.5; }
+
+.btn.wa{ display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;
+  background:#25D366; color:#052e16; border-color:transparent; box-shadow:0 8px 24px rgba(37,211,102,.25); }
+.btn.wa svg{ width:20px; height:20px; flex:none; }
+.sharehint{ font-size:12px; color:var(--ink-dim); text-align:center; margin:6px 0 0; line-height:1.45; }
+
+@media (prefers-reduced-motion:reduce){
+  *{ animation:none !important; transition:none !important; }
+  .rise{ opacity:1; transform:none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="scrim" id="scrim">
+  <div class="confirmbox" role="alertdialog" aria-modal="true" aria-labelledby="cfTitle" aria-describedby="cfBody">
+    <h3 id="cfTitle">Leave?</h3>
+    <p id="cfBody"></p>
+    <button class="btn primary" type="button" id="cfYes">Yes</button>
+    <button class="btn ghost" type="button" id="cfNo">Stay</button>
+  </div>
+</div>
+
+<!-- analytics.js before the game script: track() below fires synchronously and would otherwise
+     race the tag load and vanish. -->
+<script src="../analytics.js"></script>
+<script>
+'use strict';
+/* ============================================================================================
+   TIME CAPSULE — the game that plays twice. Tonight, 2–8 friends privately seal predictions
+   about each other (five "most likely to…" calls, a reunion headcount, a message to future us)
+   behind the family's usual hand-off ritual. Months later, the same phone opens the capsule in
+   front of the whole room: bar tallies crown the circle's picks, the headcount guesses land on
+   a number line against reality, the postcards read out one by one, and a ✓/✗ pass turns it all
+   into one Prophecy score and an Oracle.
+
+   DELIBERATE DEVIATION from the family privacy rule, disclosed on the title and seal screens:
+   persistence IS this game. Sealed capsules are stored in localStorage under `capsule.capsules`
+   (a JSON array). Content never leaves this phone — nothing is uploaded, analytics carries
+   counts only — but clearing this browser's site data destroys the capsules, so the seal screen
+   offers a backup code (base64 of the capsule JSON) that the title screen can re-import.
+   Everything mid-round (the sealing session S, the opening session O) is memory-only as usual.
+   ============================================================================================ */
+
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+const LS={ get:k=>{ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
+const DAY=86400000;
+
+function esc(s){ return String(s).replace(/[&<>"']/g,
+  c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function mulberry32(a){ return function(){ a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a);
+  t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+/* unicode-safe base64 for backup codes */
+function b64e(s){ return btoa(unescape(encodeURIComponent(s))); }
+function b64d(s){ return decodeURIComponent(escape(atob(s))); }
+
+/* ============================ prompt bank ============================
+   ~30 forward-looking "Who's most likely to…" calls. Each must read three ways months apart:
+   as a question tonight ("Who's most likely to go viral?"), as a crowning ("most likely to go
+   viral"), and as a share line ("voted most likely to go viral — ✓ called it"). Kind by
+   construction: every one passes the said-to-your-face-kindly test. */
+const PROMPTS=[
+  'move to a new city','move abroad','go viral','adopt a pet','pick up a surprising hobby',
+  'be famous for something','be late to the reunion','have a new partner',
+  'still hate the same food','run a marathon','start a business','quit a job on impulse',
+  'learn a new language','still have the same phone wallpaper','change their look completely',
+  'vanish off the grid for a month','throw the party of the year','get a new tattoo',
+  'end up on a podcast','write something people actually read','become a morning person',
+  'own the group chat with memes','win money somehow','break something doing a new sport',
+  'cry first when this opens','plan the next reunion','forget this capsule exists',
+  'cook something spectacular','make a new best friend','still be exactly the same',
+  'become a plant person','get really into fitness'
+];
+const NLIKELY=5;
+
+/* eight fixed player hues — a player keeps theirs from the seal to the opening */
+const PCOL=['#f2b34c','#63c6f2','#f27e9d','#5fd6a4','#a58bf2','#f0885a','#c9d857','#e59de0'];
+function pcol(i){ return PCOL[i%PCOL.length]; }
+function pdot(i){ return '<span class="pd" style="background:'+pcol(i)+'" aria-hidden="true"></span>'; }
+
+/* ============================ capsule store ============================
+   The one sanctioned persistence in the family, per this game's brief. Everything read back
+   from disk goes through sanitizeCapsule — a capsule may be months old, hand-imported from a
+   pasted code, or written by a future version of this file, and rendering always escapes. */
+function newId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function sanitizeCapsule(o){
+  try{
+    if(!o||typeof o!=='object'||o.v!==1) return null;
+    const names=(Array.isArray(o.names)?o.names:[]).slice(0,8)
+      .map(s=>String(s).slice(0,12).trim()).filter(s=>s);
+    if(names.length<2) return null;
+    const prompts=(Array.isArray(o.prompts)?o.prompts:[]).slice(0,NLIKELY).map(s=>String(s).slice(0,60));
+    if(prompts.length!==NLIKELY) return null;
+    const preds=(Array.isArray(o.preds)?o.preds:[]).slice(0,names.length).map(p=>{
+      p=p&&typeof p==='object'?p:{};
+      const likely=(Array.isArray(p.likely)?p.likely:[]).slice(0,NLIKELY).map(n=>{
+        n=Math.floor(+n); return (n>=0&&n<names.length)?n:0; });
+      while(likely.length<NLIKELY) likely.push(0);
+      let cn=Math.floor(+p.count); if(!isFinite(cn)) cn=names.length;
+      return { likely:likely, count:Math.max(0,Math.min(names.length,cn)),
+               msg:String(p.msg==null?'':p.msg).slice(0,100) };
+    });
+    if(preds.length!==names.length) return null;
+    let opened=null;
+    if(o.opened&&typeof o.opened==='object'){
+      const tr=(Array.isArray(o.opened.truth)?o.opened.truth:[]).slice(0,NLIKELY).map(x=>x?1:0);
+      while(tr.length<NLIKELY) tr.push(0);
+      let ac=Math.floor(+o.opened.actual); if(!isFinite(ac)) ac=0;
+      opened={ at:+o.opened.at||Date.now(), early:o.opened.early?1:0, truth:tr,
+               actual:Math.max(0,Math.min(names.length,ac)) };
+    }
+    return { v:1, id:String(o.id||'').replace(/[^a-z0-9]/gi,'').slice(0,20)||newId(),
+      label:String(o.label||'Time capsule').slice(0,24).trim()||'Time capsule',
+      sealedAt:+o.sealedAt||Date.now(), opensAt:+o.opensAt||Date.now(),
+      names:names, prompts:prompts, preds:preds, opened:opened };
+  }catch(e){ return null; }
+}
+function loadCaps(){
+  try{ const a=JSON.parse(LS.get('capsule.capsules')||'[]');
+    return (Array.isArray(a)?a:[]).map(sanitizeCapsule).filter(c=>c); }catch(e){ return []; }
+}
+function saveCaps(a){ LS.set('capsule.capsules',JSON.stringify(a)); }
+let CAPS=loadCaps();
+function capById(id){ for(let i=0;i<CAPS.length;i++) if(CAPS[i].id===id) return CAPS[i]; return null; }
+
+/* backup codes: a short readable header + unicode-safe base64 of the capsule JSON */
+function capCode(c){ return 'KC1.'+b64e(JSON.stringify(c)); }
+function parseCode(txt){
+  try{
+    let t=String(txt).trim().replace(/\s+/g,'');
+    const i=t.indexOf('KC1.'); if(i>=0) t=t.slice(i+4);
+    return sanitizeCapsule(JSON.parse(b64d(t)));
+  }catch(e){ return null; }
+}
+
+/* ============================ names (persisted crew) ============================ */
+let names=[];
+try{ const n=JSON.parse(LS.get('capsule.names')||'[]');
+  if(Array.isArray(n)) names=n.slice(0,8).map(s=>String(s).slice(0,12)); }catch(e){}
+if(names.length<2) names=names.concat(['','']).slice(0,2);
+
+/* ============================ sessions ============================
+   S = the sealing round (memory only until the seal ceremony writes ONE capsule to the store).
+   O = the opening in progress (memory only; the capsule is marked opened only at the finale). */
+let S=null, O=null;
+
+/* ============================ rendering core ============================
+   One container, innerHTML replaced wholesale per screen. GEN is a render generation counter:
+   every handler captures the generation it was bound in and no-ops if a render has happened
+   since — the double-tap guard. A previous player's private inputs are destroyed by show()
+   before any hand-off paints. */
+const app=document.getElementById('app');
+let GEN=0;
+function show(html){
+  GEN++; app.innerHTML=html;
+  try{ window.scrollTo({top:0,left:0,behavior:'instant'}); }catch(e){ window.scrollTo(0,0); }
+}
+function on(id,fn){
+  const g=GEN, el=document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('click',function(e){
+    if(g!==GEN || el.disabled) return;
+    el.disabled=true;
+    try{ fn(e); }finally{ if(g===GEN) el.disabled=false; }
+  });
+}
+function reducedMotion(){
+  return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
+/* ============================ marks ============================ */
+const MARK='<svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="mkG" x1="0" y1="0" x2="1" y2="1">'
+ +'<stop offset="0" stop-color="#f5cd7e"/><stop offset="1" stop-color="#c9922f"/></linearGradient></defs>'
+ +'<rect x="11" y="6" width="18" height="28" rx="9" fill="url(#mkG)"/>'
+ +'<rect x="11" y="17" width="18" height="3" fill="#8a6420" opacity=".8"/>'
+ +'<circle cx="33" cy="8" r="1.5" fill="#f5cd7e"/><circle cx="6" cy="14" r="1.2" fill="#9fb4ff"/>'
+ +'<circle cx="34" cy="30" r="1.2" fill="#9fb4ff"/></svg>';
+const MOTIF='<svg viewBox="0 0 130 80" aria-hidden="true"><defs><linearGradient id="moG" x1="0" y1="0" x2="1" y2="1">'
+ +'<stop offset="0" stop-color="#f5cd7e"/><stop offset="1" stop-color="#c9922f"/></linearGradient></defs>'
+ +'<g fill="#eef2ff"><circle cx="16" cy="12" r="1.6" opacity=".8"/><circle cx="104" cy="8" r="1.3" opacity=".6"/>'
+ +'<circle cx="122" cy="26" r="1.6" opacity=".7"/><circle cx="34" cy="26" r="1.1" opacity=".5"/>'
+ +'<circle cx="88" cy="20" r="1.2" opacity=".6"/></g>'
+ +'<path d="M62 12 l2.2 4.6 5 .7 -3.6 3.5 .9 5 -4.5-2.4 -4.5 2.4 .9-5 -3.6-3.5 5-.7z" fill="#ffd166" opacity=".9"/>'
+ +'<g transform="translate(65,52) rotate(-18)"><rect x="-26" y="-13" width="52" height="26" rx="13" fill="url(#moG)"/>'
+ +'<rect x="-3" y="-13" width="4" height="26" fill="#8a6420" opacity=".8"/>'
+ +'<circle cx="14" cy="0" r="4" fill="#fff" opacity=".35"/></g>'
+ +'<path d="M18 72 q47 12 94 0" stroke="#2a3a5e" stroke-width="5" fill="none" stroke-linecap="round"/></svg>';
+const TAGICON='🗓️';
+const WA_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.8-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.2-.2-.2-.5-.4z"/></svg>';
+
+/* the ceremony capsule: natural pose = the ceremony's FINAL state (see CSS comment) */
+function cerSVG(mode){
+  const lidY = mode==='open' ? -46 : 0;
+  return '<svg class="cersvg '+mode+'" viewBox="0 0 220 190" aria-hidden="true">'
+   +'<defs><linearGradient id="cgMet" x1="0" y1="0" x2="1" y2="1">'
+   +'<stop offset="0" stop-color="#f5cd7e"/><stop offset=".55" stop-color="#e0aa4e"/><stop offset="1" stop-color="#b3812c"/></linearGradient>'
+   +'<radialGradient id="cgGlow" cx="50%" cy="50%" r="50%">'
+   +'<stop offset="0" stop-color="#ffd166" stop-opacity=".5"/><stop offset="1" stop-color="#ffd166" stop-opacity="0"/></radialGradient></defs>'
+   +'<g fill="#eef2ff"><circle cx="26" cy="24" r="2" opacity=".8"/><circle cx="196" cy="18" r="1.5" opacity=".6"/>'
+   +'<circle cx="184" cy="60" r="1.8" opacity=".7"/><circle cx="40" cy="66" r="1.3" opacity=".5"/>'
+   +'<circle cx="110" cy="12" r="1.5" opacity=".7"/><circle cx="66" cy="34" r="1.2" opacity=".45"/></g>'
+   +'<circle class="glowc" cx="110" cy="112" r="72" fill="url(#cgGlow)"/>'
+   +'<polygon class="beam" points="88,84 132,84 158,10 62,10" fill="#ffd166" opacity=".22"/>'
+   +'<g class="spark" fill="#ffd166"><path d="M110 34 l1.8 4 4 .6 -3 2.9 .8 4.2 -3.6-2 -3.6 2 .8-4.2 -3-2.9 4-.6z"/>'
+   +'<circle cx="84" cy="52" r="2"/><circle cx="140" cy="44" r="2.4"/></g>'
+   +'<g class="cbody"><path d="M70 96 h80 v40 a40 26 0 0 1 -80 0 z" fill="url(#cgMet)"/>'
+   +'<rect x="70" y="96" width="80" height="8" fill="#8a6420" opacity=".85"/>'
+   +'<circle cx="82" cy="122" r="2.4" fill="#8a6420"/><circle cx="138" cy="122" r="2.4" fill="#8a6420"/></g>'
+   +'<g class="clid" style="transform:translateY('+lidY+'px)">'
+   +'<path d="M70 94 v-24 a40 30 0 0 1 80 0 v24 z" fill="url(#cgMet)"/>'
+   +'<rect x="70" y="86" width="80" height="8" rx="2" fill="#8a6420" opacity=".85"/>'
+   +'<rect x="98" y="46" width="24" height="7" rx="3.5" fill="#8a6420" opacity=".7"/>'
+   +'<ellipse cx="92" cy="66" rx="7" ry="12" fill="#fff" opacity=".28"/></g>'
+   +'<path d="M34 176 q76 14 152 0" stroke="#2a3a5e" stroke-width="5" fill="none" stroke-linecap="round"/>'
+   +'</svg>';
+}
+
+function header(showHome){
+  return '<header class="top"><span class="wordmark">'+MARK+'<span><b>Time Capsule</b>'
+   +'<small>Kreeda · Group</small></span></span>'
+   +(showHome
+      ? '<button class="soundbtn" type="button" id="bSound" aria-pressed="'+SND.on+'" aria-label="Sound">'+(SND.on?'🔊':'🔇')+'</button>'
+        +'<button class="homebtn" type="button" id="bHome" aria-label="Leave and return to start">Home</button>'
+      : '')
+   +'</header>';
+}
+function bindHome(confirmTitle,confirmBody){
+  on('bHome',()=>{ openConfirm(confirmTitle,confirmBody,'Leave',()=>{ S=null; O=null; title(); }); });
+  const sb=document.getElementById('bSound');
+  if(sb) sb.addEventListener('click',()=>setSound(!SND.on));
+}
+
+/* ============================ sound ============================
+   Synthesized tick + swish, no audio files — copied from the family's shared helpers with this
+   game's storage prefix. Context created on first tap (iOS requires a gesture). */
+const SND={ ctx:null, noise:null, on:LS.get('capsule.sound')!=='0' };
+function audio(){
+  if(!SND.on) return null;
+  if(!SND.ctx){ try{ SND.ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(SND.ctx.state==='suspended'){ try{ SND.ctx.resume(); }catch(e){} }
+  return SND.ctx;
+}
+function tick(){
+  const ac=audio(); if(!ac) return;
+  try{
+    const t=ac.currentTime, o=ac.createOscillator(), g=ac.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(880,t); o.frequency.exponentialRampToValueAtTime(1320,t+0.03);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.09,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t+0.08);
+  }catch(e){}
+}
+function swish(){
+  const ac=audio(); if(!ac) return;
+  try{
+    const dur=0.3, t=ac.currentTime;
+    if(!SND.noise){ const n=Math.floor(ac.sampleRate*0.5), b=ac.createBuffer(1,n,ac.sampleRate), d=b.getChannelData(0);
+      for(let i=0;i<n;i++) d[i]=Math.random()*2-1; SND.noise=b; }
+    const src=ac.createBufferSource(); src.buffer=SND.noise;
+    const f=ac.createBiquadFilter(); f.type='bandpass'; f.Q.value=1.4;
+    f.frequency.setValueAtTime(500,t); f.frequency.exponentialRampToValueAtTime(3400,t+dur*0.45);
+    f.frequency.exponentialRampToValueAtTime(700,t+dur);
+    const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.32,t+0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(f).connect(g).connect(ac.destination); src.start(t); src.stop(t+dur+0.02);
+  }catch(e){}
+}
+function setSound(onNow){
+  SND.on=onNow; LS.set('capsule.sound',onNow?'1':'0');
+  const b=document.getElementById('bSound');
+  if(b){ b.textContent=onNow?'🔊':'🔇'; b.setAttribute('aria-pressed',String(onNow)); }
+  if(onNow) tick();
+}
+
+/* confirm modal + toast */
+const scrim=document.getElementById('scrim');
+let confirmCb=null;
+document.getElementById('cfYes').addEventListener('click',()=>{ scrim.classList.remove('show');
+  const cb=confirmCb; confirmCb=null; if(cb) cb(); });
+document.getElementById('cfNo').addEventListener('click',()=>{ scrim.classList.remove('show'); confirmCb=null; });
+function openConfirm(t,b,yes,cb){
+  document.getElementById('cfTitle').textContent=t;
+  document.getElementById('cfBody').textContent=b;
+  document.getElementById('cfYes').textContent=yes;
+  document.getElementById('cfNo').textContent = yes==='Delete'?'Keep it':(yes==='Leave'?'Stay':'Wait');
+  confirmCb=cb; scrim.classList.add('show');
+}
+let toastT=null;
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+/* ============================ small formatters ============================ */
+function fmtDate(ms){ return new Date(ms).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}); }
+function elapsedText(a,b){
+  const d=Math.max(0,Math.round((b-a)/DAY));
+  if(d<2) return 'a day'; if(d<45) return d+' days';
+  const m=Math.round(d/30.44); if(m<12) return m+' months';
+  const y=Math.round(d/365.25*10)/10; return (y===Math.floor(y)?Math.floor(y):y)+(y<1.05?' year':' years');
+}
+function joinNames(ns){
+  if(ns.length<=3) return ns.map(esc).join(', ');
+  return ns.slice(0,2).map(esc).join(', ')+' +'+(ns.length-2);
+}
+function capStatus(c){
+  if(c.opened) return {cls:'open', txt:'Opened '+esc(fmtDate(c.opened.at))+' — tap to revisit'};
+  const ms=c.opensAt-Date.now();
+  if(ms<=0) return {cls:'ready', txt:'READY TO OPEN ✨'};
+  const d=Math.floor(ms/DAY);
+  if(d>=2) return {cls:'wait', txt:'⏳ opens in '+d+' days'};
+  if(d>=1) return {cls:'wait', txt:'⏳ opens tomorrow'};
+  return {cls:'wait', txt:'⏳ opens in '+Math.max(1,Math.ceil(ms/3600000))+' h'};
+}
+const MINI='<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="12" y="5" width="16" height="30" rx="8" fill="#e0aa4e"/><rect x="12" y="17" width="16" height="3" fill="#8a6420"/></svg>';
+
+/* ============================ title ============================ */
+let openChoice='6';   // '3' | '6' | '12' | 'pick' — session-only, like sync's pack
+function title(){
+  /* order: existing capsules first (the brief's rule), then the seal-a-new-one card */
+  const sorted=CAPS.slice().sort((a,b)=>{
+    const ra=(!a.opened&&a.opensAt<=Date.now())?0:(!a.opened?1:2);
+    const rb=(!b.opened&&b.opensAt<=Date.now())?0:(!b.opened?1:2);
+    if(ra!==rb) return ra-rb;
+    if(ra===2) return (b.opened.at||0)-(a.opened.at||0);
+    return a.opensAt-b.opensAt;
+  });
+  const capsHtml = sorted.length
+   ? '<div class="sect"><h3>Your capsules</h3><span>sealed on this phone — they open here</span></div>'
+     +sorted.map(c=>{
+        const st=capStatus(c);
+        return '<div class="cap"><button class="body" type="button" data-open="'+esc(c.id)+'">'
+         +'<span class="ic">'+MINI+'</span>'
+         +'<span class="info"><span class="lbl">'+esc(c.label)+'</span>'
+         +'<span class="sub">Sealed '+esc(fmtDate(c.sealedAt))+' · '+joinNames(c.names)+'</span>'
+         +'<span class="st '+st.cls+'">'+st.txt+'</span></span></button>'
+         +'<button class="del" type="button" data-del="'+esc(c.id)+'" aria-label="Delete capsule '+esc(c.label)+'">✕</button>'
+         +'</div>';
+      }).join('')
+   : '';
+  show(
+   '<div class="hero">'+MOTIF+'<h1>TIME CAPSULE</h1>'
+   +'<p>Seal tonight’s predictions about each other.<br>Open them at the next reunion — and find out who called it.</p></div>'
+   +capsHtml
+   +'<div class="sect"><h3>Seal a new capsule</h3><span>2–8 friends · one phone · everyone predicts privately</span></div>'
+   +'<div class="card">'
+   +'<div class="field"><label>Who’s here tonight?</label><div id="nameRows"></div>'
+   +'<button class="addbtn" type="button" id="bAdd">+ Add player</button></div>'
+   +'<div class="field"><label for="inLbl">Capsule label</label>'
+   +'<input id="inLbl" type="text" maxlength="24" autocomplete="off" placeholder="Goa trip 2026"></div>'
+   +'<div class="field"><label id="whenLbl">When does it open?</label>'
+   +'<div class="packs" role="group" aria-labelledby="whenLbl">'
+   +[['3','3 months'],['6','6 months'],['12','1 year'],['pick','Pick a date']].map(d=>
+     '<button class="pack" type="button" data-d="'+d[0]+'" aria-pressed="'+(openChoice===d[0])+'">'+d[1]+'</button>').join('')
+   +'</div>'
+   +'<input id="inDate" type="date" style="margin-top:8px;width:100%;font-size:16px;font-weight:700;background:var(--panel-2);color:var(--ink);border:1px solid var(--rule);border-radius:12px;padding:12px;min-height:48px;" '+(openChoice==='pick'?'':'hidden')+' aria-label="Opening date"></div>'
+   +'<button class="btn primary" type="button" id="bStart">Start the predictions</button>'
+   +'<p class="keepline">🔒 <b>Sealed on this phone.</b> It opens here — don’t clear this browser’s site data, and bring this phone to the reunion.</p>'
+   +'</div>'
+   +'<details class="how"><summary>How it works</summary><ul>'
+   +'<li><b>Tonight:</b> each of you privately answers the same seven prompts — five <b>“who’s most likely to…”</b> calls, a guess at the <b>reunion headcount</b>, and a <b>message to future us</b>.</li>'
+   +'<li>The capsule <b>seals with a date</b> and waits on this phone. No peeking — early opening takes a guilty confirm.</li>'
+   +'<li><b>At the reunion:</b> open it together. Bar charts crown the circle’s picks, you mark ✓/✗ on what came true, and one score names your <b>Oracle 🔮</b>.</li>'
+   +'<li>Worried about losing the phone? Copy the <b>backup code</b> when you seal — pasting it here restores the capsule on any phone.</li>'
+   +'</ul></details>'
+   +'<details class="imp"><summary>Import a capsule</summary><div class="impbody">'
+   +'<textarea id="impTxt" aria-label="Paste a capsule backup code" placeholder="Paste a backup code (starts with KC1.)"></textarea>'
+   +'<button class="btn" type="button" id="bImp">Restore capsule</button>'
+   +'<p>A backup code holds the whole capsule — restoring it here brings the seal, the date and every prediction to this phone.</p>'
+   +'</div></details>'
+   +'<footer class="foot">For fun and conversation — a game, not a psychological assessment.<br>'
+   +'Capsules are sealed on this phone and never uploaded. They open here —<br>don’t clear this browser’s site data, and bring this phone to the reunion.<br><a href="../">Kreeda</a></footer>'
+  );
+  renderNameRows();
+  document.getElementById('bAdd').addEventListener('click',()=>{
+    const vals=rowVals(); if(vals.length>=8){ toast('Eight is the whole circle'); return; }
+    vals.push(''); names=vals; renderNameRows(); tick();
+  });
+  document.querySelectorAll('.pack').forEach(el=>{
+    el.addEventListener('click',()=>{
+      openChoice=el.getAttribute('data-d');
+      document.querySelectorAll('.pack').forEach(x=>x.setAttribute('aria-pressed',
+        String(x.getAttribute('data-d')===openChoice)));
+      document.getElementById('inDate').hidden = openChoice!=='pick';
+      tick();
+    });
+  });
+  document.querySelectorAll('[data-open]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const c=capById(el.getAttribute('data-open')); if(!c) return;
+      if(c.opened){ O={c:c, fresh:false}; finale(); return; }
+      if(c.opensAt<=Date.now()){ beginOpen(c,0); return; }
+      const d=Math.max(1,Math.ceil((c.opensAt-Date.now())/DAY));
+      openConfirm('Break the seal early?','Future you voted no. “'+c.label+'” opens on its own in '
+        +d+' day'+(d===1?'':'s')+'.','Break it',()=>beginOpen(c,1));
+    });
+  });
+  document.querySelectorAll('[data-del]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const c=capById(el.getAttribute('data-del')); if(!c) return;
+      openConfirm('Delete “'+c.label+'”?',
+        c.opened?'It has been opened — deleting only clears it from this list.'
+                :'It hasn’t been opened. Its predictions will be gone for good.',
+        'Delete',()=>{ CAPS=CAPS.filter(x=>x.id!==c.id); saveCaps(CAPS); toast('Capsule deleted'); title(); });
+    });
+  });
+  on('bImp',()=>{
+    const c=parseCode(document.getElementById('impTxt').value);
+    if(!c){ toast('That doesn’t look like a capsule code'); return; }
+    if(capById(c.id)){ toast('“'+c.label+'” is already on this phone'); return; }
+    CAPS.push(c); saveCaps(CAPS); toast('“'+c.label+'” restored — sealed and waiting'); title();
+  });
+  on('bStart',startSeal);
+}
+function rowVals(){
+  return Array.prototype.map.call(document.querySelectorAll('#nameRows input'),
+    i=>i.value.slice(0,12)).slice(0,8);
+}
+function renderNameRows(){
+  const box=document.getElementById('nameRows'); if(!box) return;
+  box.innerHTML=names.map((n,i)=>
+   '<div class="nrow"><span class="pdot" style="background:'+pcol(i)+'"></span>'
+   +'<input type="text" maxlength="12" autocomplete="off" placeholder="Name" value="'+esc(n)+'" aria-label="Player '+(i+1)+' name">'
+   +(names.length>2?'<button class="rm" type="button" data-rm="'+i+'" aria-label="Remove player '+(i+1)+'">✕</button>':'')
+   +'</div>').join('');
+  box.querySelectorAll('[data-rm]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const vals=rowVals(); vals.splice(+el.getAttribute('data-rm'),1); names=vals; renderNameRows(); tick();
+    });
+  });
+}
+
+/* ============================ sealing ============================ */
+function addMonths(ms,m){
+  const d=new Date(ms), t=new Date(d.getFullYear(),d.getMonth()+m,d.getDate());
+  return t.getTime();
+}
+function startSeal(){
+  const crew=rowVals().map(s=>s.trim()).filter(s=>s);
+  if(crew.length<2){ toast('Need at least two names to make predictions'); return; }
+  let opensAt;
+  if(openChoice==='pick'){
+    const v=document.getElementById('inDate').value;
+    if(!v){ toast('Pick the opening date'); return; }
+    const p=v.split('-'); opensAt=new Date(+p[0],+p[1]-1,+p[2]).getTime();
+    if(!(opensAt>Date.now())){ toast('The opening date needs to be in the future'); return; }
+  }else opensAt=addMonths(Date.now(),+openChoice);
+  const label=(document.getElementById('inLbl').value||'').slice(0,24).trim()||'Time capsule';
+  names=crew.slice(); LS.set('capsule.names',JSON.stringify(names));
+  /* draw tonight's five prompts */
+  const rnd=mulberry32((Date.now() ^ (Math.random()*0xffffffff))>>>0);
+  const deck=PROMPTS.slice();
+  for(let i=deck.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=deck[i]; deck[i]=deck[j]; deck[j]=t; }
+  S={ label:label, opensAt:opensAt, names:crew.slice(), prompts:deck.slice(0,NLIKELY), preds:[] };
+  track('game_start',{player_count:crew.length});
+  handoffSeal(0);
+}
+function handoffSeal(p){
+  const nm=S.names[p];
+  show(
+   '<div class="handoff">'
+   +'<div class="pass">Pass the phone to</div>'
+   +'<h2 style="color:'+pcol(p)+'">'+esc(nm)+'</h2>'
+   +'<p class="sub">Five predictions, a headcount, and a message to future us — private until '
+   +'<b style="color:var(--brass-2)">'+esc(fmtDate(S.opensAt))+'</b>.</p>'
+   +'<button class="btn primary" type="button" id="bReady">I’m '+esc(nm)+' — show me</button>'
+   +'<p class="peek">👀 tilt the phone away while you answer</p>'
+   +'</div>'
+  );
+  on('bReady',()=>sheetSeal(p));
+}
+function sheetSeal(p){
+  const me=S.names[p], N=S.names.length;
+  const picks=new Array(NLIKELY).fill(-1);
+  show(
+   header(true)
+   +'<div class="turn"><span class="eye">👀</span><span><b style="color:'+pcol(p)+'">'+esc(me)+'’s turn.</b> '
+   +'Everyone else, look away — this stays sealed until '+esc(fmtDate(S.opensAt))+'.</span></div>'
+   +S.prompts.map((t,k)=>
+     '<div class="qcard" id="lk'+k+'">'
+     +'<div class="qhead"><span class="qn">'+(k+1)+'</span>'
+     +'<p class="qtext">Who’s most likely to <b>'+esc(t)+'</b>?</p></div>'
+     +'<div class="chips">'
+     +S.names.map((n,i)=>'<button class="nchip" type="button" data-k="'+k+'" data-i="'+i+'" '
+       +'style="--pc:'+pcol(i)+'" aria-pressed="false">'+esc(n)+(i===p?' (me)':'')+'</button>').join('')
+     +'</div></div>').join('')
+   +'<div class="qcard"><div class="qhead"><span class="qn">6</span>'
+   +'<p class="qtext">How many of us will be at the <b>next reunion</b>?</p></div>'
+   +'<div class="sliderbox"><output id="cntOut" for="cntRange">'+N+'</output>'
+   +'<div class="of">of '+N+' of us</div>'
+   +'<input type="range" id="cntRange" min="0" max="'+N+'" step="1" value="'+N+'" aria-label="How many of us will be at the next reunion"></div></div>'
+   +'<div class="qcard"><div class="qhead"><span class="qn">7</span>'
+   +'<p class="qtext">A message to <b>future us</b> <span class="dim" style="font-weight:700;font-size:13px">(optional)</span></p></div>'
+   +'<textarea id="msgTxt" maxlength="100" rows="2" placeholder="Dear future us…" '
+   +'aria-label="A message to future us" style="width:100%;font:inherit;font-size:16px;font-weight:600;background:var(--panel-2);color:var(--ink);border:1px solid var(--rule);border-radius:12px;padding:12px;resize:none;line-height:1.45"></textarea>'
+   +'<p class="charhint"><span id="chLeft">100</span> left</p></div>'
+   +'<div class="lockbar"><button class="btn" type="button" id="bLock"></button></div>'
+  );
+  bindHome('Leave the sealing?','Tonight’s predictions will be lost — nothing is saved until the capsule is sealed.');
+  const g=GEN, lockBtn=document.getElementById('bLock');
+  const refresh=()=>{
+    let n=0; for(let k=0;k<NLIKELY;k++) if(picks[k]>=0) n++;
+    const all=n===NLIKELY;
+    lockBtn.className='btn'+(all?' primary':'');
+    lockBtn.textContent=all?'Seal my answers':(NLIKELY-n)+' prediction'+(NLIKELY-n===1?'':'s')+' to go';
+  };
+  refresh();
+  document.querySelectorAll('.nchip').forEach(el=>{
+    el.addEventListener('click',()=>{
+      if(g!==GEN) return;
+      const k=+el.getAttribute('data-k'), i=+el.getAttribute('data-i');
+      picks[k]=i;
+      const blk=document.getElementById('lk'+k);
+      blk.querySelectorAll('.nchip').forEach(c=>c.setAttribute('aria-pressed',
+        String(+c.getAttribute('data-i')===i)));
+      blk.classList.add('done');
+      tick(); refresh();
+    });
+  });
+  const rng=document.getElementById('cntRange'), out=document.getElementById('cntOut');
+  rng.addEventListener('input',()=>{ out.textContent=rng.value; });
+  rng.addEventListener('change',tick);   // one tick when the drag settles, not per pixel
+  const mt=document.getElementById('msgTxt'), ch=document.getElementById('chLeft');
+  mt.addEventListener('input',()=>{ ch.textContent=100-mt.value.length; });
+  on('bLock',()=>{
+    for(let k=0;k<NLIKELY;k++) if(picks[k]<0){
+      toast('A few predictions still need a name');
+      document.getElementById('lk'+k).scrollIntoView({behavior:reducedMotion()?'auto':'smooth',block:'start'});
+      return;
+    }
+    S.preds[p]={ likely:picks.slice(), count:Math.max(0,Math.min(N,Math.floor(+rng.value)||0)),
+                 msg:mt.value.slice(0,100).trim() };
+    swish();
+    if(p+1<S.names.length) handoffSeal(p+1);
+    else sealCeremony();
+  });
+}
+function sealCeremony(){
+  /* persist FIRST — from here the capsule survives a refresh, which is the whole point */
+  const c=sanitizeCapsule({ v:1, id:newId(), label:S.label, sealedAt:Date.now(), opensAt:S.opensAt,
+    names:S.names, prompts:S.prompts, preds:S.preds, opened:null });
+  if(!c){ toast('Something went wrong sealing — try again'); title(); return; }
+  CAPS.push(c); saveCaps(CAPS);
+  const openDays=Math.max(0,Math.round((c.opensAt-Date.now())/DAY));
+  track('capsule_sealed',{player_count:c.names.length, open_days:openDays});
+  track('game_complete',{player_count:c.names.length, open_days:openDays});
+  LS.set('capsule.plays',String((+LS.get('capsule.plays')||0)+1));
+  S=null;
+  const shareTxt=sealShareText(c);
+  show(
+   header(false)
+   +'<div class="cerwrap">'+cerSVG('seal')
+   +'<div><span class="captag">'+TAGICON+' Opens '+esc(fmtDate(c.opensAt))+'</span></div></div>'
+   +'<div class="cer-late">'
+   +'<h2 class="cerh">Sealed ✨</h2>'
+   +'<p class="cersub">“'+esc(c.label)+'” — '+joinNames(c.names)+'.<br>'
+   +'Nobody sees inside until it opens. See you on the other side.</p>'
+   +'<p class="keepline">🔒 <b>Sealed on this phone.</b> It opens here — don’t clear this browser’s site data, and bring this phone to the reunion.</p>'
+   +'<a class="btn wa" id="bWa" href="'+waLink(shareTxt)+'" target="_blank" rel="noopener">'+WA_ICON+'Share on WhatsApp</a>'
+   +'<p class="sharehint">The share says only that a capsule exists and when it opens — never what’s inside.</p>'
+   +'<div class="btnrow"><button class="btn" type="button" id="bCode">Copy backup code</button>'
+   +(navigator.share?'<button class="btn" type="button" id="bShare">Share…</button>':'')+'</div>'
+   +'<button class="btn primary" type="button" id="bDone">Done — back to the shelf</button>'
+   +'<div id="shareSlot"></div>'
+   +'</div>'
+  );
+  swish();
+  document.getElementById('bWa').addEventListener('click',()=>track('share',{via:'whatsapp'}));
+  on('bShare',()=>{ track('share',{via:'system'});
+    try{ navigator.share({title:'Time Capsule — '+c.label, text:shareTxt}).catch(()=>{}); }catch(e){} });
+  on('bCode',()=>copyText(capCode(c),'Backup code copied — keep it somewhere safe'));
+  on('bDone',()=>title());
+}
+
+/* ============================ opening ============================ */
+function beginOpen(c,early){
+  O={ c:c, early:early?1:0, truth:new Array(NLIKELY).fill(-1), actual:-1, fresh:true };
+  track('capsule_opened',{age_days:Math.max(0,Math.round((Date.now()-c.sealedAt)/DAY)), early:early?1:0});
+  openCeremony();
+}
+function openCeremony(){
+  const c=O.c;
+  show(
+   header(true)
+   +'<div class="cerwrap">'+cerSVG('open')+'</div>'
+   +'<div class="cer-late">'
+   +'<h2 class="cerh">“'+esc(c.label)+'”</h2>'
+   +'<p class="cersub">Sealed '+esc(elapsedText(c.sealedAt,Date.now()))+' ago by '+joinNames(c.names)+'.<br>'
+   +'Open it with the whole room — this part is for everyone.</p>'
+   +'<button class="btn primary" type="button" id="bOpen">See what the circle said →</button>'
+   +'</div>'
+  );
+  bindHome('Leave the opening?','Nothing is marked opened yet — the capsule stays sealed as it was.');
+  swish();
+  on('bOpen',()=>revealPrompt(0));
+}
+/* votes for prompt k → counts per candidate + the crowned set (ties crown together) */
+function tallies(c,k){
+  const counts=new Array(c.names.length).fill(0);
+  c.preds.forEach(p=>{ counts[p.likely[k]]++; });
+  const max=Math.max.apply(null,counts);
+  const crowned=[]; counts.forEach((n,i)=>{ if(n===max&&n>0) crowned.push(i); });
+  return {counts:counts, max:max, crowned:crowned};
+}
+function crownNames(c,crowned){
+  return crowned.map(i=>'<b style="color:'+pcol(i)+'">'+esc(c.names[i])+'</b>').join(' &amp; ');
+}
+function revealPrompt(k){
+  const c=O.c, t=tallies(c,k);
+  const order=[];
+  t.counts.forEach((n,i)=>{ if(n>0) order.push(i); });
+  order.sort((a,b)=>t.counts[b]-t.counts[a]);
+  show(
+   header(true)
+   +'<p class="stepnote">Prediction '+(k+1)+' of '+NLIKELY+'</p>'
+   +'<p class="bigq">Most likely to <b>'+esc(c.prompts[k])+'</b></p>'
+   +'<div class="card">'
+   +order.map(i=>{
+     const voters=[]; c.preds.forEach((p,pi)=>{ if(p.likely[k]===i) voters.push(pi); });
+     return '<div class="tallyrow">'
+      +'<div class="tname"><span style="color:'+pcol(i)+'">'+esc(c.names[i])+'</span>'
+      +'<span class="tv">'+t.counts[i]+' vote'+(t.counts[i]===1?'':'s')+'</span></div>'
+      +'<div class="tbar"><i style="--tc:'+pcol(i)+'" data-w="'+(t.counts[i]*100/c.names.length).toFixed(1)+'"></i></div>'
+      +'<div class="voters" aria-hidden="true">'+voters.map(v=>'<span style="background:'+pcol(v)+'"></span>').join('')+'</div>'
+      +'</div>';
+    }).join('')
+   +'<div class="crownline"><span class="cn">👑</span> The circle said: '+crownNames(c,t.crowned)+'</div>'
+   +'</div>'
+   +'<button class="btn primary" type="button" id="bNext">'+(k+1<NLIKELY?'Next prediction →':'The headcount →')+'</button>'
+  );
+  bindHome('Leave the opening?','Nothing is marked opened yet — the capsule stays sealed as it was.');
+  const g=GEN;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(g!==GEN) return;
+    document.querySelectorAll('.tbar i').forEach(el=>{ el.style.width=el.getAttribute('data-w')+'%'; });
+  }));
+  swish();
+  on('bNext',()=>{ if(k+1<NLIKELY) revealPrompt(k+1); else revealCount(); });
+}
+/* the number line: everyone's guess as dots, then the room taps the ACTUAL number now */
+function numlineHTML(c,actual){
+  const N=c.names.length;
+  let h='<div class="numline">';
+  for(let v=0;v<=N;v++){
+    const dots=[]; c.preds.forEach((p,pi)=>{ if(p.count===v) dots.push(pi); });
+    h+='<div class="numcol'+(actual===v?' actual':'')+'">'
+     +'<div class="stack">'+dots.map(pi=>'<span class="gdot" style="background:'+pcol(pi)+'" title="'+esc(c.names[pi])+'"></span>').join('')+'</div>'
+     +'<span class="nl">'+v+'</span></div>';
+  }
+  return h+'</div>';
+}
+function closestGuessers(c,actual){
+  let best=1e9; c.preds.forEach(p=>{ best=Math.min(best,Math.abs(p.count-actual)); });
+  const out=[]; c.preds.forEach((p,pi)=>{ if(Math.abs(p.count-actual)===best) out.push(pi); });
+  return out;
+}
+function revealCount(){
+  const c=O.c, N=c.names.length;
+  show(
+   header(true)
+   +'<p class="stepnote">The headcount</p>'
+   +'<p class="bigq">“How many of us will be at the <b>next reunion</b>?”</p>'
+   +'<div class="card">'
+   +'<p class="tiny dim" style="margin:0;text-align:center">Everyone’s sealed guess, dot by dot:</p>'
+   +numlineHTML(c,-1)
+   +'<p class="tiny" style="margin:14px 0 0;text-align:center;font-weight:800">Now the truth — how many of you are actually here?</p>'
+   +'<div class="pickrow" role="group" aria-label="Actual headcount">'
+   +Array.from({length:N+1},(x,v)=>'<button class="pchip" type="button" data-v="'+v+'" aria-pressed="false">'+v+'</button>').join('')
+   +'</div>'
+   +'<div id="hitLine"></div>'
+   +'</div>'
+   +'<button class="btn" type="button" id="bNext" disabled>Tap tonight’s number first</button>'
+  );
+  bindHome('Leave the opening?','Nothing is marked opened yet — the capsule stays sealed as it was.');
+  const g=GEN, nextBtn=document.getElementById('bNext');
+  document.querySelectorAll('.pchip').forEach(el=>{
+    el.addEventListener('click',()=>{
+      if(g!==GEN) return;
+      O.actual=+el.getAttribute('data-v');
+      document.querySelectorAll('.pchip').forEach(x=>x.setAttribute('aria-pressed',
+        String(+x.getAttribute('data-v')===O.actual)));
+      const cg=closestGuessers(c,O.actual);
+      const off=Math.abs(c.preds[cg[0]].count-O.actual);
+      document.getElementById('hitLine').innerHTML=
+        '<div class="crownline" style="animation:none;opacity:1"><span class="cn">🎯</span> Closest: '
+        +cg.map(i=>'<b style="color:'+pcol(i)+'">'+esc(c.names[i])+'</b>').join(' &amp; ')
+        +' <span class="dim" style="font-size:13px">('+(off===0?'spot on':'off by '+off)+')</span></div>';
+      nextBtn.disabled=false; nextBtn.className='btn primary';
+      nextBtn.textContent=collectMsgs(c).length?'The messages →':'How did we do? →';
+      tick();
+    });
+  });
+  on('bNext',()=>{
+    if(O.actual<0) return;
+    const msgs=collectMsgs(c);
+    if(msgs.length) revealMsgs(0); else truthPass();
+  });
+}
+function collectMsgs(c){
+  const out=[]; c.preds.forEach((p,pi)=>{ if(p.msg) out.push({pi:pi, msg:p.msg}); });
+  return out;
+}
+function revealMsgs(i){
+  const c=O.c, msgs=collectMsgs(c), m=msgs[i];
+  show(
+   header(true)
+   +'<p class="stepnote">Messages to future us · '+(i+1)+' of '+msgs.length+'</p>'
+   +'<div class="postcard" id="pcCard" style="--pc:'+pcol(m.pi)+'" role="button" tabindex="0" aria-label="Next message">'
+   +'<span class="stamp" aria-hidden="true">🕰️</span>'
+   +'<p class="msg" style="margin:0">“'+esc(m.msg)+'”</p>'
+   +'<p class="from" style="margin-bottom:0">— '+esc(c.names[m.pi])+', '+esc(fmtDate(c.sealedAt))+'</p>'
+   +'</div>'
+   +'<button class="btn primary" type="button" id="bNext">'+(i+1<msgs.length?'Next postcard →':'How did we do? →')+'</button>'
+  );
+  bindHome('Leave the opening?','Nothing is marked opened yet — the capsule stays sealed as it was.');
+  swish();
+  const adv=()=>{ if(i+1<msgs.length) revealMsgs(i+1); else truthPass(); };
+  on('bNext',adv);
+  const card=document.getElementById('pcCard');
+  const g=GEN;
+  card.addEventListener('click',()=>{ if(g===GEN) adv(); });
+  card.addEventListener('keydown',e=>{ if(g===GEN&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); adv(); } });
+}
+/* the room, openly, marks each crowned prediction ✓ came true / ✗ nope */
+function truthPass(){
+  const c=O.c;
+  show(
+   header(true)
+   +'<p class="stepnote">The reckoning</p>'
+   +'<p class="bigq">Did the circle <b>call it</b>?</p>'
+   +'<p class="tiny dim" style="text-align:center;margin:4px 0 6px">Decide together — no hand-offs, argue out loud. ✓ came true, ✗ nope.</p>'
+   +c.prompts.map((t,k)=>{
+      const ta=tallies(c,k);
+      return '<div class="trow"><span class="tx">👑 <b>'+crownNames(c,ta.crowned)+'</b> — most likely to '+esc(t)+'</span>'
+       +'<button class="tbtn yes" type="button" data-k="'+k+'" data-v="1" aria-pressed="false" aria-label="Came true">✓</button>'
+       +'<button class="tbtn no" type="button" data-k="'+k+'" data-v="0" aria-pressed="false" aria-label="Did not come true">✗</button>'
+       +'</div>';
+    }).join('')
+   +'<button class="btn" type="button" id="bNext" disabled>Mark all five first</button>'
+  );
+  bindHome('Leave the opening?','Nothing is marked opened yet — the capsule stays sealed as it was.');
+  const g=GEN, nextBtn=document.getElementById('bNext');
+  const refresh=()=>{
+    const left=O.truth.filter(v=>v<0).length;
+    nextBtn.disabled=left>0;
+    nextBtn.className='btn'+(left?'':' primary');
+    nextBtn.textContent=left?left+' still to mark':'Reveal the prophecy score ✨';
+  };
+  document.querySelectorAll('.tbtn').forEach(el=>{
+    el.addEventListener('click',()=>{
+      if(g!==GEN) return;
+      const k=+el.getAttribute('data-k'), v=+el.getAttribute('data-v');
+      O.truth[k]=v;
+      el.parentNode.querySelectorAll('.tbtn').forEach(b=>b.setAttribute('aria-pressed',
+        String(+b.getAttribute('data-v')===v)));
+      tick(); refresh();
+    });
+  });
+  refresh();
+  on('bNext',()=>{ if(O.truth.every(v=>v>=0)) finale(); });
+}
+
+/* ============================ finale — ONE results page, numbers first ============================
+   Reached fresh (from the truth pass, which then persists `opened` onto the capsule) or as a
+   revisit of an already-opened capsule (everything recomputed from what was stored). */
+function verdictFor(pct){
+  if(pct>=100) return ['Certified prophets','Every crowned call came true. Frame this.'];
+  if(pct>=80)  return ['The circle sees all','Four of five landed — you know each other scarily well.'];
+  if(pct>=60)  return ['Called it, mostly','More prophecy than luck. The misses are the stories.'];
+  if(pct>=40)  return ['Half oracle, half optimist','The future met you halfway.'];
+  if(pct>=20)  return ['The future had notes','One landed — the rest went off-script beautifully.'];
+  return ['Gloriously wrong','Not one came true, which is its own kind of legend.'];
+}
+function oracleScores(c,truth,actual){
+  /* a player's votes "matched reality" when they backed a crowned name on a prompt that came
+     true; the closest headcount guess adds one more */
+  const sc=new Array(c.names.length).fill(0);
+  for(let k=0;k<NLIKELY;k++){
+    if(truth[k]!==1) continue;
+    const cr=tallies(c,k).crowned;
+    c.preds.forEach((p,pi)=>{ if(cr.indexOf(p.likely[k])>=0) sc[pi]++; });
+  }
+  closestGuessers(c,actual).forEach(pi=>{ sc[pi]++; });
+  return sc;
+}
+function rollLines(c,truth,actual,oracle){
+  /* everybody leaves the reveal holding something */
+  const N=c.names.length;
+  const crowns=new Array(N).fill(0), truthCrowns=new Array(N).fill(0), crownedFor=new Array(N).fill(-1);
+  const tcFor=new Array(N).fill(-1);   // first crowned prompt that ALSO came true, per player
+  const received=new Array(N).fill(0);
+  for(let k=0;k<NLIKELY;k++){
+    const ta=tallies(c,k);
+    ta.crowned.forEach(i=>{ crowns[i]++; if(crownedFor[i]<0) crownedFor[i]=k;
+      if(truth[k]===1){ truthCrowns[i]++; if(tcFor[i]<0) tcFor[i]=k; } });
+    c.preds.forEach(p=>{ received[p.likely[k]]++; });
+  }
+  const oMax=Math.max.apply(null,oracle), close=closestGuessers(c,actual);
+  const rMax=Math.max.apply(null,received);
+  let longest=-1, lLen=0;
+  c.preds.forEach((p,pi)=>{ if(p.msg.length>lLen){ lLen=p.msg.length; longest=pi; } });
+  return c.names.map((nm,i)=>{
+    let icon,txt;
+    if(oracle[i]===oMax&&oMax>0){ icon='🔮'; txt='<b>The Oracle</b> — read the future best ('+oracle[i]+' hit'+(oracle[i]===1?'':'s')+')'; }
+    else if(close.indexOf(i)>=0){ icon='🎯'; txt='<b>Sharpest clock</b> — closest on the headcount'; }
+    else if(truthCrowns[i]>0){ icon='👑'; txt='<b>Prophecy fulfilled</b> — really did '+esc(c.prompts[tcFor[i]]); }
+    else if(crowns[i]>0){ icon='👑'; txt='<b>The circle’s pick</b> — most likely to '+esc(c.prompts[crownedFor[i]]); }
+    else if(received[i]===rMax&&rMax>0){ icon='🧲'; txt='<b>The magnet</b> — collected the most predictions'; }
+    else if(received[i]===0){ icon='🦋'; txt='<b>The wildcard</b> — nobody could pin them down'; }
+    else if(i===longest&&lLen>0){ icon='✍️'; txt='<b>The chronicler</b> — wrote to future us at length'; }
+    else{ icon='🕯️'; txt='<b>Keeper of the capsule</b> — steady from seal to opening'; }
+    return {i:i, icon:icon, txt:txt};
+  });
+}
+function finale(){
+  const c=O.c;
+  if(O.fresh){
+    c.opened={ at:Date.now(), early:O.early?1:0, truth:O.truth.slice(), actual:O.actual };
+    saveCaps(CAPS);
+    const hits=c.opened.truth.filter(v=>v===1).length;
+    track('game_complete',{player_count:c.names.length,
+      prophecy:Math.round(hits*100/NLIKELY),
+      age_days:Math.max(0,Math.round((Date.now()-c.sealedAt)/DAY))});
+    LS.set('capsule.plays',String((+LS.get('capsule.plays')||0)+1));
+    O.fresh=false;
+  }
+  const truth=c.opened.truth, actual=c.opened.actual;
+  const hits=truth.filter(v=>v===1).length, pct=Math.round(hits*100/NLIKELY);
+  const vd=verdictFor(pct);
+  const oracle=oracleScores(c,truth,actual);
+  const oMax=Math.max.apply(null,oracle);
+  const oracles=[]; oracle.forEach((s,i)=>{ if(s===oMax&&oMax>0) oracles.push(i); });
+  const close=closestGuessers(c,actual);
+  const roll=rollLines(c,truth,actual,oracle);
+  const msgs=collectMsgs(c);
+  const elapsed=elapsedText(c.sealedAt,c.opened.at);
+  const today=fmtDate(c.opened.at);
+  const dl=n=>'style="animation-delay:'+n+'ms"';
+  const shareTxt=openShareText(c,truth,actual,pct,vd,oracles,close,elapsed);
+  const C=2*Math.PI*70, off=(C*(1-pct/100)).toFixed(1);
+  show(
+   header(false)
+   +'<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>'
+   +'<linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">'
+   +'<stop offset="0" stop-color="#f5cd7e"/><stop offset="1" stop-color="#e0aa4e"/></linearGradient></defs></svg>'
+   +'<div class="results">'
+   +'<h2>The opening</h2>'
+   +'<p class="names"><b>'+esc(c.label)+'</b> · sealed '+esc(elapsed)+' ago'
+   +(c.opened.early?' · <span style="color:var(--no)">opened early</span>':'')+'</p>'
+   +'<div class="card info">'
+   +'<div class="ring"><svg viewBox="0 0 152 152" aria-hidden="true">'
+   +'<circle class="tr" cx="76" cy="76" r="70"/>'
+   +'<circle class="fl" cx="76" cy="76" r="70" style="stroke-dasharray:'+C.toFixed(1)+';stroke-dashoffset:'+C.toFixed(1)+'" data-off="'+off+'"/></svg>'
+   +'<div class="rv" aria-hidden="true"><b data-n="'+pct+'">0</b><i>%</i></div>'
+   +'<div class="rl" aria-hidden="true">Prophecy score</div>'
+   +'<span class="sr">Prophecy score: '+pct+'%</span></div>'
+   +'<div class="pstrip" aria-label="'+hits+' of '+NLIKELY+' predictions came true">'
+   +truth.map((v,i)=>'<i class="'+(v===1?'y':'n')+'" style="animation-delay:'+(400+i*90)+'ms"></i>').join('')
+   +'</div>'
+   +'<div class="verdict rise" '+dl(600)+'><b>'+vd[0]+'</b><span>'+vd[1]+'</span></div>'
+   +'</div>'
+   +'<div class="card glance rise" '+dl(750)+'>'
+   +(oracles.length?'<div class="gl"><span class="gi">🔮</span><span><b>Oracle:</b> '
+     +oracles.map(i=>pdot(i)+'<b>'+esc(c.names[i])+'</b>').join(' &amp; ')+' — votes closest to how it went</span></div>':'')
+   +'<div class="gl"><span class="gi">🎯</span><span><b>Headcount:</b> '
+     +close.map(i=>pdot(i)+'<b>'+esc(c.names[i])+'</b>').join(' &amp; ')
+     +' called it closest — '+actual+' of '+c.names.length+' made it</span></div>'
+   +'<div class="gl"><span class="gi">🗓️</span><span>Sealed '+esc(fmtDate(c.sealedAt))+' → opened '+esc(today)+'</span></div>'
+   +'</div>'
+   +'<div class="sect"><h3>The crowned calls</h3><span>what the circle said — and what actually happened</span></div>'
+   +'<div class="card glance rise" '+dl(850)+'>'
+   +c.prompts.map((t,k)=>{
+      const ta=tallies(c,k);
+      return '<div class="gl"><span class="gi">'+(truth[k]===1?'<span class="ok">✓</span>':'<span class="no">✗</span>')+'</span>'
+       +'<span>👑 '+crownNames(c,ta.crowned)+' — most likely to '+esc(t)
+       +' <span class="dim">('+ta.max+'/'+c.names.length+' votes)</span> — '
+       +(truth[k]===1?'<span class="ok">called it</span>':'<span class="no">not yet</span>')+'</span></div>';
+    }).join('')
+   +'</div>'
+   +'<div class="sect"><h3>The headcount</h3><span>every sealed guess vs tonight</span></div>'
+   +'<div class="card rise" '+dl(950)+'>'+numlineHTML(c,actual)
+   +'<p class="tiny dim" style="text-align:center;margin:10px 0 0">🎯 marks the truth: '+actual+' of '+c.names.length+'</p></div>'
+   +'<div class="sect"><h3>The circle roll</h3><span>everyone leaves with a title</span></div>'
+   +'<div class="card glance rise" '+dl(1050)+'>'
+   +roll.map(r=>'<div class="gl"><span class="gi">'+r.icon+'</span><span>'+pdot(r.i)+'<b>'+esc(c.names[r.i])+'</b> — '+r.txt+'</span></div>').join('')
+   +'</div>'
+   +(msgs.length
+     ? '<div class="sect"><h3>Messages to future us</h3><span>as sealed, word for word</span></div>'
+       +msgs.map(m=>'<div class="postcard" style="--pc:'+pcol(m.pi)+';cursor:default;animation:none">'
+        +'<span class="stamp" aria-hidden="true">🕰️</span>'
+        +'<p class="msg" style="margin:0;font-size:15px">“'+esc(m.msg)+'”</p>'
+        +'<p class="from" style="margin-bottom:0">— '+esc(c.names[m.pi])+'</p></div>').join('')
+     : '')
+   +'<p class="datefoot">'+esc(today)+' · kreeda.games/capsule</p>'
+   +'<button class="btn primary" type="button" id="bAgain">Seal the next one — same crew</button>'
+   +'<a class="btn wa" id="bWa" href="'+waLink(shareTxt)+'" target="_blank" rel="noopener">'+WA_ICON+'Share on WhatsApp</a>'
+   +'<p class="sharehint">Send the opening to the group — everyone keeps the record.</p>'
+   +'<div class="btnrow"><button class="btn" type="button" id="bCopy">Copy result</button>'
+   +(navigator.share?'<button class="btn" type="button" id="bShare">Share…</button>':'')+'</div>'
+   +'<button class="btn ghost" type="button" id="bHome2">Home</button>'
+   +'<div id="shareSlot"></div>'
+   +'</div>'
+   +'<footer class="foot">Wrong predictions aren’t failures — they’re how much life happened.<br><a href="../">Kreeda</a></footer>'
+  );
+  const g=GEN;
+  /* ring fills and the number counts up after first paint; reduced motion lands at once */
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(g!==GEN) return;
+    document.querySelectorAll('.ring .fl').forEach(el=>{ el.style.strokeDashoffset=el.getAttribute('data-off'); });
+    const nums=Array.prototype.slice.call(document.querySelectorAll('.ring .rv b'));
+    if(reducedMotion()){ nums.forEach(b=>{ b.textContent=b.getAttribute('data-n'); }); return; }
+    const t0=performance.now(), D=1100;
+    (function step(){
+      if(g!==GEN) return;
+      const k=Math.min(1,(performance.now()-t0)/D), e=1-Math.pow(1-k,3);
+      nums.forEach(b=>{ b.textContent=Math.round(+b.getAttribute('data-n')*e); });
+      if(k<1) requestAnimationFrame(step);
+    })();
+  }));
+  on('bAgain',()=>{
+    names=c.names.slice(); LS.set('capsule.names',JSON.stringify(names));
+    O=null; title(); toast('Crew loaded — pick a label and a date');
+  });
+  on('bHome2',()=>{ O=null; title(); });
+  document.getElementById('bWa').addEventListener('click',()=>track('share',{via:'whatsapp'}));
+  on('bShare',()=>{ track('share',{via:'system'});
+    try{ navigator.share({title:'Time Capsule — '+c.label, text:shareTxt}).catch(()=>{}); }catch(e){} });
+  on('bCopy',()=>copyText(shareTxt,'Copied!'));
+}
+
+/* ============================ share ============================ */
+function waLink(text){ return 'https://wa.me/?text='+encodeURIComponent(text); }
+function copyText(text,okMsg){
+  let done=false;
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(()=>toast(okMsg),()=>showShareBox(text));
+      done=true;
+    }
+  }catch(e){}
+  if(!done) showShareBox(text);   // clipboard is unavailable on file:// — show it to copy by hand
+}
+function showShareBox(text){
+  const slot=document.getElementById('shareSlot');
+  if(!slot) return;
+  slot.innerHTML='<textarea class="sharebox" rows="6" readonly aria-label="Text to copy manually"></textarea>';
+  const ta=slot.querySelector('textarea'); ta.value=text;
+  ta.focus(); try{ ta.select(); }catch(e){}
+  toast('Copy it from the box below');
+}
+/* SEALED share: label, dates, crew — NEVER contents */
+function sealShareText(c){
+  return ['🕰️ We sealed a *time capsule* — _'+c.label+'_',
+    '👥 '+c.names.join(', '),
+    '🔒 Sealed '+fmtDate(c.sealedAt)+' · it opens *'+fmtDate(c.opensAt)+'*',
+    'Predictions inside. No peeking — see you there.',
+    'kreeda.games/capsule'].join('\n');
+}
+/* OPENING share: sharing is the players' own act, so it may carry the contents */
+function openShareText(c,truth,actual,pct,vd,oracles,close,elapsed){
+  const strip=truth.map(v=>v===1?'🟩':'⬛').join('');
+  const lines=[
+    '*Time Capsule* · '+c.label,
+    '_'+vd[0]+'_ — sealed '+elapsed+' ago, opened today',
+    '',
+    '🔮 Prophecy score: *'+pct+'%*  '+strip
+  ];
+  c.prompts.forEach((t,k)=>{
+    const cr=tallies(c,k).crowned.map(i=>c.names[i]).join(' & ');
+    lines.push((truth[k]===1?'✓':'✗')+' 👑 '+cr+' — voted most likely to '+t
+      +(truth[k]===1?' — called it':' — not yet'));
+  });
+  lines.push('🎯 '+close.map(i=>c.names[i]).join(' & ')+' nailed the headcount: '+actual+' of '+c.names.length+' made it');
+  if(oracles.length) lines.push('🔮 Oracle: '+oracles.map(i=>c.names[i]).join(' & '));
+  lines.push('', fmtDate(Date.now())+' · kreeda.games/capsule');
+  return lines.join('\n');
+}
+
+/* ============================ boot self-test ============================
+   Cheap invariants that would otherwise only fail in a player's hands, months after sealing.
+   Runs once, console.warn only. */
+(function audit(){
+  try{
+    if(PROMPTS.length<28) console.warn('capsule: prompt bank thin — '+PROMPTS.length);
+    PROMPTS.forEach((t,i)=>{
+      if(typeof t!=='string'||!t.length||t.length>48) console.warn('capsule: prompt '+i+' bad length');
+    });
+    if(PCOL.length!==8) console.warn('capsule: need 8 player colours, have '+PCOL.length);
+    /* a capsule must survive the code → parse round-trip intact */
+    const fake={v:1,id:'testabc',label:'Audit trip',sealedAt:Date.now(),opensAt:Date.now()+90*DAY,
+      names:['Aa','Bb','Cc'],prompts:PROMPTS.slice(0,NLIKELY),
+      preds:[{likely:[0,1,2,0,1],count:3,msg:'hi'},{likely:[1,1,1,1,1],count:2,msg:''},
+             {likely:[2,0,2,0,2],count:3,msg:'yo'}],opened:null};
+    const rt=parseCode(capCode(sanitizeCapsule(fake)));
+    if(!rt||rt.id!=='testabc'||rt.names.length!==3||rt.preds[0].likely[1]!==1)
+      console.warn('capsule: backup-code round trip failed');
+    const ta=tallies(rt,1);
+    if(ta.crowned.indexOf(1)<0) console.warn('capsule: tally/crown logic failed');
+  }catch(e){ console.warn('capsule: audit threw',e); }
+})();
+
+title();
+</script>
+</body>
+</html>

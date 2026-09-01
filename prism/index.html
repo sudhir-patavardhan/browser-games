@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Group Blind Spots — Kreeda</title>
+<meta name="description" content="The group version of Blind Spots. One friend steps into the mirror: they pick six words for themselves, then every other friend independently picks six for them. One person's 'stubborn' is an opinion; five people choosing it is a portrait. The reveal is a consensus Johari Window.">
+<link rel="canonical" href="https://kreeda.games/prism/">
+<meta name="theme-color" content="#131220">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/prism/">
+<meta property="og:title" content="Group Blind Spots — Kreeda">
+<meta property="og:description" content="One friend in the mirror, the whole circle picks their words. The reveal is a consensus Johari Window — one phone, 3–7 friends.">
+<meta property="og:image" content="https://kreeda.games/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Group Blind Spots — Kreeda">
+<meta name="twitter:description" content="One friend in the mirror, the whole circle picks their words. The reveal is a consensus Johari Window — one phone, 3–7 friends.">
+<meta name="twitter:image" content="https://kreeda.games/og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Group Blind Spots","description":"The group version of Blind Spots. One friend at a time steps into the mirror: they pick six words for themselves, then every other friend independently picks six for them. The reveal is a consensus Johari Window — what the circle agrees on, the blind spots, and what stayed hidden.","url":"https://kreeda.games/prism/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+<style>
+/* ============================ tokens ============================
+   A darkroom where white light splits. Blind Spots (windows/) was one lit window at night; the
+   group version is that window through a prism — indigo-charcoal ground, and the family's pane
+   colours kept exactly (teal = seen/open, amber = blind, violet = hidden) so anyone who has
+   played the two-player game reads this reveal instantly. One committed dark look: the pass-the-
+   phone ritual depends on the screen reading as "private", so the body is painted explicitly and
+   there is no light variant. Each player also owns one hue from an 8-colour spectrum (PAL in the
+   script) used consistently in name rows, hand-offs, bars and the reveal. */
+:root{
+  --ground:#131220;   --ground-2:#1b1930;  --panel:#221f33;   --panel-2:#2a2740;
+  --ink:#f0edf7;      --ink-dim:#a59fc0;   --rule:rgba(230,225,250,.14);
+  --teal:#2bb3a3;     --teal-deep:#1b7a70; --teal-ink:#0b2622;
+  --amber:#ffb020;    --amber-deep:#b57708;--amber-ink:#2a1e04;
+  --hidden-c:#8f86c9; --hidden-ink:#17142c; --unknown-c:#5a5570;
+  --warm-c:#57d9a3;   --neutral-c:#6c668a; --spiky-c:#e07856;
+  --danger:#e07856;   --gold:#ffd166;
+  --shade:rgba(8,7,16,.74);
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  /* Explicit paint is mandatory — a transparent body would borrow the host's theme. */
+  background:
+    radial-gradient(90% 40% at 18% -8%, rgba(43,179,163,.10) 0%, transparent 55%),
+    radial-gradient(90% 40% at 82% -8%, rgba(143,134,201,.13) 0%, transparent 55%),
+    linear-gradient(180deg, var(--ground-2) 0%, var(--ground) 45%, #0e0d18 100%);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{ max-width:560px; margin:0 auto;
+  padding: max(12px, env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
+
+button{ font-family:inherit; }
+button:focus-visible, input:focus-visible, summary:focus-visible{ outline:3px solid var(--gold); outline-offset:2px; }
+[hidden]{ display:none !important; }
+
+/* ============================ shared chrome ============================ */
+.topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; }
+.brand{ display:flex; align-items:center; gap:10px; }
+.brand svg{ width:34px; height:34px; flex:none; }
+.brand .t{ font-size:19px; font-weight:900; letter-spacing:1px; }
+.brand .t small{ display:block; font-size:10px; font-weight:700; letter-spacing:2.6px;
+  text-transform:uppercase; color:var(--ink-dim); margin-top:1px; }
+.topbtns{ display:flex; gap:8px; }
+.homebtn, .soundbtn{ background:var(--panel); color:var(--ink-dim); border:1px solid var(--rule);
+  border-radius:12px; min-width:44px; min-height:44px; padding:8px 12px; font-size:14px;
+  font-weight:700; cursor:pointer; }
+.soundbtn{ font-size:17px; line-height:1; padding:8px 10px; }
+.homebtn:active, .soundbtn:active{ transform:translateY(1px); }
+
+.screen{ animation:screenIn .28s ease; }
+@keyframes screenIn{ from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:none;} }
+
+.btn{ display:block; width:100%; border:none; border-radius:16px; padding:16px 18px;
+  font-size:17px; font-weight:800; cursor:pointer; min-height:52px;
+  background:linear-gradient(135deg, var(--teal) 0%, var(--teal-deep) 100%);
+  color:var(--teal-ink); box-shadow:0 8px 22px rgba(43,179,163,.22); }
+.btn:active{ transform:translateY(1px); }
+.btn:disabled{ opacity:.38; cursor:default; box-shadow:none; }
+.btn.amber{ background:linear-gradient(135deg, var(--amber) 0%, var(--amber-deep) 100%);
+  color:var(--amber-ink); box-shadow:0 8px 22px rgba(255,176,32,.20); }
+.btn.ghost{ background:var(--panel); color:var(--ink); border:1px solid var(--rule); box-shadow:none; }
+.btnrow{ display:flex; gap:10px; }
+.btnrow .btn{ flex:1; }
+
+/* ============================ title ============================ */
+.wordmark{ text-align:center; margin:14px 0 6px; }
+.wordmark svg{ width:104px; height:96px; }
+.wordmark h1{ margin:8px 0 0; font-size:34px; font-weight:900; letter-spacing:2px; line-height:1.1; }
+.wordmark h1 small{ display:block; font-size:12px; font-weight:800; letter-spacing:6px;
+  color:var(--ink-dim); margin-bottom:4px; }
+.wordmark h1 .w1{ color:var(--teal); } .wordmark h1 .w2{ color:var(--amber); }
+.pitch{ text-align:center; color:var(--ink-dim); font-size:15px; margin:6px 0 18px; line-height:1.45; }
+
+.namecard{ background:var(--panel); border:1px solid var(--rule); border-radius:18px;
+  padding:16px; margin-bottom:14px; }
+.namecard .lbl{ display:block; font-size:11px; font-weight:800; letter-spacing:1.4px;
+  text-transform:uppercase; color:var(--ink-dim); margin:0 0 8px; }
+.prow{ display:flex; align-items:center; gap:8px; margin-bottom:8px; min-width:0; }
+.prow .dot{ width:12px; height:12px; border-radius:4px; flex:none; }
+.prow input{ flex:1; min-width:0; background:var(--panel-2); color:var(--ink); border:1px solid var(--rule);
+  border-radius:12px; padding:12px 12px; font-size:16px; font-weight:700; min-height:46px; width:100%; }
+.prow .rm{ flex:none; width:40px; min-height:46px; background:var(--panel-2); border:1px solid var(--rule);
+  border-radius:12px; color:var(--ink-dim); font-size:19px; line-height:1; cursor:pointer; }
+.prow .rm:active{ transform:translateY(1px); }
+.addbtn{ display:block; width:100%; background:transparent; border:1px dashed var(--rule);
+  border-radius:12px; color:var(--ink-dim); font-weight:800; font-size:14px; min-height:46px;
+  padding:10px; cursor:pointer; margin:2px 0 12px; }
+.addbtn:active{ transform:translateY(1px); }
+
+details.how{ background:var(--panel); border:1px solid var(--rule); border-radius:18px;
+  padding:0 16px; margin-bottom:16px; }
+details.how summary{ padding:14px 0; font-size:14px; font-weight:800; cursor:pointer;
+  list-style:none; display:flex; align-items:center; justify-content:space-between; min-height:44px; }
+details.how summary::-webkit-details-marker{ display:none; }
+details.how summary::after{ content:'+'; font-size:18px; color:var(--ink-dim); }
+details.how[open] summary::after{ content:'–'; }
+details.how ul{ margin:0 0 14px; padding-left:18px; color:var(--ink-dim); font-size:13.5px; line-height:1.6; }
+details.how li b{ color:var(--ink); }
+
+.finefoot{ text-align:center; color:var(--ink-dim); font-size:11.5px; line-height:1.6;
+  margin-top:18px; opacity:.75; }
+.finefoot a{ color:var(--ink-dim); }
+
+/* ============================ hand-off ============================ */
+.handoff{ position:fixed; inset:0; z-index:40; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center; padding:24px;
+  background:
+    radial-gradient(90% 40% at 50% 0%, #201d33 0%, transparent 60%),
+    linear-gradient(180deg, #1a1830 0%, #0e0d18 100%); }
+.handoff .pass-ico{ width:74px; height:74px; margin-bottom:16px; }
+.handoff .to{ font-size:13px; font-weight:800; letter-spacing:2.2px; text-transform:uppercase;
+  color:var(--ink-dim); margin-bottom:6px; }
+.handoff .who{ font-size:36px; font-weight:900; margin-bottom:8px; overflow-wrap:anywhere; color:var(--amber); }
+.handoff .why{ color:var(--ink-dim); font-size:15px; margin-bottom:26px; max-width:320px; line-height:1.5; }
+.handoff .btn{ max-width:320px; }
+.handoff .tilt{ margin-top:20px; color:var(--ink-dim); font-size:12.5px; opacity:.8; }
+
+/* ============================ picking ============================ */
+.turn{ display:flex; align-items:center; gap:10px; background:var(--panel-2); border:1px solid var(--rule);
+  border-radius:13px; padding:10px 12px; margin-bottom:12px; font-size:13px; line-height:1.4; }
+.turn .eye{ font-size:20px; flex:none; }
+
+.pickhead{ background:var(--panel); border:1px solid var(--rule); border-radius:18px;
+  padding:14px 16px; margin-bottom:12px; }
+.pickhead .pass-tag{ display:inline-block; font-size:10.5px; font-weight:900; letter-spacing:1.6px;
+  text-transform:uppercase; border-radius:999px; padding:4px 10px; margin-bottom:7px; }
+.pass-tag.self{ background:rgba(43,179,163,.16); color:var(--teal); border:1px solid rgba(43,179,163,.4); }
+.pass-tag.other{ background:rgba(255,176,32,.14); color:var(--amber); border:1px solid rgba(255,176,32,.4); }
+.pickhead h2{ margin:0 0 3px; font-size:20px; font-weight:900; line-height:1.25; overflow-wrap:anywhere; }
+.pickhead p{ margin:0; color:var(--ink-dim); font-size:13.5px; line-height:1.5; }
+
+/* the tray: a sticky count, six pips, and the words picked so far as chips — tap one to drop it */
+.tray{ position:sticky; top:max(8px, env(safe-area-inset-top)); z-index:5;
+  background:var(--panel-2); border:1px solid var(--rule); border-radius:18px;
+  padding:9px 12px 9px; margin-bottom:12px; box-shadow:0 6px 18px rgba(0,0,0,.35); }
+.tray .row1{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.tray .n{ font-size:15px; font-weight:900; }
+.tray .n b{ font-size:19px; }
+.tray .pips{ display:flex; gap:5px; }
+.tray .pip{ width:11px; height:11px; border-radius:4px; background:var(--panel);
+  border:1px solid var(--rule); transition:background .18s ease, border-color .18s ease; }
+.tray .pip.on{ border-color:transparent; }
+.selfmode .pip.on{ background:var(--teal); }
+.othermode .pip.on{ background:var(--amber); }
+.tray .chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.tray .chips:empty{ display:none; }
+.tchip{ border:0; border-radius:999px; padding:6px 10px; font-size:12.5px; font-weight:800; cursor:pointer;
+  display:inline-flex; align-items:center; gap:6px; animation:chipIn .25s ease; }
+.tchip i{ font-style:normal; opacity:.65; font-size:12px; }
+.selfmode .tchip{ background:var(--teal); color:var(--teal-ink); }
+.othermode .tchip{ background:var(--amber); color:var(--amber-ink); }
+
+/* words flow as pills rather than sit in a rigid grid: short words share a row, long ones get
+   the room they need, and the whole bank fits in fewer screens of scroll */
+.wordcloud{ display:flex; flex-wrap:wrap; gap:8px; }
+.word{ flex:1 0 auto; background:var(--panel); color:var(--ink); border:1px solid var(--rule); border-radius:999px;
+  min-height:46px; padding:10px 15px; font-size:14.5px; font-weight:700; cursor:pointer;
+  transition:background .15s ease, border-color .15s ease, transform .1s ease, opacity .15s ease; }
+.word:active{ transform:scale(.96); }
+.word[aria-pressed="true"]{ border-color:transparent; }
+.selfmode .word[aria-pressed="true"]{ background:var(--teal); color:var(--teal-ink); }
+.othermode .word[aria-pressed="true"]{ background:var(--amber); color:var(--amber-ink); }
+.word.maxed{ opacity:.4; }
+#scrPick{ padding-bottom:84px; }   /* clears the fixed confirm bar */
+@media (prefers-reduced-motion:no-preference){
+  .word.pop{ animation:pop .28s cubic-bezier(.2,.8,.3,1); }
+  @keyframes pop{ 0%{ transform:scale(.92);} 55%{ transform:scale(1.08);} 100%{ transform:none;} }
+}
+
+/* the confirm lives in a fixed bar (outside the animated section, since a transform would
+   re-anchor it), so finishing a pass never means hunting below 40 words */
+.pickbar{ position:fixed; left:0; right:0; bottom:0; z-index:6; pointer-events:none;
+  padding:20px 16px calc(12px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg, rgba(19,18,32,0) 0%, var(--ground) 45%); }
+.pickbar .btn{ max-width:560px; margin:0 auto; pointer-events:auto; }
+
+/* ============================ results — one page per subject ============================
+   Numbers first: the big ring for how clearly the circle sees the subject, per-rater bars with
+   a crown, the consensus window with vote badges, the Big Five card, the warmth bars, then two
+   or three things to ask. */
+.rc-top{ text-align:center; margin:4px 0 12px; }
+.rc-top .lbl{ font-size:14px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--ink-dim); margin-bottom:3px; }
+.rc-top .names{ font-size:24px; font-weight:900; overflow-wrap:anywhere; }
+.rc-top .date{ font-size:11.5px; color:var(--ink-dim); margin-top:2px; }
+
+.rcard{ background:var(--panel); border:1px solid var(--rule); border-radius:20px; padding:14px 16px; margin-top:12px; }
+.info{ text-align:center; padding:16px 10px 16px; }
+.ring{ position:relative; display:inline-flex; flex-direction:column; align-items:center; min-width:0; }
+.ring svg{ width:92px; height:92px; transform:rotate(-90deg); }
+.ring .tr{ fill:none; stroke:var(--panel-2); stroke-width:10; }
+.ring .fl{ fill:none; stroke-width:10; stroke-linecap:round;
+  transition:stroke-dashoffset 1.2s cubic-bezier(.2,.7,.2,1); }
+.ring.big .fl{ stroke:url(#ringGrad); }
+.ring .rv{ position:absolute; top:0; left:0; width:100%; height:92px; display:flex; align-items:center;
+  justify-content:center; font-weight:900; font-size:22px; line-height:1; }
+.ring .rv i{ font-style:normal; font-size:.55em; opacity:.7; margin-left:1px; }
+.ring .rl{ margin-top:5px; font-size:11px; font-weight:800; color:var(--ink-dim); line-height:1.25;
+  overflow-wrap:anywhere; }
+.ring .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+.ring.big{ display:flex; margin:0 auto; }
+.ring.big svg{ width:156px; height:156px; }
+.ring.big .rv{ height:156px; font-size:44px; }
+.ring.big .rl{ font-size:13px; color:var(--ink); margin-top:2px; }
+.verdict{ margin-top:16px; }
+.verdict b{ display:block; font-size:26px; font-weight:900; line-height:1.15;
+  background:linear-gradient(95deg, var(--teal), var(--amber)); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.verdict span{ display:block; margin-top:4px; font-size:13px; color:var(--ink-dim); line-height:1.45; }
+
+/* per-rater bars: who sees the subject clearest — the crown rides the top row */
+.rrow{ display:flex; align-items:center; gap:10px; margin-top:9px; animation:chipIn .3s ease backwards; }
+.rrow .rname{ width:104px; flex:none; font-size:12.5px; font-weight:900; text-align:right;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rtrack{ flex:1; height:14px; border-radius:99px; background:var(--panel-2); overflow:hidden; }
+.rtrack i{ display:block; height:100%; border-radius:99px; width:0;
+  transition:width 1s cubic-bezier(.2,.7,.2,1); }
+.rrow .rpct{ width:44px; flex:none; font-size:14px; font-weight:900; text-align:right; }
+.wtrack{ flex:1; height:14px; border-radius:99px; overflow:hidden; display:flex; background:var(--panel-2); }
+.wtrack i{ height:100%; }
+.wtrack .ww{ background:var(--warm-c); } .wtrack .wn{ background:var(--neutral-c); } .wtrack .ws{ background:var(--spiky-c); }
+.rrow .wnum{ width:62px; flex:none; font-size:11.5px; font-weight:900; text-align:right; color:var(--warm-c); }
+.wlegend{ display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; }
+.wlegend span{ display:flex; align-items:center; gap:5px; font-size:11px; color:var(--ink-dim); font-weight:700; }
+.wlegend .sw{ width:10px; height:10px; border-radius:3px; flex:none; }
+@media (max-width:380px){ .rrow .rname{ width:84px; font-size:11.5px; } }
+
+/* at a glance: one line per insight, an icon each */
+.gl{ display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-top:1px solid var(--rule);
+  font-size:13.5px; line-height:1.45; }
+.gl:first-child{ border-top:0; padding-top:0; } .gl:last-child{ padding-bottom:0; }
+.gl .gi{ flex:none; width:26px; text-align:center; font-size:18px; line-height:1.15; }
+.gl b{ font-weight:900; }
+.w{ font-weight:900; }
+.w.a{ color:var(--teal); } .w.b{ color:var(--amber); } .w.h{ color:var(--hidden-c); }
+
+/* the headline moment: the top consensus blind spot gets its own line above the window */
+.callout{ background:rgba(255,176,32,.12); border:1px solid rgba(255,176,32,.42); color:var(--ink);
+  border-radius:14px; padding:12px 14px; margin:0 0 10px; font-size:15px; line-height:1.5; font-weight:700; }
+.callout b{ color:var(--amber); }
+.callout.teal{ background:rgba(43,179,163,.12); border-color:rgba(43,179,163,.42); }
+.callout.teal b{ color:var(--teal); }
+
+/* Big Five: five tracks, a filled dot for where the subject's own six words land and a ring for
+   the group average of every rater's six. Left is less, right is more, the tick is the middle. */
+.rcard h4{ margin:0 0 4px; font-size:11px; font-weight:900; letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--ink-dim); }
+.rcard .sub{ margin:0 0 10px; font-size:12.5px; color:var(--ink-dim); line-height:1.45; }
+.b5row{ display:flex; align-items:center; gap:10px; margin-top:6px; }
+.b5row .b5l{ width:122px; flex:none; font-size:11.5px; font-weight:800; color:var(--ink-dim); text-align:right;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.b5track{ position:relative; flex:1; height:18px; }
+.b5track i{ position:absolute; left:0; right:0; top:8px; height:2px; background:var(--rule); }
+.b5track i::after{ content:''; position:absolute; left:50%; top:-4px; width:1px; height:10px; background:var(--rule); }
+.dot{ position:absolute; top:3px; width:12px; height:12px; border-radius:99px; margin-left:-6px;
+  box-sizing:border-box; animation:chipIn .3s ease backwards; }
+.dot.self{ background:var(--teal); z-index:2; }
+.dot.other{ background:var(--panel); border:2.5px solid var(--amber); z-index:1; }
+.tline{ margin:8px 0 4px 132px; font-size:13px; line-height:1.4; }
+.b5legend{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; align-items:center; }
+.b5legend span{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-dim); font-weight:700; }
+.b5legend .dot{ position:static; margin:0; animation:none; }
+.b5legend .dot.self{ background:var(--ink-dim); } .b5legend .dot.other{ border-color:var(--ink-dim); }
+@media (max-width:380px){ .b5row .b5l{ width:100px; font-size:11px; } .tline{ margin-left:110px; } }
+
+.win{ margin-top:16px; animation:screenIn .4s ease backwards; }
+.winhead{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin:0 2px 8px; }
+.winhead h3{ margin:0; font-size:19px; font-weight:900; overflow-wrap:anywhere; min-width:0; }
+.winhead .sees{ font-size:12px; font-weight:800; color:var(--ink-dim); white-space:nowrap; flex:none; }
+.winhead .sees b{ color:var(--ink); font-size:14px; }
+
+/* the window itself: a dark frame, four lit panes; chips carry vote badges and grow with votes */
+.johari{ display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:6px; border-radius:18px;
+  background:#0d0c17; border:2px solid #47426b; box-shadow:0 12px 32px rgba(0,0,0,.4); }
+.pane{ border-radius:12px; padding:10px 10px 11px; min-height:118px; border:1px solid var(--rule);
+  animation:paneIn .5s cubic-bezier(.2,.8,.3,1) backwards; min-width:0; }
+@keyframes paneIn{ from{ opacity:0; transform:scale(.94);} to{ opacity:1; transform:none;} }
+.pane .lbl{ display:flex; justify-content:space-between; align-items:baseline; gap:6px;
+  font-size:10px; font-weight:900; letter-spacing:1.4px; text-transform:uppercase; }
+.pane .lbl b{ font-size:15px; }
+.pane .chips{ display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; align-items:center; }
+.chip{ font-size:12px; font-weight:800; border-radius:999px; padding:5px 9px; line-height:1.2;
+  animation:chipIn .3s ease backwards; }
+.chip .v{ font-style:normal; opacity:.78; margin-left:5px; font-size:.78em; font-weight:900; }
+.chip .ap{ font-style:normal; opacity:.6; margin:0 3px; }   /* the ≈ between two close words */
+@keyframes chipIn{ from{ opacity:0; transform:scale(.7);} to{ opacity:1; transform:none;} }
+.pane .none{ font-size:12px; font-style:italic; color:var(--ink-dim); margin-top:8px; line-height:1.4; }
+.pane .sub{ font-size:11.5px; color:var(--ink-dim); margin-top:6px; line-height:1.4; }
+.pane.open{ background:rgba(43,179,163,.16); border-color:rgba(43,179,163,.45); }
+.pane.open .lbl{ color:var(--teal); } .pane.open .chip{ background:var(--teal); color:var(--teal-ink); }
+.pane.blind{ background:rgba(255,176,32,.13); border-color:rgba(255,176,32,.42); }
+.pane.blind .lbl{ color:var(--amber); } .pane.blind .chip{ background:var(--amber); color:var(--amber-ink); }
+.pane.hid{ background:rgba(143,134,201,.13); border-color:rgba(143,134,201,.42); }
+.pane.hid .lbl{ color:var(--hidden-c); } .pane.hid .chip{ background:var(--hidden-c); color:var(--hidden-ink); }
+.pane.unk{ background:var(--ground-2); }
+.pane.unk .lbl{ color:var(--unknown-c); } .pane.unk .lbl b{ color:var(--ink-dim); }
+.pane.unk .sub{ color:var(--unknown-c); }
+.wincap{ margin:9px 2px 0; font-size:13.5px; font-weight:800; line-height:1.4; color:var(--ink); }
+
+.reslegend{ display:flex; justify-content:center; gap:12px; margin:14px 0 0; flex-wrap:wrap; }
+.reslegend .lg{ display:flex; align-items:center; gap:5px; font-size:11px; color:var(--ink-dim); font-weight:700; }
+.reslegend .sw{ width:10px; height:10px; border-radius:3px; flex:none; }
+
+.talk ul{ margin:0; padding-left:18px; font-size:13.5px; line-height:1.55; }
+.talk li+li{ margin-top:7px; }
+
+.resbtns{ margin-top:16px; }
+.resbtns .btnrow{ margin-bottom:10px; }
+.resbtns #navSlot .btn{ margin-bottom:10px; }
+@media (prefers-reduced-motion:no-preference){
+  .rcard, .win{ opacity:0; transform:translateY(10px); animation:rise .4s ease forwards; }
+  @keyframes rise{ to{ opacity:1; transform:none; } }
+}
+
+.toast{ position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+  background:var(--panel-2); border:1px solid var(--rule); color:var(--ink); border-radius:14px;
+  padding:12px 16px; font-size:13px; max-width:88vw; z-index:60; box-shadow:0 10px 30px rgba(0,0,0,.5);
+  animation:screenIn .25s ease; overflow-wrap:anywhere; white-space:pre-wrap; }
+
+/* ============================ confirm scrim ============================ */
+.scrim{ position:fixed; inset:0; background:var(--shade); z-index:50; display:flex;
+  align-items:center; justify-content:center; padding:24px; }
+.dialog{ background:var(--panel); border:1px solid var(--rule); border-radius:20px;
+  padding:20px; max-width:340px; width:100%; }
+.dialog h3{ margin:0 0 6px; font-size:18px; }
+.dialog p{ margin:0 0 16px; color:var(--ink-dim); font-size:14px; line-height:1.5; }
+
+/* share: a WhatsApp link in WhatsApp's green, and a system share sheet where the browser has one */
+.btn.wa{ display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;
+  background:#25D366; color:#052e16; box-shadow:0 8px 22px rgba(37,211,102,.22); }
+.btn.wa svg{ width:20px; height:20px; flex:none; }
+.sharehint{ font-size:12px; color:var(--ink-dim); text-align:center; margin:8px 0 10px; line-height:1.45; }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:.001ms !important; animation-delay:0s !important; transition-duration:.001ms !important; }
+  .rcard, .win{ opacity:1; transform:none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <!-- the motif: a prism splitting one beam into the pane colours -->
+      <svg viewBox="0 0 40 40" aria-hidden="true">
+        <path d="M20 5 L35 33 L5 33 Z" fill="none" stroke="#a59fc0" stroke-width="2.6" stroke-linejoin="round"/>
+        <path d="M4 15 L18 22 L18 25 L4 18 Z" fill="#f0edf7" opacity=".55"/>
+        <path d="M23 20 L38 12 L38 16 Z" fill="#2bb3a3"/>
+        <path d="M23 23 L38 21 L38 25 Z" fill="#ffb020"/>
+        <path d="M23 26 L38 30 L38 34 Z" fill="#8f86c9"/>
+      </svg>
+      <div class="t">GROUP BLIND SPOTS<small>a consensus Johari game</small></div>
+    </div>
+    <div class="topbtns" id="topbtns" hidden>
+      <button class="soundbtn" id="soundBtn" type="button" aria-label="Sound" aria-pressed="true">🔊</button>
+      <button class="homebtn" id="homeBtn" type="button" aria-label="Back to title">Home</button>
+    </div>
+  </div>
+
+  <!-- ============================ title ============================ -->
+  <section class="screen" id="scrTitle">
+    <div class="wordmark">
+      <svg viewBox="0 0 120 112" aria-hidden="true">
+        <defs>
+          <linearGradient id="pr-wm" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2bb3a3"/><stop offset="1" stop-color="#8f86c9"/>
+          </linearGradient>
+        </defs>
+        <!-- one white beam in, a fan of pane colours out: the mirror, refracted -->
+        <path d="M2 30 L52 52 L52 60 L2 38 Z" fill="#f0edf7" opacity=".5"/>
+        <path d="M60 14 L98 84 L22 84 Z" fill="none" stroke="url(#pr-wm)" stroke-width="5" stroke-linejoin="round"/>
+        <rect x="50" y="48" width="9" height="9" rx="2" fill="#2bb3a3"/>
+        <rect x="61" y="48" width="9" height="9" rx="2" fill="#ffb020"/>
+        <rect x="50" y="59" width="9" height="9" rx="2" fill="#8f86c9"/>
+        <rect x="61" y="59" width="9" height="9" rx="2" fill="#5a5570"/>
+        <path d="M72 50 L118 24 L118 36 Z" fill="#2bb3a3" opacity=".92"/>
+        <path d="M72 56 L118 48 L118 60 Z" fill="#ffb020" opacity=".92"/>
+        <path d="M72 62 L118 72 L118 84 Z" fill="#ff6b9d" opacity=".92"/>
+        <path d="M72 68 L118 96 L118 108 Z" fill="#8f86c9" opacity=".92"/>
+      </svg>
+      <h1><small>GROUP</small><span class="w1">BLIND</span> <span class="w2">SPOTS</span></h1>
+    </div>
+    <p class="pitch">One of you steps into the mirror. Everyone else picks their words.<br>One person’s “stubborn” is an opinion — five people choosing it is a portrait.</p>
+
+    <div class="namecard">
+      <span class="lbl" id="namesLbl">Who’s in the circle? (3–7)</span>
+      <div id="nameRows" role="group" aria-labelledby="namesLbl"></div>
+      <button class="addbtn" id="addBtn" type="button">+ Add player</button>
+      <button class="btn" id="startBtn" type="button">Start</button>
+    </div>
+
+    <details class="how">
+      <summary>How it works</summary>
+      <ul>
+        <li>One player at a time steps <b>into the mirror</b>: they pick <b>6 words</b> that feel like themselves. Then every other player, one hand-off at a time, privately picks <b>6 words for them</b>.</li>
+        <li>The reveal is a <b>consensus Johari window</b>: <b>Open</b> (the circle sees it, they claim it), <b>Blind spot</b> (the circle sees it — they didn’t say it), <b>Hidden</b> (claimed, but nobody caught it). A ×4 badge means four raters landed on it independently.</li>
+        <li><b>Close words count</b> — Warm ≈ Kind, Quiet ≈ Private — every word sits on the Big Five’s thirty facets, so near-matches merge and are scored by how close they are.</li>
+        <li>Each mirror opens right after its round, then the next player steps in — until the whole circle has been seen.</li>
+      </ul>
+    </details>
+
+    <p class="finefoot">For fun and conversation — a game, not a psychological assessment.<br>
+    Answers stay on this phone and are never uploaded.<br><a href="../">Kreeda</a></p>
+  </section>
+
+  <!-- ============================ picking ============================ -->
+  <section class="screen" id="scrPick" hidden>
+    <div class="turn" id="turnBanner"><span class="eye">👀</span><span id="turnText"></span></div>
+    <div class="pickhead">
+      <span class="pass-tag" id="passTag"></span>
+      <h2 id="pickTitle"></h2>
+      <p id="pickSub"></p>
+    </div>
+    <div class="tray" id="tray">
+      <div class="row1">
+        <span class="n" aria-live="polite"><b id="pickCount">0</b> of 6 picked</span>
+        <span class="pips" id="pips" aria-hidden="true"></span>
+      </div>
+      <div class="chips" id="trayChips" aria-label="Your picks so far"></div>
+    </div>
+    <div class="wordcloud" id="wordGrid"></div>
+  </section>
+  <div class="pickbar" id="pickbar" hidden><button class="btn" id="pickConfirm" disabled></button></div>
+
+  <!-- ============================ results (one subject per reveal) ============================ -->
+  <section class="screen" id="scrResults" hidden>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+      <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#2bb3a3"/><stop offset="1" stop-color="#8f86c9"/>
+      </linearGradient>
+    </defs></svg>
+    <div class="rc-top">
+      <div class="lbl">In the mirror</div>
+      <div class="names" id="resNames"></div>
+      <div class="date" id="resDate"></div>
+    </div>
+    <div id="resBody"></div>
+    <div class="reslegend">
+      <span class="lg"><span class="sw" style="background:var(--teal)"></span>Open — seen &amp; claimed</span>
+      <span class="lg"><span class="sw" style="background:var(--amber)"></span>Blind — seen, not claimed</span>
+      <span class="lg"><span class="sw" style="background:var(--hidden-c)"></span>Hidden — claimed, not seen</span>
+      <span class="lg"><b>×4</b>&nbsp;= four raters landed on it (close words merge)</span>
+    </div>
+    <div class="rcard talk" id="talkCard" style="animation-delay:.9s">
+      <h4>Talk about it</h4>
+      <ul id="talkList"></ul>
+    </div>
+    <div class="resbtns">
+      <div id="stripSlot"></div>
+      <div id="navSlot"></div>
+      <a class="btn wa" id="waBtn" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.8-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.2-.2-.2-.5-.4z"/></svg>Share on WhatsApp</a>
+      <p class="sharehint">Send this mirror to the group chat — everyone keeps the portrait.</p>
+      <div class="btnrow">
+        <button class="btn ghost" id="copyBtn" type="button">Copy result</button>
+        <button class="btn ghost" id="shareBtn" type="button" hidden>Share…</button>
+      </div>
+    </div>
+    <p class="finefoot">Blind spots aren’t verdicts — they’re gifts the circle hands you.<br><a href="../">Kreeda</a></p>
+  </section>
+
+</div>
+
+<!-- hand-off interstitial: painted only AFTER the previous player's picks are gone from the DOM -->
+<div class="handoff" id="handoff" hidden>
+  <svg class="pass-ico" viewBox="0 0 80 80" aria-hidden="true">
+    <rect x="14" y="6" width="52" height="68" rx="10" fill="none" stroke="#a59fc0" stroke-width="3"/>
+    <path d="M40 18 L54 44 L26 44 Z" fill="none" stroke="#a59fc0" stroke-width="2.6" stroke-linejoin="round"/>
+    <path d="M20 26 L34 33 L34 36 L20 29 Z" fill="#f0edf7" opacity=".55"/>
+    <path d="M44 32 L60 26 L60 30 Z" fill="#2bb3a3"/>
+    <path d="M44 35 L60 34 L60 38 Z" fill="#ffb020"/>
+    <path d="M44 38 L60 42 L60 46 Z" fill="#8f86c9"/>
+    <path d="M28 64 h24" stroke="#a59fc0" stroke-width="3" stroke-linecap="round"/>
+  </svg>
+  <div class="to">Pass the phone to</div>
+  <div class="who" id="hoName"></div>
+  <div class="why" id="hoWhy"></div>
+  <button class="btn amber" id="hoReady" type="button"></button>
+  <div class="tilt">tilt the phone away from the others 👀</div>
+</div>
+
+<!-- confirm-before-discard -->
+<div class="scrim" id="confirmScrim" hidden>
+  <div class="dialog" role="alertdialog" aria-labelledby="cdTitle" aria-describedby="cdBody">
+    <h3 id="cdTitle">Leave this session?</h3>
+    <p id="cdBody">The circle’s picks so far will be discarded.</p>
+    <div class="btnrow">
+      <button class="btn ghost" id="cdStay" type="button">Keep playing</button>
+      <button class="btn" id="cdLeave" type="button" style="background:var(--danger); color:#2a0f06; box-shadow:none;">Leave</button>
+    </div>
+  </div>
+</div>
+
+<script src="../analytics.js"></script>
+<script>
+"use strict";
+/* ============================================================================================
+   GROUP BLIND SPOTS — the group version of Blind Spots (windows/). One friend at a time steps
+   into the mirror: they pick six words for themselves, then EVERY other friend independently
+   picks six words for them. One person's "stubborn" is an opinion; five people choosing it
+   independently is a portrait. The reveal is a consensus Johari Window.
+
+   Privacy is a design constraint, not a feature flag: every pick lives in one in-memory session
+   object (S) and NOTHING else. localStorage holds only names, a sound preference and a play
+   counter, all prefixed "prism." — a refresh loses the round by design. Analytics gets counts,
+   never content.
+   ============================================================================================ */
+
+/* ============================ helpers ============================ */
+const $ = id => document.getElementById(id);
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+function shuffled(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+/* Names go through textContent where they can, but the reveal is assembled as HTML strings,
+   so one escape hatch is still needed for anything a player typed. */
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+/* the 8-hue spectrum: each player owns one colour for the whole session — name rows, hand-offs,
+   bars, the reveal header. Index = roster position. */
+const PAL = ['#2bb3a3','#ffb020','#ff6b9d','#8f86c9','#57d9a3','#4fa8e8','#e07856','#ffd166'];
+const MIN_PLAYERS = 3, MAX_PLAYERS = 7;
+
+/* ============================ word bank ============================
+   40 original trait words, balanced warm / neutral / spiky — copied verbatim from Blind Spots
+   (windows/), whose tables are hand-calibrated. The rule for the spiky third: a friend could
+   pick it to your face and mean it kindly. "Stubborn" passes; anything contemptuous does not.
+   Each word's Big Five facet loadings live in LOAD below. */
+const WORDS = [
+  // warm (14)
+  'Warm','Funny','Loyal','Patient','Generous','Kind','Dependable','Playful',
+  'Brave','Honest','Curious','Encouraging','Gentle','Wise',
+  // neutral (13)
+  'Quiet','Ambitious','Dreamy','Practical','Independent','Careful','Spontaneous',
+  'Observant','Private','Old-school','Analytical','Easygoing','Intense',
+  // spiky (13)
+  'Stubborn','Restless','Dramatic','Guarded','Blunt','Impatient','Competitive',
+  'Scattered','Moody','Overthinking','Sensitive','Picky','Impulsive'
+];
+const PICKS_EACH = 6;
+const WARM_END = 14, NEUTRAL_END = 27;   // WORDS[0..13] warm, [14..26] neutral, [27..39] spiky
+
+/* ============================ Big Five space ============================
+   Forty words is enough that two people describing the same person rarely land on the same
+   word: Warm and Kind, Quiet and Private, Spontaneous and Impulsive are the same observation in
+   different clothes. So every word carries loadings (-1..1) on the thirty NEO facets of the Big
+   Five — six each for Openness, Conscientiousness, Extraversion, Agreeableness and Neuroticism.
+   One table does two jobs: (1) matching — a word's vector is its thirty facet loadings plus its
+   five trait scores as a smoothing term, and two words match when the cosine clears NEAR; an
+   exact match scores 1, a near match its cosine, so "Priya sees Sam" is partial credit, not a
+   coin flip; (2) the Big Five card — a person's six words average into a five-trait profile.
+   Hand-set rather than fetched: the game must work offline, off the disk, with no model, and
+   this is a playful read of words, not a psychometric instrument. */
+const FACETS = ['O1','O2','O3','O4','O5','O6',   // fantasy, aesthetics, feelings, actions, ideas, values
+                'C1','C2','C3','C4','C5','C6',   // competence, order, dutifulness, achievement, self-discipline, deliberation
+                'E1','E2','E3','E4','E5','E6',   // warmth, gregariousness, assertiveness, activity, excitement-seeking, positive emotions
+                'A1','A2','A3','A4','A5','A6',   // trust, straightforwardness, altruism, compliance, modesty, tender-mindedness
+                'N1','N2','N3','N4','N5','N6'];  // anxiety, angry hostility, depression, self-consciousness, impulsiveness, vulnerability
+const TRAITS = [
+  { k:'O', name:'Openness',          hi:'open to new things', lo:'conventional' },
+  { k:'C', name:'Conscientiousness', hi:'organised',          lo:'freewheeling' },
+  { k:'E', name:'Extraversion',      hi:'outgoing',           lo:'reserved' },
+  { k:'A', name:'Agreeableness',     hi:'agreeable',          lo:'tough-minded' },
+  { k:'N', name:'Neuroticism',       hi:'emotionally reactive', lo:'unflappable' }
+];
+const LOAD = {
+  Warm:        {E1:1, E6:.4, A3:.6, A6:.6, A1:.3},
+  Kind:        {A3:1, A6:.8, E1:.6, A4:.3, E6:.2},
+  Gentle:      {A6:.9, A4:.6, E1:.5, E3:-.4, N2:-.5, A3:.4},
+  Generous:    {A3:1, A5:.4, E1:.6, A1:.3, E6:.2},
+  Encouraging: {E1:.7, A3:.7, E6:.6, E3:.3, A1:.3},
+  Loyal:       {A1:.7, C3:.9, A3:.5, C5:.3, A4:.2},
+  Dependable:  {C3:1, C5:.7, C1:.6, A1:.4, C2:.3},
+  Patient:     {N2:-.8, C6:.6, A4:.6, N5:-.5, A6:.4, C5:.3, E1:.2},
+  Honest:      {A2:1, C3:.5, A1:.4, A5:.2},
+  Brave:       {E3:.6, E5:.7, N1:-.7, N6:-.6, E4:.3},
+  Funny:       {E6:.9, E2:.6, O1:.4, E4:.3, E5:.3},
+  Playful:     {E6:.8, E5:.6, O1:.5, E2:.4, C6:-.3, O4:.3},
+  Curious:     {O5:1, O4:.6, O2:.3, O1:.3, E5:.2},
+  Wise:        {O5:.6, C6:.8, C1:.6, O6:.4, N6:-.3, O3:.2},
+  Quiet:       {E2:-.9, E4:-.4, E3:-.4, N4:.2, E5:-.3},
+  Private:     {E2:-.8, E4:-.3, N4:.4, O3:-.3, A2:-.2, E1:-.2},
+  Guarded:     {A1:-.7, E2:-.5, N4:.5, O3:-.5, E1:-.4, A2:-.3},
+  Independent: {E3:.5, A4:-.6, C1:.4, A1:-.2, O6:.2, E2:-.2},
+  Ambitious:   {C4:1, E3:.6, E4:.5, A5:-.3, C5:.3, E5:.2},
+  Competitive: {C4:.8, E3:.7, A4:-.6, A5:-.5, N2:.2, E4:.3, E5:.2},
+  Intense:     {E4:.6, O3:.6, N1:.3, C4:.5, E3:.3, E6:-.2},
+  Dramatic:    {O3:.7, E2:.5, E6:.4, E5:.4, A5:-.5, N1:.3, O1:.3},
+  Spontaneous: {O4:.8, N5:.5, C6:-.8, E5:.6, C2:-.4, E4:.3, O1:.2},
+  Impulsive:   {N5:1, C6:-.9, E5:.5, C5:-.4, O4:.3, E4:.3},
+  Restless:    {E4:.7, N1:.4, C5:-.4, O4:.4, N5:.4, C6:-.3, E5:.3},
+  Impatient:   {N2:.6, C6:-.5, E4:.5, A4:-.4, N5:.5, N1:.2},
+  Scattered:   {C2:-1, C5:-.6, C1:-.3, O1:.3, N1:.2, C6:-.3},
+  Dreamy:      {O1:1, O2:.5, C2:-.4, E4:-.3, O3:.4, C5:-.2},
+  Easygoing:   {N1:-.6, N2:-.7, A4:.7, C2:-.3, E6:.4, N6:-.3, A1:.3},
+  Practical:   {C1:.8, O1:-.6, C2:.6, O5:-.2, C6:.6, C5:.4, O2:-.2},
+  Careful:     {C6:1, C2:.7, N1:.3, E5:-.6, C1:.5, C5:.4, C3:.3, O1:-.2},
+  Analytical:  {O5:.8, C6:.7, C1:.5, O3:-.3, E6:-.2, C2:.3, O2:-.1},
+  Observant:   {O5:.5, C6:.6, E2:-.3, O2:.4, N4:.2, O3:.3, C1:.3},
+  Overthinking:{N1:.9, C6:.6, N4:.5, N5:-.3, O5:.3, N6:.3},
+  'Old-school':{O4:-.8, O6:-.8, C3:.5, C2:.4, O1:-.3, A4:.2, C5:.2},
+  Stubborn:    {A4:-1, O6:-.3, C5:.4, N2:.3, E3:.4, O4:-.3},
+  Blunt:       {A2:.8, A6:-.7, E3:.6, A4:-.4, N2:.3, A5:-.2},
+  Picky:       {C2:.6, A4:-.5, N2:.3, O4:-.4, C6:.4, A6:-.2, C1:.2},
+  Moody:       {N3:.7, N2:.5, N6:.5, E6:-.5, N1:.3, N4:.2},
+  Sensitive:   {A6:.7, N4:.6, N6:.5, O3:.8, N1:.3, E1:.2}
+};
+/* a word's trait scores: its facet loadings summed per trait, clipped to -1..1 */
+function traitVec(w){
+  return TRAITS.map(t => Math.max(-1, Math.min(1,
+    FACETS.filter(f => f[0]===t.k).reduce((s,f) => s + (LOAD[w][f]||0), 0))));
+}
+/* a person's profile from a list of words: the average trait vector, each value -1..1 */
+function profile(words){
+  const acc = [0,0,0,0,0];
+  words.forEach(w => { traitVec(w).forEach((x,i) => { acc[i] += x; }); });
+  return acc.map(x => x / (words.length || 1));
+}
+const DOMAIN_WEIGHT = 1;     // how much the five trait scores count next to the thirty facets
+const VEC = {};
+WORDS.forEach(w => { VEC[w] = FACETS.map(f => LOAD[w][f]||0).concat(traitVec(w).map(x => x*DOMAIN_WEIGHT)); });
+const NEAR = 0.65;
+const NORM = {}; WORDS.forEach(w => { NORM[w] = Math.sqrt(VEC[w].reduce((s,x)=>s+x*x, 0)); });
+function sim(a, b){
+  if(a===b) return 1;
+  const va = VEC[a], vb = VEC[b]; let d = 0;
+  for(let i=0;i<va.length;i++) d += va[i]*vb[i];
+  return d / (NORM[a]*NORM[b]);
+}
+/* Pair up two six-word lists: exact matches first, then the closest remaining pairs above NEAR,
+   greedily by similarity so each word is used once. What's left on either side is unmatched.
+   Pairs come back in bank order so panes read the same way every time. */
+function softMatch(X, Y){
+  const pairs = [], usedX = new Set(), usedY = new Set();
+  X.forEach(a => { if(Y.includes(a)){ pairs.push({a, b:a, sim:1}); usedX.add(a); usedY.add(a); } });
+  const cand = [];
+  X.forEach(a => { if(usedX.has(a)) return;
+    Y.forEach(b => { if(usedY.has(b)) return; const s = sim(a,b); if(s >= NEAR) cand.push({a, b, sim:s}); }); });
+  cand.sort((p,q) => q.sim - p.sim);
+  cand.forEach(c => { if(usedX.has(c.a) || usedY.has(c.b)) return; pairs.push(c); usedX.add(c.a); usedY.add(c.b); });
+  pairs.sort((p,q) => WORDS.indexOf(p.a) - WORDS.indexOf(q.a));
+  return { pairs,
+    restX: WORDS.filter(w => X.includes(w) && !usedX.has(w)),
+    restY: WORDS.filter(w => Y.includes(w) && !usedY.has(w)),
+    score: pairs.reduce((s,o) => s + o.sim, 0) };
+}
+const pairLabel = o => o.a===o.b ? o.a : o.a + ' ≈ ' + o.b;
+
+/* ============================ consensus math ============================
+   The group step beyond softMatch. All raters' words are merged into CLUSTERS: the most-picked
+   still-unclustered word seeds a cluster and pulls in every word within NEAR of it, so "Funny"
+   picked by two raters and "Playful" by a third become one cluster, labelled by its most-picked
+   word, counted by how many RATERS landed in it (a rater can never count twice in one cluster).
+   A cluster that soft-matches one of the subject's own six words is OPEN (the circle sees it,
+   the subject claims it); otherwise it is a BLIND spot. Self words no cluster reaches are
+   HIDDEN. Words nobody used at all are the Unknown pane. */
+function clusterRaters(raterPicks){
+  const votes = {};                       // word → Set of rater indexes who picked it
+  raterPicks.forEach((list,ri) => list.forEach(w => { (votes[w] = votes[w]||new Set()).add(ri); }));
+  const distinct = Object.keys(votes).sort((a,b) =>
+    (votes[b].size - votes[a].size) || (WORDS.indexOf(a) - WORDS.indexOf(b)));
+  const clusters = [], used = new Set();
+  distinct.forEach(w => {
+    if(used.has(w)) return;
+    const members = [w]; used.add(w);
+    distinct.forEach(x => { if(!used.has(x) && sim(w,x) >= NEAR){ members.push(x); used.add(x); } });
+    const rset = new Set(); members.forEach(m => votes[m].forEach(r => rset.add(r)));
+    clusters.push({ label:w, members, votes:rset.size });
+  });
+  clusters.sort((a,b) => b.votes - a.votes || WORDS.indexOf(a.label) - WORDS.indexOf(b.label));
+  return clusters;
+}
+function consensus(self, raterPicks){
+  const clusters = clusterRaters(raterPicks);
+  const open = [], blind = [];
+  clusters.forEach(c => {
+    let best = null, bs = 0;
+    self.forEach(sw => c.members.forEach(m => { const s = sim(sw,m); if(s >= NEAR && s > bs){ bs = s; best = sw; } }));
+    if(best) open.push({ label:c.label, selfWord:best, votes:c.votes, members:c.members });
+    else blind.push(c);
+  });
+  const hidden = self.filter(sw => !clusters.some(c => c.members.some(m => sim(sw,m) >= NEAR)));
+  const usedWords = new Set(self);
+  raterPicks.forEach(l => l.forEach(w => usedWords.add(w)));
+  return { open, blind, hidden, unknown: WORDS.length - usedWords.size };
+}
+/* end of math block (the node smoke-test slices to this marker) */
+
+/* ============================ persistence ============================
+   Only names, a sound preference and a plays counter are ever stored. Picks are personal —
+   they live in memory for this session and are gone on reload, by design. */
+const LS = {
+  get(k){ try{ return localStorage.getItem('prism.'+k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem('prism.'+k, v); }catch(e){} }
+};
+function loadNames(){
+  try{
+    const n = JSON.parse(LS.get('names')||'null');
+    if(Array.isArray(n) && n.length>=MIN_PLAYERS && n.length<=MAX_PLAYERS)
+      return n.map(x=>String(x).slice(0,12));
+  }catch(e){}
+  return ['','',''];
+}
+function saveNames(names){ LS.set('names', JSON.stringify(names)); }
+
+/* ============================ sound ============================
+   Two synthesized cues, no audio files: a soft tick on every pick and a swish when a pass
+   leaves the page. The context is created on the first tap (a user gesture, which iOS
+   requires). */
+const SND = { ctx:null, noise:null, on: LS.get('sound')!=='0' };
+function audio(){
+  if(!SND.on) return null;
+  if(!SND.ctx){ try{ SND.ctx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(SND.ctx.state==='suspended'){ try{ SND.ctx.resume(); }catch(e){} }
+  return SND.ctx;
+}
+function tick(){
+  const ac = audio(); if(!ac) return;
+  try{
+    const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(880,t); o.frequency.exponentialRampToValueAtTime(1320,t+0.03);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.09,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t+0.08);
+  }catch(e){}
+}
+function swish(){
+  const ac = audio(); if(!ac) return;
+  try{
+    const dur = 0.3, t = ac.currentTime;
+    if(!SND.noise){ const n = Math.floor(ac.sampleRate*0.5), b = ac.createBuffer(1,n,ac.sampleRate), d = b.getChannelData(0);
+      for(let i=0;i<n;i++) d[i] = Math.random()*2-1; SND.noise = b; }
+    const src = ac.createBufferSource(); src.buffer = SND.noise;
+    const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.4;     // filtered noise, swept up then down
+    f.frequency.setValueAtTime(500,t); f.frequency.exponentialRampToValueAtTime(3400,t+dur*0.45);
+    f.frequency.exponentialRampToValueAtTime(700,t+dur);
+    const g = ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.32,t+0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(f).connect(g).connect(ac.destination); src.start(t); src.stop(t+dur+0.02);
+  }catch(e){}
+}
+function setSound(on){
+  SND.on = on; LS.set('sound', on?'1':'0');
+  $('soundBtn').textContent = on ? '🔊' : '🔇'; $('soundBtn').setAttribute('aria-pressed', String(on));
+  if(on) tick();
+}
+$('soundBtn').textContent = SND.on ? '🔊' : '🔇'; $('soundBtn').setAttribute('aria-pressed', String(SND.on));
+$('soundBtn').addEventListener('click', ()=>setSound(!SND.on));
+
+/* ============================ state machine ============================
+   One session = the whole roster through the mirror, one subject per round:
+     title → [round s: pick.self → (handoff → pick.rate)×(N−1) → handoff → reveal s]
+           → "Next in the mirror" → round s+1 … → last reveal (+ session strip) → again/title
+   The subject taps "show me" themselves before their reveal — their mirror, their hand.
+   All picks live here in memory only. `lock` guards every phase-advancing button against the
+   double-tap race: taken before any DOM swap, released when the next screen is painted. */
+let S = null;
+let lock = false;
+let completeSent = false;
+function freshSession(names){
+  completeSent = false;
+  return {
+    names: names.slice(),
+    subj: 0,               // roster index of the player in the mirror
+    stage: 'self',         // 'self' | 'rate'
+    raters: [],            // roster indexes rating the current subject, in hand-off order
+    ri: 0,                 // which rater is up
+    sel: new Set(),        // current in-progress selection
+    self: null,            // the subject's own 6
+    picks: [],             // picks[j] = rater j's 6 for the subject (aligned with raters[])
+    round: null,           // computed result for the current subject (set at last lock-in)
+    done: [],              // one summary per finished subject — feeds the session strip
+    warmBy: names.map(()=>0),   // warm words chosen per player across all their rating passes
+    spikyBy: names.map(()=>0)
+  };
+}
+
+/* ============================ screens ============================ */
+const SCREENS = ['scrTitle','scrPick','scrResults'];
+function show(id){
+  for(const s of SCREENS){ $(s).hidden = (s!==id); }
+  $('topbtns').hidden = (id==='scrTitle');
+  $('pickbar').hidden = (id!=='scrPick');
+  const el = $(id); el.style.animation='none'; void el.offsetWidth; el.style.animation='';
+  try{ window.scrollTo({top:0,left:0,behavior:'instant'}); }catch(e){ window.scrollTo(0,0); }
+}
+
+/* ============================ title ============================ */
+let titleNames = loadNames();
+function finalNames(){ return titleNames.map((v,i)=>(String(v).trim()||('Player '+(i+1))).slice(0,12)); }
+function refreshStart(){
+  $('startBtn').textContent = 'Start · ' + finalNames()[0] + ' steps in first';
+}
+function renderNameRows(){
+  const box = $('nameRows'); box.innerHTML = '';
+  titleNames.forEach((v,i)=>{
+    const row = document.createElement('div'); row.className = 'prow';
+    const dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = PAL[i];
+    const inp = document.createElement('input');
+    inp.maxLength = 12; inp.autocomplete = 'off'; inp.placeholder = 'Player '+(i+1); inp.value = v;
+    inp.setAttribute('aria-label', 'Player '+(i+1)+' name');
+    inp.addEventListener('input', ()=>{ titleNames[i] = inp.value; if(i===0) refreshStart(); });
+    row.appendChild(dot); row.appendChild(inp);
+    if(titleNames.length > MIN_PLAYERS){
+      const rm = document.createElement('button');
+      rm.type = 'button'; rm.className = 'rm'; rm.textContent = '×';
+      rm.setAttribute('aria-label', 'Remove player '+(i+1));
+      rm.addEventListener('click', ()=>{ titleNames.splice(i,1); renderNameRows(); refreshStart(); });
+      row.appendChild(rm);
+    }
+    box.appendChild(row);
+  });
+  $('addBtn').hidden = titleNames.length >= MAX_PLAYERS;
+}
+$('addBtn').addEventListener('click', ()=>{
+  if(titleNames.length >= MAX_PLAYERS) return;
+  titleNames.push(''); renderNameRows(); refreshStart();
+  const inputs = $('nameRows').querySelectorAll('input');
+  if(inputs.length) inputs[inputs.length-1].focus();
+});
+renderNameRows(); refreshStart();
+
+$('startBtn').addEventListener('click', ()=>{
+  if(lock) return; lock = true;
+  const names = finalNames();
+  titleNames = names.slice(); saveNames(names);
+  S = freshSession(names);
+  track('game_start', { player_count: names.length });
+  beginRound(true);          // player 1 already holds the phone: straight into the mirror
+  lock = false;
+});
+
+/* ============================ hand-off ============================
+   The contract of this screen: by the time it is visible, the previous player's picks are
+   already gone from the DOM (wordGrid and tray are emptied and every screen hidden before the
+   interstitial is unhidden), so a fast tap or a back-swipe cannot resurface them. */
+let HO = null;
+function toHandoff(idx, why, btnLabel, go){
+  $('wordGrid').innerHTML = ''; $('trayChips').innerHTML = '';
+  for(const s of SCREENS){ $(s).hidden = true; }
+  $('pickbar').hidden = true;
+  $('topbtns').hidden = false;
+  $('hoName').textContent = S.names[idx];
+  $('hoName').style.color = PAL[idx];
+  $('hoWhy').textContent = why;
+  $('hoReady').textContent = 'I’m ' + S.names[idx] + ' — show me';
+  if(btnLabel) $('hoReady').textContent = btnLabel;
+  HO = go;
+  $('handoff').hidden = false;
+}
+$('hoReady').addEventListener('click', ()=>{
+  if(lock) return; lock = true;
+  $('handoff').hidden = true;
+  const go = HO; HO = null;
+  if(go) go();
+  lock = false;
+});
+
+/* ============================ rounds ============================ */
+function beginRound(first){
+  S.stage = 'self'; S.self = null; S.picks = []; S.ri = 0; S.sel = new Set(); S.round = null;
+  const N = S.names.length;
+  S.raters = []; for(let k=1;k<N;k++) S.raters.push((S.subj+k)%N);
+  if(first) startSelfPick();
+  else toHandoff(S.subj,
+    'You’re in the mirror next. Pick 6 words that feel like you — privately.',
+    null, startSelfPick);
+}
+function nextSubject(){ S.subj++; beginRound(false); }
+
+/* ============================ picking ============================ */
+let gridBtn = {};          // word → its pill in the current grid, so the tray can un-press it
+
+function startSelfPick(){
+  S.stage = 'self'; S.sel = new Set();
+  const me = S.names[S.subj];
+  $('turnBanner').hidden = false;
+  $('turnText').innerHTML = `<b style="color:${PAL[S.subj]}">${esc(me)}’s turn.</b> Everyone else, look away — nothing shows until the whole circle has locked in.`;
+  $('passTag').textContent = `Mirror ${S.subj+1} of ${S.names.length} · yourself`;
+  $('passTag').className = 'pass-tag self';
+  $('pickTitle').textContent = `${me}, pick 6 words that feel like YOU`;
+  $('pickSub').textContent = 'Go with your gut — the you of most days, not your best day.';
+  $('scrPick').className = 'screen selfmode';
+  $('trayChips').innerHTML = '';
+  buildGrid(); syncPick();
+  show('scrPick');
+}
+function startRatePick(){
+  S.stage = 'rate'; S.sel = new Set();
+  const rIdx = S.raters[S.ri], rater = S.names[rIdx], subj = S.names[S.subj];
+  $('turnBanner').hidden = false;
+  $('turnText').innerHTML = `<b style="color:${PAL[rIdx]}">${esc(rater)}’s eyes only.</b> ${esc(subj)} and everyone else, look away.`;
+  $('passTag').textContent = `Mirror ${S.subj+1} of ${S.names.length} · rater ${S.ri+1} of ${S.raters.length}`;
+  $('passTag').className = 'pass-tag other';
+  $('pickTitle').textContent = `${rater}, pick 6 words for ${subj}`;
+  $('pickSub').textContent = `The ${subj} you actually know — kind is good, honest is better.`;
+  $('scrPick').className = 'screen othermode';
+  $('trayChips').innerHTML = '';
+  buildGrid(); syncPick();
+  show('scrPick');
+}
+
+function buildGrid(){
+  const grid = $('wordGrid');
+  grid.innerHTML = ''; gridBtn = {};
+  // reshuffle every pass so no pass is answered by spatial memory of the one before
+  for(const w of shuffled(WORDS)){
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'word'; b.textContent = w;
+    b.setAttribute('aria-pressed','false');
+    b.addEventListener('click', ()=>toggleWord(w));
+    grid.appendChild(b); gridBtn[w] = b;
+  }
+}
+
+function toggleWord(w){
+  const btn = gridBtn[w];
+  if(S.sel.has(w)){
+    S.sel.delete(w); btn.setAttribute('aria-pressed','false');
+    const chip = $('trayChips').querySelector('[data-w="'+CSS.escape(w)+'"]'); if(chip) chip.remove();
+  }else{
+    if(S.sel.size >= PICKS_EACH) return;   // exactly 6, hard-enforced
+    S.sel.add(w); btn.setAttribute('aria-pressed','true');
+    btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
+    const chip = document.createElement('button');
+    chip.type = 'button'; chip.className = 'tchip'; chip.setAttribute('data-w', w);
+    chip.setAttribute('aria-label', 'Drop '+w);
+    chip.innerHTML = esc(w) + ' <i aria-hidden="true">×</i>';
+    chip.addEventListener('click', ()=>toggleWord(w));
+    $('trayChips').appendChild(chip);
+  }
+  tick();
+  syncPick();
+}
+
+function syncPick(){
+  const n = S.sel.size;
+  $('pickCount').textContent = n;
+  const pips = $('pips');
+  pips.innerHTML = '';
+  for(let i=0;i<PICKS_EACH;i++){
+    const p = document.createElement('span');
+    p.className = 'pip' + (i<n ? ' on':'');
+    pips.appendChild(p);
+  }
+  const full = n===PICKS_EACH;
+  // unpicked words dim at the cap so "why won't it tap" is answered visually
+  for(const el of $('wordGrid').children){
+    el.classList.toggle('maxed', full && el.getAttribute('aria-pressed')!=='true');
+  }
+  const btn = $('pickConfirm');
+  btn.disabled = !full;
+  const left = PICKS_EACH - n;
+  if(S.stage==='self'){
+    btn.textContent = full ? 'These 6 are me — lock in' : `Pick ${left} more`;
+  }else{
+    const last = S.ri === S.raters.length-1;
+    btn.textContent = full
+      ? (last ? `Lock in — ${S.names[S.subj]}’s mirror is ready`
+              : `Lock in & pass to ${S.names[S.raters[S.ri+1]]}`)
+      : `Pick ${left} more`;
+  }
+}
+
+$('pickConfirm').addEventListener('click', ()=>{
+  if(lock || !S || S.sel.size!==PICKS_EACH) return; lock = true;
+  const words = [...S.sel];
+  S.sel = new Set();
+  swish();
+  if(S.stage==='self'){
+    S.self = words;
+    const r0 = S.raters[0];
+    toHandoff(r0,
+      `${S.names[S.subj]} has locked in their own 6. Your turn: pick 6 words for ${S.names[S.subj]} — privately.`,
+      null, startRatePick);
+  }else{
+    S.picks[S.ri] = words;
+    if(S.ri < S.raters.length-1){
+      S.ri++;
+      const r = S.raters[S.ri];
+      toHandoff(r,
+        `Pick 6 words for ${S.names[S.subj]} — privately. ${S.raters.length-S.ri} of ${S.raters.length} raters to go.`,
+        null, startRatePick);
+    }else{
+      computeRound();
+      /* the kindness rail: the subject opens their own mirror — nobody reveals it for them */
+      toHandoff(S.subj,
+        'The whole circle has locked in. Your mirror is ready — you open it.',
+        null, finish);
+    }
+  }
+  lock = false;
+});
+
+/* ============================ round math ============================ */
+function computeRound(){
+  if(!S.self || S.picks.length !== S.raters.length) return;   // never compute a partial round
+  const self = S.self, m = S.picks.length;
+  const per = S.picks.map((l,j)=>({ idx:S.raters[j], j,
+    pct: Math.round(softMatch(self,l).score*100/PICKS_EACH) }));
+  const C = consensus(self, S.picks);
+  const avg = Math.round(per.reduce((s,p)=>s+p.pct,0)/m);
+  const warm = S.picks.map(l=>{
+    const c = {w:0,n:0,s:0};
+    l.forEach(x=>{ const i = WORDS.indexOf(x); if(i<WARM_END)c.w++; else if(i<NEUTRAL_END)c.n++; else c.s++; });
+    return c;
+  });
+  let k = 0;   // kindest eye this round: most warm words; ties resolve toward fewer spiky ones
+  for(let j=1;j<m;j++){ if(warm[j].w>warm[k].w || (warm[j].w===warm[k].w && warm[j].s<warm[k].s)) k = j; }
+  S.picks.forEach((l,j)=>{ S.warmBy[S.raters[j]] += warm[j].w; S.spikyBy[S.raters[j]] += warm[j].s; });
+  S.round = { per, C, avg, warm, kindest:k, m };
+  S.done.push({ subj:S.subj, avg,
+    open:C.open.length, blind:C.blind.length, hidden:C.hidden.length,
+    top: C.blind.length ? { word:C.blind[0].label, votes:C.blind[0].votes, of:m } : null });
+}
+
+/* ============================ insights ============================ */
+function roundVerdict(R, nm){
+  const majority = Math.max(2, Math.ceil(R.m*0.6));
+  if(R.avg>=75) return ['Crystal clear', `${nm} shows the circle who ${nm} is — and the circle sees it.`];
+  if(R.C.blind.length && R.C.blind[0].votes>=majority)
+    return ['Bearing gifts', `The circle keeps seeing things ${nm} hasn’t claimed. Gifts, mostly.`];
+  if(R.C.hidden.length>=3) return ['Still surprising them', `${nm} claimed more than the circle has caught yet. Show your work.`];
+  if(R.avg>=45) return ['Coming into focus', 'Plenty seen, plenty still to show.'];
+  return ['A private portrait', `The circle is still learning ${nm} — tonight helps.`];
+}
+function headlineFor(R, nm){
+  const o = R.C.open.length, h = R.C.hidden.length, b = R.C.blind.length;
+  if(o>=h && o>=b) return o>=4 ? `The circle agrees on who ${nm} is.` : `The circle mostly agrees on who ${nm} is.`;
+  if(h>b) return `${nm} is still surprising the circle.`;
+  return `The circle sees things ${nm} hasn’t claimed yet.`;
+}
+function groupProfile(){
+  const acc = [0,0,0,0,0];
+  S.picks.forEach(l => { profile(l).forEach((x,i)=>{ acc[i]+=x; }); });
+  return acc.map(x => x/(S.picks.length||1));
+}
+function b5Gap(){
+  const self = profile(S.self), grp = groupProfile();
+  let gap = 0, at = 0;
+  TRAITS.forEach((t,i)=>{ const d = grp[i]-self[i]; if(Math.abs(d)>Math.abs(gap)){ gap = d; at = i; } });
+  return { gap, at };
+}
+function b5LineText(nm){
+  const g = b5Gap();
+  if(Math.abs(g.gap) < 0.3) return `${nm} and the circle read ${nm}’s Big Five alike.`;
+  const t = TRAITS[g.at];
+  return `The circle sees ${nm} as more ${g.gap>0 ? t.hi : t.lo} than ${nm} does.`;
+}
+/* six words averaged sit close to the middle by construction, so the card shows each value with
+   a gain (clipped) — positions and the percentages in the aria labels and share text agree */
+const B5_GAIN = 1.6;
+const shown = v => Math.max(-1, Math.min(1, v*B5_GAIN));
+
+function talkItems(){
+  const R = S.round, nm = esc(S.names[S.subj]), m = R.m, out = [];
+  if(R.C.blind.length){
+    const c = R.C.blind[0];
+    out.push(`Ask the circle where <span class="w b">“${c.label.toLowerCase()}”</span> shows up — ${c.votes} of ${m} spotted it, ${nm} didn’t claim it.`);
+  }
+  if(R.C.hidden.length){
+    out.push(`${nm}: when did <span class="w h">“${R.C.hidden[0].toLowerCase()}”</span> last get to show? Nobody caught it today.`);
+  }
+  if(R.C.open.length){
+    const o = R.C.open[0];
+    out.push(`${o.votes} of ${m} and ${nm} agree: <span class="w a">“${o.selfWord.toLowerCase()}”</span> — swap the story that proves it.`);
+  }
+  if(!out.length) out.push(`No overlap anywhere today — start with the word that surprised ${nm} most.`);
+  return out.slice(0,3);
+}
+
+/* ============================ the reveal — one page per subject ============================ */
+function ring(pct, cls, label, big){
+  const r = big?70:40, s = 2*r+12, c = s/2, C = 2*Math.PI*r, v = Math.round(pct);
+  return `<div class="ring ${cls}${big?' big':''}"><svg viewBox="0 0 ${s} ${s}" aria-hidden="true">
+    <circle class="tr" cx="${c}" cy="${c}" r="${r}"/>
+    <circle class="fl" cx="${c}" cy="${c}" r="${r}" style="stroke-dasharray:${C.toFixed(1)};stroke-dashoffset:${C.toFixed(1)}" data-off="${(C*(1-v/100)).toFixed(1)}"/>
+    </svg><div class="rv" aria-hidden="true"><b data-n="${v}">0</b><i>%</i></div>
+    <div class="rl" aria-hidden="true">${label}</div><span class="sr">${label}: ${v}%</span></div>`;
+}
+/* chips grow gently with votes: ×1 = 12px up to ×5+ ≈ 17px — consensus is literally bigger */
+const chipFS = votes => (12 + Math.min(4, votes-1)*1.2).toFixed(1);
+
+function paneBlock(cls, title, count, inner, delay, noneTxt){
+  return `<div class="pane ${cls}" style="animation-delay:${delay}ms">
+    <div class="lbl"><span>${title}</span><b>${count}</b></div>
+    ${inner || `<p class="none">${noneTxt}</p>`}</div>`;
+}
+
+function b5HTML(){
+  const nm = esc(S.names[S.subj]);
+  const self = profile(S.self), grp = groupProfile();
+  const pos = v => (50 + shown(v)*50).toFixed(0), pct = v => Math.round((shown(v)+1)*50) + '%';
+  const g = b5Gap();
+  const line = Math.abs(g.gap) < 0.3
+    ? `${nm} and the circle read ${nm}’s Big Five alike.`
+    : `The circle sees ${nm} as more <span class="w b">${g.gap>0 ? TRAITS[g.at].hi : TRAITS[g.at].lo}</span> than ${nm} does.`;
+  return TRAITS.map((t,i)=>`<div class="b5row"><span class="b5l">${t.name}</span>
+    <span class="b5track" role="img" aria-label="${t.name}: ${pct(self[i])} by ${nm}, ${pct(grp[i])} by the circle"><i></i>
+      <b class="dot self" style="left:${pos(self[i])}%; animation-delay:${400+i*70}ms" title="by ${nm}: ${pct(self[i])}"></b>
+      <b class="dot other" style="left:${pos(grp[i])}%; animation-delay:${600+i*70}ms" title="by the circle: ${pct(grp[i])}"></b></span></div>`).join('')
+    + `<p class="tline">${line}</p>`;
+}
+
+function finish(){
+  if(!S || !S.round) return;      // never paint a reveal without a computed round
+  const R = S.round, m = R.m, N = S.names.length;
+  const nm = esc(S.names[S.subj]), col = PAL[S.subj];
+  const last = S.done.length === N;
+  const v = roundVerdict(R, S.names[S.subj]);
+  $('resNames').innerHTML = `<span style="color:${col}">${nm}</span>`;
+  $('resDate').textContent = new Date().toLocaleDateString(undefined,{ year:'numeric', month:'long', day:'numeric' });
+
+  /* per-rater bars, clearest eye first, crown on top */
+  const sorted = R.per.slice().sort((a,b)=>b.pct-a.pct);
+  const bars = sorted.map((p,i)=>{
+    const rn = esc(S.names[p.idx]);
+    return `<div class="rrow" style="animation-delay:${250+i*90}ms">
+      <span class="rname" style="color:${PAL[p.idx]}">${i===0?'👑 ':''}${rn}</span>
+      <div class="rtrack" role="img" aria-label="${rn} sees ${nm}: ${p.pct} percent"><i style="background:${PAL[p.idx]}" data-w="${p.pct}"></i></div>
+      <b class="rpct" style="color:${PAL[p.idx]}">${p.pct}%</b></div>`;
+  }).join('');
+
+  /* the headline moment: the top consensus blind spot */
+  const tb = R.C.blind[0];
+  const callout = tb
+    ? `<div class="callout">🎁 <b>${tb.votes} of ${m}</b> ${tb.votes===1?'sees':'see'} <b>“${tb.label.toLowerCase()}”</b> in ${nm} — ${nm} didn’t claim it.</div>`
+    : `<div class="callout teal">🪞 <b>No blind spots.</b> The circle sees exactly what ${nm} shows.</div>`;
+
+  /* the consensus window: chips carry vote badges and grow with agreement */
+  const base = 600;
+  const openChips = R.C.open.length ? '<div class="chips">' + R.C.open.map((o,i)=>
+    `<span class="chip" style="animation-delay:${base+220+i*70}ms;font-size:${chipFS(o.votes)}px" title="${o.votes} of ${m} picked it — ${nm} claims it">${o.label}${o.label!==o.selfWord?`<i class="ap">≈</i>${o.selfWord}`:''}<i class="v">×${o.votes}</i></span>`).join('') + '</div>' : null;
+  const blindChips = R.C.blind.length ? '<div class="chips">' + R.C.blind.map((c,i)=>
+    `<span class="chip" style="animation-delay:${base+520+i*70}ms;font-size:${chipFS(c.votes)}px" title="${c.votes} of ${m} see it — unclaimed">${c.label}<i class="v">×${c.votes}</i></span>`).join('') + '</div>' : null;
+  const hidChips = R.C.hidden.length ? '<div class="chips">' + R.C.hidden.map((w,i)=>
+    `<span class="chip" style="animation-delay:${base+820+i*70}ms">${w}</span>`).join('') + '</div>' : null;
+
+  const windowHTML = `<section class="win" style="animation-delay:${base}ms">
+    <div class="winhead"><h3 style="color:${col}">The consensus window</h3>
+      <span class="sees">${m} raters</span></div>
+    ${callout}
+    <div class="johari">
+      ${paneBlock('open','Open',R.C.open.length,openChips,base+120,'nothing the circle and '+nm+' agree on — rare, and worth a laugh')}
+      ${paneBlock('blind','Blind spot',R.C.blind.length,blindChips,base+420,'the circle saw nothing '+nm+' didn’t already claim')}
+      ${paneBlock('hid','Hidden',R.C.hidden.length,hidChips,base+720,'the circle caught every word '+nm+' claimed')}
+      <div class="pane unk" style="animation-delay:${base+1020}ms">
+        <div class="lbl"><span>Unknown</span><b>${R.C.unknown}</b></div>
+        <p class="sub">Nobody picked these ${R.C.unknown} for ${nm}. Room to find out.</p>
+      </div>
+    </div>
+    <p class="wincap" style="color:${col}">${esc(headlineFor(R, S.names[S.subj]))}</p>
+  </section>`;
+
+  /* warmth: how warm each rater painted the subject */
+  const kIdx = S.raters[R.kindest], kn = esc(S.names[kIdx]);
+  const wrows = R.warm.map((c,j)=>{
+    const idx = S.raters[j], rn = esc(S.names[idx]);
+    return `<div class="rrow" style="animation-delay:${200+j*80}ms">
+      <span class="rname" style="color:${PAL[idx]}">${rn}</span>
+      <div class="wtrack" role="img" aria-label="${rn}: ${c.w} warm, ${c.n} neutral, ${c.s} spiky">
+        ${c.w?`<i class="ww" style="flex:${c.w}"></i>`:''}${c.n?`<i class="wn" style="flex:${c.n}"></i>`:''}${c.s?`<i class="ws" style="flex:${c.s}"></i>`:''}
+      </div><b class="wnum">${c.w} warm</b></div>`;
+  }).join('');
+
+  $('resBody').innerHTML =
+    `<div class="rcard info">
+      ${ring(R.avg, '', 'how clearly the circle sees '+nm, true)}
+      <div class="verdict"><b>${esc(v[0])}</b><span>${esc(v[1])}</span></div>
+    </div>
+    <div class="rcard" style="animation-delay:.2s">
+      <h4>Who sees ${nm} clearest</h4>
+      ${bars}
+    </div>
+    ${windowHTML}
+    <div class="rcard" style="animation-delay:.5s">
+      <h4>Big Five</h4>
+      <p class="sub">Where the six words land on the five traits — by ${nm}’s own six, and by the average of the circle’s. A playful read of the words, not a test.</p>
+      ${b5HTML()}
+      <div class="b5legend"><span><b class="dot self"></b>by ${nm}</span><span><b class="dot other"></b>by the circle</span><span>less ← · → more</span></div>
+    </div>
+    <div class="rcard" style="animation-delay:.65s">
+      <h4>The temperature</h4>
+      <p class="sub">How warm each rater painted ${nm} — of their six words.</p>
+      ${wrows}
+      <div class="wlegend">
+        <span><span class="sw" style="background:var(--warm-c)"></span>warm</span>
+        <span><span class="sw" style="background:var(--neutral-c)"></span>neutral</span>
+        <span><span class="sw" style="background:var(--spiky-c)"></span>spiky</span>
+      </div>
+      <div class="gl" style="margin-top:10px;border-top:1px solid var(--rule);padding-top:10px"><span class="gi">💛</span><span><b>Kindest eye:</b> <span style="color:${PAL[kIdx]}">${kn}</span> — ${R.warm[R.kindest].w} of 6 words ran warm.</span></div>
+    </div>`;
+
+  $('talkList').innerHTML = talkItems().map(t=>`<li>${t}</li>`).join('');
+
+  /* the strip appears only once the whole roster has been in the mirror */
+  $('stripSlot').innerHTML = last ? stripHTML() : '';
+  $('navSlot').innerHTML = last
+    ? `<div class="btnrow"><button class="btn" id="againBtn" type="button">Play again</button>
+       <button class="btn ghost" id="changeBtn" type="button">Change players</button></div>`
+    : `<button class="btn" id="nextBtn" type="button">Next in the mirror: ${esc(S.names[S.subj+1])} →</button>`;
+  if(last){
+    /* the buttons disable themselves on first tap: subj++ must never run twice, and the reveal
+       stays in the DOM under the hand-off overlay where a double-tap could still find it */
+    $('againBtn').addEventListener('click', function(){
+      if(lock || this.disabled) return; lock = true; this.disabled = true;
+      S = freshSession(S.names);
+      track('game_start', { player_count: S.names.length });
+      beginRound(false);         // the phone is wherever it is — hand it to player 1 properly
+      lock = false;
+    });
+    $('changeBtn').addEventListener('click', ()=>goHome());
+  }else{
+    $('nextBtn').addEventListener('click', function(){
+      if(lock || this.disabled) return; lock = true; this.disabled = true;
+      nextSubject();
+      lock = false;
+    });
+  }
+
+  show('scrResults');
+
+  /* rings fill, bars grow and numbers count up after first paint; reduced motion gets the final
+     state at once. Clocked off performance.now(), not the frame timestamp, so it lands on the
+     final figure even if the tab was hidden when the page rendered. */
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if($('scrResults').hidden) return;
+    document.querySelectorAll('.ring .fl').forEach(el=>{ el.style.strokeDashoffset = el.getAttribute('data-off'); });
+    document.querySelectorAll('.rtrack i').forEach(el=>{ el.style.width = el.getAttribute('data-w')+'%'; });
+    const nums = Array.prototype.slice.call(document.querySelectorAll('.ring .rv b'));
+    if(REDUCED){ nums.forEach(b=>{ b.textContent = b.getAttribute('data-n'); }); return; }
+    const t0 = performance.now(), D = 1100;
+    (function step(){
+      if($('scrResults').hidden) return;
+      const k = Math.min(1,(performance.now()-t0)/D), e = 1-Math.pow(1-k,3);
+      nums.forEach(b=>{ b.textContent = Math.round(+b.getAttribute('data-n')*e); });
+      if(k<1) requestAnimationFrame(step);
+    })();
+  }));
+
+  if(last && !completeSent){
+    completeSent = true;
+    track('game_complete', {
+      player_count: N,
+      avg_seen: Math.round(S.done.reduce((s,d)=>s+d.avg,0)/N),
+      open_total:   S.done.reduce((s,d)=>s+d.open,0),
+      blind_total:  S.done.reduce((s,d)=>s+d.blind,0),
+      hidden_total: S.done.reduce((s,d)=>s+d.hidden,0)
+    });
+    try{ LS.set('plays', String((parseInt(LS.get('plays'),10)||0) + 1)); }catch(e){}
+  }
+}
+
+/* the session strip: three superlatives so the night itself gets a scoreboard */
+function nightStats(){
+  let ms = S.done[0]; S.done.forEach(d=>{ if(d.avg>ms.avg) ms = d; });
+  let bb = null; S.done.forEach(d=>{ if(d.top && (!bb || d.top.votes>bb.top.votes)) bb = d; });
+  let k = 0;
+  for(let i=1;i<S.names.length;i++){
+    if(S.warmBy[i]>S.warmBy[k] || (S.warmBy[i]===S.warmBy[k] && S.spikyBy[i]<S.spikyBy[k])) k = i;
+  }
+  return { ms, bb, k };
+}
+function stripHTML(){
+  const { ms, bb, k } = nightStats();
+  return `<div class="rcard" style="animation-delay:.1s;margin-bottom:12px">
+    <h4>The night in three lines</h4>
+    <div class="gl"><span class="gi">👁</span><span><b>Most seen:</b> <span style="color:${PAL[ms.subj]}">${esc(S.names[ms.subj])}</span> — ${ms.avg}% clear to the circle.</span></div>
+    ${bb
+      ? `<div class="gl"><span class="gi">🎁</span><span><b>Blind spot of the night:</b> “${bb.top.word.toLowerCase()}” ×${bb.top.votes} — on <span style="color:${PAL[bb.subj]}">${esc(S.names[bb.subj])}</span>, unclaimed.</span></div>`
+      : `<div class="gl"><span class="gi">🪞</span><span><b>No blind spots tonight</b> — this circle sees each other clearly.</span></div>`}
+    <div class="gl"><span class="gi">💛</span><span><b>Kindest eye:</b> <span style="color:${PAL[k]}">${esc(S.names[k])}</span> — ${S.warmBy[k]} warm words across the night.</span></div>
+  </div>`;
+}
+
+/* ============================ share ============================
+   One subject's mirror in words, for WhatsApp (its *bold* and _italic_ marks) and the clipboard.
+   Sharing is the players' own explicit act, so unlike analytics it may carry the words. */
+function waLink(text){ return 'https://wa.me/?text=' + encodeURIComponent(text); }
+function resultText(){
+  const R = S.round, nm = S.names[S.subj], m = R.m, N = S.names.length;
+  const v = roundVerdict(R, nm);
+  const sorted = R.per.slice().sort((a,b)=>b.pct-a.pct);
+  const openWords = R.C.open.map(o => (o.label===o.selfWord ? o.label : o.label+' ≈ '+o.selfWord) + ' ×'+o.votes).join(' · ') || '—';
+  const blindWords = R.C.blind.map(c => c.label+' ×'+c.votes).join(' · ') || '—';
+  const hiddenWords = R.C.hidden.join(' · ') || '—';
+  const lines = [
+    `*Group Blind Spots* · ${nm} in the mirror · ${m} raters`,
+    `_${v[0]}_ — ${v[1]}`,
+    '',
+    `👁 The circle sees ${nm}: *${R.avg}%*`,
+    `👑 Clearest eye: ${S.names[sorted[0].idx]} ${sorted[0].pct}%`,
+    `👁 ` + sorted.map(p=>`${S.names[p.idx]} ${p.pct}%`).join(' · '),
+    '',
+    `🟩 Open (${R.C.open.length}): ${openWords}`,
+    `🟨 Blind (${R.C.blind.length}): ${blindWords}`,
+    `🟪 Hidden (${R.C.hidden.length}): ${hiddenWords}`,
+    `⬛ Unknown: ${R.C.unknown} words`,
+    '',
+    `💛 Kindest eye: ${S.names[S.raters[R.kindest]]}`,
+    `🧭 ${b5LineText(nm)}`
+  ];
+  if(S.done.length===N){
+    const { ms, bb, k } = nightStats();
+    lines.push('', '*The night*',
+      `👁 Most seen: ${S.names[ms.subj]} ${ms.avg}%`,
+      bb ? `🎁 Blind spot of the night: “${bb.top.word.toLowerCase()}” ×${bb.top.votes} on ${S.names[bb.subj]}`
+         : '🪞 No blind spots tonight',
+      `💛 Kindest eye: ${S.names[k]}`);
+  }
+  lines.push('', new Date().toLocaleDateString(undefined,{ year:'numeric', month:'short', day:'numeric' }) + ' · kreeda.games/prism');
+  return lines.join('\n');
+}
+$('waBtn').addEventListener('click', e => {
+  e.currentTarget.href = waLink(resultText());     // set on the way out so it always carries this mirror
+  track('share', { via:'whatsapp' });
+});
+if(navigator.share){
+  $('shareBtn').hidden = false;
+  $('shareBtn').addEventListener('click', () => {
+    track('share', { via:'system' });
+    try{ navigator.share({ title:`Group Blind Spots — ${S.names[S.subj]}`, text:resultText() }).catch(()=>{}); }catch(e){}
+  });
+}
+let toastTimer = null;
+function toast(msg){
+  let t = document.querySelector('.toast');
+  if(t) t.remove();
+  t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.remove(), 4200);
+}
+$('copyBtn').addEventListener('click', ()=>{
+  const text = resultText();
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text)
+        .then(()=>toast('Copied!'))
+        .catch(()=>toast(text));          // clipboard is unavailable on file:// — show it instead
+    }else toast(text);
+  }catch(e){ toast(text); }
+});
+
+/* ============================ home / leave ============================
+   Home mid-session discards private picks (and any un-mirrored friends), so it confirms first.
+   From the LAST reveal there is nothing left to lose and it goes straight back. */
+$('homeBtn').addEventListener('click', ()=>{
+  const finishedAll = S && S.done.length===S.names.length && !$('scrResults').hidden;
+  if(S && !finishedAll){
+    $('cdBody').textContent = $('scrResults').hidden
+      ? 'The circle’s picks so far will be discarded.'
+      : 'The rest of the circle hasn’t had their mirror yet — leaving discards their turn.';
+    $('confirmScrim').hidden = false; $('cdStay').focus();
+  }
+  else goHome();
+});
+$('cdStay').addEventListener('click', ()=>{ $('confirmScrim').hidden = true; });
+$('cdLeave').addEventListener('click', ()=>{ $('confirmScrim').hidden = true; goHome(); });
+$('confirmScrim').addEventListener('click', e=>{ if(e.target===$('confirmScrim')) $('confirmScrim').hidden = true; });
+
+function goHome(){
+  // scrub everything private before the title paints
+  $('wordGrid').innerHTML = ''; $('trayChips').innerHTML = '';
+  $('resBody').innerHTML = ''; $('talkList').innerHTML = '';
+  $('stripSlot').innerHTML = ''; $('navSlot').innerHTML = '';
+  $('handoff').hidden = true; HO = null;
+  $('scrPick').className = 'screen';
+  if(S) titleNames = S.names.slice();
+  S = null;
+  renderNameRows(); refreshStart();
+  show('scrTitle');
+}
+
+/* ============================ boot self-test ============================
+   Cheap invariants that would otherwise only fail in a player's hands. Runs once, logs only. */
+(function audit(){
+  try{
+    if(WORDS.length!==40) console.warn('prism: word bank is '+WORDS.length+', expected 40');
+    WORDS.forEach(w=>{ if(!LOAD[w]) console.warn('prism: no facet loadings for "'+w+'"'); });
+    Object.keys(LOAD).forEach(w=>{
+      if(WORDS.indexOf(w)<0) console.warn('prism: loadings for unknown word "'+w+'"');
+      Object.keys(LOAD[w]).forEach(f=>{ if(FACETS.indexOf(f)<0) console.warn('prism: unknown facet '+f+' on "'+w+'"'); });
+    });
+    if(FACETS.length!==30) console.warn('prism: facet list is '+FACETS.length+', expected 30');
+    if(PAL.length<MAX_PLAYERS) console.warn('prism: palette has '+PAL.length+' hues for '+MAX_PLAYERS+' players');
+    if(sim('Warm','Kind') < NEAR) console.warn('prism: Warm/Kind no longer clear NEAR');
+    if(sim('Warm','Stubborn') >= NEAR) console.warn('prism: Warm/Stubborn unexpectedly near');
+    // the consensus pipeline on a known case: 2 raters, one exact overlap, one near cluster
+    const c = consensus(['Warm','Quiet','Loyal','Curious','Careful','Dreamy'],
+                        [['Kind','Funny','Loyal','Blunt','Ambitious','Moody'],
+                         ['Warm','Funny','Stubborn','Loyal','Analytical','Playful']]);
+    if(!c.open.some(o=>o.label==='Loyal'&&o.votes===2)) console.warn('prism: consensus lost the Loyal ×2 cluster');
+    if(c.open.length + c.blind.length < 1) console.warn('prism: consensus produced no clusters');
+  }catch(e){ console.warn('prism: audit failed', e); }
+})();
+</script>
+</body>
+</html>

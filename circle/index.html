@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Circle Quiz — Kreeda</title>
+<meta name="description" content="The group version of Duo Quiz. 3–8 friends, one phone: one player in the spotlight secretly answers two questions about themselves while everyone else predicts — then a knowledge map shows who really knows whom in the whole circle.">
+<link rel="canonical" href="https://kreeda.games/circle/">
+<meta name="theme-color" content="#0f1220">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/circle/">
+<meta property="og:title" content="Circle Quiz — Kreeda">
+<meta property="og:description" content="One friend in the spotlight at a time — everyone else predicts their answers. The reveal maps who really knows whom. 3–8 players, one phone.">
+<meta property="og:image" content="https://kreeda.games/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Circle Quiz — Kreeda">
+<meta name="twitter:description" content="One friend in the spotlight at a time — everyone else predicts their answers. The reveal maps who really knows whom. 3–8 players, one phone.">
+<meta name="twitter:image" content="https://kreeda.games/og.png">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../icon-180.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Circle Quiz","description":"The group version of Duo Quiz. 3–8 friends, one phone: one player in the spotlight secretly answers questions about themselves while everyone else predicts — then a knowledge map shows who really knows whom.","url":"https://kreeda.games/circle/","image":"https://kreeda.games/og.png","playMode":"MultiPlayer","applicationCategory":"Game","genre":"Party","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+<style>
+/* ============================ tokens ============================
+   Midnight stage: a living room after dark with one lamp on someone. The ground is deep navy —
+   quieter than sync's violet, roomier than windows' charcoal — and the accent is spotlight gold,
+   because this game is literally about putting one friend under the light at a time. One
+   committed dark look: the hand-off ritual depends on the screen reading as "private", and this
+   phone changes hands up to 40 times a round. The eight player hues below are fixed by seat:
+   whoever is player 3 is green in the inputs, the chips, the matrix and the share text alike —
+   ownership never needs a label twice. */
+:root{
+  --ground:#0f1220;  --ground-2:#171b30;
+  --panel:#1c2136;   --panel-2:#262c48;  --rule:rgba(180,190,255,.15);
+  --ink:#eef0fb;     --ink-dim:#9aa2c6;
+  --spot:#ffc857;    --spot-soft:rgba(255,200,87,.15); --spot-ink:#2a2005;
+  --ok:#57d9a3;      --ok-soft:rgba(87,217,163,.14);
+  --no:#ff8c7a;      --no-soft:rgba(255,140,122,.12);
+  --shade:rgba(6,8,18,.74);
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  /* explicit background is mandatory: a transparent body would borrow the host's theme */
+  background:
+    radial-gradient(120% 55% at 50% -10%, rgba(255,200,87,.10) 0%, transparent 55%),
+    radial-gradient(120% 60% at 12% -6%, rgba(77,171,247,.10) 0%, transparent 50%),
+    linear-gradient(180deg, var(--ground-2) 0%, var(--ground) 44%, #0a0d18 100%);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{ max-width:540px; margin:0 auto;
+  padding: max(14px, env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
+
+button{ font:inherit; color:inherit; cursor:pointer; }
+button:focus-visible, input:focus-visible, summary:focus-visible{
+  outline:3px solid var(--spot); outline-offset:2px; }
+
+/* ============================ shared chrome ============================ */
+.top{ display:flex; align-items:center; gap:10px; margin:2px 0 12px; min-height:44px; }
+.wordmark{ display:flex; align-items:center; gap:9px; }
+.wordmark svg{ width:34px; height:34px; flex:none; }
+.wordmark b{ font-size:21px; font-weight:900; letter-spacing:1px; }
+.wordmark small{ display:block; font-size:10px; font-weight:700; letter-spacing:2.6px;
+  text-transform:uppercase; color:var(--ink-dim); }
+.homebtn{ margin-left:auto; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
+  min-width:44px; min-height:44px; padding:8px 12px; font-size:13px; font-weight:800; color:var(--ink-dim); }
+.soundbtn{ margin-left:auto; background:var(--panel); border:1px solid var(--rule); border-radius:11px;
+  min-width:44px; min-height:44px; padding:8px 10px; font-size:17px; line-height:1; }
+.soundbtn + .homebtn{ margin-left:0; }
+
+.card{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:18px 16px; }
+.btn{
+  display:block; width:100%; min-height:52px; padding:14px 16px; margin-top:10px;
+  background:var(--panel-2); border:1px solid var(--rule); border-radius:14px;
+  font-size:16px; font-weight:800; letter-spacing:.2px; text-align:center;
+  transition:transform .1s ease, background .15s ease;
+}
+.btn:active{ transform:scale(.985); }
+.btn.primary{ background:linear-gradient(100deg, #ffd47e 0%, var(--spot) 45%, #ff9f5a 120%);
+  border-color:transparent; color:var(--spot-ink); box-shadow:0 8px 24px rgba(255,200,87,.28); }
+.btn.ghost{ background:transparent; border-color:var(--rule); color:var(--ink-dim); font-weight:700; }
+.btn[disabled]{ opacity:.45; cursor:default; }
+.btnrow{ display:flex; gap:10px; }
+.btnrow .btn{ flex:1; }
+.dim{ color:var(--ink-dim); }
+
+.dot{ display:inline-block; width:11px; height:11px; border-radius:4px; flex:none; vertical-align:baseline; }
+
+/* ============================ title ============================ */
+.hero{ text-align:center; margin:20px 0 16px; }
+.hero svg{ width:132px; height:92px; }
+.hero h1{ font-size:40px; font-weight:900; letter-spacing:2px; margin:6px 0 4px;
+  background:linear-gradient(95deg, #ffd47e, var(--spot) 40%, #ff8c7a); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.hero p{ margin:0; font-size:15px; color:var(--ink-dim); font-weight:600; line-height:1.45; }
+
+.field{ margin-top:12px; }
+.field label{ display:block; font-size:11px; font-weight:800; letter-spacing:1.4px;
+  text-transform:uppercase; color:var(--ink-dim); margin:0 0 5px 2px; }
+.nrow{ display:flex; align-items:center; gap:9px; margin-top:8px; }
+.nrow .dot{ width:13px; height:13px; }
+.nrow input{
+  flex:1; min-width:0; font:inherit; font-size:16px; font-weight:700;   /* 16px or iOS zooms */
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:11px 12px; min-height:46px;
+}
+.nrow .xbtn{ flex:none; width:44px; min-height:44px; background:transparent; border:1px solid var(--rule);
+  border-radius:11px; color:var(--ink-dim); font-size:16px; font-weight:800; }
+.addbtn{ margin-top:10px; width:100%; min-height:46px; background:transparent; border:1px dashed var(--rule);
+  border-radius:12px; color:var(--ink-dim); font-size:14px; font-weight:800; }
+
+.packs{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.pack{ flex:1 1 40%; min-height:46px; padding:10px 8px; background:var(--panel-2);
+  border:1px solid var(--rule); border-radius:12px; font-size:13.5px; font-weight:800; }
+.pack[aria-pressed="true"]{ background:var(--spot-soft); border-color:var(--spot); color:#fff;
+  box-shadow:inset 0 0 0 1px var(--spot); }
+.packblurb{ font-size:12.5px; color:var(--ink-dim); margin:8px 2px 0; min-height:1.4em; }
+
+details.how{ margin-top:14px; border:1px solid var(--rule); border-radius:14px;
+  background:var(--panel); padding:0 14px; }
+details.how summary{ cursor:pointer; font-size:14px; font-weight:800; padding:13px 0;
+  min-height:44px; list-style:none; display:flex; align-items:center; gap:8px; }
+details.how summary::-webkit-details-marker{ display:none; }
+details.how summary::before{ content:'▸'; color:var(--ink-dim); transition:transform .15s ease; }
+details.how[open] summary::before{ transform:rotate(90deg); }
+details.how ul{ margin:0 0 14px; padding-left:20px; font-size:13.5px; line-height:1.65;
+  color:var(--ink-dim); }
+details.how li b{ color:var(--ink); }
+
+.foot{ margin-top:20px; text-align:center; font-size:11px; line-height:1.7; color:var(--ink-dim); }
+.foot a{ color:var(--ink-dim); }
+
+/* ============================ hand-off ============================ */
+.handoff{ min-height:76vh; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; text-align:center; padding:20px 6px; }
+.handoff .pass{ font-size:13px; font-weight:800; letter-spacing:2.4px; text-transform:uppercase;
+  color:var(--ink-dim); }
+.handoff h2{ font-size:36px; font-weight:900; margin:12px 0 6px; overflow-wrap:anywhere; }
+.handoff .sub{ font-size:15px; color:var(--ink-dim); margin:0 0 26px; line-height:1.5; max-width:330px; }
+.handoff .sub b{ color:var(--ink); }
+.handoff .btn{ max-width:340px; }
+.handoff .peek{ margin-top:22px; font-size:12.5px; color:var(--ink-dim); }
+@media (prefers-reduced-motion:no-preference){
+  .handoff h2{ animation:heartbeat 1.6s ease-in-out infinite; }
+  @keyframes heartbeat{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.03);} }
+}
+
+/* ============================ answer sheets ============================
+   Two questions per pass, whole-option pills, one tap each. The actor's own colour rides a CSS
+   variable on the sheet so a selected pill is unmistakably "mine". */
+.turn{ display:flex; align-items:center; gap:10px; background:var(--panel-2); border:1px solid var(--rule);
+  border-radius:13px; padding:10px 12px; margin-bottom:10px; font-size:13px; line-height:1.4; }
+.turn .eye{ font-size:20px; flex:none; }
+.prog{ display:flex; align-items:center; gap:10px; margin:0 2px 10px; font-size:12px; font-weight:800;
+  color:var(--ink-dim); letter-spacing:.4px; }
+.prog .spark{ color:var(--spot); }
+.qcard{ background:var(--panel); border:1px solid var(--rule); border-radius:18px; padding:14px; margin-top:10px; }
+.qcard .qhead{ display:flex; gap:9px; align-items:flex-start; margin-bottom:10px; }
+.qcard .qn{ flex:none; width:24px; height:24px; border-radius:99px; background:var(--panel-2); margin-top:2px;
+  font-size:11.5px; font-weight:900; display:flex; align-items:center; justify-content:center;
+  color:var(--ink-dim); }
+.qcard.done .qn{ background:var(--ok-soft); color:var(--ok); box-shadow:inset 0 0 0 1.5px var(--ok); }
+.qtext{ flex:1; font-size:18px; font-weight:900; line-height:1.3; margin:0; }
+.opt{ display:block; width:100%; min-height:48px; margin-top:8px; padding:11px 14px; text-align:left;
+  background:var(--panel-2); border:1.5px solid var(--rule); border-radius:12px;
+  font-size:15px; font-weight:700; line-height:1.3; transition:background .15s, border-color .15s, transform .1s; }
+.opt:active{ transform:scale(.985); }
+.opt[aria-pressed="true"]{ background:var(--me-soft); border-color:var(--me);
+  box-shadow:inset 0 0 0 1px var(--me); }
+@media (prefers-reduced-motion:no-preference){
+  .qcard.flash{ animation:flash .9s ease; }
+  @keyframes flash{ 0%,100%{ box-shadow:none; } 30%{ box-shadow:0 0 0 3px var(--spot); } }
+}
+.lockbar{ position:sticky; bottom:0; z-index:5; padding:14px 0 calc(6px + env(safe-area-inset-bottom));
+  margin-top:6px; background:linear-gradient(180deg, transparent 0%, var(--ground) 38%); }
+.lockbar .btn{ margin-top:0; }
+
+/* ============================ mini reveal (per spotlight turn) ============================ */
+.rev .who{ text-align:center; margin:8px 0 4px; }
+.rev .who .lbl{ font-size:12px; font-weight:800; letter-spacing:2px; text-transform:uppercase;
+  color:var(--ink-dim); }
+.rev .who h2{ font-size:34px; font-weight:900; margin:4px 0 0; overflow-wrap:anywhere;
+  text-shadow:0 0 34px rgba(255,200,87,.35); }
+.rev .qcard .qtext{ font-size:15px; color:var(--ink-dim); font-weight:800; }
+.rev .ans{ font-size:21px; font-weight:900; color:var(--spot); margin:2px 0 10px 33px; line-height:1.3;
+  overflow-wrap:anywhere; }
+.pchips{ display:flex; flex-wrap:wrap; gap:6px; margin-left:33px; }
+.pchip{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:800;
+  border-radius:999px; padding:6px 10px; line-height:1.25; border:1.5px solid transparent;
+  max-width:100%; overflow-wrap:anywhere; }
+.pchip .m{ font-weight:900; }
+.pchip.hit{ background:var(--ok-soft); border-color:var(--ok); }
+.pchip.hit .m{ color:var(--ok); }
+.pchip.miss{ background:var(--panel-2); border-color:var(--rule); color:var(--ink-dim); }
+.pchip.miss .m{ color:var(--no); }
+.pchip.miss i{ font-style:normal; opacity:.85; }
+.tally{ text-align:center; font-size:13.5px; color:var(--ink-dim); margin:14px 0 2px; }
+.tally b{ color:var(--ink); font-size:16px; }
+@media (prefers-reduced-motion:no-preference){
+  .rev .qcard, .rev .tally{ opacity:0; transform:translateY(10px); animation:rise .4s ease forwards; }
+  .pchip{ animation:chipIn .3s ease backwards; }
+  @keyframes chipIn{ from{ opacity:0; transform:scale(.7);} to{ opacity:1; transform:none;} }
+}
+
+/* ============================ results — one page ============================
+   Numbers first: one big ring for the whole circle, then the matrix — the actual product — then
+   the superlatives, the legibility bars, and a collapsible recap. Words come last and few. */
+.results h2{ font-size:15px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--ink-dim); text-align:center; margin:4px 0 2px; }
+.circline{ text-align:center; font-size:13px; font-weight:800; margin:0 0 12px; color:var(--ink-dim); }
+
+.info{ text-align:center; padding:16px 10px 16px; }
+.ring{ position:relative; display:inline-flex; flex-direction:column; align-items:center; min-width:0; }
+.ring svg{ width:156px; height:156px; transform:rotate(-90deg); }
+.ring .tr{ fill:none; stroke:var(--panel-2); stroke-width:10; }
+.ring .fl{ fill:none; stroke-width:10; stroke-linecap:round; stroke:url(#ciRing);
+  transition:stroke-dashoffset 1.2s cubic-bezier(.2,.7,.2,1); }
+.ring .rv{ position:absolute; top:0; left:0; width:100%; height:156px; display:flex; align-items:center;
+  justify-content:center; font-weight:900; font-size:44px; line-height:1; color:var(--spot); }
+.ring .rv i{ font-style:normal; font-size:.55em; opacity:.7; margin-left:1px; }
+.ring .rl{ margin-top:4px; font-size:13px; font-weight:800; color:var(--ink); }
+.ring .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+.ring{ display:flex; margin:0 auto; }
+.verdict{ margin-top:14px; }
+.verdict b{ display:block; font-size:26px; font-weight:900; line-height:1.15;
+  background:linear-gradient(95deg, #ffd47e, var(--spot) 45%, #ff8c7a); -webkit-background-clip:text;
+  background-clip:text; color:transparent; }
+.verdict span{ display:block; margin-top:4px; font-size:13px; color:var(--ink-dim); line-height:1.45; }
+
+/* THE MATRIX: rows read columns. Cell intensity = accuracy over that subject's two questions.
+   Sized to stay legible at 360px even for eight players: initials + colour dots as axis labels,
+   and the whole grid scrolls in its own container if a very narrow screen still overflows. */
+.mxcard{ margin-top:12px; padding:14px 12px 12px; }
+.mxcard h3{ margin:0 0 2px; font-size:14px; font-weight:900; letter-spacing:1.4px; text-transform:uppercase; }
+.mxcap{ font-size:12px; color:var(--ink-dim); margin:2px 0 10px; line-height:1.45; }
+.mxwrap{ overflow-x:auto; }
+.mx{ display:grid; gap:3px; min-width:280px; }
+.mxc{ min-height:30px; border-radius:7px; display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:900; }
+.mxh{ flex-direction:column; gap:2px; background:transparent; font-size:11px; color:var(--ink-dim); }
+.mxh .dot{ width:8px; height:8px; }
+.mxl{ justify-content:flex-start; gap:5px; padding-left:2px; background:transparent; font-size:11px;
+  color:var(--ink-dim); }
+.mxl .dot{ width:8px; height:8px; }
+.mxs{ background:transparent; color:var(--ink-dim); font-weight:400; }
+button.mxc{ border:1px solid var(--rule); padding:0; }
+.mxc.v0{ background:var(--panel-2); color:transparent; }
+.mxc.v1{ background:rgba(255,200,87,.38); color:var(--ink); border-color:rgba(255,200,87,.4); }
+.mxc.v2{ background:var(--spot); color:var(--spot-ink); border-color:var(--spot); }
+.mxc.sel{ outline:2px solid var(--ink); outline-offset:1px; }
+@media (prefers-reduced-motion:no-preference){
+  button.mxc{ animation:pop .35s ease backwards; }
+  @keyframes pop{ from{ transform:scale(.4); opacity:.3; } to{ transform:none; opacity:1; } }
+}
+.mxd{ margin-top:10px; background:var(--panel-2); border:1px solid var(--rule); border-radius:12px;
+  padding:10px 12px; font-size:12.5px; line-height:1.5; }
+.mxd b{ font-weight:900; }
+.mxd .m{ font-weight:900; margin-right:4px; }
+.mxd .m.hit{ color:var(--ok); } .mxd .m.miss{ color:var(--no); }
+.mxd:empty{ display:none; }
+
+/* superlatives: one emoji line each */
+.glance{ margin-top:12px; padding:12px 14px; }
+.gl{ display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-top:1px solid var(--rule);
+  font-size:13.5px; line-height:1.45; }
+.gl:first-child{ border-top:0; padding-top:0; } .gl:last-child{ padding-bottom:0; }
+.gl .gi{ flex:none; width:26px; text-align:center; font-size:18px; line-height:1.15; }
+.gl b{ font-weight:900; }
+.gl .lb{ font-weight:900; letter-spacing:.8px; text-transform:uppercase; font-size:10.5px; margin-right:5px;
+  color:var(--spot); }
+
+/* legibility bars: how well the circle reads each player, plus everyone's personal line */
+.barcard{ margin-top:12px; padding:14px 14px 10px; }
+.barcard h3{ margin:0 0 10px; font-size:14px; font-weight:900; letter-spacing:1.4px; text-transform:uppercase; }
+.bitem{ padding:8px 0 9px; border-top:1px solid var(--rule); }
+.bitem:first-of-type{ border-top:0; padding-top:0; }
+.brow{ display:flex; align-items:center; gap:9px; }
+.brow .bl{ width:104px; flex:none; display:flex; align-items:center; gap:6px; font-size:12.5px;
+  font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.brow .btrack{ flex:1; height:14px; border-radius:99px; background:var(--panel-2); overflow:hidden; }
+.brow .btrack i{ display:block; height:100%; border-radius:99px; width:0%; transition:width 1s cubic-bezier(.2,.7,.2,1); }
+.brow .bn{ width:42px; flex:none; text-align:right; font-size:14px; font-weight:900; }
+.bsub{ margin:4px 0 0 113px; font-size:11.5px; color:var(--ink-dim); line-height:1.4; }
+.bsub b{ color:var(--ink); }
+
+/* recap rows */
+details.recap{ margin-top:12px; }
+.rt{ padding:9px 0; border-top:1px solid var(--rule); }
+.rt:first-child{ border-top:0; }
+.rth{ display:flex; align-items:center; gap:7px; font-size:13px; font-weight:900; margin-bottom:4px; }
+.rq{ display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; padding:3px 0 3px 18px;
+  font-size:12.5px; line-height:1.45; }
+.rq .rqt{ color:var(--ink-dim); }
+.rq .rqa{ font-weight:900; color:var(--spot); }
+.rq .rqm{ display:inline-flex; gap:3px; }
+.mk{ display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px;
+  border-radius:5px; font-size:10px; font-weight:900; font-style:normal; border:1.5px solid transparent; }
+.mk.hit{ color:#101423; }
+.mk.miss{ background:transparent; }
+@media (prefers-reduced-motion:no-preference){
+  .info, .mxcard, .glance, .barcard, details.recap, .verdict{ opacity:0; transform:translateY(10px);
+    animation:rise .4s ease forwards; }
+  @keyframes rise{ to{ opacity:1; transform:none; } }
+}
+
+.datefoot{ text-align:center; font-size:11.5px; color:var(--ink-dim); margin-top:14px; }
+.sharebox{ width:100%; margin-top:10px; font-size:13px; line-height:1.5;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:var(--panel-2); color:var(--ink); border:1px solid var(--rule); border-radius:12px;
+  padding:10px; resize:none; }
+
+/* toast + confirm modal */
+.toast{ position:fixed; left:50%; bottom:calc(26px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(8px); background:var(--panel-2); color:var(--ink);
+  border:1px solid var(--rule); border-radius:12px; padding:11px 18px; font-size:14px;
+  font-weight:800; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:90;
+  box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:88vw; text-align:center; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+.scrim{ position:fixed; inset:0; background:var(--shade); z-index:70; display:none;
+  align-items:center; justify-content:center; padding:20px; }
+.scrim.show{ display:flex; }
+.confirmbox{ background:var(--panel); border:1px solid var(--rule); border-radius:18px;
+  padding:20px 18px; max-width:340px; width:100%; }
+.confirmbox h3{ margin:0 0 6px; font-size:18px; font-weight:900; }
+.confirmbox p{ margin:0 0 14px; font-size:13.5px; color:var(--ink-dim); line-height:1.5; }
+
+/* share: a WhatsApp link in WhatsApp's green, and a system share sheet where the browser has one */
+.btn.wa{ display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;
+  background:#25D366; color:#052e16; border-color:transparent; box-shadow:0 8px 24px rgba(37,211,102,.25); }
+.btn.wa svg{ width:20px; height:20px; flex:none; }
+.sharehint{ font-size:12px; color:var(--ink-dim); text-align:center; margin:6px 0 0; line-height:1.45; }
+
+@media (prefers-reduced-motion:reduce){
+  *{ animation:none !important; transition:none !important; }
+  .info, .mxcard, .glance, .barcard, details.recap, .verdict, .rev .qcard, .rev .tally, .pchip{
+    opacity:1; transform:none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="scrim" id="scrim">
+  <div class="confirmbox" role="alertdialog" aria-modal="true" aria-labelledby="cfTitle" aria-describedby="cfBody">
+    <h3 id="cfTitle">Leave this game?</h3>
+    <p id="cfBody">The round in progress will be discarded. Answers are never saved anywhere.</p>
+    <button class="btn primary" type="button" id="cfYes">Leave</button>
+    <button class="btn ghost" type="button" id="cfNo">Keep playing</button>
+  </div>
+</div>
+
+<!-- analytics.js before the game script: track() below fires synchronously and would otherwise
+     race the tag load and vanish. -->
+<script src="../analytics.js"></script>
+<script>
+'use strict';
+/* ============================================================================================
+   CIRCLE QUIZ — the group version of Duo Quiz. 3–8 friends, one phone. One player at a time
+   steps into the spotlight: two questions about them go around the circle, every other player
+   secretly taps a prediction, and the spotlight answers last — truth locked in privately, then
+   an instant mini-reveal so the room gets a payoff every ninety seconds. After everyone's turn,
+   the real product: the knowledge matrix — an N×N heatmap of who reads whom — with superlatives,
+   legibility bars, and one line for every player.
+
+   Privacy is a design constraint, not a feature flag: answers live in one in-memory session
+   object (S) and NOTHING else. localStorage holds only names, a sound preference and a play
+   counter, all prefixed circle. — a refresh mid-game loses the round by design; that is cheaper
+   than answers ever touching disk. Analytics gets counts, never content.
+   ============================================================================================ */
+
+function track(name,p){ try{ if(window.bgTrack) window.bgTrack(name,p); }catch(e){} }
+const LS={ get:k=>{ try{ return localStorage.getItem('circle.'+k)||''; }catch(e){ return ''; } },
+           set:(k,v)=>{ try{ localStorage.setItem('circle.'+k,v); }catch(e){} } };
+
+/* Seeded PRNG so a session's draw is deterministic given its seed — the deck can never disagree
+   with itself mid-session — while each new session still gets a fresh seed. */
+function mulberry32(a){ return function(){ a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a);
+  t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+
+function esc(s){ return String(s).replace(/[&<>"']/g,
+  c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============================================================================================
+   QUESTION BANK — 46 original questions.
+   Tags: f = Friends · a = Family · w = Coworkers · m = Mixed crew.
+   Every question is answerable about A PERSON, not about the world: there is no correct option,
+   only a true one. Options are short enough to sit on one tappable pill. A question may serve
+   several packs; a session draws 2 per spotlight (up to 16) without repeats.
+   ============================================================================================ */
+const BANK=[
+ {q:'Your phone dies at a party. You…', o:['Borrow a charger, fast','Enjoy the freedom','Slip out early','Talk to more people'], t:'fawm'},
+ {q:'Ideal Friday night:', o:['Big loud plans','Small dinner, long talk','Couch and a remote','Solo recharge'], t:'fawm'},
+ {q:'The gift you’d actually love:', o:['Something handmade','An experience','Something useful','Cash, no shame'], t:'fawm'},
+ {q:'A spider appears in the room. You…', o:['Relocate it gently','Call for backup','End it, no trial','Name it and move on'], t:'fawm'},
+ {q:'Karaoke night. Your move:', o:['First on the mic','Group numbers only','Hype from the crowd','Guard the snacks'], t:'fam'},
+ {q:'Group photo time. You’re the one who…', o:['Directs everyone','Does the same pose','Blinks, guaranteed','Holds the camera'], t:'fawm'},
+ {q:'Lost in a new city, you…', o:['Love it — wander on','Open the map at once','Ask a stranger','Follow the food smells'], t:'fawm'},
+ {q:'Your alarm-clock truth:', o:['One alarm, straight up','Snooze twice, exactly','Five alarms, minimum','No alarm — I just wake'], t:'fawm'},
+ {q:'Cooking for this whole group, you’d…', o:['Make my one famous dish','Try something brand new','Do comfort classics','Order in, plate it nicely'], t:'fawm'},
+ {q:'Free ticket anywhere, leaving tomorrow:', o:['Beach','Mountains','A big loud city','Home, actually'], t:'fawm'},
+ {q:'Your texting style, honestly:', o:['Instant replies','Twice-a-day batches','Read now, reply someday','Voice notes, always'], t:'fawm'},
+ {q:'You win the lottery. It stays secret for…', o:['Seconds','One day','Until the paperwork','Forever'], t:'fawm'},
+ {q:'At a buffet, you…', o:['Scout the whole spread first','Load plate one, no regrets','Repeat my usual favourites','Dessert first, obviously'], t:'fawm'},
+ {q:'Wrong order arrives at a restaurant. You…', o:['Send it back, nicely','Eat it anyway','Make someone else ask','Trade around the table'], t:'fawm'},
+ {q:'Board game night: you’re the one who…', o:['Reads every rule','Bends every rule','Plays to win, hard','Came for the snacks'], t:'fam'},
+ {q:'A three-day power cut. You’d miss most:', o:['The fridge','Hot water','Wi-Fi, no contest','A charged phone'], t:'fawm'},
+ {q:'Complimented in front of everyone, you…', o:['Soak it in','Deflect with a joke','Return one instantly','Change the subject'], t:'fawm'},
+ {q:'Your morning fuel:', o:['Coffee, non-negotiable','Tea, made properly','Something cold and sweet','Water — I’m built different'], t:'fawm'},
+ {q:'A plan-free Sunday is…', o:['Bliss','Nice — once','Slightly unsettling','My actual nightmare'], t:'fawm'},
+ {q:'In the horror movie, you’re the one who…', o:['Investigates the noise','Vetoes splitting up','Leaves in act one','Somehow survives'], t:'fam'},
+ {q:'Midnight snack of choice:', o:['Something salty','Something sweet','Whatever’s leftover','Sleep is my snack'], t:'fam'},
+ {q:'Packing for a trip happens…', o:['A week out, with lists','The night before','The morning of','In the taxi, mentally'], t:'fawm'},
+ {q:'On the dance floor you are…', o:['The centre of it','On the edge, vibing','Two songs from ready','Running the playlist'], t:'fam'},
+ {q:'A full day of total silence sounds…', o:['Healing','Fine, honestly','Hard by noon','Physically impossible'], t:'fawm'},
+ {q:'This group starts a band. Your job:', o:['Lead vocals','A real instrument','Manager and merch','Tambourine, ironically'], t:'fm'},
+ {q:'Pick a superpower, honestly:', o:['Read minds','Teleport anywhere','Pause time','Talk to animals'], t:'fawm'},
+ {q:'A whole day with zero phone:', o:['Easy','Doable with warning','Twitchy by lunch','Please never again'], t:'fawm'},
+ {q:'Old photos of yourself make you…', o:['Laugh out loud','Cringe, deeply','Weirdly proud','Quiet and nostalgic'], t:'fam'},
+ {q:'New people at the table. You…', o:['Introduce myself first','Find one good conversation','Observe, then commit','Stay near the food'], t:'fawm'},
+ {q:'Your umbrella policy:', o:['Always carry one','Check the sky, gamble','Sprint between awnings','Just get wet'], t:'fawm'},
+ {q:'Money advice you’d actually give:', o:['Save it — boring works','Spend it on experiences','Invest it, all of it','Some fun, some stash'], t:'fawm'},
+ {q:'The group is late because of…', o:['Not me — I herd everyone','My outfit decisions','One last thing I remembered','I said a time. I lied'], t:'fam'},
+ {q:'Your role in the family group chat:', o:['Daily good-mornings','Photos of everything','Silent reader','The fact-checker'], t:'a'},
+ {q:'The family recipe should be…', o:['Followed to the letter','Quietly improved','Finally written down','Secretly ordered in'], t:'a'},
+ {q:'Family road trips run on…', o:['My snacks','My playlist','My navigation','My patience'], t:'a'},
+ {q:'Festival prep: your department is…', o:['The food','The decorations','The logistics','Staying out of the way'], t:'a'},
+ {q:'The TV remote at home is…', o:['Mine, obviously','Shared by treaty','Whoever grabs it first','Irrelevant — I have a phone'], t:'af'},
+ {q:'Your work calendar is…', o:['Colour-coded blocks','Meetings and mystery gaps','A polite fiction','I am the calendar'], t:'w'},
+ {q:'Free office snacks appear. You…', o:['First in line','Casual drive-by later','Bring better ones in','Pretend to be above it'], t:'w'},
+ {q:'Deadline pressure turns you into…', o:['A machine','A negotiator','A night owl','A delegator'], t:'w'},
+ {q:'Your video-call camera is…', o:['Always on','On when it matters','Mysteriously broken','Ring light, best angle'], t:'w'},
+ {q:'Work friends are…', o:['Real friends','Office-hours friends','One or two keepers','A beautiful contradiction'], t:'w'},
+ {q:'Your inbox right now:', o:['Zero, always zero','Under fifty','Four digits and free','Search is my filing'], t:'w'},
+ {q:'A friend’s questionable new haircut. You…', o:['Say it, kindly','Hype it anyway','Wait to be asked','Poll the group chat'], t:'fm'},
+ {q:'3 a.m. adventure text from this group:', o:['Already outside','Asking twelve questions','Morning me will read it','Phone was on silent'], t:'f'},
+ {q:'Your borrowing policy with friends:', o:['Return it better','Return it… eventually','What’s mine is yours','Never borrow, never lend'], t:'fm'}
+];
+
+const PACKS=[
+  {id:'f', name:'Friends',    blurb:'The usual suspects — old or new'},
+  {id:'a', name:'Family',     blurb:'Siblings, parents, cousins'},
+  {id:'w', name:'Coworkers',  blurb:'Team night, office off-site'},
+  {id:'m', name:'Mixed crew', blurb:'A bit of everyone in one room'}
+];
+const QPT=2, MINP=3, MAXP=8;
+
+/* the eight fixed seat colours — a player keeps theirs in inputs, chips, matrix and share alike */
+const COLORS=['#ff6b6b','#ffa94d','#ffd43b','#69db7c','#38d9c9','#4dabf7','#9775fa','#f783ac'];
+const soft=c=>c+'2e';                        // 18% alpha for a seat colour's soft background
+
+/* ============================ state ============================
+   S is the whole game and lives only in memory. truth/pred hold option indexes, -1 = unanswered.
+   pred[s][p] is predictor p's two guesses about subject s (null on the diagonal). Every screen
+   renders through show(), which wipes the DOM — a previous player's private taps cannot survive
+   into a hand-off even for one frame. */
+let S=null;
+function newSession(pack){
+  const N=names.length;
+  const rnd=mulberry32((Date.now() ^ (Math.random()*0xffffffff))>>>0);
+  const pool=BANK.filter(x=>x.t.indexOf(pack)>=0);
+  /* Fisher–Yates on a copy, deal QPT per spotlight — no repeats possible within a session */
+  const deck=pool.slice();
+  for(let i=deck.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=deck[i]; deck[i]=deck[j]; deck[j]=t; }
+  S={ pack:pack, names:names.slice(), N:N, qs:[], truth:[], pred:[], turn:0, step:0 };
+  for(let s=0;s<N;s++){
+    S.qs.push(deck.slice(s*QPT,(s+1)*QPT));
+    S.truth.push([-1,-1]);
+    const row=[]; for(let p=0;p<N;p++) row.push(p===s?null:[-1,-1]);
+    S.pred.push(row);
+  }
+}
+/* the pass order for subject s: everyone else, seat by seat, starting beside them — the phone
+   travels around the circle and lands on the spotlight last */
+function ord(s){ const a=[]; for(let k=1;k<S.N;k++) a.push((s+k)%S.N); return a; }
+function hitsOf(r,s){ let h=0; for(let k=0;k<QPT;k++) if(S.pred[s][r][k]===S.truth[s][k]) h++; return h; }
+
+let names=['','','',''];
+try{ const n=JSON.parse(LS.get('names')||'[]');
+  if(Array.isArray(n)&&n.length>=MINP&&n.length<=MAXP) names=n.map(x=>String(x).slice(0,12)); }catch(e){}
+
+/* ============================ rendering core ============================
+   One container, innerHTML replaced wholesale per screen. GEN is a render generation counter:
+   every handler captures the generation it was bound in and no-ops if a render has happened
+   since — this is the double-tap guard. A fast second tap on any advancing button finds either
+   a disabled button or a stale generation; it can never advance the state machine twice. */
+const app=document.getElementById('app');
+let GEN=0;
+function show(html){
+  GEN++; app.innerHTML=html;
+  try{ window.scrollTo({top:0,left:0,behavior:'instant'}); }catch(e){ window.scrollTo(0,0); }
+}
+function on(id,fn){
+  const g=GEN, el=document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('click',function(e){
+    if(g!==GEN || el.disabled) return;
+    el.disabled=true;                       // released only if the handler chooses to re-render
+    try{ fn(e); }finally{ if(g===GEN) el.disabled=false; }
+  });
+}
+
+/* the motif: a ring of seat-coloured heads around one lit spot */
+const MARK='<svg viewBox="0 0 40 40" aria-hidden="true">'
+ +'<circle cx="20" cy="20" r="7" fill="#ffc857"/>'
+ +'<circle cx="20" cy="20" r="10.5" fill="none" stroke="#ffc857" stroke-width="1" opacity=".35"/>'
+ +'<circle cx="34" cy="20" r="3.2" fill="#ff6b6b"/><circle cx="27" cy="32.1" r="3.2" fill="#69db7c"/>'
+ +'<circle cx="13" cy="32.1" r="3.2" fill="#4dabf7"/><circle cx="6" cy="20" r="3.2" fill="#ffa94d"/>'
+ +'<circle cx="13" cy="7.9" r="3.2" fill="#9775fa"/><circle cx="27" cy="7.9" r="3.2" fill="#f783ac"/>'
+ +'</svg>';
+const MOTIF='<svg viewBox="0 0 132 92" aria-hidden="true">'
+ +'<defs><radialGradient id="ciGlow" cx="50%" cy="50%" r="50%">'
+ +'<stop offset="0" stop-color="#ffc857" stop-opacity=".5"/><stop offset="1" stop-color="#ffc857" stop-opacity="0"/>'
+ +'</radialGradient></defs>'
+ +'<circle cx="66" cy="46" r="34" fill="url(#ciGlow)"/>'
+ +'<circle cx="66" cy="40" r="11" fill="#ffc857"/>'
+ +'<path d="M50 66 q16-14 32 0" fill="none" stroke="#ffc857" stroke-width="8" stroke-linecap="round"/>'
+ +'<circle cx="118" cy="46" r="6" fill="#ff6b6b"/><circle cx="103" cy="76" r="6" fill="#ffd43b"/>'
+ +'<circle cx="66" cy="88" r="6" fill="#69db7c" opacity=".9"/><circle cx="29" cy="76" r="6" fill="#38d9c9"/>'
+ +'<circle cx="14" cy="46" r="6" fill="#4dabf7"/><circle cx="29" cy="14" r="6" fill="#9775fa"/>'
+ +'<circle cx="103" cy="14" r="6" fill="#f783ac"/>'
+ +'</svg>';
+
+function header(showHome){
+  return '<header class="top"><span class="wordmark">'+MARK+'<span><b>Circle Quiz</b>'
+   +'<small>Kreeda · Group</small></span></span>'
+   +(showHome
+      ? '<button class="soundbtn" type="button" id="bSound" aria-pressed="'+SND.on+'" aria-label="Sound">'+(SND.on?'🔊':'🔇')+'</button>'
+        +'<button class="homebtn" type="button" id="bHome" aria-label="Leave game and return to start">Home</button>'
+      : '')
+   +'</header>';
+}
+function bindHome(){
+  on('bHome',()=>{ openConfirm(()=>{ S=null; title(); }); });
+  const sb=document.getElementById('bSound');
+  if(sb) sb.addEventListener('click',()=>setSound(!SND.on));
+}
+function nameHTML(i){ return '<b style="color:'+COLORS[i]+'">'+esc(S.names[i])+'</b>'; }
+function dotHTML(i,extra){ return '<i class="dot" style="background:'+COLORS[i]+'"'+(extra||'')+'></i>'; }
+
+/* ============================ sound ============================
+   Two synthesized cues, no audio files: a soft tick on every pick and a swish when the phone
+   moves on. The context is created on the first tap (a user gesture, which iOS requires), and
+   the on/off preference is the only thing besides names and a play count that touches storage. */
+const SND={ ctx:null, noise:null, on:LS.get('sound')!=='0' };
+function audio(){
+  if(!SND.on) return null;
+  if(!SND.ctx){ try{ SND.ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(SND.ctx.state==='suspended'){ try{ SND.ctx.resume(); }catch(e){} }
+  return SND.ctx;
+}
+function tick(){
+  const ac=audio(); if(!ac) return;
+  try{
+    const t=ac.currentTime, o=ac.createOscillator(), g=ac.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(880,t); o.frequency.exponentialRampToValueAtTime(1320,t+0.03);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.09,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t+0.08);
+  }catch(e){}
+}
+function swish(){
+  const ac=audio(); if(!ac) return;
+  try{
+    const dur=0.3, t=ac.currentTime;
+    if(!SND.noise){ const n=Math.floor(ac.sampleRate*0.5), b=ac.createBuffer(1,n,ac.sampleRate), d=b.getChannelData(0);
+      for(let i=0;i<n;i++) d[i]=Math.random()*2-1; SND.noise=b; }
+    const src=ac.createBufferSource(); src.buffer=SND.noise;
+    const f=ac.createBiquadFilter(); f.type='bandpass'; f.Q.value=1.4;      // filtered noise, swept up then down
+    f.frequency.setValueAtTime(500,t); f.frequency.exponentialRampToValueAtTime(3400,t+dur*0.45);
+    f.frequency.exponentialRampToValueAtTime(700,t+dur);
+    const g=ac.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.32,t+0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(f).connect(g).connect(ac.destination); src.start(t); src.stop(t+dur+0.02);
+  }catch(e){}
+}
+function setSound(on){
+  SND.on=on; LS.set('sound',on?'1':'0');
+  const b=document.getElementById('bSound');
+  if(b){ b.textContent=on?'🔊':'🔇'; b.setAttribute('aria-pressed',String(on)); }
+  if(on) tick();
+}
+
+/* confirm modal — the only way out of a live session other than finishing it */
+const scrim=document.getElementById('scrim');
+let confirmCb=null;
+document.getElementById('cfYes').addEventListener('click',()=>{ scrim.classList.remove('show');
+  const cb=confirmCb; confirmCb=null; if(cb) cb(); });
+document.getElementById('cfNo').addEventListener('click',()=>{ scrim.classList.remove('show'); confirmCb=null; });
+function openConfirm(cb){ confirmCb=cb; scrim.classList.add('show'); }
+
+let toastT=null;
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ============================ title ============================
+   pack is session-only, deliberately not persisted: storage holds names, sound and a play count
+   and nothing else — see the privacy note at the top. */
+let pack='f';
+
+function title(){
+  show(
+   '<div class="hero">'+MOTIF+'<h1>CIRCLE QUIZ</h1>'
+   +'<p>Who really knows whom?<br>3–8 friends · one phone · one spotlight at a time.</p></div>'
+   +'<div class="card">'
+   +'<div class="field"><label id="circLbl">The circle · 3–8 players</label>'
+   +'<div id="rows" role="group" aria-labelledby="circLbl"></div>'
+   +'<button class="addbtn" type="button" id="bAdd">+ Add a player</button></div>'
+   +'<div class="field"><label id="packLbl">Pack</label>'
+   +'<div class="packs" role="group" aria-labelledby="packLbl">'
+   +PACKS.map(p=>'<button class="pack" type="button" data-pack="'+p.id+'" aria-pressed="'
+     +(p.id===pack)+'">'+p.name+'</button>').join('')
+   +'</div><p class="packblurb" id="packBlurb"></p></div>'
+   +'<button class="btn primary" type="button" id="bStart"></button>'
+   +'</div>'
+   +'<details class="how"><summary>How it works</summary><ul>'
+   +'<li><b>One at a time, the spotlight.</b> Two quick questions about that player go around the circle — everyone else secretly taps what they think the spotlight will answer.</li>'
+   +'<li><b>The spotlight answers last</b>, privately — and the round reveals on the spot: who called it, who guessed wrong.</li>'
+   +'<li>After everyone’s turn: <b>the knowledge map</b> — a grid of who reads whom, plus Mind Reader, Open Book, Enigma and the Closest Pair. Everyone gets a line.</li>'
+   +'<li>Nothing is uploaded and a refresh forgets the round — answers live only on this screen.</li>'
+   +'</ul></details>'
+   +'<footer class="foot">For fun and conversation — a game, not a psychological assessment.<br>'
+   +'Answers stay on this phone and are never uploaded.<br><a href="../">Kreeda</a></footer>'
+  );
+  const rowsEl=document.getElementById('rows'), addBtn=document.getElementById('bAdd'),
+        startBtn=document.getElementById('bStart'), blurb=document.getElementById('packBlurb');
+  const refresh=()=>{
+    startBtn.textContent='Start · '+names.length+' in the circle';
+    blurb.textContent=PACKS.find(p=>p.id===pack).blurb;
+    addBtn.style.display=names.length>=MAXP?'none':'';
+  };
+  const drawRows=()=>{
+    rowsEl.innerHTML=names.map((n,i)=>
+      '<div class="nrow">'+dotHTML(i)
+      +'<input type="text" maxlength="12" autocomplete="off" placeholder="Player '+(i+1)+'" '
+      +'aria-label="Player '+(i+1)+' name" data-i="'+i+'" value="'+esc(n)+'">'
+      +(names.length>MINP?'<button class="xbtn" type="button" data-x="'+i+'" aria-label="Remove player '+(i+1)+'">✕</button>':'')
+      +'</div>').join('');
+    rowsEl.querySelectorAll('input').forEach(el=>{
+      el.addEventListener('input',()=>{ names[+el.getAttribute('data-i')]=el.value; });
+    });
+    rowsEl.querySelectorAll('.xbtn').forEach(el=>{
+      el.addEventListener('click',()=>{ names.splice(+el.getAttribute('data-x'),1); drawRows(); refresh(); });
+    });
+    refresh();
+  };
+  drawRows();
+  addBtn.addEventListener('click',()=>{ if(names.length<MAXP){ names.push(''); drawRows(); } });
+  document.querySelectorAll('.pack').forEach(el=>{
+    el.addEventListener('click',()=>{
+      pack=el.getAttribute('data-pack');
+      document.querySelectorAll('.pack').forEach(x=>x.setAttribute('aria-pressed',
+        String(x.getAttribute('data-pack')===pack)));
+      refresh();
+    });
+  });
+  on('bStart',()=>{
+    names=names.map((n,i)=>String(n).trim().slice(0,12)||'Player '+(i+1));
+    LS.set('names',JSON.stringify(names));
+    newSession(pack);
+    track('game_start',{player_count:S.N, pack:pack});
+    beginTurn();
+  });
+}
+
+/* ============================ flow ============================
+   One spotlight turn per player. Within a turn the phone visits every non-subject in seat
+   order (hand-off interstitial each), then the subject, then the whole room sees the
+   mini-reveal. Every private screen is reached ONLY through a hand-off. */
+function beginTurn(){ S.step=0; nextActor(); }
+function nextActor(){
+  const s=S.turn, o=ord(s);
+  if(S.step<o.length){
+    const p=o[S.step];
+    handoff(p,'Spotlight is on '+nameHTML(s)+'.<br>Your job: predict what <b>'+esc(S.names[s])+'</b> will answer.',
+      ()=>sheet('pred',s,p));
+  }else{
+    handoff(s,'Everyone has made their reads.<br>Now the truth — these two are about <b>you</b>.',
+      ()=>sheet('truth',s,s));
+  }
+}
+function afterLock(kind){
+  if(kind==='pred'){ S.step++; nextActor(); }
+  else miniReveal(S.turn);
+}
+
+/* ============================ hand-off ============================
+   Renders through show(), which has already destroyed the previous screen — by the time this
+   paints there is nothing underneath to peek at, however fast the tap. */
+function handoff(p,subHtml,cb){
+  show(
+   '<div class="handoff">'
+   +'<div class="pass">Pass the phone to</div>'
+   +'<h2 style="color:'+COLORS[p]+'">'+esc(S.names[p])+'</h2>'
+   +'<p class="sub">'+subHtml+'</p>'
+   +'<button class="btn primary" type="button" id="bReady">I’m '+esc(S.names[p])+' — show me</button>'
+   +'<p class="peek">👀 tilt the phone away from the circle</p>'
+   +'</div>'
+  );
+  on('bReady',cb);
+}
+
+/* ============================ the sheet ============================
+   One builder for both private screens: a predictor's two guesses, or the subject's two truths.
+   Two questions, whole-option pills, a sticky lock bar that counts what's left. */
+function sheet(kind,s,actor){
+  const qs=S.qs[s], store=(kind==='pred')?S.pred[s][actor]:S.truth[s];
+  const o=ord(s);
+  const banner=(kind==='pred')
+    ? '<b style="color:'+COLORS[actor]+'">'+esc(S.names[actor])+'’s eyes only.</b> '
+      +'Tap what you think <b style="color:'+COLORS[s]+'">'+esc(S.names[s])+'</b> will answer for themselves.'
+    : '<b style="color:'+COLORS[s]+'">'+esc(S.names[s])+'’s eyes only.</b> '
+      +'These two are about you — answer what’s true, not what’s flattering.';
+  const progress='<span class="spark">✦</span> Spotlight '+(S.turn+1)+' of '+S.N+' · '
+    +((kind==='pred')?('reader '+(S.step+1)+' of '+o.length):'the spotlight answers last');
+  show(
+   header(true)
+   +'<div class="turn"><span class="eye">👀</span><span>'+banner+'</span></div>'
+   +'<div class="prog">'+progress+'</div>'
+   +'<div id="sheet" style="--me:'+COLORS[actor]+';--me-soft:'+soft(COLORS[actor])+'">'
+   +qs.map((q,k)=>
+     '<div class="qcard" id="qc'+k+'">'
+     +'<div class="qhead"><span class="qn">'+(k+1)+'</span><p class="qtext">'+esc(q.q)+'</p></div>'
+     +q.o.map((opt,i)=>'<button class="opt" type="button" data-k="'+k+'" data-i="'+i+'" '
+        +'aria-pressed="'+(store[k]===i)+'">'+esc(opt)+'</button>').join('')
+     +'</div>').join('')
+   +'</div>'
+   +'<div class="lockbar"><button class="btn" type="button" id="bLock"></button></div>'
+  );
+  bindHome();
+  const g=GEN, lockBtn=document.getElementById('bLock');
+  const refresh=()=>{
+    const left=store.filter(x=>x<0).length;
+    lockBtn.className='btn'+(left===0?' primary':'');
+    lockBtn.textContent=left>0
+      ? (left===QPT?'Answer both questions':'One more to go')
+      : (kind==='pred'?'Lock my read & pass on':'Lock in & reveal');
+  };
+  refresh();
+  document.getElementById('sheet').addEventListener('click',e=>{
+    if(g!==GEN) return;
+    const b=e.target.closest('.opt'); if(!b) return;
+    const k=+b.getAttribute('data-k'), i=+b.getAttribute('data-i');
+    store[k]=i;
+    const card=document.getElementById('qc'+k);
+    card.querySelectorAll('.opt').forEach(x=>x.setAttribute('aria-pressed',
+      String(+x.getAttribute('data-i')===i)));
+    card.classList.add('done');
+    tick(); refresh();
+  });
+  on('bLock',()=>{
+    const missing=store.indexOf(-1);
+    if(missing>=0){
+      const card=document.getElementById('qc'+missing);
+      card.scrollIntoView({behavior:'smooth',block:'start'});
+      card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash');
+      toast('Both questions need an answer');
+      return;
+    }
+    swish();
+    afterLock(kind);
+  });
+}
+
+/* ============================ mini reveal ============================
+   The payoff every ninety seconds: the spotlight's true answers big, every read beside them as
+   a seat-coloured chip — a wrong guess shows WHAT was guessed, because that is the conversation. */
+function miniReveal(s){
+  const qs=S.qs[s], o=ord(s);
+  let total=0;
+  const chip=(r,k,d)=>{
+    const hit=S.pred[s][r][k]===S.truth[s][k];
+    return '<span class="pchip '+(hit?'hit':'miss')+'" style="animation-delay:'+d+'ms">'
+      +dotHTML(r)+esc(S.names[r])
+      +(hit?'<span class="m">✓</span>'
+           :'<span class="m">✗</span><i>“'+esc(qs[k].o[S.pred[s][r][k]])+'”</i>')
+      +'</span>';
+  };
+  for(let k=0;k<QPT;k++) for(const r of o) if(S.pred[s][r][k]===S.truth[s][k]) total++;
+  const last=S.turn===S.N-1;
+  show(
+   header(true)
+   +'<div class="rev">'
+   +'<div class="who"><span class="lbl">Spotlight reveal</span>'
+   +'<h2 style="color:'+COLORS[s]+'">'+esc(S.names[s])+'</h2></div>'
+   +qs.map((q,k)=>
+     '<div class="qcard" style="animation-delay:'+(k*250)+'ms">'
+     +'<div class="qhead"><span class="qn">'+(k+1)+'</span><p class="qtext">'+esc(q.q)+'</p></div>'
+     +'<div class="ans">'+esc(q.o[S.truth[s][k]])+'</div>'
+     +'<div class="pchips">'+o.map((r,j)=>chip(r,k,300+k*250+j*70)).join('')+'</div>'
+     +'</div>').join('')
+   +'<p class="tally" style="animation-delay:600ms"><b>'+total+'</b> of '+(QPT*o.length)
+   +' reads landed on '+nameHTML(s)+'.</p>'
+   +'<button class="btn primary" type="button" id="bNext">'
+   +(last?'See the whole circle →':'Next spotlight: '+esc(S.names[S.turn+1])+' →')+'</button>'
+   +'</div>'
+  );
+  bindHome();
+  on('bNext',()=>{
+    swish();
+    S.turn++;
+    if(S.turn<S.N) beginTurn(); else results();
+  });
+}
+
+/* ============================ scoring ============================ */
+function scores(){
+  const N=S.N, H=[], rowPct=[], colPct=[];
+  let total=0;
+  for(let r=0;r<N;r++){ H.push([]);
+    for(let s=0;s<N;s++) H[r].push(r===s?-1:hitsOf(r,s)); }
+  for(let r=0;r<N;r++){
+    let sum=0; for(let s=0;s<N;s++) if(s!==r) sum+=H[r][s];
+    rowPct.push(sum*100/(QPT*(N-1))); total+=sum;
+  }
+  for(let s=0;s<N;s++){
+    let sum=0; for(let r=0;r<N;r++) if(r!==s) sum+=H[r][s];
+    colPct.push(sum*100/(QPT*(N-1)));
+  }
+  return { H:H, rowPct:rowPct, colPct:colPct, group:total*100/(QPT*N*(N-1)) };
+}
+function verdict(g){
+  if(g>=80) return ['One brain, many bodies','You could finish each other’s grocery lists.'];
+  if(g>=65) return ['Thick as thieves','Most reads landed. This circle pays attention.'];
+  if(g>=50) return ['Reading the room','Half the reads landed — the other half are stories.'];
+  if(g>=35) return ['Plot twists everywhere','More surprises than certainties. Excellent gossip material.'];
+  return ['Beautiful mysteries','Almost nothing landed — you have so much to talk about.'];
+}
+function argmax(arr){ let b=0; for(let i=1;i<arr.length;i++) if(arr[i]>arr[b]) b=i; return b; }
+function argmin(arr){ let b=0; for(let i=1;i<arr.length;i++) if(arr[i]<arr[b]) b=i; return b; }
+function closestPair(H){
+  let ba=-1,bb=-1,best=-1;
+  for(let a=0;a<S.N;a++) for(let b=a+1;b<S.N;b++){
+    const m=H[a][b]+H[b][a];
+    if(m>best){ best=m; ba=a; bb=b; }
+  }
+  return {a:ba,b:bb,sum:best};
+}
+function bestReaderOf(H,s){
+  let br=-1,bh=-1;
+  for(const r of ord(s)) if(H[r][s]>bh){ bh=H[r][s]; br=r; }
+  return {r:br,h:bh};
+}
+function qtrim(q){ return q.q.replace(/[:…]+\s*$/,''); }
+
+/* ============================ results — the knowledge map ============================ */
+let completeSent=false;
+function results(){
+  if(!S){ title(); return; }
+  const sc=scores(), N=S.N, H=sc.H;
+  const g=Math.round(sc.group), v=verdict(g);
+  const today=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+  const packName=PACKS.find(p=>p.id===S.pack).name;
+  const dl=n=>'style="animation-delay:'+n+'ms"';
+
+  if(!completeSent){
+    completeSent=true;
+    track('game_complete',{player_count:N, pack:S.pack, group_mind:g,
+      best_row:Math.round(Math.max.apply(null,sc.rowPct)),
+      best_col:Math.round(Math.max.apply(null,sc.colPct))});
+    const plays=(+LS.get('plays')||0)+1; LS.set('plays',String(plays));
+  }
+
+  /* the big ring: group mind — one figure for the whole circle */
+  const R=70, SZ=2*R+12, C=2*Math.PI*R;
+  const ringHTML='<div class="ring"><svg viewBox="0 0 '+SZ+' '+SZ+'" aria-hidden="true">'
+   +'<circle class="tr" cx="'+(SZ/2)+'" cy="'+(SZ/2)+'" r="'+R+'"/>'
+   +'<circle class="fl" cx="'+(SZ/2)+'" cy="'+(SZ/2)+'" r="'+R+'" '
+   +'style="stroke-dasharray:'+C.toFixed(1)+';stroke-dashoffset:'+C.toFixed(1)+'" '
+   +'data-off="'+(C*(1-g/100)).toFixed(1)+'"/></svg>'
+   +'<div class="rv" aria-hidden="true"><b data-n="'+g+'">0</b><i>%</i></div>'
+   +'<div class="rl" aria-hidden="true">Group mind</div>'
+   +'<span class="sr">Group mind: '+g+'%</span></div>';
+
+  /* THE MATRIX — rows are readers, columns are spotlights, diagonal blanked */
+  const initial=i=>esc((S.names[i]||'?').charAt(0).toUpperCase());
+  let mx='<div class="mx" style="grid-template-columns:46px repeat('+N+',minmax(26px,1fr))">'
+   +'<span class="mxc mxh" aria-hidden="true"></span>'
+   +S.names.map((n,i)=>'<span class="mxc mxh" title="'+esc(n)+'">'+dotHTML(i)+initial(i)+'</span>').join('');
+  for(let r=0;r<N;r++){
+    mx+='<span class="mxc mxl" title="'+esc(S.names[r])+'">'+dotHTML(r)+initial(r)+'</span>';
+    for(let s=0;s<N;s++){
+      if(r===s){ mx+='<span class="mxc mxs" aria-hidden="true">·</span>'; continue; }
+      mx+='<button type="button" class="mxc v'+H[r][s]+'" data-r="'+r+'" data-s="'+s+'" '
+       +'style="animation-delay:'+((r*N+s)*28)+'ms" '
+       +'aria-label="'+esc(S.names[r])+' read '+esc(S.names[s])+' right on '+H[r][s]+' of '+QPT+' — tap for details">'
+       +(H[r][s]||'')+'</button>';
+    }
+  }
+  mx+='</div>';
+
+  /* superlatives — one emoji line each; if every column ties, one warm line replaces two */
+  const mr=argmax(sc.rowPct), ob=argmax(sc.colPct), en=argmin(sc.colPct);
+  const cp=closestPair(H);
+  const pct=x=>Math.round(x);
+  const allEqual=pct(sc.colPct[ob])===pct(sc.colPct[en]);
+  let gls='<div class="gl"><span class="gi">🔮</span><span><span class="lb">Mind Reader</span>'
+    +nameHTML(mr)+' reads the room at <b>'+pct(sc.rowPct[mr])+'%</b>.</span></div>';
+  if(allEqual){
+    gls+='<div class="gl"><span class="gi">📖</span><span><span class="lb">Open Books</span>'
+      +'All of you, evenly read at <b>'+pct(sc.colPct[ob])+'%</b> — no enigmas tonight.</span></div>';
+  }else{
+    gls+='<div class="gl"><span class="gi">📖</span><span><span class="lb">Open Book</span>'
+      +nameHTML(ob)+' — the circle reads them at <b>'+pct(sc.colPct[ob])+'%</b>.</span></div>'
+      +'<div class="gl"><span class="gi">🎭</span><span><span class="lb">Enigma</span>'
+      +nameHTML(en)+' keeps their cards close: <b>'+pct(sc.colPct[en])+'%</b>.</span></div>';
+  }
+  gls+='<div class="gl"><span class="gi">💞</span><span><span class="lb">Closest Pair</span>'
+    +(cp.sum>0
+      ? nameHTML(cp.a)+' ↔ '+nameHTML(cp.b)+' — they read each other at <b>'+pct(cp.sum*100/(2*QPT))+'%</b>.'
+      : 'Still auditioning — tonight everyone surprised everyone.')
+    +'</span></div>';
+
+  /* legibility bars, sorted — and a personal best-reader line for every single player */
+  const orderIdx=S.names.map((_,i)=>i).sort((a,b)=>sc.colPct[b]-sc.colPct[a]);
+  const bars=orderIdx.map((s,j)=>{
+    const br=bestReaderOf(H,s);
+    return '<div class="bitem">'
+     +'<div class="brow"><span class="bl">'+dotHTML(s)+esc(S.names[s])+'</span>'
+     +'<span class="btrack"><i data-w="'+pct(sc.colPct[s])+'" style="background:'+COLORS[s]
+       +';transition-delay:'+(300+j*120)+'ms"></i></span>'
+     +'<span class="bn" style="color:'+COLORS[s]+'">'+pct(sc.colPct[s])+'%</span></div>'
+     +'<p class="bsub">🔎 '+(br.h>0
+        ? 'Best reader of '+esc(S.names[s])+': <b>'+esc(S.names[br.r])+'</b> ('+br.h+'/'+QPT+')'
+        : 'Nobody cracked '+esc(S.names[s])+' — yet')+'</p>'
+     +'</div>';
+  }).join('');
+
+  /* compact per-question recap, collapsed by default — the mini-reveals already told the story */
+  const recap=S.names.map((_,s)=>{
+    const o=ord(s);
+    return '<div class="rt"><div class="rth">'+dotHTML(s)+nameHTML(s)+'</div>'
+     +S.qs[s].map((q,k)=>
+       '<div class="rq"><span class="rqt">'+esc(qtrim(q))+' —</span>'
+       +'<b class="rqa">'+esc(q.o[S.truth[s][k]])+'</b>'
+       +'<span class="rqm">'+o.map(r=>{
+          const hit=S.pred[s][r][k]===S.truth[s][k];
+          return '<i class="mk '+(hit?'hit':'miss')+'" style="'
+           +(hit?'background:'+COLORS[r]:'color:'+COLORS[r]+';border-color:'+COLORS[r])
+           +'" title="'+esc(S.names[r])+(hit?' called it':' guessed “'+esc(q.o[S.pred[s][r][k]])+'”')+'">'
+           +(hit?'✓':'✗')+'</i>';
+        }).join('')+'</span></div>').join('')
+     +'</div>';
+  }).join('');
+
+  show(
+   header(false)
+   +'<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>'
+   +'<linearGradient id="ciRing" x1="0" y1="0" x2="1" y2="1">'
+   +'<stop offset="0" stop-color="#ffd47e"/><stop offset="1" stop-color="#ff8c7a"/></linearGradient>'
+   +'</defs></svg>'
+   +'<div class="results">'
+   +'<h2>The circle, mapped</h2>'
+   +'<p class="circline">'+S.names.map((n,i)=>dotHTML(i)+' '+esc(n)).join(' · ')
+   +' <span class="dim">· '+packName+' pack</span></p>'
+   +'<div class="card info">'+ringHTML
+   +'<div class="verdict" '+dl(600)+'><b>'+v[0]+'</b><span>'+v[1]+'</span></div>'
+   +'</div>'
+   +'<div class="card mxcard" '+dl(300)+'>'
+   +'<h3>The knowledge matrix</h3>'
+   +'<p class="mxcap">Each row is a reader, each column a spotlight — brighter means better read. Tap any square for the story.</p>'
+   +'<div class="mxwrap">'+mx+'</div>'
+   +'<div class="mxd" id="mxd" aria-live="polite"></div>'
+   +'</div>'
+   +'<div class="card glance" '+dl(600)+'>'+gls+'</div>'
+   +'<div class="card barcard" '+dl(800)+'>'
+   +'<h3>How well the circle reads each of you</h3>'+bars
+   +'</div>'
+   +'<details class="how recap" '+dl(950)+'><summary>Every question, every read</summary>'+recap+'</details>'
+   +'<p class="datefoot">'+esc(today)+' · kreeda.games/circle</p>'
+   +'<button class="btn primary" type="button" id="bAgain">Play again</button>'
+   +'<a class="btn wa" id="bWa" href="#" target="_blank" rel="noopener">'+WA_ICON+'Share on WhatsApp</a>'
+   +'<p class="sharehint">Send it to the group chat — everyone keeps the map.</p>'
+   +'<div class="btnrow"><button class="btn" type="button" id="bCopy">Copy result</button>'
+   +(navigator.share?'<button class="btn" type="button" id="bShare">Share…</button>':'')+'</div>'
+   +'<button class="btn ghost" type="button" id="bChange">Change players</button>'
+   +'<div id="shareSlot"></div>'
+   +'</div>'
+   +'<footer class="foot">Misses aren’t failures — they’re the best conversation in the room.<br>'
+   +'<a href="../">Kreeda</a></footer>'
+  );
+  const gG=GEN;
+  const reduced=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  /* ring fills, number counts up, bars slide out — after first paint; reduced motion lands at once */
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(gG!==GEN) return;
+    document.querySelectorAll('.ring .fl').forEach(el=>{ el.style.strokeDashoffset=el.getAttribute('data-off'); });
+    document.querySelectorAll('.btrack i').forEach(el=>{ el.style.width=el.getAttribute('data-w')+'%'; });
+    const nums=Array.prototype.slice.call(document.querySelectorAll('.ring .rv b'));
+    if(reduced){ nums.forEach(b=>{ b.textContent=b.getAttribute('data-n'); }); return; }
+    const t0=performance.now(), D=1100;
+    /* clocked off performance.now(), not the frame timestamp, so it lands on the final figure
+       even if the tab was hidden when the page rendered */
+    (function step(){
+      if(gG!==GEN) return;
+      const k=Math.min(1,(performance.now()-t0)/D), e=1-Math.pow(1-k,3);
+      nums.forEach(b=>{ b.textContent=Math.round(+b.getAttribute('data-n')*e); });
+      if(k<1) requestAnimationFrame(step);
+    })();
+  }));
+
+  /* tap a matrix cell → the misses behind it, in the detail box */
+  const mxd=document.getElementById('mxd');
+  document.querySelectorAll('button.mxc').forEach(el=>{
+    el.addEventListener('click',()=>{
+      if(gG!==GEN) return;
+      document.querySelectorAll('button.mxc.sel').forEach(x=>x.classList.remove('sel'));
+      el.classList.add('sel');
+      const r=+el.getAttribute('data-r'), s=+el.getAttribute('data-s');
+      let h='<b>'+esc(S.names[r])+' read '+esc(S.names[s])+'</b> — '+H[r][s]+' of '+QPT+'<br>';
+      S.qs[s].forEach((q,k)=>{
+        const hit=S.pred[s][r][k]===S.truth[s][k];
+        h+='<span class="m '+(hit?'hit':'miss')+'">'+(hit?'✓':'✗')+'</span>'
+         +esc(qtrim(q))+' — guessed “'+esc(q.o[S.pred[s][r][k]])+'”'
+         +(hit?'':', '+esc(S.names[s])+' said “'+esc(q.o[S.truth[s][k]])+'”')+'<br>';
+      });
+      mxd.innerHTML=h;
+      tick();
+    });
+  });
+
+  on('bAgain',()=>{ completeSent=false; names=S.names.slice(); newSession(S.pack);
+    track('game_start',{player_count:S.N, pack:S.pack}); beginTurn(); });
+  on('bChange',()=>{ completeSent=false; S=null; title(); });
+
+  /* the share text is the map in words — sharing is the players' own explicit act, so unlike
+     analytics it may carry the answers */
+  const text=shareText(sc,v,{mr:mr,ob:ob,en:en,allEqual:allEqual,cp:cp},packName,today);
+  const wa=document.getElementById('bWa');
+  wa.href=waLink(text);
+  wa.addEventListener('click',()=>track('share',{via:'whatsapp'}));
+  on('bShare',()=>{ track('share',{via:'system'});
+    try{ navigator.share({title:'Circle Quiz — '+S.names.join(', '), text:text}).catch(()=>{}); }catch(e){} });
+  on('bCopy',()=>{
+    let done=false;
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(()=>toast('Copied!'),()=>showShareBox(text));
+        done=true;
+      }
+    }catch(e){}
+    if(!done) showShareBox(text);   // clipboard is unavailable on file:// — show it to copy by hand
+  });
+}
+
+/* ============================ share ============================
+   WhatsApp bold and italic marks, the verdict and the group figure first, then one emoji block
+   row per player — 🟩 per hit, ⬛ per miss, as read by the others — then the superlatives. */
+const WA_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.8-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.2-.2-.2-.5-.4z"/></svg>';
+function waLink(text){ return 'https://wa.me/?text='+encodeURIComponent(text); }
+function shareText(sc,v,sup,packName,today){
+  const pct=x=>Math.round(x);
+  const lines=[
+    '*Circle Quiz* · '+S.N+' in the circle · '+packName+' pack',
+    '_'+v[0]+'_ — '+v[1],
+    '',
+    '🧠 Group mind: *'+Math.round(sc.group)+'%*',
+    '',
+    '*How the circle reads each of you*'
+  ];
+  S.names.forEach((n,s)=>{
+    let row='';
+    for(const r of ord(s)) for(let k=0;k<QPT;k++)
+      row+=(S.pred[s][r][k]===S.truth[s][k])?'🟩':'⬛';
+    lines.push(n+' '+pct(sc.colPct[s])+'%  '+row);
+  });
+  lines.push('');
+  lines.push('🔮 Mind Reader: '+S.names[sup.mr]+' ('+pct(sc.rowPct[sup.mr])+'%)');
+  if(sup.allEqual){
+    lines.push('📖 Open Books, all of you ('+pct(sc.colPct[sup.ob])+'%)');
+  }else{
+    lines.push('📖 Open Book: '+S.names[sup.ob]+' ('+pct(sc.colPct[sup.ob])+'%)');
+    lines.push('🎭 Enigma: '+S.names[sup.en]+' ('+pct(sc.colPct[sup.en])+'%)');
+  }
+  if(sup.cp.sum>0) lines.push('💞 Closest pair: '+S.names[sup.cp.a]+' ↔ '+S.names[sup.cp.b]);
+  lines.push('', today+' · kreeda.games/circle');
+  return lines.join('\n');
+}
+function showShareBox(text){
+  const slot=document.getElementById('shareSlot');
+  if(!slot) return;
+  slot.innerHTML='<textarea class="sharebox" rows="6" readonly aria-label="Result text to copy manually"></textarea>';
+  const ta=slot.querySelector('textarea'); ta.value=text;
+  ta.focus(); try{ ta.select(); }catch(e){}
+  toast('Copy it from the box below');
+}
+
+/* ============================ boot self-test ============================
+   Cheap invariants that would otherwise only fail in a player's hands: every pack must be able
+   to deal a full 8-player session (16 questions), and every question must have 2–4 short
+   options. Runs once, logs only. */
+(function audit(){
+  try{
+    PACKS.forEach(p=>{
+      const n=BANK.filter(x=>x.t.indexOf(p.id)>=0).length;
+      if(n<MAXP*QPT) console.warn('circle: pack "'+p.id+'" has only '+n+' questions (needs '+(MAXP*QPT)+')');
+    });
+    BANK.forEach((x,i)=>{
+      if(!(x.o.length>=2&&x.o.length<=4)) console.warn('circle: question '+i+' has '+x.o.length+' options');
+      if(x.q.length>60) console.warn('circle: question '+i+' text is long ('+x.q.length+')');
+      x.o.forEach(o=>{ if(o.length>28) console.warn('circle: question '+i+' option too long: '+o); });
+    });
+    if(COLORS.length<MAXP) console.warn('circle: only '+COLORS.length+' seat colours for '+MAXP+' players');
+  }catch(e){}
+})();
+
+title();
+</script>
+</body>
+</html>
