@@ -64,30 +64,10 @@ export const config = {
       accessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET || '',
       bearerToken: process.env.TWITTER_BEARER_TOKEN || ''
     },
-    reddit: {
-      enabled: Boolean(process.env.REDDIT_CLIENT_ID && process.env.REDDIT_CLIENT_SECRET),
-      clientId: process.env.REDDIT_CLIENT_ID || '',
-      clientSecret: process.env.REDDIT_CLIENT_SECRET || '',
-      username: process.env.REDDIT_USERNAME || '',
-      password: process.env.REDDIT_PASSWORD || '',
-      userAgent: process.env.REDDIT_USER_AGENT || 'KreedaGrowthAgent/1.0'
-    },
-    discord: {
-      enabled: Boolean(process.env.DISCORD_WEBHOOK_URL),
-      webhookUrl: process.env.DISCORD_WEBHOOK_URL || ''
-    },
-    buffer: {
-      enabled: Boolean(process.env.BUFFER_ACCESS_TOKEN),
-      accessToken: process.env.BUFFER_ACCESS_TOKEN || '',
-      profileIds: (process.env.BUFFER_PROFILE_IDS || '').split(',').map(s => s.trim()).filter(Boolean)
-    },
-    genericWebhook: {
-      enabled: Boolean(process.env.GENERIC_WEBHOOK_URL),
-      url: process.env.GENERIC_WEBHOOK_URL || ''
-    },
-    devto: {
-      enabled: Boolean(process.env.DEVTO_API_KEY),
-      apiKey: process.env.DEVTO_API_KEY || ''
+    facebook: {
+      enabled: Boolean(process.env.FACEBOOK_ACCESS_TOKEN && process.env.FACEBOOK_PAGE_ID),
+      accessToken: process.env.FACEBOOK_ACCESS_TOKEN || '',
+      pageId: process.env.FACEBOOK_PAGE_ID || ''
     }
   },
   // Play-together video posts: film one storyboarded game and post it, on a

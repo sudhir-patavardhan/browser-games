@@ -12,82 +12,40 @@ export class ContentGenerator {
   }
 
   /**
-   * Generates marketing material for a specific game and channel
+   * Generates marketing material for a specific game
    * @param {string} gameId - e.g. 'drift', 'carrom', 'hub'
-   * @param {'twitter'|'reddit'|'hackernews'|'producthunt'|'shorts'|'devto'} channel
+   * @param {'twitter'|'facebook'} channel
    * @param {Object} [options]
    */
   async generate(gameId, channel, options = {}) {
+    if (!['twitter', 'facebook'].includes(channel)) {
+      throw new Error(`Unsupported channel: ${channel}. Supported channels: 'twitter', 'facebook'.`);
+    }
+
     const game = GAME_CATALOG[gameId] || GAME_CATALOG.hub;
     let result = null;
 
-    switch (channel) {
-      case 'twitter': {
-        const isThread = options.isThread || false;
-        if (isThread) {
-          result = await this.ai.generate({
-            prompt: PROMPT_TEMPLATES.twitterThread(game, options.angle || 'technical'),
-            systemInstruction: SYSTEM_PROMPTS.marketingStrategist,
-            jsonMode: true
-          });
-        } else {
-          result = await this.ai.generate({
-            prompt: PROMPT_TEMPLATES.twitterSingle(game, options.context || ''),
-            systemInstruction: SYSTEM_PROMPTS.marketingStrategist,
-            jsonMode: true
-          });
-        }
-        break;
-      }
-
-      case 'reddit': {
-        const subreddit = options.subreddit || 'r/webgames';
+    if (channel === 'twitter') {
+      const isThread = options.isThread || false;
+      if (isThread) {
         result = await this.ai.generate({
-          prompt: PROMPT_TEMPLATES.redditPost(game, subreddit),
+          prompt: PROMPT_TEMPLATES.twitterThread(game, options.angle || 'technical'),
           systemInstruction: SYSTEM_PROMPTS.marketingStrategist,
           jsonMode: true
         });
-        break;
-      }
-
-      case 'hackernews': {
+      } else {
         result = await this.ai.generate({
-          prompt: PROMPT_TEMPLATES.hackerNewsPost(game, options.type || 'Show HN'),
+          prompt: PROMPT_TEMPLATES.twitterSingle(game, options.context || ''),
           systemInstruction: SYSTEM_PROMPTS.marketingStrategist,
           jsonMode: true
         });
-        break;
       }
-
-      case 'producthunt': {
-        result = await this.ai.generate({
-          prompt: PROMPT_TEMPLATES.productHuntKit(),
-          systemInstruction: SYSTEM_PROMPTS.marketingStrategist,
-          jsonMode: true
-        });
-        break;
-      }
-
-      case 'shorts': {
-        result = await this.ai.generate({
-          prompt: PROMPT_TEMPLATES.shortVideoScript(game),
-          systemInstruction: SYSTEM_PROMPTS.marketingStrategist,
-          jsonMode: true
-        });
-        break;
-      }
-
-      case 'devto': {
-        result = await this.ai.generate({
-          prompt: PROMPT_TEMPLATES.devtoArticle(game),
-          systemInstruction: SYSTEM_PROMPTS.marketingStrategist,
-          jsonMode: true
-        });
-        break;
-      }
-
-      default:
-        throw new Error(`Unknown marketing channel: ${channel}`);
+    } else if (channel === 'facebook') {
+      result = await this.ai.generate({
+        prompt: PROMPT_TEMPLATES.twitterSingle(game, options.context || ''),
+        systemInstruction: SYSTEM_PROMPTS.marketingStrategist,
+        jsonMode: true
+      });
     }
 
     // Save as local artifact
@@ -102,21 +60,17 @@ export class ContentGenerator {
   }
 
   /**
-   * Generates a 360-degree cross-platform launch campaign for a game
+   * Generates a social campaign for a game across Twitter and Facebook
    * @param {string} gameId
    */
   async generateFullCampaign(gameId) {
     const game = GAME_CATALOG[gameId] || GAME_CATALOG.hub;
-    console.log(`🚀 Generating 360° campaign for ${game.name}...`);
+    console.log(`🚀 Generating social campaign for ${game.name}...`);
 
-    const [twitterSingle, twitterThread, redditWebgames, redditIndiedev, hackerNews, shortVideo, devArticle] = await Promise.all([
+    const [twitterSingle, twitterThread, facebook] = await Promise.all([
       this.generate(gameId, 'twitter', { isThread: false }),
       this.generate(gameId, 'twitter', { isThread: true, angle: 'technical' }),
-      this.generate(gameId, 'reddit', { subreddit: 'r/webgames' }),
-      this.generate(gameId, 'reddit', { subreddit: 'r/indiegames' }),
-      this.generate(gameId, 'hackernews', { type: 'Show HN' }),
-      this.generate(gameId, 'shorts'),
-      this.generate(gameId, 'devto')
+      this.generate(gameId, 'facebook')
     ]);
 
     const campaign = {
@@ -127,11 +81,7 @@ export class ContentGenerator {
       deliverables: {
         twitterSingle,
         twitterThread,
-        redditWebgames,
-        redditIndiedev,
-        hackerNews,
-        shortVideo,
-        devArticle
+        facebook
       }
     };
 
