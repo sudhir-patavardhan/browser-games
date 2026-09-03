@@ -164,7 +164,7 @@
   },
   {
     "id": "plan-friday-1788019324895-4",
-    "status": "scheduled",
+    "status": "draft_published",
     "channel": "twitter",
     "gameId": "drift",
     "scheduledDate": "2026-09-02",
@@ -179,12 +179,20 @@
       "mediaSuggestion": "A 5-second high-frame-rate looping video showing a clean countersteer drift around a tight curve with the ghost car alongside, highlighting the battery regen meter pulsing green."
     },
     "createdAt": "2026-08-29T16:02:04.895Z",
-    "publishedAt": null,
-    "publishResult": null
+    "publishedAt": "2026-09-03T13:12:12.385Z",
+    "publishResult": {
+      "success": true,
+      "channel": "twitter",
+      "mode": "draft",
+      "postId": "sim-tweet-1788441132385",
+      "url": "https://twitter.com/intent/tweet?text=A%20drift%20game%20where%20your%20EV%20battery%20is%20your%20health%20bar%20%26%20grip%20is%20a%20budget.%0A%0AReal%20weight%20transfer%2C%20regen%20braking%2C%20and%20daily%20ghost%20runs%E2%80%94built%20into%20a%20single%20HTML%20file%20(instant%20load%2C%20zero%20ads).%0A%0ACan%20you%20beat%20today's%20dev%20ghost%3F%20%F0%9F%91%87%0Ahttps%3A%2F%2Fkreeda.games%2Fdrift%2Findex.html%0A%0A%23gamedev%20%23webdev%20%23indiedev",
+      "publishedAt": "2026-09-03T13:12:12.385Z"
+    },
+    "updatedAt": "2026-09-03T13:12:12.385Z"
   },
   {
     "id": "plan-saturday-1788019343411-5",
-    "status": "scheduled",
+    "status": "draft_published",
     "channel": "reddit",
     "gameId": "deadpoint",
     "scheduledDate": "2026-09-03",
@@ -195,8 +203,17 @@
       "flair": "Playable Build"
     },
     "createdAt": "2026-08-29T16:02:23.411Z",
-    "publishedAt": null,
-    "publishResult": null
+    "publishedAt": "2026-09-03T13:12:12.387Z",
+    "publishResult": {
+      "success": true,
+      "channel": "reddit",
+      "subreddit": "r/indiegames",
+      "mode": "draft",
+      "postId": "sim-reddit-1788441132387",
+      "url": "https://www.reddit.com/r/indiegames/submit?title=I%20wanted%20a%20climbing%20game%20that%20actually%20simulates%20center-of-mass%20and%20barn-dooring%2C%20so%20I%20built%20Deadpoint%20(free%20browser%20physics%20climber)",
+      "publishedAt": "2026-09-03T13:12:12.387Z"
+    },
+    "updatedAt": "2026-09-03T13:12:12.387Z"
   },
   {
     "id": "plan-sunday-1788019353867-6",
@@ -319,7 +336,7 @@
   },
   {
     "id": "plan-tuesday-1788270801062-1",
-    "status": "scheduled",
+    "status": "draft_published",
     "channel": "devto",
     "gameId": "ennead",
     "scheduledDate": "2026-09-02",
@@ -334,12 +351,18 @@
       "contentMarkdown": "# Building Zero-Dependency Games in a Single HTML File: The Architecture of Ennead (Tic-Tac-Toe)\n\nThe modern web stack has normalized shipping megabytes of JavaScript, multi-step build pipelines, and hundreds of transitive npm dependencies just to draw a few shapes on a screen. \n\nWhen we built **[Kreeda](https://kreeda.games)**, we set an uncompromising constraint: **every game must live inside a single, self-contained HTML file**. No build step, no external assets, no UI libraries, zero trackers, and sub-100ms cold starts on any mobile or desktop browser.\n\nIn this article, we dive into the engineering behind **Ennead**—our minimalist take on Tic-Tac-Toe—breaking down state management, optimal Minimax game-tree evaluation, smooth Canvas 2D stroke math, procedural WebAudio synthesis, and headless verification.\n\n---\n\n## 1. The 0-Dependency Challenge\n\nWhy ship a game in a single HTML file without npm, Webpack, or React?\n\n1. **Zero Cold-Start Latency:** The entire file (HTML + CSS + JS) is ~15-30 KB uncompressed. The browser parses it in one network round trip, rendering the interactive board in under 100ms.\n2. **Permanence and Portability:** A single HTML file can be emailed, archived, run completely offline, or hosted on any static file server without dependency bit-rot.\n3. **Clarity of Execution:** You eliminate layer upon layer of framework abstractions. The state belongs to vanilla JavaScript objects, the view belongs to pure Canvas 2D, and audio belongs directly to the Web Audio API.\n\n---\n\n## 2. Architecture Breakdown: The Render Loop & State Management\n\nEnnead is structured around a classic deterministic state machine decoupled from the visual render loop.\n\n### The State Model\nThe board is represented as an array of 9 cells (indices `0` through `8`). Cell values are `null`, `'X'`, or `'O'`:\n\n```javascript\nconst State = {\n  board: Array(9).fill(null),\n  turn: 'X',\n  winner: null, // 'X', 'O', 'tie', or null\n  winningLine: null,\n  animatingMarks: [], // tracks interpolation for draw animations\n  score: { X: 0, O: 0, ties: 0 }\n};\n```\n\n### The Render Loop\nInstead of re-rendering only on click events, we run a continuous `requestAnimationFrame` loop. This allows us to handle micro-animations (e.g., pen-stroke interpolation, win-line sweeps, hover ripples, and device pixel ratio handling) seamlessly:\n\n```javascript\nfunction initCanvas() {\n  const dpr = window.devicePixelRatio || 1;\n  canvas.width = rect.width * dpr;\n  canvas.height = rect.height * dpr;\n  ctx.scale(dpr, dpr);\n}\n\nfunction render(timestamp) {\n  ctx.clearRect(0, 0, width, height);\n  drawGrid();\n  drawPlacedMarks(timestamp);\n  drawWinningLine(timestamp);\n  requestAnimationFrame(render);\n}\n```\n\n---\n\n## 3. Math & Logic Breakdown\n\n### A. Unbeatable AI: Minimax with Alpha-Beta Pruning\nTic-Tac-Toe has a small state space ($3^9 = 19,683$ permutations), making full-depth Minimax trivial to execute in <1ms without freezing the main thread.\n\n```javascript\nfunction minimax(board, depth, isMaximizing) {\n  const score = evaluateBoard(board);\n  if (score !== null) return score - depth; // Prefer quicker wins\n  if (isFull(board)) return 0;\n\n  if (isMaximizing) {\n    let maxEval = -Infinity;\n    for (let i = 0; i < 9; i++) {\n      if (!board[i]) {\n        board[i] = 'O';\n        maxEval = Math.max(maxEval, minimax(board, depth + 1, false));\n        board[i] = null;\n      }\n    }\n    return maxEval;\n  } else {\n    let minEval = Infinity;\n    for (let i = 0; i < 9; i++) {\n      if (!board[i]) {\n        board[i] = 'X';\n        minEval = Math.min(minEval, minimax(board, depth + 1, true));\n        board[i] = null;\n      }\n    }\n    return minEval;\n  }\n}\n```\n\n### B. Smooth Pen-Stroke Geometry\nInstead of instantly popping 'X' and 'O' sprites onto the grid, marks are drawn procedurally using parametric equations interpolated across time ($t \\in [0, 1]$).\n\nFor an 'O' (circle sweep):\n$$\\theta(t) = -\\frac{\\pi}{2} + 2\\pi \\cdot t$$\n\nFor an 'X' (two intersecting line segments):\n$$P_1(t) = (1-t)A + tB \\quad \\text{for } t \\le 0.5$$\n$$P_2(t) = (1-2(t-0.5))C + 2(t-0.5)D \\quad \\text{for } t > 0.5$$\n\n```javascript\nfunction drawAnimatedX(ctx, x, y, size, progress) {\n  ctx.beginPath();\n  // First stroke\n  const p1 = Math.min(progress * 2, 1);\n  ctx.moveTo(x - size, y - size);\n  ctx.lineTo(x - size + 2 * size * p1, y - size + 2 * size * p1);\n  \n  // Second stroke\n  if (progress > 0.5) {\n    const p2 = (progress - 0.5) * 2;\n    ctx.moveTo(x + size, y - size);\n    ctx.lineTo(x + size - 2 * size * p2, y - size + 2 * size * p2);\n  }\n  ctx.stroke();\n}\n```\n\n---\n\n## 4. Procedural WebAudio (Zero Audio Files)\n\nLoading `.wav` or `.mp3` files adds HTTP overhead and decoded audio memory pressure. In Ennead, every audio effect is synthesized dynamically on the fly with the Web Audio API.\n\n### Tactile Move \"Click\"\nA brief, pitch-decaying sine wave coupled with an exponential gain drop creates a tactile physical button feel:\n\n```javascript\nfunction playPlaceSound() {\n  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();\n  const osc = audioCtx.createOscillator();\n  const gain = audioCtx.createGain();\n\n  osc.type = 'sine';\n  osc.frequency.setValueAtTime(440, audioCtx.currentTime);\n  osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.05);\n\n  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);\n  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);\n\n  osc.connect(gain);\n  gain.connect(audioCtx.destination);\n\n  osc.start();\n  osc.stop(audioCtx.currentTime + 0.05);\n}\n```\n\n### Winning Harmonic Chord\nWhen a player wins, we trigger an arpeggiated tri-tone chord ($E_5, G\\#_5, B_5$) using soft triangle waves:\n\n```javascript\nfunction playWinChime() {\n  const freqs = [659.25, 830.61, 987.77];\n  freqs.forEach((f, idx) => {\n    setTimeout(() => playTone(f, 0.4), idx * 80);\n  });\n}\n```\n\n---\n\n## 5. Automated Verification with Headless Chrome\n\nTo ensure gameplay integrity across different browser versions without a hefty testing framework, we use a lightweight Node.js script with Puppeteer/Headless Chrome:\n\n1. **Board Evaluation Integrity:** The test script simulates hundreds of random and optimal games via simulated Canvas click coordinates.\n2. **Minimax Assertion:** Ensures that the computer AI never loses against any randomized opponent strategy (wins $\\ge 0$, losses $\\equiv 0$, ties $\\ge 0$).\n3. **AudioContext Resumption:** Verifies audio unlocks correctly after the first user gesture without throwing unhandled promise rejections.\n\n---\n\n## 6. Play the Game & Explore the Source\n\nYou can play Ennead right now in any modern browser—no signups, no ads, no trackers:\n\n🎮 **Play the game:** [https://kreeda.games/ennead/index.html](https://kreeda.games/ennead/index.html)  \n📦 **Inspect the source code:** [https://github.com/sudhir-patavardhan/browser-games](https://github.com/sudhir-patavardhan/browser-games)  \n\nCheck out the full 12-game arcade at [Kreeda.games](https://kreeda.games), all released under the permissive MIT license."
     },
     "createdAt": "2026-09-01T13:53:21.062Z",
-    "publishedAt": null,
-    "publishResult": null
+    "publishedAt": "2026-09-03T13:12:12.387Z",
+    "publishResult": {
+      "success": true,
+      "channel": "devto",
+      "mode": "draft",
+      "publishedAt": "2026-09-03T13:12:12.387Z"
+    },
+    "updatedAt": "2026-09-03T13:12:12.388Z"
   },
   {
     "id": "plan-wednesday-1788270807146-2",
-    "status": "scheduled",
+    "status": "draft_published",
     "channel": "reddit",
     "gameId": "carrom",
     "scheduledDate": "2026-09-03",
@@ -350,8 +373,17 @@
       "flair": "Developer"
     },
     "createdAt": "2026-09-01T13:53:27.146Z",
-    "publishedAt": null,
-    "publishResult": null
+    "publishedAt": "2026-09-03T13:12:12.388Z",
+    "publishResult": {
+      "success": true,
+      "channel": "reddit",
+      "subreddit": "r/webgames",
+      "mode": "draft",
+      "postId": "sim-reddit-1788441132388",
+      "url": "https://www.reddit.com/r/webgames/submit?title=%5BHTML5%5D%20Carrom%20%E2%80%93%20Classic%20tabletop%20disc-flicking%20board%20game%20with%20custom%20physics%20and%203-tier%20AI",
+      "publishedAt": "2026-09-03T13:12:12.388Z"
+    },
+    "updatedAt": "2026-09-03T13:12:12.389Z"
   },
   {
     "id": "plan-thursday-1788270817596-3",
@@ -465,5 +497,29 @@
     "createdAt": "2026-09-01T13:54:09.116Z",
     "publishedAt": null,
     "publishResult": null
+  },
+  {
+    "id": "post-1788441202867-giw2",
+    "status": "draft_published",
+    "channel": "twitter",
+    "gameId": "windows",
+    "scheduledDate": "2026-09-03",
+    "content": {
+      "kind": "together-video",
+      "text": "Find out what the person sitting next to you sees that you completely miss about yourself. A quiet 5-minute reveal for couples and close friends: https://kreeda.games/windows/index.html",
+      "altText": "Two people take turns selecting personality traits on a shared phone screen until a four-pane Johari Window reveals their hidden traits and blind spots.",
+      "videoPath": "/home/runner/work/browser-games/browser-games/marketing/artifacts/videos/windows-together-1788441165763.mp4",
+      "squarePath": "/home/runner/work/browser-games/browser-games/marketing/artifacts/videos/windows-together-1788441165763-square.mp4"
+    },
+    "createdAt": "2026-09-03T13:13:22.867Z",
+    "publishedAt": "2026-09-03T13:13:22.867Z",
+    "publishResult": {
+      "success": true,
+      "channel": "twitter",
+      "mode": "draft",
+      "postId": "sim-tweet-1788441202867",
+      "url": "https://twitter.com/intent/tweet?text=Find%20out%20what%20the%20person%20sitting%20next%20to%20you%20sees%20that%20you%20completely%20miss%20about%20yourself.%20A%20quiet%205-minute%20reveal%20for%20couples%20and%20close%20friends%3A%20https%3A%2F%2Fkreeda.games%2Fwindows%2Findex.html",
+      "publishedAt": "2026-09-03T13:13:22.867Z"
+    }
   }
 ]

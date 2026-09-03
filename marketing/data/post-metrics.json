@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-01T13:54:35.871Z",
+  "updatedAt": "2026-09-03T13:13:22.868Z",
   "tweets": {
     "2093734828265152685": {
       "gameId": "drift",
@@ -25,11 +25,21 @@
           "replies": 0,
           "reposts": 0,
           "bookmarks": 0
+        },
+        {
+          "at": "2026-09-03T13:13:22.868Z",
+          "impressions": 73,
+          "linkClicks": 5,
+          "profileClicks": 3,
+          "likes": 1,
+          "replies": 0,
+          "reposts": 0,
+          "bookmarks": 0
         }
       ],
       "latest": {
-        "at": "2026-09-01T13:54:35.871Z",
-        "impressions": 57,
+        "at": "2026-09-03T13:13:22.868Z",
+        "impressions": 73,
         "linkClicks": 5,
         "profileClicks": 3,
         "likes": 1,

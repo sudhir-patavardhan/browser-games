@@ -1,12 +1,14 @@
-## Marketing agent — full_cycle · 2026-09-01 13:52 UTC · **DRAFT**
+## Marketing agent — full_cycle · 2026-09-03 13:12 UTC · **DRAFT**
 
 ### Content queue
-- Planned: **7** new item(s) · Published this run: **2** (draft — simulated, nothing went out)
+- Planned: **0** new item(s) · Published this run: **4** (draft — simulated, nothing went out)
 - Scout: **4** community lead(s) evaluated, replies drafted for review
 - Visual cards refreshed: **21**
 
 ### Play-together video
-- Skipped: next due 2026-09-02 (every 2 days; last: sync)
+- **Blind Spots** — drafted (not posted) · 31s of footage
+- File: `windows-together-1788441165763.mp4` (+ square variant) — attached to this workflow run as an artifact; not committed
+- Copy: > Find out what the person sitting next to you sees that you completely miss about yourself. A quiet 5-minute reveal for couples and close friends: https://kreeda.games/windows/index.html
 
 ### X Ads
 - Not enabled (set `X_ADS_ACCOUNT_ID`)
@@ -14,7 +16,7 @@
 ### Organic performance (our own tweets)
 | Game | Posts | Impressions | Link clicks | CTR | Engagement |
 |---|---:|---:|---:|---:|---:|
-| Drift | 1 | 57 | 5 | 8.77% | 10.53% |
+| Drift | 1 | 73 | 5 | 6.85% | 8.22% |
 
 ### Next steps
 - Everything above was a rehearsal. Run the workflow with mode=live (or set MARKETING_MODE=live) to post for real.
