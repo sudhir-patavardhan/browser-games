@@ -29,7 +29,6 @@ export function renderCycleReport(s = {}) {
   // Organic queue
   lines.push('### Content queue');
   lines.push(`- Planned: **${a.plannedPosts ?? 0}** new item(s) · Published this run: **${a.publishedPosts ?? 0}** (${s.mode === 'live' ? 'live' : 'draft — simulated, nothing went out'})`);
-  if (a.scoutedLeads != null) lines.push(`- Scout: **${a.scoutedLeads}** community lead(s) evaluated, replies drafted for review`);
   if (a.generatedCards != null) lines.push(`- Visual cards refreshed: **${a.generatedCards}**`);
   lines.push('');
 

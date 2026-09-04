@@ -36,12 +36,10 @@ export const config = {
     data: path.join(MARKETING_DIR, 'data'),
     artifacts: path.join(MARKETING_DIR, 'artifacts'),
     queueFile: path.join(MARKETING_DIR, 'data', 'queue.json'),
-    opportunitiesFile: path.join(MARKETING_DIR, 'data', 'opportunities.json'),
-    telemetryFile: path.join(MARKETING_DIR, 'data', 'telemetry.json'),
     postMetricsFile: path.join(MARKETING_DIR, 'data', 'post-metrics.json'),
     lastCycleFile: path.join(MARKETING_DIR, 'data', 'last-cycle.json'),
-    reports: path.join(MARKETING_DIR, 'artifacts', 'reports'),
-    dashboard: path.join(MARKETING_DIR, 'dashboard')
+    // The Run log and the Briefing are state: they live on marketing-state.
+    reports: path.join(MARKETING_DIR, 'data', 'artifacts', 'reports'),
   },
   general: {
     baseUrl: process.env.BASE_URL || 'https://kreeda.games',
@@ -64,9 +62,11 @@ export const config = {
       accessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET || '',
       bearerToken: process.env.TWITTER_BEARER_TOKEN || ''
     },
+    // A long-lived Page token, not a user token: it does not expire while the
+    // CMO is an admin of the Page. `node cli.js fb token` mints one (§11).
     facebook: {
-      enabled: Boolean(process.env.FACEBOOK_ACCESS_TOKEN && process.env.FACEBOOK_PAGE_ID),
-      accessToken: process.env.FACEBOOK_ACCESS_TOKEN || '',
+      enabled: Boolean(process.env.FACEBOOK_PAGE_TOKEN && process.env.FACEBOOK_PAGE_ID),
+      pageToken: process.env.FACEBOOK_PAGE_TOKEN || '',
       pageId: process.env.FACEBOOK_PAGE_ID || ''
     }
   },

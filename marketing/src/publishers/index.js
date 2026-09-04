@@ -1,36 +1,30 @@
 import { TwitterPublisher } from './twitterPublisher.js';
 import { FacebookPublisher } from './facebookPublisher.js';
+import { X, FACEBOOK, toChannel } from '../knowledge/channels.js';
 
+/** Publishes a Post to whichever Channel its Slot names. */
 export class UniversalPublisher {
   constructor() {
-    this.twitter = new TwitterPublisher();
-    this.facebook = new FacebookPublisher();
+    this.publishers = {
+      [X]: new TwitterPublisher(),
+      [FACEBOOK]: new FacebookPublisher()
+    };
   }
 
   /**
-   * Publishes content to the target channel
-   * @param {string} channel - 'twitter' | 'facebook'
-   * @param {Object} content - Post payload
-   * @param {boolean} [dryRun]
+   * @param {string} channel a Channel, in any spelling `toChannel` accepts.
+   * @param {Object} content the Post payload.
+   * @param {boolean} [dryRun] when true, nothing leaves this machine.
    */
   async publish(channel, content, dryRun) {
-    switch (channel) {
-      case 'twitter':
-        return await this.twitter.publish(content, dryRun);
-      case 'facebook':
-        return await this.facebook.publish(content, dryRun);
-      default:
-        throw new Error(`Unsupported channel: ${channel}. Supported channels: 'twitter', 'facebook'.`);
-    }
+    return this.publishers[toChannel(channel)].publish(content, dryRun);
   }
 
-  /**
-   * Returns a status report of which platform credentials are configured
-   */
+  /** Which Channels the Producer holds credentials for. */
   getStatus() {
     return {
-      twitter: this.twitter.isConfigured,
-      facebook: this.facebook.isConfigured
+      [X]: this.publishers[X].isConfigured,
+      [FACEBOOK]: this.publishers[FACEBOOK].isConfigured
     };
   }
 }

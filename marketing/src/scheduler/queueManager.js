@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { config } from '../config.js';
 import { UniversalPublisher } from '../publishers/index.js';
+import { X, toChannel } from '../knowledge/channels.js';
 
 export class QueueManager {
   constructor(filePath = config.paths.queueFile) {
@@ -39,7 +40,7 @@ export class QueueManager {
       const entry = {
         id: item.id || `post-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         status: item.status || 'draft', // 'draft' | 'scheduled' | 'approved' | 'published' | 'archived'
-        channel: item.channel || 'twitter',
+        channel: item.channel ? toChannel(item.channel) : X,
         gameId: item.gameId || 'hub',
         scheduledDate: item.scheduledDate || new Date().toISOString().split('T')[0],
         content: item.content || {},

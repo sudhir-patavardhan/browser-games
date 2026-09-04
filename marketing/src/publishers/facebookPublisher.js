@@ -6,7 +6,7 @@ export class FacebookPublisher {
   }
 
   get isConfigured() {
-    return Boolean(this.cfg.accessToken && this.cfg.pageId);
+    return Boolean(this.cfg.pageToken && this.cfg.pageId);
   }
 
   /**
@@ -34,7 +34,7 @@ export class FacebookPublisher {
       const endpoint = `https://graph.facebook.com/v18.0/${this.cfg.pageId}/feed`;
       const params = new URLSearchParams({
         message: text,
-        access_token: this.cfg.accessToken
+        access_token: this.cfg.pageToken
       });
 
       let body;
@@ -44,7 +44,7 @@ export class FacebookPublisher {
         const form = new FormData();
         form.append('message', text);
         form.append('video_file', new File([await this.readFile(videoPath)], 'video.mp4', { type: 'video/mp4' }));
-        form.append('access_token', this.cfg.accessToken);
+        form.append('access_token', this.cfg.pageToken);
         body = form;
       } else {
         body = params;

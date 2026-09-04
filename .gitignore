@@ -12,3 +12,5 @@ marketing/artifacts/videos/
 # marketing state lives on the marketing-state branch, checked out as a
 # worktree here (ADR 0001). main holds code only.
 marketing/data/
+# what `state init` set aside when it took that path over
+marketing/data.before-marketing-state-*/

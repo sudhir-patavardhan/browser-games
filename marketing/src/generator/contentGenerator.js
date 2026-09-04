@@ -1,107 +1,50 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { config } from '../config.js';
 import { GAME_CATALOG } from '../knowledge/catalog.js';
-import { AUDIENCES } from '../knowledge/audiences.js';
 import { GeminiClient } from '../ai/geminiClient.js';
 import { SYSTEM_PROMPTS, PROMPT_TEMPLATES } from '../ai/prompts.js';
 
+/**
+ * Turns a brief into the text of one Post.
+ *
+ * This is the model half of the Creative (AGENTS_SPEC.md §6.3). It writes and
+ * returns; it does not save anything. The per-generation dumps it used to
+ * leave under artifacts/<channel>/ are retired by the delete list — what a
+ * Post says lives on the Post, in the queue, on the marketing-state branch,
+ * and its rendered Assets live on the media release (ADR 0003).
+ */
 export class ContentGenerator {
   constructor(geminiClient = new GeminiClient()) {
     this.ai = geminiClient;
   }
 
   /**
-   * Generates marketing material for a specific game
-   * @param {string} gameId - e.g. 'drift', 'carrom', 'hub'
-   * @param {'twitter'|'facebook'} channel
+   * Writes the content for one Post.
+   * @param {string} gameId
+   * @param {'x'|'facebook'} channel
    * @param {Object} [options]
+   * @param {boolean} [options.isThread] X only: a thread rather than a single Post.
+   * @param {string} [options.angle]
+   * @param {string} [options.context]
    */
   async generate(gameId, channel, options = {}) {
-    if (!['twitter', 'facebook'].includes(channel)) {
-      throw new Error(`Unsupported channel: ${channel}. Supported channels: 'twitter', 'facebook'.`);
+    if (!['x', 'facebook'].includes(channel)) {
+      throw new Error(`Unsupported Channel: ${channel}. There are two: 'x' and 'facebook'.`);
     }
 
     const game = GAME_CATALOG[gameId] || GAME_CATALOG.hub;
-    let result = null;
 
-    if (channel === 'twitter') {
-      const isThread = options.isThread || false;
-      if (isThread) {
-        result = await this.ai.generate({
-          prompt: PROMPT_TEMPLATES.twitterThread(game, options.angle || 'technical'),
-          systemInstruction: SYSTEM_PROMPTS.marketingStrategist,
-          jsonMode: true
-        });
-      } else {
-        result = await this.ai.generate({
-          prompt: PROMPT_TEMPLATES.twitterSingle(game, options.context || ''),
-          systemInstruction: SYSTEM_PROMPTS.marketingStrategist,
-          jsonMode: true
-        });
-      }
-    } else if (channel === 'facebook') {
-      result = await this.ai.generate({
-        prompt: PROMPT_TEMPLATES.twitterSingle(game, options.context || ''),
-        systemInstruction: SYSTEM_PROMPTS.marketingStrategist,
-        jsonMode: true
-      });
-    }
+    // TODO(Phase 2, §6.3): Facebook needs its own longer-form facebookPost
+    // prompt. Until it exists, both Channels share the X prompt, which is why
+    // the Facebook lane is not live yet.
+    const prompt = channel === 'x' && options.isThread
+      ? PROMPT_TEMPLATES.twitterThread(game, options.angle || 'technical')
+      : PROMPT_TEMPLATES.twitterSingle(game, options.context || '');
 
-    // Save as local artifact
-    const artifactPath = this.saveArtifact(channel, gameId, result);
-    return {
-      gameId,
-      channel,
-      content: result,
-      artifactPath,
-      createdAt: new Date().toISOString()
-    };
-  }
+    const content = await this.ai.generate({
+      prompt,
+      systemInstruction: SYSTEM_PROMPTS.marketingStrategist,
+      jsonMode: true
+    });
 
-  /**
-   * Generates a social campaign for a game across Twitter and Facebook
-   * @param {string} gameId
-   */
-  async generateFullCampaign(gameId) {
-    const game = GAME_CATALOG[gameId] || GAME_CATALOG.hub;
-    console.log(`🚀 Generating social campaign for ${game.name}...`);
-
-    const [twitterSingle, twitterThread, facebook] = await Promise.all([
-      this.generate(gameId, 'twitter', { isThread: false }),
-      this.generate(gameId, 'twitter', { isThread: true, angle: 'technical' }),
-      this.generate(gameId, 'facebook')
-    ]);
-
-    const campaign = {
-      id: `campaign-${gameId}-${Date.now()}`,
-      gameId,
-      gameName: game.name,
-      createdAt: new Date().toISOString(),
-      deliverables: {
-        twitterSingle,
-        twitterThread,
-        facebook
-      }
-    };
-
-    const campaignPath = path.join(config.paths.artifacts, `campaign-${gameId}-${Date.now()}.json`);
-    fs.writeFileSync(campaignPath, JSON.stringify(campaign, null, 2));
-    console.log(`✅ Campaign generated and saved to ${campaignPath}`);
-    return campaign;
-  }
-
-  saveArtifact(channel, gameId, data) {
-    const channelDir = path.join(config.paths.artifacts, channel);
-    if (!fs.existsSync(channelDir)) {
-      fs.mkdirSync(channelDir, { recursive: true });
-    }
-
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `${gameId}-${timestamp}.json`;
-    const filePath = path.join(channelDir, filename);
-
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-    return filePath;
+    return { gameId, channel, content, createdAt: new Date().toISOString() };
   }
 }

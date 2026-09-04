@@ -1,24 +1,19 @@
 /**
- * Specialized prompts for all marketing channels
+ * The Creative's prompts (AGENTS_SPEC.md §6.3) and the two the paid lane
+ * still uses. One Channel's prompt is never used for the other.
  */
 
 export const SYSTEM_PROMPTS = {
-  marketingStrategist: `You are an elite Growth & Marketing Agent for Kreeda (https://kreeda.games), a collection of 12 zero-dependency, single-file browser games.
+  marketingStrategist: `You are an elite Growth & Marketing Agent for Kreeda (https://kreeda.games), a hub of instant, single-file browser games — 29 Games across 7 Categories.
 Your core philosophy:
 1. NEVER SOUND LIKE SPAM OR GENERIC AI MARKETING.
 2. Lead with authentic value, surprising technical feats, or pure fun gameplay moments.
-3. Respect community norms (e.g. Reddit rules, Hacker News guidelines, X brevity).
+3. Respect each Channel's norms: X brevity, Facebook's longer form.
 4. Highlight what makes Kreeda uniquely delightful:
    - Instant 0.1s load time on mobile & desktop
    - Zero downloads, zero accounts, zero pop-ups, zero paywalls
    - Single-file HTML engineering (vanilla JS, pure Canvas/WebGL, procedural WebAudio synth)
-   - 100% open-source under MIT`,
-
-  scoutLeadAnalyst: `You are an Opportunity Analyst for Kreeda. Your job is to analyze social posts and queries from users searching for games, technical showcases, or game dev inspiration.
-You must:
-1. Determine if Kreeda or a specific Kreeda game genuinely solves their request.
-2. Assign a relevance score (0-100).
-3. If relevant, draft a natural, ultra-helpful, genuine response that introduces the right game without being pushy.`
+   - 100% open-source under MIT`
 };
 
 export const PROMPT_TEMPLATES = {
@@ -49,67 +44,6 @@ Requirements:
 - Tweet 4: Why single-file zero-dependency web apps feel magical again.
 - Tweet 5: Call to action (link to play + GitHub repo link).
 - Output JSON: { "thread": [ { "tweetNumber": 1, "text": "...", "mediaNote": "..." } ] }`,
-
-  redditPost: (game, subreddit = 'r/webgames') => `Create a high-converting, community-appropriate Reddit post for ${subreddit} about "${game.name}".
-Game URL: ${game.url}
-Game Pitch: ${game.pitch}
-Mechanics: ${JSON.stringify(game.mechanics || game.highlights)}
-Subreddit Context: ${subreddit}
-
-Guidelines:
-- If r/webgames: Title must be descriptive, honest, and mention [HTML5]/[Web]. Body can be concise, inviting feedback.
-- If r/indiegames or r/gamedev: Focus on mechanics, developer decisions, and lessons learned.
-- If r/javascript: Focus on pure vanilla JS architecture, WebAudio synthesis, Canvas performance.
-- Output JSON: { "subreddit": "${subreddit}", "title": "...", "bodyMarkdown": "...", "flair": "..." }`,
-
-  hackerNewsPost: (game, type = 'Show HN') => `Create a "Show HN" submission and top-level maker comment for Hacker News.
-Focus: "${game.name} — ${game.tagline}"
-Portal: https://kreeda.games
-Repo: https://github.com/sudhir-patavardhan/browser-games
-Highlights: Single-file HTML, zero build tools, zero dependencies, procedural WebAudio, verified headless physics.
-
-Requirements:
-- HN Title: Clean, factual, no marketing buzzwords (e.g. "Show HN: Drift – A single-file endless EV racing game with procedural WebAudio").
-- Maker Comment: Explain motivation, technical decisions, physics/rendering challenges, and ask for community feedback on performance or mechanics.
-- Output JSON: { "title": "...", "url": "${game.url}", "makerComment": "..." }`,
-
-  productHuntKit: () => `Create a complete Product Hunt launch kit for Kreeda (https://kreeda.games).
-Highlights: 12 instant single-file browser games with 0 dependencies, 0 downloads, 0 paywalls.
-
-Requirements:
-- Name: Kreeda
-- Tagline: (Under 60 characters)
-- Short Description: (1-2 sentences)
-- Pricing: 100% Free
-- Maker First Comment: Passionate story about reviving the golden era of instant web games without bloat.
-- Key Product Features: 5 clear bullet points.
-- Output JSON: { "name": "Kreeda", "tagline": "...", "shortDescription": "...", "makerComment": "...", "featureBullets": ["..."] }`,
-
-  shortVideoScript: (game) => `Create a 20-30 second viral TikTok / Reels / YouTube Shorts video script for "${game.name}".
-Game: ${game.name} (${game.tagline})
-Pitch: ${game.pitch}
-Viral Hooks: ${game.viralHooks?.join(' | ')}
-
-Format:
-- 0-3s: Visual on-screen text hook + startling sound/visual cue.
-- 3-18s: Fast-paced gameplay sequence showing core tension (e.g., drifting near a barrier, pocketing queen, dyno jump, 90s brawling).
-- 18-25s: Climax / payoff.
-- 25-30s: Clear CTA: "Free in your browser right now on Kreeda.games - no download".
-- Output JSON: { "title": "...", "hookText": "...", "duration": "25s", "scenes": [ { "time": "0-3s", "visual": "...", "voiceover": "...", "onScreenText": "..." } ], "caption": "...", "hashtags": ["..."] }`,
-
-  devtoArticle: (game) => `Write an in-depth technical article for Dev.to / Hashnode about the architecture of "${game.name}".
-Game URL: ${game.url}
-Repo: https://github.com/sudhir-patavardhan/browser-games
-Tech Stack: Single-file HTML5, Canvas 2D / WebGL, Web Audio API, zero build tools.
-
-Structure:
-1. The 0-Dependency Challenge: Why we chose zero frameworks and single HTML files.
-2. Architecture breakdown of ${game.name}: The render loop and state management.
-3. Physics / Math breakdown: How the mechanics are calculated.
-4. Procedural WebAudio: Synthesizing real sound without loading audio files.
-5. Verification: How headless Chrome verifies physics.
-6. Play the game & view the source code.
-- Output JSON: { "title": "...", "tags": ["javascript", "webdev", "gamedev", "showdev"], "contentMarkdown": "..." }`,
 
   togetherVideoPost: (game) => `Write one X (Twitter) post to accompany a 25-second video of two people playing "${game.name}" (${game.url}) together.
 Tagline: ${game.tagline}
@@ -158,17 +92,4 @@ ${JSON.stringify(records, null, 2)}
 
 Write 3-5 short, concrete lessons for planning the next campaign (which games/angles/audiences earn cheap clicks, which don't, what to try next). Output JSON: { "lessons": ["..."], "recommendedNext": "<one sentence>" }`,
 
-  opportunityDraft: (post, catalog = []) => `Analyze this social post / user query and draft a personalized, helpful reply introducing the most appropriate Kreeda game:
-User Post: "${post.content}"
-Platform: "${post.platform}"
-Author: "${post.author}"
-
-You may ONLY recommend one of these actual Kreeda games (use the exact "id" value for recommendedGame — never invent a game that isn't in this list):
-${catalog.map(g => `- id: "${g.id}", name: "${g.name}" — ${g.tagline}`).join('\n')}
-
-Determine:
-1. Relevance score (0-100)
-2. Best matching game id from the list above (if nothing fits well, use "hub")
-3. Natural, friendly reply that directly addresses their question and mentions the game as an instant solution.
-- Output JSON: { "relevanceScore": 85, "recommendedGame": "...", "reasoning": "...", "draftReply": "..." }`
 };

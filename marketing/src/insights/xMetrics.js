@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { config } from '../config.js';
 import { buildOAuth1Header } from '../ads/oauth1.js';
+import { X, toChannel, isChannel } from '../knowledge/channels.js';
 
 /**
  * Pulls performance for the tweets the agent itself posted — impressions,
@@ -44,7 +45,7 @@ export class XMetrics {
 
     for (const item of read(config.paths.queueFile) || []) {
       const id = item.publishResult?.postId;
-      if (item.channel === 'twitter' && item.publishResult?.mode === 'live' && isLiveId(id)) {
+      if (isChannel(item.channel) && toChannel(item.channel) === X && item.publishResult?.mode === 'live' && isLiveId(id)) {
         out.set(id, { gameId: item.gameId, kind: item.content?.kind || 'post', postedAt: item.publishedAt });
       }
     }
