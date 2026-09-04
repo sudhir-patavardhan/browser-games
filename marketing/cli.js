@@ -24,6 +24,7 @@ import { runSmoke } from './src/producer/smoke.js';
 import { initState } from './src/producer/state.js';
 import { mintPageToken, facebookPreflight, MissingPermissionsError } from './src/publishers/facebookAccess.js';
 import { FbMetrics } from './src/insights/fbMetrics.js';
+import { xPreflight } from './src/publishers/xAccess.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -78,6 +79,18 @@ async function main() {
       const stateReport = await initState({ push: !flags['no-push'] });
       console.log(stateReport.render());
       if (stateReport.blocked) process.exit(1);
+      break;
+    }
+
+    // Whether the Producer can publish a Post on X, and read what it earned.
+    case 'x': {
+      if (args[1] !== 'preflight') {
+        console.error('Unknown x command. There is one: preflight.');
+        process.exit(1);
+      }
+      const report = await xPreflight();
+      console.log(report.render());
+      if (report.blocked) process.exit(1);
       break;
     }
 
@@ -493,6 +506,7 @@ Setup
   state init                 Open the marketing-state branch and check it out at
                              marketing/data/ (idempotent; ADR 0001)             [--no-push]
   status                     Which Channels the Producer can reach
+  x preflight                Whether the Producer can publish a Post on X and read metrics
   fb token                   Mint the long-lived Facebook Page token (§11)
                              --user-token <short-lived token from Graph API Explorer>
   fb preflight               Whether the Producer can publish a Post on the Page
