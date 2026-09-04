@@ -9,6 +9,14 @@ import { config } from '../config.js';
  * current "auth key" credentials (distinct from legacy static "AIzaSy..." keys) are bound
  * to a service account and are not accepted via a plain key= query param or header.
  */
+/** The Creative could not write. The Post stays a Draft (§6.3). */
+export class GeminiUnavailableError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'GeminiUnavailableError';
+  }
+}
+
 export class GeminiClient {
   constructor(apiKey = config.ai.geminiApiKey, model = config.ai.geminiModel) {
     this.apiKey = apiKey;
@@ -27,8 +35,9 @@ export class GeminiClient {
    * @param {number} [options.temperature] - Sampling temperature (0.2 to 1.0)
    * @param {boolean} [options.jsonMode] - Expect structured JSON response
    */
-  async generate({ prompt, systemInstruction = '', temperature = 0.7, jsonMode = false }) {
+  async generate({ prompt, systemInstruction = '', temperature = 0.7, jsonMode = false, strict = false }) {
     if (!this.isConfigured) {
+      if (strict) throw new GeminiUnavailableError('GEMINI_API_KEY is not set, so the Creative cannot write.');
       console.warn('⚠️ GEMINI_API_KEY not configured. Falling back to template generation engine.');
       return this.fallbackGenerator(prompt, jsonMode);
     }
@@ -58,6 +67,10 @@ export class GeminiClient {
 
       return text.trim();
     } catch (err) {
+      // §6.3: live mode never publishes fallback copy. A Post the Creative
+      // could not write stays a Draft and is listed in the Run log, because
+      // generic template copy going out under the brand is worse than silence.
+      if (strict) throw new GeminiUnavailableError(`The Creative could not write: ${err.message}`);
       console.error('Gemini API call failed:', err.message);
       console.warn('Using deterministic fallback template...');
       return this.fallbackGenerator(prompt, jsonMode);
