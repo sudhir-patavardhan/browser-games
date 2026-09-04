@@ -22,7 +22,7 @@ import { XMetrics } from './src/insights/xMetrics.js';
 import { X, CHANNELS, CHANNEL_NAMES, toChannel } from './src/knowledge/channels.js';
 import { runSmoke } from './src/producer/smoke.js';
 import { initState } from './src/producer/state.js';
-import { mintPageToken, facebookPreflight } from './src/publishers/facebookAccess.js';
+import { mintPageToken, facebookPreflight, MissingPermissionsError } from './src/publishers/facebookAccess.js';
 import { FbMetrics } from './src/insights/fbMetrics.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -134,13 +134,30 @@ you administer the Page.
         try {
           minted = await mintPageToken({ userToken, appId, appSecret });
         } catch (err) {
-          // A failed exchange is almost always one of four things, and the
-          // Graph message alone does not say which.
+          if (err instanceof MissingPermissionsError) {
+            // Nothing was spent: the check runs before the exchange. What is
+            // needed is a new token, granted properly.
+            console.error(`\nThis token cannot publish a Post.\n`);
+            console.error(`  granted: ${err.granted.join(', ') || 'nothing'}`);
+            console.error(`  missing: ${err.missing.join(', ')}\n`);
+            console.error('Graph API Explorer makes this easy to get wrong twice over:\n');
+            console.error('  1. Typing a permission into "Add a Permission" does not select it.');
+            console.error('     Pick it from the dropdown, and check the list above shows it with');
+            console.error('     an x beside it and the counter has gone up.');
+            console.error('  2. When the login dialog offers to "continue with your previous');
+            console.error('     settings", Continue re-grants only what you had before. Click');
+            console.error('     Edit settings instead, tick the Page, and approve the new');
+            console.error('     permission there.\n');
+            console.error('Then generate a fresh token and run this again.\n');
+            process.exit(1);
+          }
+          // Any other failed exchange is almost always one of four things, and
+          // the Graph message alone does not say which.
           console.error(`\nCould not mint the Page token: ${err.message}\n`);
           console.error('The usual causes:');
           console.error('  · the short-lived token expired — they last about an hour, so fetch a fresh one');
           console.error('  · the token came from a different app than FACEBOOK_APP_ID');
-          console.error('  · pages_show_list was not granted, so the exchange cannot see your Pages');
+          console.error('  · the token is a Page token; the exchange needs a User token');
           console.error(`  · you do not administer Page ${config.platforms.facebook.pageId || '(FACEBOOK_PAGE_ID is unset)'}\n`);
           process.exit(1);
         }

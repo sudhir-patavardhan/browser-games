@@ -22,7 +22,8 @@ const APP = { appId: '111', appSecret: 'secret' };
  * A Graph API that records every call. `expiresAt` is what debug_token says
  * about the Page token: 0 means no expiry.
  */
-function stubGraph({ pages, expiresAt = 0, fail = null } = {}) {
+function stubGraph({ pages, expiresAt = 0, fail = null, permissions = ['pages_manage_posts', 'pages_read_engagement', 'pages_show_list'] } = {}) {
+  const grants = permissions.map(p => (typeof p === 'string' ? { permission: p, status: 'granted' } : p));
   const calls = [];
   globalThis.fetch = async (url) => {
     const u = new URL(url);
@@ -36,6 +37,7 @@ function stubGraph({ pages, expiresAt = 0, fail = null } = {}) {
     const body = {
       '/oauth/access_token': { access_token: LONG_LIVED, token_type: 'bearer', expires_in: 5_184_000 },
       '/me/accounts': { data: pages },
+      '/me/permissions': { data: grants },
       '/debug_token': { data: { is_valid: true, type: 'PAGE', expires_at: expiresAt, scopes: ['pages_manage_posts', 'pages_read_engagement', 'pages_show_list'] } }
     }[path];
 
@@ -129,4 +131,28 @@ test('inspectToken reads a token back through the app', async () => {
   assert.equal(info.is_valid, true);
   assert.equal(info.type, 'PAGE');
   assert.equal(info.expires_at, 0);
+});
+
+test('a token missing a permission is refused before the exchange spends it', async () => {
+  const calls = stubGraph({ pages: ONE_PAGE, permissions: ['pages_show_list', 'pages_read_engagement'] });
+  await assert.rejects(
+    () => mintPageToken({ userToken: SHORT_LIVED, ...APP }),
+    err => {
+      assert.equal(err.name, 'MissingPermissionsError');
+      assert.deepEqual(err.missing, ['pages_manage_posts']);
+      assert.deepEqual(err.granted, ['pages_show_list', 'pages_read_engagement']);
+      return true;
+    }
+  );
+  assert.ok(!calls.some(c => c.path === '/oauth/access_token'),
+    'the exchange must not run: the token is still good for a retry after re-granting');
+});
+
+test('a permission the dialog declined is not counted as granted', async () => {
+  stubGraph({ pages: ONE_PAGE, permissions: [
+    { permission: 'pages_show_list', status: 'granted' },
+    { permission: 'pages_read_engagement', status: 'granted' },
+    { permission: 'pages_manage_posts', status: 'declined' }
+  ] });
+  await assert.rejects(() => mintPageToken({ userToken: SHORT_LIVED, ...APP }), /pages_manage_posts/);
 });

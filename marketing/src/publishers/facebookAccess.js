@@ -24,6 +24,19 @@ const GRAPH = `https://graph.facebook.com/${GRAPH_VERSION}`;
 /** What the Producer must be able to do on the Page. */
 const REQUIRED_SCOPES = ['pages_manage_posts', 'pages_read_engagement', 'pages_show_list'];
 
+/**
+ * A user token that was not granted everything the Producer needs. Named,
+ * because the fix is specific and is not "try again".
+ */
+export class MissingPermissionsError extends Error {
+  constructor(missing, granted) {
+    super(`The token was not granted ${missing.join(' or ')}. It has: ${granted.join(', ') || 'nothing'}.`);
+    this.name = 'MissingPermissionsError';
+    this.missing = missing;
+    this.granted = granted;
+  }
+}
+
 async function graph(path, params) {
   const url = new URL(`${GRAPH}${path}`);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
@@ -35,6 +48,23 @@ async function graph(path, params) {
     throw new Error(`Graph ${path} failed [${res.status}]: ${err.message || 'unknown error'}${err.code ? ` (code ${err.code})` : ''}`);
   }
   return body;
+}
+
+/**
+ * What a user token was actually granted.
+ *
+ * Needs no app secret, so it can be asked before anything else happens. Graph
+ * API Explorer makes it easy to believe a permission was granted when it was
+ * not: typing one into the "Add a Permission" box does not select it, and the
+ * login dialog's "continue with your previous settings" re-grants only what
+ * was granted before. Both leave a token that reads the Page but cannot
+ * publish to it.
+ *
+ * @returns {Promise<string[]>} the granted permissions.
+ */
+export async function grantedPermissions(userToken) {
+  const res = await graph('/me/permissions', { access_token: userToken });
+  return (res.data || []).filter(p => p.status === 'granted').map(p => p.permission);
 }
 
 /**
@@ -51,6 +81,14 @@ export async function mintPageToken({ userToken, appId, appSecret, pageId = conf
   if (!userToken) throw new Error('A short-lived user token is required — get one from Graph API Explorer.');
   if (!appId || !appSecret) {
     throw new Error('FACEBOOK_APP_ID and FACEBOOK_APP_SECRET are required: only the app can exchange a short-lived token for a long-lived one.');
+  }
+
+  // Check the grant before spending the token on an exchange that would
+  // produce a Page token the Producer cannot publish with.
+  const granted = await grantedPermissions(userToken);
+  const missing = REQUIRED_SCOPES.filter(scope => !granted.includes(scope));
+  if (missing.length) {
+    throw new MissingPermissionsError(missing, granted);
   }
 
   const longLived = await graph('/oauth/access_token', {
