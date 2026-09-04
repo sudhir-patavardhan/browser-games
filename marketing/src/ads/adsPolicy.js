@@ -10,13 +10,18 @@ import { config } from '../config.js';
  * account, launches are refused.
  */
 export const ADS_POLICY = Object.freeze({
-  maxDailyPerCampaignUsd: config.ads.maxDailyPerCampaignUsd,   // hard ceiling per campaign
-  maxTotalDailyUsd: config.ads.maxTotalDailyUsd,               // ceiling across all active campaigns
-  trialDays: config.ads.trialDays,                             // full days before a campaign is judged
-  // Kill thresholds, evaluated only after `trialDays` of delivery.
-  minTrialClicks: 3,          // fewer link clicks than this over the trial → pause
-  maxCostPerClickUsd: 1.0,    // paying more than this per link click → pause
-  minCtrPercent: 0.25         // impressions but a CTR below this → pause
+  maxDailyPerCampaignUsd: config.ads.maxDailyPerCampaignUsd,   // the per-Campaign Cap
+  maxTotalDailyUsd: config.ads.maxTotalDailyUsd,               // the Cap across every active Campaign
+  // A Trial is three days and a Campaign always ends when it ends (ADR 0004).
+  // Nothing is ever extended or scaled in place; a good result is a Winner in
+  // its Post-mortem, which earns a fresh Campaign.
+  trialDays: config.ads.trialDays,
+  // The kill rules bite a day before the Trial is out, so a Campaign that is
+  // clearly not working stops paying for its third day.
+  judgingPointDays: 2,
+  minTrialClicks: 3,          // fewer link clicks than this by the judging point
+  maxCostPerClickUsd: 1.0,    // paying more than this per link click
+  minCtrPercent: 0.25         // delivering impressions but converting below this
 });
 
 export function usdToLocal(usd) {
@@ -59,8 +64,16 @@ export function evaluateLaunchBudget(requestedDailyUsd, activeCampaigns = []) {
 }
 
 /**
- * Judge a campaign from its accumulated stats.
- * @returns {{ verdict: 'keep'|'pause'|'too_early', reason: string, metrics: Object }}
+ * Applies the kill rules to a running Campaign.
+ *
+ * This decides only whether a kill rule fired. The Verdict — Paused or Ended —
+ * is what the Producer writes to the ledger: Paused when this returns a kill,
+ * Ended when the Trial runs out. A Campaign that is doing well is not "kept";
+ * it finishes its Trial and its Post-mortem may label it a Winner.
+ *
+ * @returns {{ judged: boolean, kill: boolean, reason: string, metrics: Object }}
+ *          `judged` is false before the judging point, when no kill rule has
+ *          had long enough to mean anything.
  */
 export function judgeCampaign(campaign, stats) {
   const impressions = stats.impressions || 0;
@@ -70,20 +83,32 @@ export function judgeCampaign(campaign, stats) {
   const cpc = clicks > 0 ? spendUsd / clicks : null;
   const metrics = { impressions, clicks, spendUsd, ctrPercent: Number(ctr.toFixed(2)), cpcUsd: cpc == null ? null : Number(cpc.toFixed(3)) };
 
-  const launchedAt = new Date(campaign.launchedAt);
-  const ageDays = (Date.now() - launchedAt.getTime()) / 86_400_000;
-  if (ageDays < ADS_POLICY.trialDays) {
-    return { verdict: 'too_early', reason: `${ageDays.toFixed(1)} days in; judged after ${ADS_POLICY.trialDays}.`, metrics };
+  const ageDays = (Date.now() - new Date(campaign.launchedAt).getTime()) / 86_400_000;
+  if (ageDays < ADS_POLICY.judgingPointDays) {
+    return {
+      judged: false,
+      kill: false,
+      reason: `${ageDays.toFixed(1)} days in; the kill rules apply from day ${ADS_POLICY.judgingPointDays}.`,
+      metrics
+    };
   }
 
+  const killed = reason => ({ judged: true, kill: true, reason, metrics });
+
   if (clicks < ADS_POLICY.minTrialClicks) {
-    return { verdict: 'pause', reason: `Only ${clicks} link click(s) after ${ADS_POLICY.trialDays} days (need ≥ ${ADS_POLICY.minTrialClicks}).`, metrics };
+    return killed(`Only ${clicks} link click(s) by day ${ADS_POLICY.judgingPointDays} of the Trial (needs at least ${ADS_POLICY.minTrialClicks}).`);
   }
   if (cpc != null && cpc > ADS_POLICY.maxCostPerClickUsd) {
-    return { verdict: 'pause', reason: `Cost per click $${cpc.toFixed(2)} exceeds $${ADS_POLICY.maxCostPerClickUsd}.`, metrics };
+    return killed(`Cost per click $${cpc.toFixed(2)} is over $${ADS_POLICY.maxCostPerClickUsd}.`);
   }
   if (impressions > 0 && ctr < ADS_POLICY.minCtrPercent) {
-    return { verdict: 'pause', reason: `CTR ${ctr.toFixed(2)}% is below ${ADS_POLICY.minCtrPercent}%.`, metrics };
+    return killed(`CTR ${ctr.toFixed(2)}% is under ${ADS_POLICY.minCtrPercent}%.`);
   }
-  return { verdict: 'keep', reason: `Performing: ${clicks} clicks at $${(cpc ?? 0).toFixed(2)} CPC, CTR ${ctr.toFixed(2)}%.`, metrics };
+
+  return {
+    judged: true,
+    kill: false,
+    reason: `Running its Trial out: ${clicks} clicks at $${(cpc ?? 0).toFixed(2)} CPC, CTR ${ctr.toFixed(2)}%.`,
+    metrics
+  };
 }

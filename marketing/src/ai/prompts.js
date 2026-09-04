@@ -20,8 +20,8 @@ export const PROMPT_TEMPLATES = {
   twitterSingle: (game, context = '') => `Create a punchy, viral Twitter/X post for the browser game "${game.name}" on Kreeda.
 Game URL: ${game.url}
 Tagline: ${game.tagline}
-Key features: ${game.highlights?.join(', ') || game.mechanics?.join(', ')}
-Viral Hooks: ${game.viralHooks?.join(' | ')}
+Key features: ${game.mechanics?.join(', ')}
+Hooks: ${game.hooks?.join(' | ')}
 Additional context: ${context}
 
 Requirements:
@@ -34,8 +34,8 @@ Requirements:
 Angle: ${angle} (e.g. 'technical breakdown', 'gameplay mechanics showcase', or 'indie dev story').
 Game Details:
 - Pitch: ${game.pitch}
-- Mechanics: ${JSON.stringify(game.mechanics || game.highlights)}
-- Technical highlights: ${JSON.stringify(game.technicalHighlights || game.highlights)}
+- Mechanics: ${JSON.stringify(game.mechanics)}
+- Technical highlights: ${JSON.stringify(game.technicalHighlights || game.mechanics)}
 - Repo: https://github.com/sudhir-patavardhan/browser-games
 
 Requirements:
@@ -48,7 +48,7 @@ Requirements:
   togetherVideoPost: (game) => `Write one X (Twitter) post to accompany a 25-second video of two people playing "${game.name}" (${game.url}) together.
 Tagline: ${game.tagline}
 Pitch: ${game.pitch}
-Hooks: ${game.viralHooks?.join(' | ')}
+Hooks: ${game.hooks?.join(' | ')}
 
 Rules:
 - Lead with the relationship benefit — what the two people find out about each other, the feeling of the reveal. NEVER open with the mechanic ("one phone", "pass the phone", "two players"): that is how it works, not why anyone plays.
@@ -61,7 +61,7 @@ Output JSON: { "text": "...", "altText": "..." }`,
   adsCampaignBrief: ({ catalog = [], learnings = null, organic = null, activeCampaigns = [], dailyBudgetUsd = 10 }) => `Plan the next paid X (Twitter) "Website traffic" campaign for Kreeda. Budget: $${dailyBudgetUsd}/day for a 2-day trial, so the ad must earn link clicks fast.
 
 You may ONLY pick one of these games (use the exact "id" for gameId):
-${catalog.map(g => `- id: "${g.id}", name: "${g.name}"${g.category === 'together' ? ' [play-together]' : ''} — ${g.tagline} — ${g.url}`).join('\n')}
+${catalog.map(g => `- id: "${g.id}", name: "${g.name}"${g.category ? ` [${g.category}]` : ''} — ${g.tagline} — ${g.url}`).join('\n')}
 
 Campaigns currently running (avoid duplicating their game + angle):
 ${activeCampaigns.length ? activeCampaigns.map(c => `- ${c.gameId} / ${c.angle}`).join('\n') : '- none'}

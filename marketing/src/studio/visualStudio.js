@@ -84,7 +84,7 @@ export class VisualStudio {
   <!-- Genre Tag -->
   <g transform="translate(260, 70)">
     <rect width="200" height="38" rx="19" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
-    <text x="18" y="24" fill="#a6a6b8" font-family="-apple-system, system-ui, sans-serif" font-weight="600" font-size="14">${escapeXml(game.genre)}</text>
+    <text x="18" y="24" fill="#a6a6b8" font-family="-apple-system, system-ui, sans-serif" font-weight="600" font-size="14">${escapeXml(game.category || '')}</text>
   </g>
 
   <!-- Game Title -->
@@ -104,12 +104,12 @@ export class VisualStudio {
 
     <g transform="translate(30, 82)">
       <circle cx="10" cy="0" r="4" fill="${t.accent}"/>
-      <text x="24" y="5" fill="#a6a6b8" font-family="-apple-system, system-ui, sans-serif" font-weight="500" font-size="17">${escapeXml(game.highlights?.[0] || game.mechanics?.[0] || 'Single-file vanilla JavaScript & Canvas 2D engine')}</text>
+      <text x="24" y="5" fill="#a6a6b8" font-family="-apple-system, system-ui, sans-serif" font-weight="500" font-size="17">${escapeXml(game.mechanics?.[0] || 'Single-file vanilla JavaScript & Canvas 2D engine')}</text>
     </g>
 
     <g transform="translate(30, 122)">
       <circle cx="10" cy="0" r="4" fill="${t.accent}"/>
-      <text x="24" y="5" fill="#a6a6b8" font-family="-apple-system, system-ui, sans-serif" font-weight="500" font-size="17">${escapeXml(game.highlights?.[1] || game.technicalHighlights?.[0] || 'Synthesized WebAudio procedural sound effects')}</text>
+      <text x="24" y="5" fill="#a6a6b8" font-family="-apple-system, system-ui, sans-serif" font-weight="500" font-size="17">${escapeXml(game.mechanics?.[1] || game.technicalHighlights?.[0] || 'Synthesized WebAudio procedural sound effects')}</text>
     </g>
   </g>
 

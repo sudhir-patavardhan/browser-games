@@ -237,11 +237,11 @@ export class CampaignManager {
       const judgement = judgeCampaign(campaign, normalized);
 
       campaign.lastStats = { at: now.toISOString(), ...normalized, ...judgement.metrics };
-      campaign.history.push({ at: now.toISOString(), ...judgement.metrics, verdict: judgement.verdict });
+      campaign.history.push({ at: now.toISOString(), ...judgement.metrics, killed: judgement.kill });
 
-      console.log(`📊 ${campaign.name}: ${judgement.metrics.impressions} imp · ${judgement.metrics.clicks} clicks · $${judgement.metrics.spendUsd} · CTR ${judgement.metrics.ctrPercent}% → ${judgement.verdict} (${judgement.reason})`);
+      console.log(`📊 ${campaign.name}: ${judgement.metrics.impressions} imp · ${judgement.metrics.clicks} clicks · $${judgement.metrics.spendUsd} · CTR ${judgement.metrics.ctrPercent}% → ${judgement.kill ? 'Paused' : 'running'} (${judgement.reason})`);
 
-      if (judgement.verdict === 'pause') {
+      if (judgement.kill) {
         if (!dryRun) await this.ads.setCampaignStatus(campaign.campaignId, 'PAUSED');
         campaign.status = 'paused';
         campaign.pausedAt = now.toISOString();
@@ -328,7 +328,7 @@ export class CampaignManager {
       if (!probe.authorized) throw new AdsApiAccessError(probe.error);
     }
 
-    const catalog = Object.values(GAME_CATALOG).filter(g => g.id !== 'hub').map(g => ({ id: g.id, name: g.name, tagline: g.tagline, url: g.url, category: g.category || 'solo' }));
+    const catalog = Object.values(GAME_CATALOG).filter(g => g.id !== 'hub').map(g => ({ id: g.id, name: g.name, tagline: g.tagline, url: g.url, category: g.category }));
     const learnings = this.loadLearnings();
     const organic = new XMetrics().summarizeByGame();   // what our own posts earned, per game
 
@@ -402,7 +402,7 @@ export class CampaignManager {
 
     return {
       gameId: game.id,
-      angle: String(brief?.angle || game.genre || 'launch').slice(0, 60),
+      angle: String(brief?.angle || game.category || 'launch').slice(0, 60),
       tweetText: text,
       headline: brief?.headline ? String(brief.headline).slice(0, 50) : `Play ${game.name} free — no download`,
       ageBucket: AGE_BUCKETS.has(brief?.ageBucket) ? brief.ageBucket : 'AGE_18_PLUS',
