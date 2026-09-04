@@ -83,7 +83,8 @@ const HOSTS = [
   { host: 'generativelanguage.googleapis.com', used_for: 'the Creative' },
   { host: 'oauth2.googleapis.com', used_for: 'signing in as the GA4 service account' },
   { host: 'analyticsdata.googleapis.com', used_for: 'Players from GA4' },
-  { host: 'api.github.com', used_for: 'marketing-state, the Review, and the media release' },
+  { host: 'api.github.com', used_for: 'marketing-state and the Review' },
+  { host: 'uploads.github.com', used_for: 'uploading an Asset to the media release' },
   { host: 'cdn.playwright.dev', used_for: 'installing Chromium to render an Asset' }
 ];
 
