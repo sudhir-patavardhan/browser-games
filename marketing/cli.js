@@ -71,15 +71,12 @@ async function main() {
       console.log(`Base URL:        ${config.general.baseUrl}`);
       console.log(`Mode:            ${config.general.mode.toUpperCase()}`);
       console.log(`AI Engine:       ${config.ai.geminiModel} (${config.ai.geminiApiKey ? '✅ Key Present' : '⚠️ Fallback Engine'})`);
-      
+
       const pub = new UniversalPublisher();
       const st = pub.getStatus();
       console.log(`\n--- Configured Channels ---`);
       console.log(`Twitter/X API:   ${st.twitter ? '✅ Connected' : '❌ Missing Credentials'}`);
-      console.log(`Reddit API:      ${st.reddit ? '✅ Connected' : '❌ Missing Credentials'}`);
-      console.log(`Discord Webhook: ${st.discord ? '✅ Connected' : '❌ Missing Credentials'}`);
-      console.log(`Dev.to API:      ${st.devto ? '✅ Connected' : '❌ Missing Credentials'}`);
-      console.log(`Universal Hook:  ${st.webhook ? '✅ Connected' : '❌ Missing Credentials'}`);
+      console.log(`Facebook API:    ${st.facebook ? '✅ Connected' : '❌ Missing Credentials'}`);
       console.log(`======================================================\n`);
       break;
     }
