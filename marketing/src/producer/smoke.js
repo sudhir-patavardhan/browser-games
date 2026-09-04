@@ -19,7 +19,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 import { config } from '../config.js';
-import { CheckReport, ok, warn, fail } from './checks.js';
+import { CheckReport, ok, warn, fail, FAIL } from './checks.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -294,36 +294,20 @@ async function repoSlug(repo) {
  */
 async function checkStateBranch(add) {
   const repo = config.paths.root;
-
-  const auth = await run('gh', ['auth', 'status']);
-  if (auth.failed) {
-    add(fail('gh auth status', firstLine(auth.stderr || auth.stdout),
-      'the Producer cannot open the Review or upload Assets to the media release'));
-  } else {
-    // gh prints its status on stderr; the account line is the one that matters.
-    const text = `${auth.stdout}\n${auth.stderr}`;
-    add(ok('gh auth status', firstLine(text.split('\n').find(l => /Logged in|account/i.test(l)) || text)));
-  }
-
-  // `repos/{owner}/{repo}` makes gh infer the repo from the git remote, which
-  // it cannot do for every checkout a routine might run in. The slug is
-  // resolved here instead, from the remote if it names GitHub and from the
-  // configured repo URL otherwise.
   const slug = await repoSlug(repo);
+  const token = (process.env.GH_TOKEN || '').trim();
+
   if (!slug) {
-    add(fail('repo write access', 'no GitHub remote to check', 'the Producer needs a GitHub remote to push state and open the Review'));
+    add(fail('GitHub repo', 'no GitHub remote and no configured repo URL', 'the Producer cannot push state or open the Review'));
     return;
   }
-  const permissions = await run('gh', ['api', `repos/${slug}`, '--jq', '.permissions.push'], { cwd: repo });
-  const canPush = permissions.stdout.trim() === 'true';
-  if (permissions.failed) {
-    add(fail('repo write access', firstLine(permissions.stderr), 'the token cannot be checked; the Producer may fail mid-Cycle'));
-  } else if (!canPush) {
-    add(fail('repo write access', 'the token cannot push to this repo',
-      'give GH_TOKEN write access — it pushes marketing-state, opens the Review, and uploads Assets'));
-  } else {
-    add(ok('repo write access', 'the token can push, open the Review, and upload release Assets'));
-  }
+
+  // The GitHub API first, and `gh` only as a fallback. A cloud sandbox has
+  // GH_TOKEN but not necessarily the gh binary, and what actually matters is
+  // whether the Producer can write to the repo — not how it authenticates.
+  const access = token ? await apiAccess(slug, token) : await ghAccess(repo, slug);
+  add(access);
+  if (access.status === FAIL) return;
 
   const remote = await run('git', ['ls-remote', '--heads', 'origin', STATE_BRANCH], { cwd: repo });
   if (remote.failed) {
@@ -341,23 +325,58 @@ async function checkStateBranch(add) {
   // the write path a Cycle actually uses, and updates nothing.
   await run('git', ['fetch', '--quiet', 'origin', STATE_BRANCH], { cwd: repo });
   const push = await run('git', ['push', '--dry-run', 'origin', `FETCH_HEAD:refs/heads/${STATE_BRANCH}`], { cwd: repo });
-  if (push.failed) {
-    add(fail(`push ${STATE_BRANCH}`, firstLine(push.stderr), 'the Producer cannot commit state at the end of a Cycle'));
-  } else {
-    add(ok(`push ${STATE_BRANCH}`, 'accepted (dry run)'));
-  }
+  add(push.failed
+    ? fail(`push ${STATE_BRANCH}`, firstLine(push.stderr), 'the Producer cannot commit state at the end of a Cycle')
+    : ok(`push ${STATE_BRANCH}`, 'accepted (dry run)'));
 
+  await checkWorktree(add);
+}
+
+/** Asks GitHub directly what GH_TOKEN may do. Needs no binary. */
+async function apiAccess(slug, token) {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${slug}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'kreeda-marketing' }
+    });
+    if (res.status === 401) return fail('repo write access', 'GH_TOKEN was rejected', 'the token is invalid or revoked; issue a new one');
+    if (res.status === 404) return fail('repo write access', `GH_TOKEN cannot see ${slug}`, 'give the token access to this repository');
+    if (!res.ok) return fail('repo write access', `GitHub answered ${res.status}`, 'the token cannot be checked; the Producer may fail mid-Cycle');
+
+    const body = await res.json();
+    return body.permissions?.push
+      ? ok('repo write access', `GH_TOKEN can push, open the Review, and upload release Assets (${slug})`)
+      : fail('repo write access', 'GH_TOKEN cannot push to this repo',
+        'give it write access — it pushes marketing-state, opens the Review, and uploads Assets');
+  } catch (err) {
+    return fail('repo write access', err.message, 'the Producer cannot reach api.github.com');
+  }
+}
+
+/** The local fallback: no GH_TOKEN, so whatever gh is logged in as. */
+async function ghAccess(repo, slug) {
+  const status = await run('gh', ['auth', 'status']);
+  if (status.failed) {
+    const missing = /ENOENT/.test(status.stderr);
+    return fail('repo write access', missing ? 'no GH_TOKEN, and gh is not installed' : firstLine(status.stderr),
+      'set GH_TOKEN, or run `gh auth login` — the Producer needs one of them to push state and open the Review');
+  }
+  const permissions = await run('gh', ['api', `repos/${slug}`, '--jq', '.permissions.push'], { cwd: repo });
+  return permissions.stdout.trim() === 'true'
+    ? ok('repo write access', `gh can push, open the Review, and upload release Assets (${slug})`)
+    : fail('repo write access', 'the gh login cannot push to this repo', 'set GH_TOKEN to a token that can');
+}
+
+async function checkWorktree(add) {
   const worktree = path.join(config.paths.marketing, 'data');
-  const listed = await run('git', ['worktree', 'list', '--porcelain'], { cwd: repo });
-  const onStateBranch = listed.stdout.includes(`refs/heads/${STATE_BRANCH}`);
-  if (onStateBranch) {
+  const listed = await run('git', ['worktree', 'list', '--porcelain'], { cwd: config.paths.root });
+
+  if (listed.stdout.includes(`refs/heads/${STATE_BRANCH}`)) {
     add(ok('data worktree', `marketing/data is the ${STATE_BRANCH} worktree`));
   } else if (fs.existsSync(worktree)) {
     add(fail('data worktree', `marketing/data exists but is not the ${STATE_BRANCH} worktree`,
-      `run \`node cli.js state init\` — state on a code branch is the bug ADR 0001 closes`));
+      'run `node cli.js state init` — state on a code branch is the bug ADR 0001 closes'));
   } else {
-    add(fail('data worktree', 'marketing/data is not checked out',
-      `run \`git worktree add marketing/data ${STATE_BRANCH}\``));
+    add(fail('data worktree', 'marketing/data is not checked out', 'run `node cli.js state init`'));
   }
 }
 
