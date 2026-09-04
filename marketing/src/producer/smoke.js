@@ -70,15 +70,30 @@ const SECRETS = [
   { name: 'GA4_SA_KEY', without: 'the Analyst cannot count Players (Phase 3)', blocking: false }
 ];
 
-/** Every host a Cycle calls. Any HTTP answer proves DNS, TLS and egress. */
+/**
+ * Every host a Cycle calls. Missing one here is a Cycle that fails at the
+ * moment it matters instead of at the moment it is checked.
+ */
 const HOSTS = [
-  { host: 'api.x.com', used_for: 'publishing Posts and reading metrics on X' },
+  { host: 'api.x.com', used_for: 'reading X metrics' },
+  { host: 'api.twitter.com', used_for: 'publishing Posts on X' },
+  { host: 'upload.twitter.com', used_for: 'uploading a video Asset to X' },
   { host: 'ads-api.x.com', used_for: 'Campaigns' },
   { host: 'graph.facebook.com', used_for: 'the Facebook Channel' },
   { host: 'generativelanguage.googleapis.com', used_for: 'the Creative' },
+  { host: 'oauth2.googleapis.com', used_for: 'signing in as the GA4 service account' },
   { host: 'analyticsdata.googleapis.com', used_for: 'Players from GA4' },
-  { host: 'api.github.com', used_for: 'marketing-state, the Review, and the media release' }
+  { host: 'api.github.com', used_for: 'marketing-state, the Review, and the media release' },
+  { host: 'cdn.playwright.dev', used_for: 'installing Chromium to render an Asset' }
 ];
+
+/**
+ * A sandboxed session reaches the internet through a proxy that answers a
+ * blocked host itself, with an ordinary HTTP response. Counting that as
+ * "reachable" is how a Cycle gets a green check and then cannot publish, so
+ * the body is read and the proxy's own refusal is recognised.
+ */
+const BLOCKED_BY_PROXY = /request blocked|no rule or allowlist entry|blocked by (the )?proxy|egress denied/i;
 
 /** Runs a command without throwing. */
 async function run(cmd, args, opts = {}) {
@@ -161,13 +176,22 @@ function describeSecret(secret, value) {
 
 // --- Reachability ----------------------------------------------------------
 
-/** Resolves to the HTTP status, or rejects if the host cannot be reached at all. */
+/**
+ * Resolves to the status, the time it took, and the first of the body — enough
+ * to tell the host answering from a proxy answering for it.
+ */
 function probe(host, timeoutMs = 10_000) {
   return new Promise((resolve, reject) => {
     const startedAt = Date.now();
     const req = https.request({ host, path: '/', method: 'GET', timeout: timeoutMs }, res => {
-      res.resume();
-      resolve({ status: res.statusCode, ms: Date.now() - startedAt });
+      let body = '';
+      res.setEncoding('utf8');
+      res.on('data', chunk => {
+        // A refusal is short and comes first; a real body is not worth reading.
+        if (body.length < 512) body += chunk;
+      });
+      res.on('end', () => resolve({ status: res.statusCode, ms: Date.now() - startedAt, body }));
+      res.on('error', reject);
     });
     req.on('timeout', () => req.destroy(new Error(`no answer in ${timeoutMs} ms`)));
     req.on('error', reject);
@@ -187,8 +211,12 @@ async function checkReachability(add) {
   for (const r of results) {
     if (r.error) {
       add(fail(r.host, r.error, `a Cycle cannot reach this host, so ${r.used_for} is impossible from here`));
+    } else if (BLOCKED_BY_PROXY.test(r.body)) {
+      add(fail(r.host, `blocked before it left this machine (HTTP ${r.status})`,
+        `add ${r.host} to the environment's network allowlist — without it, ${r.used_for} is impossible`));
     } else {
-      // Any answer proves DNS, TLS and egress; these paths need auth, so 4xx is expected.
+      // Any answer from the host proves DNS, TLS and egress; these paths need
+      // auth, so 4xx is the expected shape of a healthy answer.
       add(ok(r.host, `HTTP ${r.status} in ${r.ms} ms`));
     }
   }
