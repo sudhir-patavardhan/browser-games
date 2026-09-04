@@ -521,9 +521,10 @@
       "success": true,
       "channel": "facebook",
       "mode": "live",
-      "postId": "122097774201470766",
-      "url": "https://facebook.com/122097774201470766",
-      "publishedAt": "2026-09-04T15:13:19.466Z"
+      "postId": "1282959528235085_122097774225470766",
+      "url": "https://facebook.com/1282959528235085_122097774225470766",
+      "publishedAt": "2026-09-04T15:13:19.466Z",
+      "photoId": "122097774201470766"
     },
     "reviewedAt": "2026-09-04T14:13:40Z",
     "rejectReason": null,

@@ -1,9 +1,21 @@
 {
-  "updatedAt": "2026-09-04T15:13:24.920Z",
+  "updatedAt": "2026-09-04T15:15:42.949Z",
   "posts": {
     "122097774201470766": {
       "gameId": "ennead",
       "error": "Page insights for 122097774201470766 failed: (#100) The value must be a valid insights metric"
+    },
+    "1282959528235085_122097774225470766": {
+      "gameId": "ennead",
+      "publishedAt": "2026-09-04T15:13:19.466Z",
+      "latest": {
+        "clicks": 0,
+        "linkClicks": 0,
+        "reactions": 0,
+        "videoViews": 0,
+        "impressions": null
+      },
+      "updatedAt": "2026-09-04T15:15:42.949Z"
     }
   }
 }
