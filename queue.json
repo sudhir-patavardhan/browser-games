@@ -492,7 +492,7 @@
   },
   {
     "id": "plan-tuesday-1788491792289-1",
-    "status": "in_review",
+    "status": "approved",
     "channel": "facebook",
     "gameId": "ennead",
     "category": "",
@@ -518,15 +518,15 @@
     ],
     "intentId": null,
     "publishResult": null,
-    "reviewedAt": null,
+    "reviewedAt": "2026-09-04T14:13:40Z",
     "rejectReason": null,
     "attempts": 0,
     "createdAt": "2026-09-04T03:16:32.289Z",
-    "updatedAt": "2026-09-04T14:04:38.420Z"
+    "updatedAt": "2026-09-04T15:10:49.650Z"
   },
   {
     "id": "plan-wednesday-1788491798840-2",
-    "status": "in_review",
+    "status": "approved",
     "channel": "x",
     "gameId": "carrom",
     "category": "",
@@ -552,11 +552,11 @@
     ],
     "intentId": null,
     "publishResult": null,
-    "reviewedAt": null,
+    "reviewedAt": "2026-09-04T14:13:40Z",
     "rejectReason": null,
     "attempts": 0,
     "createdAt": "2026-09-04T03:16:38.840Z",
-    "updatedAt": "2026-09-04T14:04:16.507Z"
+    "updatedAt": "2026-09-04T15:10:49.650Z"
   },
   {
     "id": "plan-thursday-1788491805105-3",
