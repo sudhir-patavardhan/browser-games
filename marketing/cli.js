@@ -25,6 +25,9 @@ import { initState } from './src/producer/state.js';
 import { mintPageToken, facebookPreflight, MissingPermissionsError } from './src/publishers/facebookAccess.js';
 import { FbMetrics } from './src/insights/fbMetrics.js';
 import { xPreflight } from './src/publishers/xAccess.js';
+import { PublishCycle } from './src/producer/cycle.js';
+import { Queue } from './src/producer/queue.js';
+import { Creative } from './src/agents/creative/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -80,6 +83,42 @@ async function main() {
       console.log(stateReport.render());
       if (stateReport.blocked) process.exit(1);
       break;
+    }
+
+    // The Cycles (AGENTS_SPEC.md §5.1). The Producer alone; --live to act.
+    case 'cycle': {
+      const which = args[1];
+
+      if (which === 'publish') {
+        const cycle = new PublishCycle();
+        const { log, review } = await cycle.run({ dryRun: !flags.live });
+        console.log(`\n${log.render()}`);
+        if (review) console.log(`Review: ${review.html_url}\n`);
+        if (log.counts().failed) process.exit(1);
+        break;
+      }
+
+      if (which === 'creative') {
+        // Used by the Planning Cycle so Monday and Tuesday's Posts are In
+        // review by Sunday evening (§3).
+        const hours = Number(String(flags.horizon || '48').replace(/h$/i, '')) || 48;
+        const queue = new Queue();
+        const creative = new Creative();
+        const drafts = queue.needingCreative({ horizonHours: hours });
+        console.log(`\nThe Creative: ${drafts.length} Draft(s) within ${hours}h`);
+        for (const draft of drafts) {
+          const { post, filled, notes, error } = await creative.fill(draft, { dryRun: !flags.live });
+          for (const note of notes) console.log(`     ${note}`);
+          if (error) { console.log(`  failed  ${draft.id} (${draft.gameId}) stays a Draft: ${error}`); continue; }
+          if (filled) { queue.replace(post); console.log(`  ok      ${post.id} (${post.gameId}) is In review`); }
+          else console.log(`  dry run ${draft.id} (${draft.gameId}) written but not filled`);
+        }
+        console.log();
+        break;
+      }
+
+      console.error('Unknown Cycle. There are two here: publish, creative.');
+      process.exit(1);
     }
 
     // Whether the Producer can publish a Post on X, and read what it earned.
@@ -507,6 +546,11 @@ Setup
                              marketing/data/ (idempotent; ADR 0001)             [--no-push]
   status                     Which Channels the Producer can reach
   x preflight                Whether the Producer can publish a Post on X and read metrics
+
+The Cycles
+  cycle publish              One Publish Cycle: read merged Reviews, expire, fill Drafts,
+                             publish what is due, pull metrics, update the Review  [--live]
+  cycle creative             Fill every Draft inside the horizon      [--horizon 48h] [--live]
   fb token                   Mint the long-lived Facebook Page token (§11)
                              --user-token <short-lived token from Graph API Explorer>
   fb preflight               Whether the Producer can publish a Post on the Page
