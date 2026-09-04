@@ -105,9 +105,10 @@ export const config = {
   }
 };
 
-// Ensure directories exist
-for (const p of [config.paths.data, config.paths.artifacts]) {
-  if (!fs.existsSync(p)) {
-    fs.mkdirSync(p, { recursive: true });
-  }
+// marketing/data is never created here: it is the marketing-state worktree
+// (ADR 0001), and silently recreating it as a plain directory is how state
+// ends up on a code branch. `node cli.js state init` checks it out; the
+// Producer fails loudly when it is missing.
+if (!fs.existsSync(config.paths.artifacts)) {
+  fs.mkdirSync(config.paths.artifacts, { recursive: true });
 }

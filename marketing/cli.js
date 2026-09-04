@@ -21,6 +21,8 @@ import { ConversionApiClient } from './src/ads/conversionApi.js';
 import { TogetherDirector } from './src/studio/togetherDirector.js';
 import { TogetherPromoter } from './src/generator/togetherPromoter.js';
 import { XMetrics } from './src/insights/xMetrics.js';
+import { runSmoke } from './src/producer/smoke.js';
+import { initState } from './src/producer/state.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,6 +56,27 @@ async function main() {
     case '--help':
     case '-h': {
       printHelp();
+      break;
+    }
+
+    // The smoke routine (AGENTS_SPEC.md §3). Nothing else is built until it is green.
+    case 'smoke': {
+      const report = await runSmoke();
+      console.log(report.render());
+      if (report.blocked) process.exit(1);
+      break;
+    }
+
+    // ADR 0001 — every state file lives on the marketing-state branch.
+    case 'state': {
+      const sub = args[1] || 'init';
+      if (sub !== 'init') {
+        console.error(`Unknown state command: ${sub} (only "init" exists — it is idempotent, so it doubles as a status check)`);
+        process.exit(1);
+      }
+      const stateReport = await initState({ push: !flags['no-push'] });
+      console.log(stateReport.render());
+      if (stateReport.blocked) process.exit(1);
       break;
     }
 
@@ -439,6 +462,10 @@ function printHelp() {
 Usage: node cli.js <command> [options]
 
 Commands:
+  smoke                      Prove this machine can run a Cycle: secrets, reachability,
+                             a rendered Asset, and a push to marketing-state (AGENTS_SPEC §3)
+  state init                 Open the marketing-state branch and check it out at marketing/data/
+                             (idempotent; ADR 0001)                              [--no-push]
   status                     Check status of API credentials & channel connectivity
   plan                       Generate a complete 7-day marketing campaign plan
   generate                   Generate content for a specific game and channel
