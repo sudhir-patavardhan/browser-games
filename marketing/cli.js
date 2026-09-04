@@ -22,6 +22,8 @@ import { XMetrics } from './src/insights/xMetrics.js';
 import { X, CHANNELS, CHANNEL_NAMES, toChannel } from './src/knowledge/channels.js';
 import { runSmoke } from './src/producer/smoke.js';
 import { initState } from './src/producer/state.js';
+import { mintPageToken, facebookPreflight } from './src/publishers/facebookAccess.js';
+import { FbMetrics } from './src/insights/fbMetrics.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -77,6 +79,67 @@ async function main() {
       console.log(stateReport.render());
       if (stateReport.blocked) process.exit(1);
       break;
+    }
+
+    // The Facebook lane (AGENTS_SPEC.md §11).
+    case 'fb': {
+      const sub = args[1];
+
+      if (sub === 'preflight') {
+        const report = await facebookPreflight();
+        console.log(report.render());
+        if (report.blocked) process.exit(1);
+        break;
+      }
+
+      if (sub === 'token') {
+        const userToken = flags['user-token'] || flags.token;
+        if (!userToken) {
+          console.error(`
+Mints the long-lived Page token the Producer publishes with. It does not
+expire while you administer the Page.
+
+  node cli.js fb token --user-token <short-lived user token>
+
+Get the short-lived token from developers.facebook.com/tools/explorer:
+pick the app, then "Generate access token" with pages_manage_posts,
+pages_read_engagement and pages_show_list. It lasts about an hour, which is
+long enough to run this. FACEBOOK_APP_ID and FACEBOOK_APP_SECRET must be set
+— only the app itself can exchange a short-lived token for a long-lived one.
+`);
+          process.exit(1);
+        }
+
+        const minted = await mintPageToken({
+          userToken,
+          appId: config.platforms.facebook.appId,
+          appSecret: config.platforms.facebook.appSecret
+        });
+
+        console.log(`\nPage: ${minted.pageName} (${minted.pageId})`);
+        console.log(`Expiry: ${minted.neverExpires
+          ? 'none, while you administer the Page'
+          : 'THIS TOKEN STILL EXPIRES — check that the app id and secret are the ones that issued the user token'}`);
+        console.log(`Permissions: ${minted.scopes.join(', ') || 'none reported'}`);
+        console.log(`\nAdd this to the cloud environment (and marketing/.env to publish locally):\n`);
+        console.log(`FACEBOOK_PAGE_TOKEN=${minted.pageToken}`);
+        console.log(`FACEBOOK_PAGE_ID=${minted.pageId}\n`);
+        break;
+      }
+
+      if (sub === 'metrics') {
+        const queue = new QueueManager();
+        const result = await new FbMetrics().refresh(queue.getAll());
+        console.log(`\nFacebook: refreshed ${result.fetched} Post(s)${result.failed ? `, ${result.failed} unreadable` : ''}`);
+        for (const [gameId, m] of Object.entries(new FbMetrics().summarizeByGame(result.store))) {
+          console.log(`   ${gameId.padEnd(14)} ${String(m.posts).padStart(2)} Post(s) · ${m.impressions} impressions · ${m.reach} reach · ${m.clicks} clicks · ${m.clickRatePercent}%`);
+        }
+        console.log();
+        break;
+      }
+
+      console.error('Unknown fb command. There are three: token, preflight, metrics.');
+      process.exit(1);
     }
 
     case 'status': {
@@ -379,6 +442,10 @@ Setup
   state init                 Open the marketing-state branch and check it out at
                              marketing/data/ (idempotent; ADR 0001)             [--no-push]
   status                     Which Channels the Producer can reach
+  fb token                   Mint the long-lived Facebook Page token (§11)
+                             --user-token <short-lived token from Graph API Explorer>
+  fb preflight               Whether the Producer can publish a Post on the Page
+  fb metrics                 Pull Page insights for every live Facebook Post
 
 Content
   generate                   Draft a Post for one Game and Channel

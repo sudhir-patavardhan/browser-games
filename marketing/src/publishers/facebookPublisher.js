@@ -1,4 +1,6 @@
 import { config } from '../config.js';
+import { FACEBOOK } from '../knowledge/channels.js';
+import { GRAPH_VERSION } from './facebookAccess.js';
 
 export class FacebookPublisher {
   constructor(cfg = config.platforms.facebook) {
@@ -22,7 +24,7 @@ export class FacebookPublisher {
       console.log(`[DRY-RUN / DRAFT] Facebook Post: "${text.slice(0, 100)}..."${videoPath ? ` (+ video: ${videoPath})` : ''}`);
       return {
         success: true,
-        channel: 'facebook',
+        channel: FACEBOOK,
         mode: 'draft',
         postId: `sim-fb-${Date.now()}`,
         url: `https://facebook.com/${this.cfg.pageId}`,
@@ -31,31 +33,27 @@ export class FacebookPublisher {
     }
 
     try {
-      const endpoint = `https://graph.facebook.com/v18.0/${this.cfg.pageId}/feed`;
-      const params = new URLSearchParams({
-        message: text,
-        access_token: this.cfg.pageToken
-      });
+      // Text goes to the Page's feed; a video Asset goes to /videos, which is
+      // the only endpoint that accepts one (§11).
+      const endpoint = videoPath
+        ? `https://graph.facebook.com/${GRAPH_VERSION}/${this.cfg.pageId}/videos`
+        : `https://graph.facebook.com/${GRAPH_VERSION}/${this.cfg.pageId}/feed`;
 
       let body;
-      let headers = {};
+      const headers = {};
 
       if (videoPath) {
         const form = new FormData();
-        form.append('message', text);
-        form.append('video_file', new File([await this.readFile(videoPath)], 'video.mp4', { type: 'video/mp4' }));
+        form.append('description', text);
+        form.append('source', new File([await this.readFile(videoPath)], 'video.mp4', { type: 'video/mp4' }));
         form.append('access_token', this.cfg.pageToken);
         body = form;
       } else {
-        body = params;
+        body = new URLSearchParams({ message: text, access_token: this.cfg.pageToken });
         headers['Content-Type'] = 'application/x-www-form-urlencoded';
       }
 
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers,
-        body
-      });
+      const res = await fetch(endpoint, { method: 'POST', headers, body });
 
       if (!res.ok) {
         const errText = await res.text();
@@ -65,7 +63,7 @@ export class FacebookPublisher {
       const data = await res.json();
       return {
         success: true,
-        channel: 'facebook',
+        channel: FACEBOOK,
         mode: 'live',
         postId: data.id,
         url: `https://facebook.com/${data.id}`,
@@ -75,7 +73,7 @@ export class FacebookPublisher {
       console.error('Facebook publish failed:', err.message);
       return {
         success: false,
-        channel: 'facebook',
+        channel: FACEBOOK,
         error: err.message,
         publishedAt: new Date().toISOString()
       };

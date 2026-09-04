@@ -67,7 +67,12 @@ export const config = {
     facebook: {
       enabled: Boolean(process.env.FACEBOOK_PAGE_TOKEN && process.env.FACEBOOK_PAGE_ID),
       pageToken: process.env.FACEBOOK_PAGE_TOKEN || '',
-      pageId: process.env.FACEBOOK_PAGE_ID || ''
+      pageId: process.env.FACEBOOK_PAGE_ID || '',
+      // Only `fb token` and the preflight need these: minting a long-lived
+      // Page token and inspecting one both have to prove they are the app.
+      // Publishing a Post does not.
+      appId: process.env.FACEBOOK_APP_ID || '',
+      appSecret: process.env.FACEBOOK_APP_SECRET || ''
     }
   },
   // Play-together video posts: film one storyboarded game and post it, on a

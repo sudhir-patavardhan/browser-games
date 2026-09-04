@@ -27,12 +27,18 @@ const AGE_BUCKETS = new Set(['AGE_18_PLUS', 'AGE_21_TO_34', 'AGE_25_TO_34', 'AGE
  * unless { dryRun: false } is passed explicitly.
  */
 export class CampaignManager {
-  constructor({ ads = new XAdsClient(), twitter = new TwitterPublisher(), ai = new GeminiClient() } = {}) {
+  constructor({
+    ads = new XAdsClient(),
+    twitter = new TwitterPublisher(),
+    ai = new GeminiClient(),
+    ledgerFile = config.ads.ledgerFile,
+    learningsFile = config.ads.learningsFile
+  } = {}) {
     this.ads = ads;
     this.twitter = twitter;
     this.ai = ai;
-    this.ledgerFile = config.ads.ledgerFile;
-    this.learningsFile = config.ads.learningsFile;
+    this.ledgerFile = ledgerFile;
+    this.learningsFile = learningsFile;
   }
 
   // ---------- persistence ----------
@@ -106,10 +112,12 @@ export class CampaignManager {
     }
 
     const dailyUsd = budget.dailyUsd;
-    // A campaign can never outspend its trial window even if the daily review is late.
-    const totalUsd = dailyUsd * (ADS_POLICY.trialDays + 1);
+    // ADR 0004: the Trial is the Campaign's whole life. endsAt and the total
+    // budget are both exactly the Trial, so the Campaign ends on its own even
+    // if no Cycle runs to end it.
+    const totalUsd = dailyUsd * ADS_POLICY.trialDays;
     const now = new Date();
-    const endTime = new Date(now.getTime() + (ADS_POLICY.trialDays + 1) * 86_400_000);
+    const endTime = new Date(now.getTime() + ADS_POLICY.trialDays * 86_400_000);
     const name = `[agent] ${game.name} — ${brief.angle || 'campaign'} — ${now.toISOString().slice(0, 10)}`;
     const targeting = {
       countries: brief.countries?.length ? brief.countries : DEFAULT_COUNTRIES,
@@ -132,7 +140,8 @@ export class CampaignManager {
       videoPath: brief.videoPath || null,
       launchedAt: now.toISOString(),
       endsAt: endTime.toISOString(),
-      status: dryRun ? 'simulated' : 'active',
+      // A live record is only ever 'active' once something can spend (§8.2).
+      status: dryRun ? 'simulated' : 'launching',
       lastStats: null,
       history: []
     };
@@ -154,62 +163,96 @@ export class CampaignManager {
       return { launched: true, dryRun: true, campaign: record };
     }
 
-    // 0. Never post the ad tweet if the Ads API can't take the campaign — an
-    //    orphaned tweet on the timeline is the worst outcome of a failed launch.
+    // The money-safe order (§8.2). Every step before the last one is
+    // un-billable: the Campaign and its line item exist PAUSED, and the ledger
+    // record is written the moment the Campaign has an id. A crash anywhere
+    // after that leaves a visible, paused, un-billed record the next Cycle can
+    // clean up — never a Campaign spending money that nothing knows about.
+
+    // 1. Access first: an ad tweet posted for a Campaign the API will not
+    //    accept is an orphan on the timeline.
     const probe = await this.ads.probeAccess();
     if (!probe.authorized) throw new AdsApiAccessError(probe.error);
-
-    // 1. The creative: post the ad tweet (or reuse one).
-    let tweetId = brief.tweetId;
-    if (!tweetId) {
-      const post = await this.twitter.publish({ text: brief.tweetText, videoPath: brief.videoPath }, false);
-      if (!post.success) throw new Error(`Could not post the ad tweet: ${post.error}`);
-      tweetId = post.postId;
-    }
-    record.tweetId = tweetId;
-
-    // 2. Campaign → line item → targeting → promoted tweet.
     const funding = await this.ads.resolveFundingInstrument();
+
+    // 2. The Campaign, paused.
     const campaign = await this.ads.createCampaign({
       name,
       fundingInstrumentId: funding.id,
       dailyBudgetMicro: usdToLocalMicro(dailyUsd),
-      totalBudgetMicro: usdToLocalMicro(totalUsd)
+      totalBudgetMicro: usdToLocalMicro(totalUsd),
+      status: 'PAUSED'
     });
     record.campaignId = campaign.id;
 
-    const lineItem = await this.ads.createLineItem({
-      campaignId: campaign.id,
-      fundingInstrumentId: funding.id,
-      name: `${game.name} — ${targeting.ageBucket}`,
-      dailyBudgetMicro: usdToLocalMicro(dailyUsd),
-      totalBudgetMicro: usdToLocalMicro(totalUsd),
-      startTime: now.toISOString().replace(/\.\d{3}Z$/, 'Z'),
-      endTime: endTime.toISOString().replace(/\.\d{3}Z$/, 'Z')
-    });
-    record.lineItemId = lineItem.id;
-
-    for (const cc of targeting.countries) {
-      await this.ads.addTargeting(lineItem.id, 'LOCATION', await this.ads.lookupCountry(cc));
-    }
-    await this.ads.addTargeting(lineItem.id, 'AGE', targeting.ageBucket);
-    for (const interest of targeting.interests) {
-      try {
-        const hit = await this.ads.lookupInterest(interest);
-        await this.ads.addTargeting(lineItem.id, 'INTEREST', hit.id);
-      } catch (err) {
-        console.warn(`  ⚠️ skipping interest "${interest}": ${err.message}`);
-      }
-    }
-    for (const kw of targeting.keywords) {
-      await this.ads.addTargeting(lineItem.id, 'BROAD_KEYWORD', kw);
-    }
-
-    await this.ads.promoteTweet(lineItem.id, tweetId);
-
+    // 3. The ledger, immediately. From here on the record exists whatever
+    //    happens, so `status: 'launching'` is what a crashed launch looks
+    //    like, and it is paused and costing nothing.
+    record.status = 'launching';
     ledger.push(record);
     this.saveLedger(ledger);
-    console.log(`✅ Live: campaign ${campaign.id}, line item ${lineItem.id}, promoting tweet ${tweetId}`);
+
+    try {
+      // 4. The line item, paused.
+      const lineItem = await this.ads.createLineItem({
+        campaignId: campaign.id,
+        fundingInstrumentId: funding.id,
+        name: `${game.name} — ${targeting.ageBucket}`,
+        dailyBudgetMicro: usdToLocalMicro(dailyUsd),
+        totalBudgetMicro: usdToLocalMicro(totalUsd),
+        startTime: now.toISOString().replace(/\.\d{3}Z$/, 'Z'),
+        endTime: endTime.toISOString().replace(/\.\d{3}Z$/, 'Z'),
+        status: 'PAUSED'
+      });
+      record.lineItemId = lineItem.id;
+      this.saveLedger(ledger);
+
+      // 5. Targeting, while nothing can deliver.
+      for (const cc of targeting.countries) {
+        await this.ads.addTargeting(lineItem.id, 'LOCATION', await this.ads.lookupCountry(cc));
+      }
+      await this.ads.addTargeting(lineItem.id, 'AGE', targeting.ageBucket);
+      for (const interest of targeting.interests) {
+        try {
+          const hit = await this.ads.lookupInterest(interest);
+          await this.ads.addTargeting(lineItem.id, 'INTEREST', hit.id);
+        } catch (err) {
+          console.warn(`  skipping interest "${interest}": ${err.message}`);
+        }
+      }
+      for (const kw of targeting.keywords) {
+        await this.ads.addTargeting(lineItem.id, 'BROAD_KEYWORD', kw);
+      }
+
+      // 6. The ad tweet, with its Asset. Last of the creating steps, so a
+      //    failure above never leaves one on the timeline.
+      let tweetId = brief.tweetId;
+      if (!tweetId) {
+        const post = await this.twitter.publish({ text: brief.tweetText, videoPath: brief.videoPath }, false);
+        if (!post.success) throw new Error(`Could not post the ad tweet: ${post.error}`);
+        tweetId = post.postId;
+      }
+      record.tweetId = tweetId;
+      this.saveLedger(ledger);
+
+      await this.ads.promoteTweet(lineItem.id, tweetId);
+
+      // 7. Only now does anything begin to spend.
+      await this.ads.setLineItemStatus(lineItem.id, 'ACTIVE');
+      await this.ads.setCampaignStatus(campaign.id, 'ACTIVE');
+      record.status = 'active';
+      this.saveLedger(ledger);
+
+      console.log(`Live: Campaign ${campaign.id}, line item ${lineItem.id}, promoting tweet ${tweetId}`);
+    } catch (err) {
+      // The record stays in the ledger, paused, so the failure is visible and
+      // the next Cycle can clean it up.
+      record.status = 'launch_failed';
+      record.launchError = err.message;
+      this.saveLedger(ledger);
+      throw err;
+    }
+
     return { launched: true, dryRun: false, campaign: record };
   }
 
