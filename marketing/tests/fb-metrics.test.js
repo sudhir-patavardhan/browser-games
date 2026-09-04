@@ -22,38 +22,47 @@ test('a missing metrics file reads as empty rather than throwing', () => {
   assert.deepEqual(m.load(), { updatedAt: null, posts: {} });
 });
 
-test('Games are ranked by click rate, best first', () => {
+test('Games are ranked by link clicks, best first', () => {
   const summary = metrics().summarizeByGame({
     posts: {
-      '1': { gameId: 'circle', latest: { impressions: 1000, reach: 800, clicks: 50, reactions: 10 } },
-      '2': { gameId: 'drift', latest: { impressions: 2000, reach: 1500, clicks: 20, reactions: 4 } }
+      '1': { gameId: 'circle', latest: { clicks: 60, linkClicks: 50, reactions: 10, videoViews: 0 } },
+      '2': { gameId: 'drift', latest: { clicks: 30, linkClicks: 20, reactions: 4, videoViews: 0 } }
     }
   });
   assert.deepEqual(Object.keys(summary), ['circle', 'drift']);
-  assert.equal(summary.circle.clickRatePercent, 5);
-  assert.equal(summary.drift.clickRatePercent, 1);
+  assert.equal(summary.circle.linkClicks, 50);
 });
 
 test('several Posts about one Game add up', () => {
   const summary = metrics().summarizeByGame({
     posts: {
-      '1': { gameId: 'sync', latest: { impressions: 1000, reach: 900, clicks: 30, reactions: 5 } },
-      '2': { gameId: 'sync', latest: { impressions: 1000, reach: 700, clicks: 10, reactions: 1 } }
+      '1': { gameId: 'sync', latest: { clicks: 40, linkClicks: 30, reactions: 5, videoViews: 100 } },
+      '2': { gameId: 'sync', latest: { clicks: 12, linkClicks: 10, reactions: 1, videoViews: 20 } }
     }
   });
   assert.equal(summary.sync.posts, 2);
-  assert.equal(summary.sync.impressions, 2000);
-  assert.equal(summary.sync.clickRatePercent, 2);
+  assert.equal(summary.sync.linkClicks, 40);
+  assert.equal(summary.sync.videoViews, 120);
 });
 
 test('a Post that could not be read does not distort the totals', () => {
   const summary = metrics().summarizeByGame({
     posts: {
-      '1': { gameId: 'sync', latest: { impressions: 1000, reach: 900, clicks: 30, reactions: 5 } },
+      '1': { gameId: 'sync', latest: { clicks: 40, linkClicks: 30, reactions: 5 } },
       '2': { gameId: 'sync', error: 'insights unavailable' }
     }
   });
   assert.equal(summary.sync.posts, 1);
+});
+
+test('there is no post-level impressions number to report, and none is invented', () => {
+  // Graph v21 removed every post_impressions metric. A rate computed against
+  // a missing denominator would be worse than no rate at all.
+  const summary = metrics().summarizeByGame({
+    posts: { '1': { gameId: 'sync', latest: { clicks: 40, linkClicks: 30, reactions: 5, impressions: null } } }
+  });
+  assert.equal(summary.sync.impressions, undefined);
+  assert.equal(summary.sync.clickRatePercent, undefined);
 });
 
 test('an unconfigured Channel refreshes nothing rather than failing a Cycle', async () => {

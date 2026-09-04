@@ -19,9 +19,11 @@ export class FacebookPublisher {
   async publish(post, dryRun = config.general.mode === 'draft') {
     const text = typeof post === 'string' ? post : (post.text || post.headline || '');
     const videoPath = typeof post === 'object' ? post.videoPath : undefined;
+    // One attachment per Post: a video wins over a card when both exist.
+    const imagePath = typeof post === 'object' && !videoPath ? post.imagePath : undefined;
 
     if (dryRun || !this.isConfigured) {
-      console.log(`[DRY-RUN / DRAFT] Facebook Post: "${text.slice(0, 100)}..."${videoPath ? ` (+ video: ${videoPath})` : ''}`);
+      console.log(`[DRY-RUN / DRAFT] Facebook Post: "${text.slice(0, 100)}..."${videoPath ? ` (+ video: ${videoPath})` : ''}${imagePath ? ` (+ card: ${imagePath})` : ''}`);
       return {
         success: true,
         channel: FACEBOOK,
@@ -33,11 +35,11 @@ export class FacebookPublisher {
     }
 
     try {
-      // Text goes to the Page's feed; a video Asset goes to /videos, which is
-      // the only endpoint that accepts one (§11).
-      const endpoint = videoPath
-        ? `https://graph.facebook.com/${GRAPH_VERSION}/${this.cfg.pageId}/videos`
-        : `https://graph.facebook.com/${GRAPH_VERSION}/${this.cfg.pageId}/feed`;
+      // Each kind of Post has its own endpoint: plain text to the Page's feed,
+      // a video Asset to /videos, a card to /photos. /feed accepts neither
+      // attachment (§11).
+      const node = videoPath ? 'videos' : imagePath ? 'photos' : 'feed';
+      const endpoint = `https://graph.facebook.com/${GRAPH_VERSION}/${this.cfg.pageId}/${node}`;
 
       let body;
       const headers = {};
@@ -46,6 +48,12 @@ export class FacebookPublisher {
         const form = new FormData();
         form.append('description', text);
         form.append('source', new File([await this.readFile(videoPath)], 'video.mp4', { type: 'video/mp4' }));
+        form.append('access_token', this.cfg.pageToken);
+        body = form;
+      } else if (imagePath) {
+        const form = new FormData();
+        form.append('message', text);
+        form.append('source', new File([await this.readFile(imagePath)], 'card.png', { type: 'image/png' }));
         form.append('access_token', this.cfg.pageToken);
         body = form;
       } else {
@@ -61,12 +69,17 @@ export class FacebookPublisher {
       }
 
       const data = await res.json();
+      // /photos answers with the photo's own id and, separately, the id of the
+      // Post it created. Insights and permalinks are keyed on the Post, so
+      // storing the photo id would leave the Analyst unable to read it.
+      const postId = data.post_id || data.id;
       return {
         success: true,
         channel: FACEBOOK,
         mode: 'live',
-        postId: data.id,
-        url: `https://facebook.com/${data.id}`,
+        postId,
+        photoId: data.post_id ? data.id : undefined,
+        url: `https://facebook.com/${postId}`,
         publishedAt: new Date().toISOString()
       };
     } catch (err) {

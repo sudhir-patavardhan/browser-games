@@ -235,7 +235,7 @@ you administer the Page.
         const result = await new FbMetrics().refresh(queue.getAll());
         console.log(`\nFacebook: refreshed ${result.fetched} Post(s)${result.failed ? `, ${result.failed} unreadable` : ''}`);
         for (const [gameId, m] of Object.entries(new FbMetrics().summarizeByGame(result.store))) {
-          console.log(`   ${gameId.padEnd(14)} ${String(m.posts).padStart(2)} Post(s) · ${m.impressions} impressions · ${m.reach} reach · ${m.clicks} clicks · ${m.clickRatePercent}%`);
+          console.log(`   ${gameId.padEnd(14)} ${String(m.posts).padStart(2)} Post(s) · ${m.linkClicks} link click(s) · ${m.clicks} click(s) · ${m.reactions} reaction(s)${m.videoViews ? ` · ${m.videoViews} video view(s)` : ''}`);
         }
         console.log();
         break;
