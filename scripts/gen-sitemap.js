@@ -20,6 +20,8 @@ const urls = [
     changefreq: 'monthly',
     priority: i < 2 ? '0.9' : '0.8',
   })),
+  // Pages that are not games and so have no card on the hub to scrape.
+  { loc: 'https://kreeda.games/marketing/', changefreq: 'yearly', priority: '0.3' },
 ];
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>

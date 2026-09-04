@@ -13,15 +13,27 @@ import { FACEBOOK, toChannel, isChannel } from '../knowledge/channels.js';
 import { GRAPH_VERSION } from '../publishers/facebookAccess.js';
 
 /**
- * The Page-post metrics that mean something to the Analyst. Reach and
- * impressions size the audience; the click metrics are what the funnel needs.
+ * The Page-post metrics Graph v21 still has.
+ *
+ * Meta removed every post-level impressions metric — `post_impressions`,
+ * `post_impressions_unique`, `post_impressions_organic` and
+ * `post_engaged_users` are all rejected as "not a valid insights metric".
+ * There is no post-level reach or impression number on Facebook any more, so
+ * there is no honest click-through *rate* to report either.
+ *
+ * What remains is what people did, not how many saw it. The rest of the
+ * funnel comes from GA4, which counts sessions and Players against the
+ * utm_content on the link (§7) — and that was always the better source.
  */
 const METRICS = [
-  'post_impressions',
-  'post_impressions_unique',
   'post_clicks',
-  'post_reactions_by_type_total'
+  'post_clicks_by_type',
+  'post_reactions_by_type_total',
+  'post_video_views'
 ];
+
+/** Which of the click types in post_clicks_by_type is a click on our link. */
+const LINK_CLICK_KEYS = ['link clicks', 'other clicks'];
 
 export class FbMetrics {
   constructor(cfg = config.platforms.facebook, file = path.join(config.paths.data, 'fb-metrics.json')) {
@@ -54,24 +66,23 @@ export class FbMetrics {
       throw new Error(`Page insights for ${postId} failed: ${body.error?.message || res.status}`);
     }
 
-    const value = name => {
-      const row = (body.data || []).find(d => d.name === name);
-      const v = row?.values?.[0]?.value;
-      return typeof v === 'object' && v !== null
-        ? Object.values(v).reduce((a, b) => a + b, 0)
-        : (v || 0);
-    };
+    const raw = name => (body.data || []).find(d => d.name === name)?.values?.[0]?.value;
+    const total = value => (typeof value === 'object' && value !== null
+      ? Object.values(value).reduce((a, b) => a + (Number(b) || 0), 0)
+      : Number(value) || 0);
 
-    const impressions = value('post_impressions');
-    const clicks = value('post_clicks');
+    const byType = raw('post_clicks_by_type');
+    const linkClicks = typeof byType === 'object' && byType !== null
+      ? Object.entries(byType).filter(([k]) => LINK_CLICK_KEYS.includes(k.toLowerCase())).reduce((a, [, v]) => a + (Number(v) || 0), 0)
+      : 0;
+
     return {
-      impressions,
-      reach: value('post_impressions_unique'),
-      clicks,
-      reactions: value('post_reactions_by_type_total'),
-      // Facebook counts every click on the Post, not link clicks alone, so
-      // this reads high next to X. The Analyst compares it with itself.
-      clickRatePercent: impressions > 0 ? Number(((clicks / impressions) * 100).toFixed(2)) : 0
+      clicks: total(raw('post_clicks')),
+      linkClicks,
+      reactions: total(raw('post_reactions_by_type_total')),
+      videoViews: total(raw('post_video_views')),
+      // Graph v21 has no post-level impressions, so there is no rate to give.
+      impressions: null
     };
   }
 
@@ -113,23 +124,20 @@ export class FbMetrics {
     return { fetched, failed, store };
   }
 
-  /** Per-Game totals, best click rate first. */
+  /** Per-Game totals, most link clicks first. */
   summarizeByGame(store = this.load()) {
     const byGame = {};
     for (const entry of Object.values(store.posts || {})) {
       if (!entry.latest) continue;
-      const g = (byGame[entry.gameId] ||= { posts: 0, impressions: 0, reach: 0, clicks: 0, reactions: 0 });
+      const g = (byGame[entry.gameId] ||= { posts: 0, clicks: 0, linkClicks: 0, reactions: 0, videoViews: 0 });
       g.posts++;
-      g.impressions += entry.latest.impressions;
-      g.reach += entry.latest.reach;
-      g.clicks += entry.latest.clicks;
-      g.reactions += entry.latest.reactions;
-    }
-    for (const g of Object.values(byGame)) {
-      g.clickRatePercent = g.impressions > 0 ? Number(((g.clicks / g.impressions) * 100).toFixed(2)) : 0;
+      g.clicks += entry.latest.clicks || 0;
+      g.linkClicks += entry.latest.linkClicks || 0;
+      g.reactions += entry.latest.reactions || 0;
+      g.videoViews += entry.latest.videoViews || 0;
     }
     return Object.fromEntries(
-      Object.entries(byGame).sort((a, b) => b[1].clickRatePercent - a[1].clickRatePercent)
+      Object.entries(byGame).sort((a, b) => b[1].linkClicks - a[1].linkClicks || b[1].clicks - a[1].clicks)
     );
   }
 }

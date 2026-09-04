@@ -28,12 +28,31 @@ export class TwitterPublisher {
     });
   }
 
-  /**
-   * Uploads a video via Twitter's chunked media upload (v1.1) and returns
-   * a media_id_string usable in POST /2/tweets' media.media_ids.
-   * @param {string} filePath - path to an .mp4 file
-   */
+  /** What each Asset kind is called on the upload endpoint. */
+  static MEDIA = {
+    video: { type: 'video/mp4', category: 'tweet_video' },
+    card: { type: 'image/png', category: 'tweet_image' }
+  };
+
+  /** Uploads a video Asset. */
   async uploadVideo(filePath) {
+    return this.uploadMedia(filePath, 'video');
+  }
+
+  /** Uploads a card Asset. A Post with an image earns more link clicks. */
+  async uploadImage(filePath) {
+    return this.uploadMedia(filePath, 'card');
+  }
+
+  /**
+   * Uploads an Asset through the chunked media endpoint (v1.1) and returns a
+   * media_id_string usable in POST /2/tweets' media.media_ids. The same INIT /
+   * APPEND / FINALIZE flow carries both kinds; only the declared type differs.
+   * @param {string} filePath
+   * @param {'video'|'card'} kind
+   */
+  async uploadMedia(filePath, kind = 'video') {
+    const { type, category } = TwitterPublisher.MEDIA[kind] || TwitterPublisher.MEDIA.video;
     const bytes = fs.readFileSync(filePath);
     const uploadUrl = 'https://upload.twitter.com/1.1/media/upload.json';
 
@@ -41,8 +60,8 @@ export class TwitterPublisher {
     const initParams = {
       command: 'INIT',
       total_bytes: String(bytes.length),
-      media_type: 'video/mp4',
-      media_category: 'tweet_video'
+      media_type: type,
+      media_category: category
     };
     const initRes = await fetch(`${uploadUrl}?${new URLSearchParams(initParams)}`, {
       method: 'POST',
@@ -115,9 +134,11 @@ export class TwitterPublisher {
 
     const text = typeof post === 'string' ? post : (post.text || post.headline || '');
     const videoPath = typeof post === 'object' ? post.videoPath : undefined;
+    // A video wins over a card when a Post has both: X shows one attachment.
+    const imagePath = typeof post === 'object' && !videoPath ? post.imagePath : undefined;
 
     if (dryRun || !this.isConfigured) {
-      console.log(`[DRY-RUN / DRAFT] Twitter Post: "${text.slice(0, 100)}..."${videoPath ? ` (+ video: ${videoPath})` : ''}`);
+      console.log(`[DRY-RUN / DRAFT] Twitter Post: "${text.slice(0, 100)}..."${videoPath ? ` (+ video: ${videoPath})` : ''}${imagePath ? ` (+ card: ${imagePath})` : ''}`);
       return {
         success: true,
         channel: X,
@@ -130,10 +151,8 @@ export class TwitterPublisher {
 
     try {
       let mediaIds;
-      if (videoPath) {
-        const mediaId = await this.uploadVideo(videoPath);
-        mediaIds = [mediaId];
-      }
+      if (videoPath) mediaIds = [await this.uploadVideo(videoPath)];
+      else if (imagePath) mediaIds = [await this.uploadImage(imagePath)];
 
       // Live Twitter API v2 POST /2/tweets (OAuth 1.0a user context)
       const endpoint = 'https://api.twitter.com/2/tweets';
