@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How Kreeda's marketing system works</title>
+<meta name="description" content="Kreeda's marketing runs itself, but publishes nothing without a human ticking a box. Here is how the pieces fit: the Producer, six Agents, three Cycles, two branches, and one pull request that means yes.">
+<link rel="canonical" href="https://kreeda.games/marketing/">
+<meta name="theme-color" content="#07070d">
+<meta name="color-scheme" content="dark">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/marketing/">
+<meta property="og:title" content="How Kreeda's marketing system works">
+<meta property="og:description" content="An agentic marketing system that publishes nothing without a human ticking a box.">
+<meta name="twitter:card" content="summary">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+
+<style>
+  /* One file, no dependencies, no webfont — the same contract as every other
+     page on this site. */
+  *{ box-sizing:border-box; }
+  :root{
+    --bg:#07070d;
+    --surface:#12121c;
+    --surface-2:#191926;
+    --line:rgba(255,255,255,.10);
+    --line-strong:rgba(255,255,255,.22);
+    --ink:#f4f4f8;
+    --ink-dim:#a6a6b8;
+    --ink-faint:#75758a;
+    --accent:#5CFF6E;
+    --human:#ffd166;
+    --code:#7cc4ff;
+    --radius:18px;
+    --pad: max(16px, env(safe-area-inset-left));
+  }
+  html{ -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
+  @media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto; } *{ animation:none !important; transition:none !important; } }
+  body{
+    margin:0; min-height:100%;
+    background:
+      radial-gradient(900px 600px at 12% -10%, #1d1440 0%, transparent 60%),
+      radial-gradient(700px 500px at 95% 0%, #08303a 0%, transparent 55%),
+      var(--bg);
+    background-repeat:no-repeat;
+    color:var(--ink);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    line-height:1.6;
+  }
+  a{ color:inherit; }
+
+  .bar{
+    position:sticky; top:0; z-index:20;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:10px var(--pad); padding-top:max(10px, env(safe-area-inset-top));
+    background:rgba(7,7,13,.86); border-bottom:1px solid var(--line); backdrop-filter:blur(10px);
+  }
+  .brand{ display:flex; align-items:center; gap:9px; font-weight:800; font-size:17px; text-decoration:none; }
+  .brand .dot{ color:var(--accent); }
+  .bar .ghost{
+    font-size:13px; color:var(--ink-dim); padding:8px 12px; border-radius:999px;
+    border:1px solid var(--line); white-space:nowrap; text-decoration:none;
+  }
+  .bar .ghost:hover{ color:var(--ink); border-color:var(--line-strong); }
+
+  .wrap{ max-width:860px; margin:0 auto; padding:0 var(--pad) 56px; }
+
+  header.hero{ padding:44px 0 8px; }
+  header.hero h1{ font-size:clamp(30px,6vw,46px); line-height:1.1; letter-spacing:-1px; margin:0 0 14px; font-weight:850; }
+  header.hero .lede{ font-size:clamp(16px,2.6vw,19px); color:var(--ink-dim); max-width:64ch; margin:0; }
+  .kicker{ font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:700; margin:0 0 12px; }
+
+  h2{ font-size:clamp(21px,3.4vw,27px); letter-spacing:-.4px; margin:52px 0 6px; font-weight:800; scroll-margin-top:70px; }
+  h3{ font-size:17px; margin:28px 0 4px; font-weight:750; }
+  p{ margin:12px 0; color:var(--ink-dim); }
+  p strong, li strong{ color:var(--ink); font-weight:650; }
+  ul{ color:var(--ink-dim); padding-left:20px; }
+  li{ margin:7px 0; }
+
+  .term{ color:var(--ink); font-weight:650; border-bottom:1px dotted var(--line-strong); cursor:help; }
+
+  code{
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:.88em; background:var(--surface-2); border:1px solid var(--line);
+    padding:1px 6px; border-radius:6px; color:var(--code);
+  }
+
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px 22px; margin:20px 0;
+  }
+  .card h3{ margin-top:0; }
+
+  .note{
+    border-left:3px solid var(--human); background:rgba(255,209,102,.06);
+    padding:14px 18px; border-radius:0 12px 12px 0; margin:22px 0;
+  }
+  .note p{ margin:0; color:var(--ink); }
+  .note p + p{ margin-top:8px; color:var(--ink-dim); }
+
+  figure{ margin:26px 0; }
+  figure svg{ width:100%; height:auto; display:block; }
+  figcaption{ font-size:13px; color:var(--ink-faint); margin-top:10px; text-align:center; }
+
+  .scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table{ border-collapse:collapse; width:100%; min-width:520px; font-size:14.5px; margin:6px 0; }
+  th, td{ text-align:left; padding:11px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th{ color:var(--ink); font-weight:700; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; }
+  td{ color:var(--ink-dim); }
+  td:first-child{ color:var(--ink); font-weight:600; white-space:nowrap; }
+
+  .who{ display:grid; gap:12px; grid-template-columns:1fr; margin:18px 0; }
+  @media (min-width:660px){ .who{ grid-template-columns:1fr 1fr; } }
+  .who .role{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:15px 17px;
+  }
+  .who .role b{ display:block; font-size:15px; margin-bottom:3px; }
+  .who .role span{ font-size:14px; color:var(--ink-dim); }
+  .who .role.human{ border-color:rgba(255,209,102,.35); }
+  .who .role.human b{ color:var(--human); }
+  .who .role.machine b{ color:var(--code); }
+  .who .role.agent b{ color:var(--accent); }
+
+  .legend{ display:flex; flex-wrap:wrap; gap:8px 18px; font-size:13px; color:var(--ink-faint); margin:14px 0 0; }
+  .legend i{ width:11px; height:11px; border-radius:3px; display:inline-block; margin-right:6px; vertical-align:-1px; }
+
+  .toc{ display:flex; flex-wrap:wrap; gap:8px; margin:26px 0 0; padding:0; list-style:none; }
+  .toc a{
+    font-size:13px; color:var(--ink-dim); text-decoration:none;
+    border:1px solid var(--line); border-radius:999px; padding:6px 13px; display:block;
+  }
+  .toc a:hover{ color:var(--ink); border-color:var(--line-strong); }
+
+  footer{
+    max-width:860px; margin:0 auto; padding:22px var(--pad) 40px;
+    border-top:1px solid var(--line);
+    display:flex; flex-wrap:wrap; gap:10px 20px; align-items:center;
+    font-size:13px; color:var(--ink-faint);
+  }
+  footer a{ color:var(--ink-dim); }
+  footer .spacer{ flex:1 1 auto; }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <a class="brand" href="../">Kreeda<span class="dot">.</span></a>
+  <a class="ghost" href="https://github.com/sudhir-patavardhan/browser-games/tree/main/marketing">Read the source</a>
+</div>
+
+<div class="wrap">
+
+<header class="hero">
+  <p class="kicker">How it works</p>
+  <h1>The marketing system</h1>
+  <p class="lede">
+    Kreeda's marketing writes its own posts, buys its own ads and measures its own results —
+    and publishes <em>nothing</em> until a human ticks a box. This page explains how those two
+    facts live together: what the pieces are, where everything is stored, and what exactly
+    happens when someone clicks merge.
+  </p>
+  <ul class="toc">
+    <li><a href="#loop">The loop</a></li>
+    <li><a href="#cast">Who does what</a></li>
+    <li><a href="#approval">How approval works</a></li>
+    <li><a href="#branches">Where things are stored</a></li>
+    <li><a href="#lifecycle">A Post's life</a></li>
+    <li><a href="#cycles">When it runs</a></li>
+    <li><a href="#money">Money</a></li>
+    <li><a href="#measure">Measurement</a></li>
+  </ul>
+</header>
+
+<h2 id="loop">The loop, in one picture</h2>
+
+<p>
+  Everything below is a detail of this. A plan becomes posts, posts wait for a human,
+  approved posts go out, what they earn comes back as numbers, and the numbers shape the
+  next plan.
+</p>
+
+<figure>
+  <svg viewBox="0 0 820 300" role="img" aria-label="A cycle: the Strategist plans, the Creative writes, the CMO approves in a Review, the Producer publishes to X and Facebook, GA4 counts Players, and the Analyst feeds results back to the Strategist.">
+    <defs>
+      <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="rgba(255,255,255,.38)"/>
+      </marker>
+      <style>
+        .n{ fill:#12121c; stroke:rgba(255,255,255,.14); }
+        .n.human{ stroke:rgba(255,209,102,.55); fill:rgba(255,209,102,.07); }
+        .n.agent{ stroke:rgba(92,255,110,.4); }
+        .n.code{ stroke:rgba(124,196,255,.45); }
+        .t{ fill:#f4f4f8; font:600 13px -apple-system,system-ui,sans-serif; text-anchor:middle; }
+        .s{ fill:#a6a6b8; font:400 11px -apple-system,system-ui,sans-serif; text-anchor:middle; }
+        .ln{ stroke:rgba(255,255,255,.3); stroke-width:1.6; fill:none; marker-end:url(#arw); }
+      </style>
+    </defs>
+
+    <rect class="n agent" x="14"  y="30"  width="140" height="58" rx="12"/>
+    <text class="t" x="84"  y="54">Strategist</text><text class="s" x="84"  y="72">writes the Plan</text>
+
+    <rect class="n agent" x="186" y="30"  width="140" height="58" rx="12"/>
+    <text class="t" x="256" y="54">Creative</text><text class="s" x="256" y="72">writes each Post</text>
+
+    <rect class="n human" x="358" y="30"  width="150" height="58" rx="12"/>
+    <text class="t" x="433" y="54">CMO</text><text class="s" x="433" y="72">ticks and merges</text>
+
+    <rect class="n code"  x="540" y="30"  width="140" height="58" rx="12"/>
+    <text class="t" x="610" y="54">Producer</text><text class="s" x="610" y="72">publishes</text>
+
+    <rect class="n" x="668" y="128" width="138" height="58" rx="12"/>
+    <text class="t" x="737" y="152">X · Facebook</text><text class="s" x="737" y="170">the Channels</text>
+
+    <rect class="n" x="440" y="222" width="150" height="58" rx="12"/>
+    <text class="t" x="515" y="246">GA4</text><text class="s" x="515" y="264">counts Players</text>
+
+    <rect class="n agent" x="200" y="222" width="150" height="58" rx="12"/>
+    <text class="t" x="275" y="246">Analyst</text><text class="s" x="275" y="264">reads the funnel</text>
+
+    <path class="ln" d="M154 59 H180"/>
+    <path class="ln" d="M326 59 H352"/>
+    <path class="ln" d="M508 59 H534"/>
+    <path class="ln" d="M680 70 Q737 70 737 122"/>
+    <path class="ln" d="M737 186 Q737 251 596 251"/>
+    <path class="ln" d="M440 251 H356"/>
+    <path class="ln" d="M200 251 Q84 251 84 94"/>
+
+    <text class="s" x="415" y="168">what the Analyst finds is what the next Plan is built from</text>
+  </svg>
+  <figcaption>Green is judgement, blue is deterministic code, amber is the human. Nothing crosses from Creative to Producer without passing through the amber box.</figcaption>
+</figure>
+
+<div class="legend">
+  <span><i style="background:rgba(92,255,110,.6)"></i>Agent — judgement</span>
+  <span><i style="background:rgba(124,196,255,.7)"></i>Producer — code</span>
+  <span><i style="background:rgba(255,209,102,.8)"></i>Human — approval</span>
+</div>
+
+<h2 id="cast">Who does what</h2>
+
+<p>
+  There are three kinds of participant, and the difference between them is the whole design.
+  <strong>Agents propose. The Producer executes. The human decides.</strong>
+</p>
+
+<div class="who">
+  <div class="role human">
+    <b>CMO · a person</b>
+    <span>Owns the brand and the budget. Approves every post and every ad by merging one
+    pull request. Sets the spending ceilings. Answers what the system cannot decide alone.</span>
+  </div>
+  <div class="role machine">
+    <b>Producer · code</b>
+    <span>Never an LLM, never creative. Publishes approved posts, launches approved ads,
+    enforces the spending ceilings, stops ads that are failing, retries what broke, and
+    writes the log. If it is deterministic, it lives here.</span>
+  </div>
+</div>
+
+<p>
+  Between them sit six <span class="term" title="A role with a strict output contract, played by a Claude session following that role's prompt.">Agents</span>.
+  An Agent is a role, not a program: a Claude session follows that role's prompt, and its
+  output is accepted only if it validates against a schema. An Agent can only ever
+  <em>propose</em>.
+</p>
+
+<div class="who">
+  <div class="role agent"><b>Analyst</b><span>Reads the whole funnel — impressions, clicks, sessions, people who actually played — and says what is working, with numbers attached.</span></div>
+  <div class="role agent"><b>Strategist</b><span>Writes next week's plan: which game, which angle, which channel, which day, and why. Names where the ad money should go.</span></div>
+  <div class="role agent"><b>Creative</b><span>Turns a one-line brief into a finished post: the copy, the image card, the video. The only Agent that is a model call made by code rather than a session.</span></div>
+  <div class="role agent"><b>Media Buyer</b><span>Proposes an ad: game, angle, creative, targeting, budget. Proposes — it cannot spend.</span></div>
+  <div class="role agent"><b>Performance Analyst</b><span>Writes the post-mortem when an ad ends: promised versus delivered, cost per player, and one thing to change.</span></div>
+  <div class="role agent"><b>Chief of Staff</b><span>Writes the weekly briefing the CMO reads in two minutes: headline numbers, what worked, what the system decided, what still needs a human.</span></div>
+</div>
+
+<h2 id="approval">How approval works</h2>
+
+<p>
+  This is the part worth understanding properly, because it is the safety mechanism the
+  whole system rests on.
+</p>
+
+<p>
+  Every day, the Producer opens or updates <strong>one pull request</strong>. Its body is a
+  checklist — one line per post waiting for a decision, one per proposed ad, each with the
+  full text and a link to the exact image or video that would go out. Every line arrives
+  <strong>pre-ticked</strong>.
+</p>
+
+<figure>
+  <svg viewBox="0 0 820 226" role="img" aria-label="A Review pull request with three ticked items; merging it approves the ticked ones and rejects the unticked one.">
+    <defs>
+      <style>
+        .box{ fill:#12121c; stroke:rgba(255,255,255,.14); }
+        .lbl{ fill:#f4f4f8; font:600 13px -apple-system,system-ui,sans-serif; }
+        .dim{ fill:#a6a6b8; font:400 12px -apple-system,system-ui,sans-serif; }
+        .ok{ fill:#5CFF6E; font:700 13px ui-monospace,monospace; }
+        .no{ fill:#75758a; font:700 13px ui-monospace,monospace; }
+        .go{ fill:#5CFF6E; font:600 12px -apple-system,system-ui,sans-serif; }
+        .stop{ fill:#ff8a8a; font:600 12px -apple-system,system-ui,sans-serif; }
+      </style>
+    </defs>
+
+    <rect class="box" x="10" y="14" width="400" height="196" rx="14"/>
+    <text class="lbl" x="30" y="42">Review · 5 September</text>
+    <text class="dim" x="30" y="62">one pull request, everything awaiting you</text>
+
+    <text class="ok"  x="30" y="98">[x]</text><text class="lbl" x="62" y="98">Carrom · X · Sun 09:00</text>
+    <text class="ok"  x="30" y="128">[x]</text><text class="lbl" x="62" y="128">Tic Tac Toe · Facebook</text>
+    <text class="no"  x="30" y="158">[ ]</text><text class="dim" x="62" y="158">Drift ad · $5/day · you unticked this</text>
+    <text class="dim" x="30" y="188">Merging is your approval.</text>
+
+    <path d="M418 112 H470" stroke="rgba(255,255,255,.3)" stroke-width="1.6" fill="none" marker-end="url(#arw2)"/>
+    <defs><marker id="arw2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="rgba(255,255,255,.38)"/></marker></defs>
+    <text class="dim" x="444" y="104" style="text-anchor:middle">merge</text>
+
+    <rect class="box" x="484" y="40" width="326" height="66" rx="12" style="stroke:rgba(92,255,110,.35)"/>
+    <text class="go"  x="504" y="66">Ticked → approved</text>
+    <text class="dim" x="504" y="88">goes out at its scheduled time, not before</text>
+
+    <rect class="box" x="484" y="122" width="326" height="66" rx="12" style="stroke:rgba(255,138,138,.3)"/>
+    <text class="stop" x="504" y="148">Unticked → rejected</text>
+    <text class="dim"  x="504" y="170">never published, and not offered again</text>
+  </svg>
+  <figcaption>Untick anything you do not want. Merging decides everything at once.</figcaption>
+</figure>
+
+<div class="note">
+  <p><strong>Closing the pull request without merging changes nothing at all.</strong></p>
+  <p>That is deliberate. Ignoring it is always safe — nothing is published by default, nothing
+  is published on a timer, and there is no setting anywhere that turns approval off. A post
+  nobody decides on simply expires after three days.</p>
+</div>
+
+<h2 id="branches">Where things are stored</h2>
+
+<p>
+  Four places, each with one job. Keeping them apart is what stops a marketing run from
+  rebuilding the website, and what stops an unrelated code change from rewinding live data.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Where</th><th>What lives there</th><th>Who writes it</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>main</code></td>
+      <td>The games, this website, and the marketing system's code. No marketing data whatsoever.</td>
+      <td>People, in pull requests</td>
+    </tr>
+    <tr>
+      <td><code>marketing-state</code></td>
+      <td>Everything the system knows: the post queue, the ad ledger, metrics, the Agents' outputs, the run logs, the weekly briefing. An orphan branch — it shares no history with the code.</td>
+      <td>The Producer, and only the Producer</td>
+    </tr>
+    <tr>
+      <td><code>marketing-review</code></td>
+      <td>Nothing. It is one empty commit that exists so the pull request has something to merge. Approving is a decision, not a change to any file.</td>
+      <td>The Producer</td>
+    </tr>
+    <tr>
+      <td>A GitHub release called <code>media</code></td>
+      <td>Every rendered video and image card. Not in git — a year of videos would add half a gigabyte to the repository.</td>
+      <td>The Creative</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  The split matters for a specific reason. A video is rendered on one day, reviewed on
+  another, and published on a third — possibly by a different machine. Because the file
+  lives on a release rather than in a temporary folder, <strong>the file the CMO previews is
+  byte-for-byte the file that goes out.</strong>
+</p>
+
+<h2 id="lifecycle">A post's life</h2>
+
+<p>
+  Every post moves through the same states, and every move is checked. A state is never just
+  assigned — an earlier version of this system did that, and published some things twice.
+</p>
+
+<figure>
+  <svg viewBox="0 0 820 230" role="img" aria-label="States: Draft becomes In review, then Approved, then Published. Side exits are Rejected, Failed and Expired.">
+    <defs>
+      <style>
+        .st{ fill:#12121c; stroke:rgba(255,255,255,.16); }
+        .st.done{ stroke:rgba(92,255,110,.5); }
+        .st.out{ stroke:rgba(255,255,255,.1); fill:#0d0d15; }
+        .sl{ fill:#f4f4f8; font:600 12.5px -apple-system,system-ui,sans-serif; text-anchor:middle; }
+        .so{ fill:#75758a; font:600 12px -apple-system,system-ui,sans-serif; text-anchor:middle; }
+        .e{ stroke:rgba(255,255,255,.28); stroke-width:1.5; fill:none; marker-end:url(#arw3); }
+        .e.faint{ stroke:rgba(255,255,255,.14); stroke-dasharray:4 4; }
+        .cap{ fill:#a6a6b8; font:400 11px -apple-system,system-ui,sans-serif; text-anchor:middle; }
+      </style>
+      <marker id="arw3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="rgba(255,255,255,.36)"/></marker>
+    </defs>
+
+    <rect class="st" x="12"  y="70" width="150" height="52" rx="11"/><text class="sl" x="87"  y="101">Draft</text>
+    <rect class="st" x="222" y="70" width="150" height="52" rx="11"/><text class="sl" x="297" y="101">In review</text>
+    <rect class="st" x="432" y="70" width="150" height="52" rx="11"/><text class="sl" x="507" y="101">Approved</text>
+    <rect class="st done" x="642" y="70" width="160" height="52" rx="11"/><text class="sl" x="722" y="101">Published</text>
+
+    <path class="e" d="M162 96 H216"/><text class="cap" x="189" y="60">the Creative</text><text class="cap" x="189" y="46">writes it</text>
+    <path class="e" d="M372 96 H426"/><text class="cap" x="399" y="60">you tick it</text><text class="cap" x="399" y="46">and merge</text>
+    <path class="e" d="M582 96 H636"/><text class="cap" x="609" y="60">its time</text><text class="cap" x="609" y="46">arrives</text>
+
+    <rect class="st out" x="222" y="168" width="150" height="44" rx="11"/><text class="so" x="297" y="195">Rejected</text>
+    <rect class="st out" x="432" y="168" width="150" height="44" rx="11"/><text class="so" x="507" y="195">Failed</text>
+    <rect class="st out" x="12"  y="168" width="150" height="44" rx="11"/><text class="so" x="87"  y="195">Expired</text>
+
+    <path class="e faint" d="M297 122 V164"/><text class="cap" x="297" y="150" style="text-anchor:start">you unticked it</text>
+    <path class="e faint" d="M507 122 V164"/><text class="cap" x="507" y="150" style="text-anchor:start">the channel refused it</text>
+    <path class="e faint" d="M62 122 V164"/>
+    <text class="cap" x="87" y="150" style="text-anchor:start">3 days late</text>
+  </svg>
+  <figcaption>A failed post is retried at the next opportunity for up to three days. After that it expires and the Strategist fills the gap next week.</figcaption>
+</figure>
+
+<h2 id="cycles">When it runs</h2>
+
+<p>
+  The system has no server and no daemon. It wakes up on a schedule, does one job, and
+  stops. Each run is a scheduled Claude session with a fixed instruction and a rule against
+  improvising.
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Run</th><th>When</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td>Morning desk</td><td>03:30 daily</td><td>The Analyst reads yesterday. Finished ads get a post-mortem. If there is room under the budget, the Media Buyer proposes a new one.</td></tr>
+    <tr><td>Publish</td><td>09:00, 13:00, 17:00</td><td>The Producer alone. Read what was approved, expire what is stale, write anything due soon, publish what is ready, pull the numbers, update the pull request.</td></tr>
+    <tr><td>Planning</td><td>Sundays, 16:00</td><td>The Strategist writes next week. The Chief of Staff writes the briefing. Monday and Tuesday's posts are written and waiting before the evening is out.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  All times UTC. Publishing three times a day rather than continuously means a post has a
+  slot, and a slot that is missed is caught by the next one rather than lost.
+</p>
+
+<h2 id="money">Money</h2>
+
+<p>
+  Paid promotion is deliberately small and deliberately hard to escalate. The ceilings are
+  frozen in the code itself: <strong>$10 a day for any one ad, $25 a day across all of
+  them.</strong> Configuration can lower those numbers and cannot raise them.
+</p>
+
+<p>
+  Every ad is a <strong>three-day trial that always ends</strong>. Nothing runs indefinitely
+  and nothing is topped up. If an ad is doing well, that is recorded as a result, and the
+  Media Buyer may propose a fresh, larger one — which goes back through the same pull
+  request, and needs the same tick. An ad that is clearly failing is stopped a day early.
+</p>
+
+<p>
+  Launching is ordered so that a crash cannot cost money: the ad is created <em>paused</em>,
+  written to the ledger immediately, given its targeting, and only switched on at the very
+  last step. A failure at any point leaves something visible, paused, and unbilled.
+</p>
+
+<h2 id="measure">How success is measured</h2>
+
+<p>
+  Not impressions, and not clicks. The number that matters is <strong>Players</strong>:
+  someone who reached thirty seconds of real, visible play on a game page. Everything else is
+  a step on the way to that.
+</p>
+
+<p>
+  Every published link carries where it came from — the channel, whether it was paid, the
+  category or ad, and the specific post. When a visitor plays, that fact is recorded against
+  those markers. So the question "did that Tuesday post about Carrom actually bring anyone
+  who played?" has a real answer, and the Analyst uses it to decide what next week looks
+  like.
+</p>
+
+<div class="note">
+  <p><strong>Why build it this way?</strong></p>
+  <p>An agent that can publish is an agent that can embarrass you at 3am. An agent that can
+  spend is one that can spend all of it. So the parts that need judgement are separated from
+  the parts that touch the outside world, and everything that touches the outside world
+  waits behind one box that a person has to tick.</p>
+</div>
+
+<p style="margin-top:34px">
+  The system is open source, and the design decisions — including the ones that were tried
+  and rejected — are written down alongside the code.
+  <a href="https://github.com/sudhir-patavardhan/browser-games/tree/main/marketing">Read it on GitHub</a>.
+</p>
+
+</div>
+
+<footer>
+  <span>&copy; Kreeda &middot; Free browser games, no sign-up.</span>
+  <span class="spacer"></span>
+  <a href="../">Play something</a>
+  <a href="https://github.com/sudhir-patavardhan/browser-games">Source on GitHub</a>
+</footer>
+
+<script src="../analytics.js"></script>
+</body>
+</html>
