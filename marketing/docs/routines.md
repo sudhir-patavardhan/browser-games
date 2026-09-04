@@ -20,7 +20,7 @@ Verified 2026-09-04 by cloning the repo fresh and running the sequence below:
 `npm ci` succeeds, `state init` fetches the branch and checks out the
 worktree, `smoke` is green and `npm test` passes 73 tests.
 
-## Environment
+## Secrets
 
 Every secret lives in the cloud environment's **Environment variables**
 (claude.ai/code -> the cloud icon above the message box -> hover the
@@ -31,11 +31,55 @@ secrets — there is no Actions workflow to read those.
 `fb token` and `fb preflight` use them, and the Page token they mint does not
 expire.
 
-The environment's **network access** must reach the six hosts smoke probes:
-`api.x.com`, `ads-api.x.com`, `graph.facebook.com`,
-`generativelanguage.googleapis.com`, `analyticsdata.googleapis.com` and
-`api.github.com`. Run the smoke routine once after creating the environment;
-it reports any host it cannot reach, and which part of the system that costs.
+## What the cloud sandbox does not have
+
+Learned by running the smoke routine in "Browser Games" on 2026-09-04:
+
+- **`gh` is not installed.** Anything that shells out to it fails with
+  `spawn gh ENOENT`. Smoke asks the GitHub API with `GH_TOKEN` instead and
+  falls back to `gh` only on a machine that has it. Phase 2's Review handling
+  must do the same, or the environment needs a setup script that installs gh.
+- **`cdn.playwright.dev` is blocked by the agent proxy**, so
+  `npx playwright install chromium` gets a 403 and no video Asset can be
+  rendered in the cloud. Either add that host to the environment's network
+  allowlist, or accept what §3 already plans for: video rendering becomes the
+  manual `node cli.js media render <postId>` step on the CMO's machine and the
+  Creative queues text-and-card Posts only.
+- **The clone carries the default branch only.** A prompt cannot
+  `git checkout` some other branch; the code has to be on `main`.
+
+Everything else worked first time: all eighteen secrets arrived, all six hosts
+answered, and `state init` fetched `marketing-state` and built the worktree on
+a machine that had never seen it.
+
+## Environment
+
+The environment's **network access** decides whether a Cycle can publish at
+all. Set **Network access** to **Custom**, tick **"Also include default list of
+common package managers"** — without it `npm ci` cannot reach the npm registry —
+and list every host below in **Allowed domains**:
+
+```text
+api.x.com
+api.twitter.com
+upload.twitter.com
+ads-api.x.com
+graph.facebook.com
+generativelanguage.googleapis.com
+oauth2.googleapis.com
+analyticsdata.googleapis.com
+cdn.playwright.dev
+```
+
+`api.github.com` is not in the list: GitHub traffic takes its own proxy and
+does not go through this allowlist.
+
+A blocked host does not look like a network error. The proxy answers the
+request itself, with an ordinary HTTP response, which is why the first cloud
+run showed `api.x.com` and `graph.facebook.com` as reachable when they were
+not — a uniform fast 403 rather than the slower, varied answers the real hosts
+give. Smoke now reads the body and reports a proxy refusal as a failure naming
+the host to allowlist.
 
 ## The routines
 
