@@ -280,6 +280,13 @@ async function checkAssets(add) {
 
 // --- State branch ----------------------------------------------------------
 
+/** owner/name for the repo, from the remote if it is on GitHub, else from config. */
+async function repoSlug(repo) {
+  const remote = await run('git', ['remote', 'get-url', 'origin'], { cwd: repo });
+  const from = url => url.match(/github\.com[:/]([^/]+\/[^/\s]+?)(?:\.git)?$/)?.[1];
+  return from(remote.stdout.trim()) || from(config.general.repoUrl) || null;
+}
+
 /**
  * The Producer is the only committer to marketing-state (ADR 0001), so this
  * asks three things: can this machine talk to GitHub as someone, may that
@@ -298,7 +305,16 @@ async function checkStateBranch(add) {
     add(ok('gh auth status', firstLine(text.split('\n').find(l => /Logged in|account/i.test(l)) || text)));
   }
 
-  const permissions = await run('gh', ['api', 'repos/{owner}/{repo}', '--jq', '.permissions.push'], { cwd: repo });
+  // `repos/{owner}/{repo}` makes gh infer the repo from the git remote, which
+  // it cannot do for every checkout a routine might run in. The slug is
+  // resolved here instead, from the remote if it names GitHub and from the
+  // configured repo URL otherwise.
+  const slug = await repoSlug(repo);
+  if (!slug) {
+    add(fail('repo write access', 'no GitHub remote to check', 'the Producer needs a GitHub remote to push state and open the Review'));
+    return;
+  }
+  const permissions = await run('gh', ['api', `repos/${slug}`, '--jq', '.permissions.push'], { cwd: repo });
   const canPush = permissions.stdout.trim() === 'true';
   if (permissions.failed) {
     add(fail('repo write access', firstLine(permissions.stderr), 'the token cannot be checked; the Producer may fail mid-Cycle'));
