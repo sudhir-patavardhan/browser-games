@@ -82,6 +82,15 @@
     rec("...carrying the game, so the number is attributable to it",
         firstBeats.length>0 && firstBeats[0].params.game_id===A.game().id,
         firstBeats.length? JSON.stringify(firstBeats[0].params) : "-");
+
+    // ---- the player conversion: thirty seconds of real play is one played_30s to GA4 — the marketing
+    //      system's definition of a player — and never from the hub, where time is browsing, not play
+    const played=sent('played_30s'), isGame=A.game().id!=='home';
+    rec(isGame ? "thirty seconds of real play sends one played_30s to GA4, carrying the game"
+               : "the hub never sends played_30s: browsing the shelf is not play",
+        isGame ? (played.length===1 && played[0].game_id===A.game().id && Math.abs(played[0].active_seconds-BEAT)<=1)
+               : played.length===0,
+        played.length+" played_30s event(s): "+JSON.stringify(played));
   });
 
   // ---- hiding the tab stops the clock, and flushes what was owed
@@ -118,6 +127,11 @@
         Math.abs(summed - shown)<=BEAT+1,
         "sum(active_seconds)="+summed+" total_seconds="+beats[beats.length-1].params.total_seconds+
         " seconds()="+shown+" over "+beats.length+" reports");
+    if(A.game().id!=='home'){
+      const again=sent('played_30s');
+      rec("...and played_30s fires once per page, not once per beat", again.length===1,
+          again.length+" played_30s event(s) after "+beats.length+" beats");
+    }
   });
 
   // ---- and a tab nobody is touching stops counting: the idle cutoff is the whole honesty of the number.

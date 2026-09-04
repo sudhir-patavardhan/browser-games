@@ -207,9 +207,13 @@
       total_seconds:Math.round(active/1000),
       reason:String(reason)
     });
-    // The first time real play crosses the threshold, tell X this visit converted. Once per page.
+    /* The first time real play crosses the threshold, this visit converted: tell X, and record the same
+       moment in GA4 as `played_30s` — the one event the marketing system counts as a player, for every
+       visitor and not only the ones an ad brought. Once per page, from the same clock as game_time, so
+       neither can be gamed by an open tab. */
     if(!playedSent && active>=PLAYED_AFTER && GAME.game_id!=='home'){
       playedSent=true;
+      window.bgTrack('played_30s', { active_seconds:Math.round(active/1000) });
       xConvert('played_30s', { value:Math.round(active/1000) });
     }
   }
