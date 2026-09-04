@@ -94,36 +94,70 @@ async function main() {
 
       if (sub === 'token') {
         const userToken = flags['user-token'] || flags.token;
-        if (!userToken) {
+        const { appId, appSecret } = config.platforms.facebook;
+
+        // Everything that can be checked without the token is checked first:
+        // the short-lived token the CMO pastes in lasts about an hour, and
+        // failing on a missing app secret after they fetched one wastes it.
+        const problems = [];
+        if (!userToken) problems.push('--user-token is missing');
+        if (!appId) problems.push('FACEBOOK_APP_ID is not set');
+        if (!appSecret) problems.push('FACEBOOK_APP_SECRET is not set');
+
+        if (problems.length) {
           console.error(`
-Mints the long-lived Page token the Producer publishes with. It does not
-expire while you administer the Page.
+Cannot mint a Page token: ${problems.join('; ')}.
 
   node cli.js fb token --user-token <short-lived user token>
 
-Get the short-lived token from developers.facebook.com/tools/explorer:
-pick the app, then "Generate access token" with pages_manage_posts,
-pages_read_engagement and pages_show_list. It lasts about an hour, which is
-long enough to run this. FACEBOOK_APP_ID and FACEBOOK_APP_SECRET must be set
-— only the app itself can exchange a short-lived token for a long-lived one.
+Mints the long-lived Page token the Producer publishes with. You do this
+once: a Page token derived from a long-lived user token has no expiry while
+you administer the Page.
+
+  1. developers.facebook.com -> your app -> Settings -> Basic
+     Copy the App ID and App Secret into marketing/.env as
+     FACEBOOK_APP_ID and FACEBOOK_APP_SECRET. Only the app itself can
+     exchange a short-lived token for a long-lived one, which is the step
+     that makes the Page token permanent.
+
+  2. Tools -> Graph API Explorer -> pick that same app -> Generate access
+     token, granting pages_manage_posts, pages_read_engagement and
+     pages_show_list (add publish_video for video Posts).
+
+  3. Paste that token into the command above. It lasts about an hour, which
+     is long enough, and it is not what you keep.
 `);
           process.exit(1);
         }
 
-        const minted = await mintPageToken({
-          userToken,
-          appId: config.platforms.facebook.appId,
-          appSecret: config.platforms.facebook.appSecret
-        });
+        let minted;
+        try {
+          minted = await mintPageToken({ userToken, appId, appSecret });
+        } catch (err) {
+          // A failed exchange is almost always one of four things, and the
+          // Graph message alone does not say which.
+          console.error(`\nCould not mint the Page token: ${err.message}\n`);
+          console.error('The usual causes:');
+          console.error('  · the short-lived token expired — they last about an hour, so fetch a fresh one');
+          console.error('  · the token came from a different app than FACEBOOK_APP_ID');
+          console.error('  · pages_show_list was not granted, so the exchange cannot see your Pages');
+          console.error(`  · you do not administer Page ${config.platforms.facebook.pageId || '(FACEBOOK_PAGE_ID is unset)'}\n`);
+          process.exit(1);
+        }
 
         console.log(`\nPage: ${minted.pageName} (${minted.pageId})`);
-        console.log(`Expiry: ${minted.neverExpires
-          ? 'none, while you administer the Page'
-          : 'THIS TOKEN STILL EXPIRES — check that the app id and secret are the ones that issued the user token'}`);
         console.log(`Permissions: ${minted.scopes.join(', ') || 'none reported'}`);
+        if (minted.neverExpires) {
+          console.log('Expiry: none. Facebook reports no expiry while you administer the Page,');
+          console.log('        so this is the last time you need to do this.');
+        } else {
+          console.log('Expiry: THIS TOKEN STILL EXPIRES, which means the exchange did not take.');
+          console.log('        Check that FACEBOOK_APP_ID is the app that issued the user token.');
+        }
         console.log(`\nAdd this to the cloud environment (and marketing/.env to publish locally):\n`);
         console.log(`FACEBOOK_PAGE_TOKEN=${minted.pageToken}`);
         console.log(`FACEBOOK_PAGE_ID=${minted.pageId}\n`);
+        console.log('Then check it with: node cli.js fb preflight\n');
         break;
       }
 
