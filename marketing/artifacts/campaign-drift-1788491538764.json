@@ -1,0 +1,75 @@
+{
+  "id": "campaign-drift-1788491538764",
+  "gameId": "drift",
+  "gameName": "Drift",
+  "createdAt": "2026-09-04T03:12:18.764Z",
+  "deliverables": {
+    "twitterSingle": {
+      "gameId": "drift",
+      "channel": "twitter",
+      "content": {
+        "headline": "A drifting game where your EV battery is your health bar",
+        "text": "A drifting game where your EV battery is your health bar. 🔋\n\nReal weight transfer physics, regen braking & zombie bounties—packed in a single zero-dependency HTML file.\n\nZero install. 0.1s load:\nhttps://kreeda.games/drift/index.html\n\n#gamedev #webdev #indiedev",
+        "hashtags": [
+          "#gamedev",
+          "#webdev",
+          "#indiedev"
+        ],
+        "mediaSuggestion": "A fast-paced 6-second gameplay clip/GIF showing a tight weight-transfer slide around oncoming traffic, regen braking kick-in with the UI lighting up, and a quick biome crossfade from rain to snow."
+      },
+      "artifactPath": "/Users/sudhir/Projects/browser-games/marketing/artifacts/twitter/drift-2026-09-04T03-12-13-758Z.json",
+      "createdAt": "2026-09-04T03:12:13.761Z"
+    },
+    "twitterThread": {
+      "gameId": "drift",
+      "channel": "twitter",
+      "content": {
+        "thread": [
+          {
+            "tweetNumber": 1,
+            "text": "Most browser driving games fake drifting with a lateral slide variable and a handbrake key.\n\nWe built an endless EV drifting game using real weight-transfer physics and throttle balance—running entirely inside a single zero-dependency HTML file.\n\nHere is how the physics and audio engine work 🧵👇",
+            "mediaNote": "GIF/Video: Smooth entry drift through a biome transition, showing EV cockpit HUD gauges reacting dynamically."
+          },
+          {
+            "tweetNumber": 2,
+            "text": "1/ True Weight-Transfer Dynamics (No Handbrake)\n\nOversteer is triggered by trail-braking: decelerating pitches mass forward, lightening rear tire load. \n\nThrottle feeds instant EV torque to sustain the slide, and counter-steering catches the snap. We even verified physics invariants via headless Chrome CDP tests.",
+            "mediaNote": "Diagram or telemetry clip showing front/rear axle load distribution during turn entry and slip-angle calculation."
+          },
+          {
+            "tweetNumber": 3,
+            "text": "2/ Zero-Asset Procedural WebAudio Synth\n\nThere are zero audio files loaded over the network. The electric motor is fully synthesized via WebAudio:\n\n• Oscillator pitch = real-time wheel speed\n• Gain/loudness = absolute kW output\n• Harmonic sub-waves bend downward during regenerative braking",
+            "mediaNote": "Short video clip with sound enabled showing instant audio response during acceleration, hard regen braking, and high-speed drift."
+          },
+          {
+            "tweetNumber": 4,
+            "text": "3/ Why Single-File Web Apps Feel Magical\n\nNo npm install. No 50MB WebAssembly blobs. No 15-second loading screens.\n\nJust raw Vanilla JS and Canvas2D rendering 4 biomes, zombie bounties, and deterministic daily ghost runs at 60fps in under 0.1s load time.",
+            "mediaNote": "Screenshot of browser devtools network tab showing instant 1-request load and tiny footprint."
+          },
+          {
+            "tweetNumber": 5,
+            "text": "Take the daily seeded road for a spin (zero ads, no account needed):\n🚗 Play: https://kreeda.games/drift/index.html\n\n100% open source under MIT—inspect the code or fork it:\n⭐ GitHub: https://github.com/sudhir-patavardhan/browser-games",
+            "mediaNote": "Split image of the game screen and the clean open-source repository page."
+          }
+        ]
+      },
+      "artifactPath": "/Users/sudhir/Projects/browser-games/marketing/artifacts/twitter/drift-2026-09-04T03-12-18-763Z.json",
+      "createdAt": "2026-09-04T03:12:18.764Z"
+    },
+    "facebook": {
+      "gameId": "drift",
+      "channel": "facebook",
+      "content": {
+        "headline": "Grip is a budget. Battery is life.",
+        "text": "Grip is a budget. The battery is your life.\n\nBuilt an EV drift racer with real weight-transfer physics & regen braking into a single HTML file. Zero load time, zero ads.\n\nSlide & recharge ⚡️\nhttps://kreeda.games/drift/index.html\n\n#gamedev #webdev #indiedev",
+        "hashtags": [
+          "#gamedev",
+          "#webdev",
+          "#indiedev"
+        ],
+        "mediaSuggestion": "A smooth 6-second looping GIF/video showing a high-speed weight-transfer drift around a snow-covered bend, with the battery regen UI flashing green during the slide."
+      },
+      "artifactPath": "/Users/sudhir/Projects/browser-games/marketing/artifacts/facebook/drift-2026-09-04T03-12-14-647Z.json",
+      "createdAt": "2026-09-04T03:12:14.647Z"
+    }
+  }
+}

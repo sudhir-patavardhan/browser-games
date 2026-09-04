@@ -26,26 +26,26 @@ export class CampaignPlanner {
       {
         day: 'Tuesday',
         theme: 'Tech & Architecture Tuesday',
-        channel: 'devto',
+        channel: 'facebook',
         focusGame: 'ennead',
         options: {},
-        description: 'Deep-dive article on minimax AI with alpha-beta pruning & single-file architecture'
+        description: 'Highlight the minimax AI with alpha-beta pruning & single-file architecture'
       },
       {
         day: 'Wednesday',
         theme: 'Classic Board Game Revived',
-        channel: 'reddit',
+        channel: 'twitter',
         focusGame: 'carrom',
-        options: { subreddit: 'r/webgames' },
+        options: { context: 'Carrom physics and AI cushion bank calculations, for web gamers' },
         description: 'Introduce Carrom physics and AI cushion bank calculations to web gamers'
       },
       {
         day: 'Thursday',
-        theme: 'Shorts & TikTok Viral Reel',
-        channel: 'shorts',
+        theme: 'Weekend Ride Preview',
+        channel: 'facebook',
         focusGame: 'road-rumble',
         options: {},
-        description: 'Fast-paced Road Rash style motorcycle combat reel'
+        description: 'Fast-paced Road Rash style motorcycle combat preview'
       },
       {
         day: 'Friday',
@@ -58,9 +58,9 @@ export class CampaignPlanner {
       {
         day: 'Saturday',
         theme: 'Indie Game Spotlight',
-        channel: 'reddit',
+        channel: 'facebook',
         focusGame: 'dasanana',
-        options: { subreddit: 'r/indiegames' },
+        options: {},
         description: 'Showcase the mythological astra-countering combat and tejas mechanics'
       },
       {

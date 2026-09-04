@@ -96,18 +96,23 @@ export class AutonomousRunner {
 
     // 6. Paid campaigns: review yesterday's, learn, launch the next one (policy-capped)
     if (config.ads.enabled) {
-      const ads = await new CampaignManager().runCycle({ dryRun });
-      summary.actions.ads = {
-        reviewed: ads.reviewed.length,
-        paused: ads.reviewed.filter(r => r.verdict === 'pause').length,
-        launched: Boolean(ads.planned?.launched),
-        plannedBrief: ads.planned?.campaign
-          ? { gameId: ads.planned.campaign.gameId, angle: ads.planned.campaign.angle, videoPath: ads.planned.campaign.videoPath || null, dryRun: Boolean(ads.planned.dryRun) }
-          : null,
-        blocked: ads.blocked || null,
-        committedDailyUsd: ads.status?.committedDailyUsd ?? null,
-        policy: ads.status?.policy || null
-      };
+      try {
+        const ads = await new CampaignManager().runCycle({ dryRun });
+        summary.actions.ads = {
+          reviewed: ads.reviewed.length,
+          paused: ads.reviewed.filter(r => r.verdict === 'pause').length,
+          launched: Boolean(ads.planned?.launched),
+          plannedBrief: ads.planned?.campaign
+            ? { gameId: ads.planned.campaign.gameId, angle: ads.planned.campaign.angle, videoPath: ads.planned.campaign.videoPath || null, dryRun: Boolean(ads.planned.dryRun) }
+            : null,
+          blocked: ads.blocked || null,
+          committedDailyUsd: ads.status?.committedDailyUsd ?? null,
+          policy: ads.status?.policy || null
+        };
+      } catch (err) {
+        console.warn(`⚠️ X Ads cycle failed: ${err.message}`);
+        summary.actions.ads = { failed: err.message };
+      }
     } else {
       console.log(`\n💸 X Ads: skipped (set X_ADS_ACCOUNT_ID to enable paid campaigns).`);
     }
@@ -140,6 +145,7 @@ export class AutonomousRunner {
     const a = summary.actions || {};
     if (summary.mode !== 'live') steps.push('Everything above was a rehearsal. Run the workflow with mode=live (or set MARKETING_MODE=live) to post for real.');
     if (a.ads?.blocked) steps.push(`X Ads: ${a.ads.blocked}`);
+    if (a.ads?.failed) steps.push(`X Ads: cycle failed — ${a.ads.failed}`);
     if (!config.ads.enabled) steps.push('X Ads: set X_ADS_ACCOUNT_ID (and currency/rate) to let the agent rehearse and, once approved, run campaigns.');
     if (a.togetherVideo?.skipped && /storyboard|chromium|browser/i.test(a.togetherVideo.skipped)) steps.push('Video: run `npx playwright install --with-deps chromium` in marketing/ so storyboards can be filmed.');
     if (!(a.metrics?.fetched > 0)) steps.push('Organic metrics begin once posts go out live; the ads planner reads them to pick games and angles.');

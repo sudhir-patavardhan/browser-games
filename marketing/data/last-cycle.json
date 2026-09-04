@@ -1,40 +1,58 @@
 {
-  "timestamp": "2026-09-03T13:12:01.153Z",
-  "mode": "draft",
+  "timestamp": "2026-09-04T03:28:36.112Z",
+  "mode": "live",
   "actions": {
     "plannedPosts": 0,
     "scoutedLeads": 4,
-    "publishedPosts": 4,
+    "publishedPosts": 0,
     "generatedCards": 21,
     "togetherVideo": {
-      "gameId": "windows",
-      "mode": "draft",
-      "postId": "sim-tweet-1788441202867",
-      "url": "https://twitter.com/intent/tweet?text=Find%20out%20what%20the%20person%20sitting%20next%20to%20you%20sees%20that%20you%20completely%20miss%20about%20yourself.%20A%20quiet%205-minute%20reveal%20for%20couples%20and%20close%20friends%3A%20https%3A%2F%2Fkreeda.games%2Fwindows%2Findex.html",
-      "text": "Find out what the person sitting next to you sees that you completely miss about yourself. A quiet 5-minute reveal for couples and close friends: https://kreeda.games/windows/index.html",
-      "renderSeconds": 31,
-      "videoFile": "windows-together-1788441165763.mp4"
+      "skipped": "next due 2026-09-06 (every 2 days; last: windows)"
+    },
+    "ads": {
+      "failed": "Ads API GET /accounts failed [403] INSUFFICIENT_USER_AUTHORIZED_PERMISSION: User 1815951078233694208 is not authorized to make this request. Please have them reauthorize with your client application with id 33371607."
     },
     "metrics": {
-      "fetched": 1,
+      "fetched": 5,
       "summary": {
         "drift": {
+          "posts": 3,
+          "impressions": 91,
+          "linkClicks": 8,
+          "likes": 1,
+          "replies": 1,
+          "reposts": 0,
+          "videoPosts": 0,
+          "ctrPercent": 8.79,
+          "engagementPercent": 10.99
+        },
+        "break-room": {
           "posts": 1,
-          "impressions": 73,
-          "linkClicks": 5,
+          "impressions": 7,
+          "linkClicks": 0,
           "likes": 1,
           "replies": 0,
           "reposts": 0,
           "videoPosts": 0,
-          "ctrPercent": 6.85,
-          "engagementPercent": 8.22
+          "ctrPercent": 0,
+          "engagementPercent": 14.29
+        },
+        "windows": {
+          "posts": 1,
+          "impressions": 1,
+          "linkClicks": 0,
+          "likes": 0,
+          "replies": 0,
+          "reposts": 0,
+          "videoPosts": 1,
+          "ctrPercent": 0,
+          "engagementPercent": 0
         }
       }
     }
   },
   "action": "full_cycle",
   "nextSteps": [
-    "Everything above was a rehearsal. Run the workflow with mode=live (or set MARKETING_MODE=live) to post for real.",
-    "X Ads: set X_ADS_ACCOUNT_ID (and currency/rate) to let the agent rehearse and, once approved, run campaigns."
+    "X Ads: cycle failed — Ads API GET /accounts failed [403] INSUFFICIENT_USER_AUTHORIZED_PERMISSION: User 1815951078233694208 is not authorized to make this request. Please have them reauthorize with your client application with id 33371607."
   ]
 }

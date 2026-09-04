@@ -99,7 +99,7 @@
   },
   {
     "id": "plan-thursday-1788019317743-3",
-    "status": "draft_published",
+    "status": "archived",
     "channel": "shorts",
     "gameId": "road-rumble",
     "scheduledDate": "2026-09-01",
@@ -153,18 +153,13 @@
       ]
     },
     "createdAt": "2026-08-29T16:01:57.743Z",
-    "publishedAt": "2026-09-01T13:54:35.866Z",
-    "publishResult": {
-      "success": true,
-      "channel": "webhook",
-      "mode": "draft",
-      "publishedAt": "2026-09-01T13:54:35.866Z"
-    },
-    "updatedAt": "2026-09-01T13:54:35.867Z"
+    "publishedAt": null,
+    "publishResult": null,
+    "updatedAt": "2026-09-04T03:15:24.521Z"
   },
   {
     "id": "plan-friday-1788019324895-4",
-    "status": "draft_published",
+    "status": "published",
     "channel": "twitter",
     "gameId": "drift",
     "scheduledDate": "2026-09-02",
@@ -179,20 +174,20 @@
       "mediaSuggestion": "A 5-second high-frame-rate looping video showing a clean countersteer drift around a tight curve with the ghost car alongside, highlighting the battery regen meter pulsing green."
     },
     "createdAt": "2026-08-29T16:02:04.895Z",
-    "publishedAt": "2026-09-03T13:12:12.385Z",
+    "publishedAt": "2026-09-04T03:17:32.189Z",
     "publishResult": {
       "success": true,
       "channel": "twitter",
-      "mode": "draft",
-      "postId": "sim-tweet-1788441132385",
-      "url": "https://twitter.com/intent/tweet?text=A%20drift%20game%20where%20your%20EV%20battery%20is%20your%20health%20bar%20%26%20grip%20is%20a%20budget.%0A%0AReal%20weight%20transfer%2C%20regen%20braking%2C%20and%20daily%20ghost%20runs%E2%80%94built%20into%20a%20single%20HTML%20file%20(instant%20load%2C%20zero%20ads).%0A%0ACan%20you%20beat%20today's%20dev%20ghost%3F%20%F0%9F%91%87%0Ahttps%3A%2F%2Fkreeda.games%2Fdrift%2Findex.html%0A%0A%23gamedev%20%23webdev%20%23indiedev",
-      "publishedAt": "2026-09-03T13:12:12.385Z"
+      "mode": "live",
+      "postId": "2095712838916637082",
+      "url": "https://twitter.com/i/web/status/2095712838916637082",
+      "publishedAt": "2026-09-04T03:17:32.189Z"
     },
-    "updatedAt": "2026-09-03T13:12:12.385Z"
+    "updatedAt": "2026-09-04T03:17:32.190Z"
   },
   {
     "id": "plan-saturday-1788019343411-5",
-    "status": "draft_published",
+    "status": "archived",
     "channel": "reddit",
     "gameId": "deadpoint",
     "scheduledDate": "2026-09-03",
@@ -203,21 +198,13 @@
       "flair": "Playable Build"
     },
     "createdAt": "2026-08-29T16:02:23.411Z",
-    "publishedAt": "2026-09-03T13:12:12.387Z",
-    "publishResult": {
-      "success": true,
-      "channel": "reddit",
-      "subreddit": "r/indiegames",
-      "mode": "draft",
-      "postId": "sim-reddit-1788441132387",
-      "url": "https://www.reddit.com/r/indiegames/submit?title=I%20wanted%20a%20climbing%20game%20that%20actually%20simulates%20center-of-mass%20and%20barn-dooring%2C%20so%20I%20built%20Deadpoint%20(free%20browser%20physics%20climber)",
-      "publishedAt": "2026-09-03T13:12:12.387Z"
-    },
-    "updatedAt": "2026-09-03T13:12:12.387Z"
+    "publishedAt": null,
+    "publishResult": null,
+    "updatedAt": "2026-09-04T03:15:24.525Z"
   },
   {
     "id": "plan-sunday-1788019353867-6",
-    "status": "scheduled",
+    "status": "published",
     "channel": "twitter",
     "gameId": "break-room",
     "scheduledDate": "2026-09-04",
@@ -232,8 +219,16 @@
       "mediaSuggestion": "A 5-second clean looping GIF/video showing a high-skill draw shot (backspin) using the cue spin pad to sink the 8-ball into a called corner pocket."
     },
     "createdAt": "2026-08-29T16:02:33.867Z",
-    "publishedAt": null,
-    "publishResult": null
+    "publishedAt": "2026-09-04T03:17:32.641Z",
+    "publishResult": {
+      "success": true,
+      "channel": "twitter",
+      "mode": "live",
+      "postId": "2095712841139720352",
+      "url": "https://twitter.com/i/web/status/2095712841139720352",
+      "publishedAt": "2026-09-04T03:17:32.641Z"
+    },
+    "updatedAt": "2026-09-04T03:17:32.641Z"
   },
   {
     "id": "post-1788019393751-rx0i",
@@ -288,238 +283,200 @@
     }
   },
   {
-    "id": "plan-monday-1788270790156-0",
-    "status": "draft_published",
+    "id": "plan-monday-1788491784323-0",
+    "status": "published",
     "channel": "twitter",
     "gameId": "drift",
-    "scheduledDate": "2026-09-01",
+    "scheduledDate": "2026-09-04",
     "content": {
       "thread": [
         {
           "tweetNumber": 1,
-          "text": "Most arcade driving games give you a magical 'handbrake' button.\n\nWe built an endless EV drifting game where oversteer is initiated purely by weight transfer, throttle lift-off, and counter-steering.\n\nBuilt entirely in raw Canvas with zero external libraries. 🧵👇",
-          "mediaNote": "High-framerate gameplay GIF showing a tight corner entry: trail-braking to shift weight forward, rear kicking out, and power-sliding past a roadside EV charger."
+          "text": "Most web driving games use an arcade \"press Space to drift\" hack.\n\nWe built an endless EV drifter driven by actual weight-transfer physics: brake to load the front axle, pin the throttle to break the rear loose, countersteer to catch the slide.\n\nNo handbrake button. All in 1 HTML file. 🧵👇",
+          "mediaNote": "GIF of a sleek EV initiating a clean pendulum drift around a snow bend into a zombie horde, switching between cockpit HUD and top-down view."
         },
         {
           "tweetNumber": 2,
-          "text": "The driving physics breakdown:\n\n• Weight transfer: Braking loads the front axle, freeing rear grip to pivot the car\n• EV torque: Instant power delivery sustains the slip angle\n• Regen dynamics: Off-throttle regen recharges the battery, while cutting off-road grass drains it 90x faster",
-          "mediaNote": "Side-by-side clip highlighting the Dual-View HUD (Cockpit glance + Top-Down tracker) with real-time kW draw and battery levels."
+          "text": "The tire model runs on pure Newtonian slip curves:\n\n• Braking transfers vehicle mass forward, unloading the rear\n• Instant electric torque overwhelms the unweighted rear tires\n• Countersteering balances slip angle against momentum\n\nCut the throttle mid-slide and dynamic regen kicks in to snap the car straight while recharging your pack.",
+          "mediaNote": "Short video showing dynamic suspension telemetry and tire friction vectors overlaying the car during an entry slide."
         },
         {
           "tweetNumber": 3,
-          "text": "The technical stack is completely assetless:\n\n🔊 Procedural WebAudio synth simulates dual-motor inverter whine (pitch mapped to wheel speed, amplitude to kW load, pitch-bent on regen)\n🧪 Headless Chrome CDP automated suites verify slip angle physics invariants on every build",
-          "mediaNote": "Short video with sound demonstrating the dynamic WebAudio EV motor pitch rising on acceleration and dipping under regenerative braking."
+          "text": "Zero audio samples were used.\n\nThe EV motor whine is synthesized in real time via procedural WebAudio:\n• Pitch modulates with instantaneous wheel RPM\n• Loudness scales with kW power draw\n• Harmonics invert with a downward sweep under regenerative braking\n\nDeterministic daily seeds let you race against exact ghost telemetry lines.",
+          "mediaNote": "Audio clip demonstration isolating the WebAudio procedural motor synth across acceleration, coasting, and hard regen."
         },
         {
           "tweetNumber": 4,
-          "text": "Browser games lost their way when 60MB engine bundles and loading spinners took over.\n\nDrift is a single, self-contained HTML file.\n\nIt loads in under 0.1 seconds, runs at locked 60 FPS on mobile and desktop, and has zero tracking, zero accounts, and zero pop-ups.",
-          "mediaNote": "Screenshot of browser DevTools Network tab showing 1 request, 0 external assets, and instant DOMContentLoaded."
+          "text": "The entire stack—Canvas rendering, tire physics, procedural biomes, weapon systems, and audio engine—lives in a single, zero-dependency HTML file.\n\nNo npm install. No 50MB asset packs. Instant 0.1s load time on mobile and desktop.\n\nThe open web can still feel lightweight and instantaneous.",
+          "mediaNote": "Screenshot of the single index.html file open in a code editor next to the Chrome DevTools network tab showing 0 external asset requests."
         },
         {
           "tweetNumber": 5,
-          "text": "Race the daily seeded ghost line or drift through 4 biomes right now:\n\n🎮 Play instantly: https://kreeda.games/drift/index.html\n⭐ Full source code (MIT): https://github.com/sudhir-patavardhan/browser-games\n\nDrop your highest drift multiplier in the replies 🏁",
-          "mediaNote": "Static card showing the end-of-run stats screen with multiplier badges and ghost comparison."
+          "text": "Jump into the cockpit and test your countersteer control:\n\n⚡ Play Drift: https://kreeda.games/drift/index.html\n🛠️ Inspect the source (100% MIT): https://github.com/sudhir-patavardhan/browser-games\n\nDrop your highest daily multiplier below.",
+          "mediaNote": "High-resolution promo card showing the sunny desert biome with ghost line and score HUD."
         }
       ]
     },
-    "createdAt": "2026-09-01T13:53:10.156Z",
-    "publishedAt": "2026-09-01T13:54:35.867Z",
+    "createdAt": "2026-09-04T03:16:24.323Z",
+    "publishedAt": "2026-09-04T03:27:58.217Z",
     "publishResult": {
       "success": true,
       "channel": "twitter",
-      "mode": "draft",
-      "postId": "sim-tweet-1788270875867",
-      "url": "https://twitter.com/intent/tweet?text=",
-      "publishedAt": "2026-09-01T13:54:35.867Z"
-    },
-    "updatedAt": "2026-09-01T13:54:35.868Z"
-  },
-  {
-    "id": "plan-tuesday-1788270801062-1",
-    "status": "draft_published",
-    "channel": "devto",
-    "gameId": "ennead",
-    "scheduledDate": "2026-09-02",
-    "content": {
-      "title": "Building Zero-Dependency Games in a Single HTML File: The Architecture of Ennead (Tic-Tac-Toe)",
-      "tags": [
-        "javascript",
-        "webdev",
-        "gamedev",
-        "showdev"
+      "mode": "live",
+      "postId": "2095715454245593363",
+      "url": "https://twitter.com/i/web/status/2095715454245593363",
+      "threadIds": [
+        "2095715454245593363",
+        "2095715456879620546",
+        "2095715459782066440",
+        "2095715462202179658",
+        "2095715464542613657"
       ],
-      "contentMarkdown": "# Building Zero-Dependency Games in a Single HTML File: The Architecture of Ennead (Tic-Tac-Toe)\n\nThe modern web stack has normalized shipping megabytes of JavaScript, multi-step build pipelines, and hundreds of transitive npm dependencies just to draw a few shapes on a screen. \n\nWhen we built **[Kreeda](https://kreeda.games)**, we set an uncompromising constraint: **every game must live inside a single, self-contained HTML file**. No build step, no external assets, no UI libraries, zero trackers, and sub-100ms cold starts on any mobile or desktop browser.\n\nIn this article, we dive into the engineering behind **Ennead**—our minimalist take on Tic-Tac-Toe—breaking down state management, optimal Minimax game-tree evaluation, smooth Canvas 2D stroke math, procedural WebAudio synthesis, and headless verification.\n\n---\n\n## 1. The 0-Dependency Challenge\n\nWhy ship a game in a single HTML file without npm, Webpack, or React?\n\n1. **Zero Cold-Start Latency:** The entire file (HTML + CSS + JS) is ~15-30 KB uncompressed. The browser parses it in one network round trip, rendering the interactive board in under 100ms.\n2. **Permanence and Portability:** A single HTML file can be emailed, archived, run completely offline, or hosted on any static file server without dependency bit-rot.\n3. **Clarity of Execution:** You eliminate layer upon layer of framework abstractions. The state belongs to vanilla JavaScript objects, the view belongs to pure Canvas 2D, and audio belongs directly to the Web Audio API.\n\n---\n\n## 2. Architecture Breakdown: The Render Loop & State Management\n\nEnnead is structured around a classic deterministic state machine decoupled from the visual render loop.\n\n### The State Model\nThe board is represented as an array of 9 cells (indices `0` through `8`). Cell values are `null`, `'X'`, or `'O'`:\n\n```javascript\nconst State = {\n  board: Array(9).fill(null),\n  turn: 'X',\n  winner: null, // 'X', 'O', 'tie', or null\n  winningLine: null,\n  animatingMarks: [], // tracks interpolation for draw animations\n  score: { X: 0, O: 0, ties: 0 }\n};\n```\n\n### The Render Loop\nInstead of re-rendering only on click events, we run a continuous `requestAnimationFrame` loop. This allows us to handle micro-animations (e.g., pen-stroke interpolation, win-line sweeps, hover ripples, and device pixel ratio handling) seamlessly:\n\n```javascript\nfunction initCanvas() {\n  const dpr = window.devicePixelRatio || 1;\n  canvas.width = rect.width * dpr;\n  canvas.height = rect.height * dpr;\n  ctx.scale(dpr, dpr);\n}\n\nfunction render(timestamp) {\n  ctx.clearRect(0, 0, width, height);\n  drawGrid();\n  drawPlacedMarks(timestamp);\n  drawWinningLine(timestamp);\n  requestAnimationFrame(render);\n}\n```\n\n---\n\n## 3. Math & Logic Breakdown\n\n### A. Unbeatable AI: Minimax with Alpha-Beta Pruning\nTic-Tac-Toe has a small state space ($3^9 = 19,683$ permutations), making full-depth Minimax trivial to execute in <1ms without freezing the main thread.\n\n```javascript\nfunction minimax(board, depth, isMaximizing) {\n  const score = evaluateBoard(board);\n  if (score !== null) return score - depth; // Prefer quicker wins\n  if (isFull(board)) return 0;\n\n  if (isMaximizing) {\n    let maxEval = -Infinity;\n    for (let i = 0; i < 9; i++) {\n      if (!board[i]) {\n        board[i] = 'O';\n        maxEval = Math.max(maxEval, minimax(board, depth + 1, false));\n        board[i] = null;\n      }\n    }\n    return maxEval;\n  } else {\n    let minEval = Infinity;\n    for (let i = 0; i < 9; i++) {\n      if (!board[i]) {\n        board[i] = 'X';\n        minEval = Math.min(minEval, minimax(board, depth + 1, true));\n        board[i] = null;\n      }\n    }\n    return minEval;\n  }\n}\n```\n\n### B. Smooth Pen-Stroke Geometry\nInstead of instantly popping 'X' and 'O' sprites onto the grid, marks are drawn procedurally using parametric equations interpolated across time ($t \\in [0, 1]$).\n\nFor an 'O' (circle sweep):\n$$\\theta(t) = -\\frac{\\pi}{2} + 2\\pi \\cdot t$$\n\nFor an 'X' (two intersecting line segments):\n$$P_1(t) = (1-t)A + tB \\quad \\text{for } t \\le 0.5$$\n$$P_2(t) = (1-2(t-0.5))C + 2(t-0.5)D \\quad \\text{for } t > 0.5$$\n\n```javascript\nfunction drawAnimatedX(ctx, x, y, size, progress) {\n  ctx.beginPath();\n  // First stroke\n  const p1 = Math.min(progress * 2, 1);\n  ctx.moveTo(x - size, y - size);\n  ctx.lineTo(x - size + 2 * size * p1, y - size + 2 * size * p1);\n  \n  // Second stroke\n  if (progress > 0.5) {\n    const p2 = (progress - 0.5) * 2;\n    ctx.moveTo(x + size, y - size);\n    ctx.lineTo(x + size - 2 * size * p2, y - size + 2 * size * p2);\n  }\n  ctx.stroke();\n}\n```\n\n---\n\n## 4. Procedural WebAudio (Zero Audio Files)\n\nLoading `.wav` or `.mp3` files adds HTTP overhead and decoded audio memory pressure. In Ennead, every audio effect is synthesized dynamically on the fly with the Web Audio API.\n\n### Tactile Move \"Click\"\nA brief, pitch-decaying sine wave coupled with an exponential gain drop creates a tactile physical button feel:\n\n```javascript\nfunction playPlaceSound() {\n  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();\n  const osc = audioCtx.createOscillator();\n  const gain = audioCtx.createGain();\n\n  osc.type = 'sine';\n  osc.frequency.setValueAtTime(440, audioCtx.currentTime);\n  osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.05);\n\n  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);\n  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);\n\n  osc.connect(gain);\n  gain.connect(audioCtx.destination);\n\n  osc.start();\n  osc.stop(audioCtx.currentTime + 0.05);\n}\n```\n\n### Winning Harmonic Chord\nWhen a player wins, we trigger an arpeggiated tri-tone chord ($E_5, G\\#_5, B_5$) using soft triangle waves:\n\n```javascript\nfunction playWinChime() {\n  const freqs = [659.25, 830.61, 987.77];\n  freqs.forEach((f, idx) => {\n    setTimeout(() => playTone(f, 0.4), idx * 80);\n  });\n}\n```\n\n---\n\n## 5. Automated Verification with Headless Chrome\n\nTo ensure gameplay integrity across different browser versions without a hefty testing framework, we use a lightweight Node.js script with Puppeteer/Headless Chrome:\n\n1. **Board Evaluation Integrity:** The test script simulates hundreds of random and optimal games via simulated Canvas click coordinates.\n2. **Minimax Assertion:** Ensures that the computer AI never loses against any randomized opponent strategy (wins $\\ge 0$, losses $\\equiv 0$, ties $\\ge 0$).\n3. **AudioContext Resumption:** Verifies audio unlocks correctly after the first user gesture without throwing unhandled promise rejections.\n\n---\n\n## 6. Play the Game & Explore the Source\n\nYou can play Ennead right now in any modern browser—no signups, no ads, no trackers:\n\n🎮 **Play the game:** [https://kreeda.games/ennead/index.html](https://kreeda.games/ennead/index.html)  \n📦 **Inspect the source code:** [https://github.com/sudhir-patavardhan/browser-games](https://github.com/sudhir-patavardhan/browser-games)  \n\nCheck out the full 12-game arcade at [Kreeda.games](https://kreeda.games), all released under the permissive MIT license."
+      "publishedAt": "2026-09-04T03:27:58.217Z"
     },
-    "createdAt": "2026-09-01T13:53:21.062Z",
-    "publishedAt": "2026-09-03T13:12:12.387Z",
-    "publishResult": {
-      "success": true,
-      "channel": "devto",
-      "mode": "draft",
-      "publishedAt": "2026-09-03T13:12:12.387Z"
-    },
-    "updatedAt": "2026-09-03T13:12:12.388Z"
+    "updatedAt": "2026-09-04T03:27:58.217Z"
   },
   {
-    "id": "plan-wednesday-1788270807146-2",
-    "status": "draft_published",
-    "channel": "reddit",
-    "gameId": "carrom",
-    "scheduledDate": "2026-09-03",
-    "content": {
-      "subreddit": "r/webgames",
-      "title": "[HTML5] Carrom – Classic tabletop disc-flicking board game with custom physics and 3-tier AI",
-      "bodyMarkdown": "Hey r/webgames,\n\nI built a lightweight, browser-based version of **Carrom** (the classic South Asian tabletop game that plays like a blend of pool/billiards and shuffleboard).\n\n**Play here:** https://kreeda.games/carrom/index.html\n\n### How to Play:\n1. Drag the slider along your baseline to position the striker.\n2. Drag back and release with slingshot controls to flick.\n3. Pocket your 9 pieces (white or black) and secure the red Queen with a follow-up cover shot.\n4. Avoid pocketing the striker (standard foul penalty returns a piece to the center).\n\n### Under the hood:\n- **Physics engine:** Built from scratch in pure 2D canvas with continuous sub-stepping so high-velocity striker flicks never phase or tunnel through pieces.\n- **AI tiers:** Easy, Medium, and Hard (calculates ghost-ball pocket trajectories and restitution-corrected bank shots off the cushions).\n- **Zero bloat:** Loads instantly, zero ads, no sign-ups, no tracking.\n\nWould love feedback on the flick sensitivity and whether Hard AI feels sufficiently challenging or too punishing on bank angles!",
-      "flair": "Developer"
-    },
-    "createdAt": "2026-09-01T13:53:27.146Z",
-    "publishedAt": "2026-09-03T13:12:12.388Z",
-    "publishResult": {
-      "success": true,
-      "channel": "reddit",
-      "subreddit": "r/webgames",
-      "mode": "draft",
-      "postId": "sim-reddit-1788441132388",
-      "url": "https://www.reddit.com/r/webgames/submit?title=%5BHTML5%5D%20Carrom%20%E2%80%93%20Classic%20tabletop%20disc-flicking%20board%20game%20with%20custom%20physics%20and%203-tier%20AI",
-      "publishedAt": "2026-09-03T13:12:12.388Z"
-    },
-    "updatedAt": "2026-09-03T13:12:12.389Z"
-  },
-  {
-    "id": "plan-thursday-1788270817596-3",
+    "id": "plan-tuesday-1788491792289-1",
     "status": "scheduled",
-    "channel": "shorts",
-    "gameId": "road-rumble",
-    "scheduledDate": "2026-09-04",
+    "channel": "facebook",
+    "gameId": "ennead",
+    "scheduledDate": "2026-09-05",
     "content": {
-      "title": "We Rebuilt 90s Road Rash in Vanilla JavaScript",
-      "hookText": "Wait... is that Road Rash in a browser tab?! 🏍️💥",
-      "duration": "27s",
-      "scenes": [
-        {
-          "time": "0-3s",
-          "visual": "Close-up capture of bike rider pulling up next to a rival at 140 MPH, winding up a punch, and SMACKING them directly into an oncoming semi-truck. Screen shake + loud crunch SFX.",
-          "voiceover": "Remember when motorcycle games let you literally punch people off their bikes?",
-          "onScreenText": "90s Road Rash is back... in pure JavaScript 💀"
-        },
-        {
-          "time": "3-10s",
-          "visual": "High-speed pseudo-3D raster road rendering, bike cresting a steep elevation drop, dodging two oncoming yellow sedans by inches, tires smoking on a hairpin turn.",
-          "voiceover": "We rebuilt that chaotic 90s retro brawler physics engine using zero external libraries.",
-          "onScreenText": "Pure Canvas + WebAudio Synth (Zero Downloads)"
-        },
-        {
-          "time": "10-18s",
-          "visual": "Player picks up a roadside club, pulls alongside two aggressive AI riders box-swarming, clubs the left rider (sending bike cartwheeling), kicks the right rider into a guardrail.",
-          "voiceover": "No ads. No $70 price tag. Just 5 ruthless AI riders, elevation drops, and melee combat.",
-          "onScreenText": "Pin the throttle. Throw the punch."
-        },
-        {
-          "time": "18-23s",
-          "visual": "Final corner before the finish line. Rival takes 1st place, player boosts with nitro draft, lands a flying right hook at the line to take 1st as the checkered flag waves.",
-          "voiceover": "Steal 1st place in the final millisecond.",
-          "onScreenText": "1st PLACE 🏁"
-        },
-        {
-          "time": "23-27s",
-          "visual": "Quick zoom out to show it running seamlessly in mobile Safari / Chrome browser, instant restart tap.",
-          "voiceover": "Play Road Rumble right now in your browser at Kreeda.games. Zero install, completely free.",
-          "onScreenText": "Play Free 👉 kreeda.games/road-rumble"
-        }
-      ],
-      "caption": "We rebuilt classic 90s Road Rash arcade brawling in a single lightweight web file. Zero downloads, zero ads, pure nostalgic road rage. 🏍️💨 Play instant at kreeda.games",
+      "headline": "Think Tic-Tac-Toe is solved? Try Ultimate 9x9 nested mind games.",
+      "text": "Think Tic-Tac-Toe is for kids?\n\nTry nested 9x9 Ultimate Mode—every move dictates your opponent's sub-board. Powered by an unbeatable Minimax AI in a single zero-dependency HTML file.\n\nPlay instantly (no ads/signups):\nhttps://kreeda.games/ennead/index.html\n\n#gamedev #indiedev",
       "hashtags": [
-        "gamedev",
-        "retrogaming",
-        "roadrash",
-        "indiegames",
-        "javascript",
-        "webdev",
-        "arcade"
-      ]
+        "#gamedev",
+        "#indiedev"
+      ],
+      "mediaSuggestion": "A fast 5-second GIF showing a high-stakes move in Ultimate Tic-Tac-Toe triggering a glowing meta-board capture animation, followed by the Minimax AI instantly countering."
     },
-    "createdAt": "2026-09-01T13:53:37.596Z",
+    "createdAt": "2026-09-04T03:16:32.289Z",
     "publishedAt": null,
     "publishResult": null
   },
   {
-    "id": "plan-friday-1788270829598-4",
+    "id": "plan-wednesday-1788491798840-2",
+    "status": "scheduled",
+    "channel": "twitter",
+    "gameId": "carrom",
+    "scheduledDate": "2026-09-06",
+    "content": {
+      "headline": "Classic Carrom Physics & Bank-Shot AI in Vanilla JS",
+      "text": "Classic Carrom rebuilt in pure vanilla JS.\n\nThe AI calculates restitution-corrected cushion bank shots in real-time in your browser.\n\nZero installs, loads in 0.1s:\nhttps://kreeda.games/carrom/index.html\n\n#gamedev #webdev #indiedev",
+      "hashtags": [
+        "#gamedev",
+        "#webdev",
+        "#indiedev"
+      ],
+      "mediaSuggestion": "A fast 6-second high-framerate video/GIF showing a smooth striker flick, an impossible cushion bank shot by the AI, and the red Queen sinking into the corner pocket with smooth physics."
+    },
+    "createdAt": "2026-09-04T03:16:38.840Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-thursday-1788491805105-3",
+    "status": "scheduled",
+    "channel": "facebook",
+    "gameId": "road-rumble",
+    "scheduledDate": "2026-09-07",
+    "content": {
+      "headline": "Rebuilding 90s Road Rash in pure Vanilla JS",
+      "text": "We rebuilt 90s Road Rash in a single vanilla JS file using pseudo-3D raster projection.\n\nPin the throttle, punch rivals into oncoming traffic, zero downloads:\nhttps://kreeda.games/road-rumble/index.html\n\n#gamedev #webdev #indiedev",
+      "hashtags": [
+        "#gamedev",
+        "#webdev",
+        "#indiedev"
+      ],
+      "mediaSuggestion": "A 5-second 60fps looping gameplay GIF showing the player swinging a club at a rival biker, sending them crashing into an oncoming civilian truck over a crest hill."
+    },
+    "createdAt": "2026-09-04T03:16:45.105Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-friday-1788491811742-4",
     "status": "scheduled",
     "channel": "twitter",
     "gameId": "drift",
-    "scheduledDate": "2026-09-05",
+    "scheduledDate": "2026-09-08",
     "content": {
-      "headline": "EV Battery as Health Bar Drift Challenge",
-      "text": "A drift game where your EV battery is your health bar. Off-road drains it 90x faster; regen braking saves you.\n\nReal weight transfer physics in a single HTML file (0.1s load).\n\nBeat the Friday dev ghost: https://kreeda.games/drift/index.html\n\n#gamedev #webdev #indiedev",
+      "headline": "Zero-install EV drift game with real weight-transfer physics",
+      "text": "A drifting game in a single HTML file where your EV battery is your health bar.\n\nReal weight-transfer physics + regen braking on slide.\n\nCan you beat the dev ghost on today's Daily Road? ⚡️🏎️\n\nhttps://kreeda.games/drift/index.html #gamedev #webdev #indiedev",
       "hashtags": [
         "#gamedev",
         "#webdev",
         "#indiedev"
       ],
-      "mediaSuggestion": "A 5-second seamless gameplay GIF showing a tight weight-transfer slide around a snowy hairpin corner with the regen battery meter flashing green, narrowly dodging oncoming traffic."
+      "mediaSuggestion": "A fast-paced 5-7s looping 60fps clip showing a clean countersteer drift around a snowy bend, battery HUD flashing green with regen, cleanly overtaking the translucent dev ghost."
     },
-    "createdAt": "2026-09-01T13:53:49.598Z",
+    "createdAt": "2026-09-04T03:16:51.742Z",
     "publishedAt": null,
     "publishResult": null
   },
   {
-    "id": "plan-saturday-1788270841178-5",
+    "id": "plan-saturday-1788491818299-5",
     "status": "scheduled",
-    "channel": "reddit",
+    "channel": "facebook",
     "gameId": "dasanana",
-    "scheduledDate": "2026-09-06",
+    "scheduledDate": "2026-09-09",
     "content": {
-      "subreddit": "r/indiegames",
-      "title": "I built a mythological missile-counter duel game where you rhythm-chant Sanskrit verses mid-combat to recharge energy",
-      "bodyMarkdown": "Hey r/indiegames,\n\nI’ve always wanted to translate the astronomical scale of ancient Indian epic warfare (*astras* / divine celestial weapons) into a tight, twitch-reaction arcade combat loop. \n\nMost depictions of these duels in media are turn-based or cinematic, but in the lore, an *astra* had to be neutralized in mid-air by summoning its exact counter-element before impact (e.g., extinguishing an inferno with a deluge, piercing darkness with solar radiance).\n\nSo I built **Astra Duel** around two interwoven mechanics:\n\n### 1. Mid-Air Elemental Interception\nBosses fire telegraphed divine missiles across the screen. You have split seconds to identify the incoming missile's signature and invoke the opposing elemental counter:\n* **Agneyāstra** (Fire) ⇄ **Varuṇāstra** (Torrential Water)\n* **Vāyavyāstra** (Cyclone) ⇄ **Pārvatāstra** (Mountain Anchor)\n* **Tamisrāstra** (Void/Darkness) ⇄ **Sūryāstra** (Solar Beam)\n\nIf you mistime the invocation or pick the wrong counter, the projectiles don't cancel out—they hit you full force.\n\n### 2. Real-Time Sanskrit Rhythm Chanting\nEvery celestial weapon drains your *Prāna* (solar energy). When you're running on empty, you can't just wait for a passive cooldown timer. Instead, you enter a meditative chant state where you must rhythm-tap authentic Sanskrit stanzas from the *Āditya-Hṛdayam* (the hymn to the Sun God recited before battle) in sync with the pulse to regenerate solar reserves while dodging incoming strikes.\n\n### The Boss Gauntlet\n* **Khara:** Teaches rapid dual-element switching.\n* **Indrajit:** Master of illusions who fires stealth/camouflaged astras and the deadly *Śakti* spear.\n* **Rāvaṇa:** A 10-headed endurance duel where you have to sever all heads concurrently before unleashing the final *Brahmāstra*.\n\n### Tech / Philosophy\nThe game is built with zero frameworks, zero external assets, and zero dependencies—pure Canvas2D and procedural WebAudio sound synthesis inside a single standalone HTML file. Instant 0.1s load time, fully open-source (MIT).\n\n**Playable in browser here (no downloads/logins):** https://kreeda.games/dasanana/index.html\n\nI'd love your thoughts on the difficulty curve—specifically whether the dual-tasking between rhythm-chanting and missile reaction feels tense and rewarding or too overwhelming during the Indrajit phase!",
-      "flair": "Playable Game"
+      "headline": "Sanskrit Rhythm Chanting Meets Mythic Astra Combat",
+      "text": "Rhythm-chant authentic Sanskrit verses to counter divine missiles and clash against Rāvaṇa's 10 heads.\n\nInstant load, 0 downloads, single HTML file.\n\nPlay in browser: https://kreeda.games/dasanana/index.html\n\n#gamedev #indiedev #webdev",
+      "hashtags": [
+        "#gamedev",
+        "#indiedev",
+        "#webdev"
+      ],
+      "mediaSuggestion": "A 6-second looping gameplay GIF showcasing a player rhythm-chanting Āditya-Hṛdayam glyphs, countering Indrajit's darkness projectile with a burst of light astra, and triggering particle FX."
     },
-    "createdAt": "2026-09-01T13:54:01.178Z",
+    "createdAt": "2026-09-04T03:16:58.299Z",
     "publishedAt": null,
     "publishResult": null
   },
   {
-    "id": "plan-sunday-1788270849116-6",
+    "id": "plan-sunday-1788491825155-6",
     "status": "scheduled",
     "channel": "twitter",
     "gameId": "break-room",
-    "scheduledDate": "2026-09-07",
+    "scheduledDate": "2026-09-10",
     "content": {
-      "headline": "Zero-Install 8-Ball with Real Cue Spin Physics",
-      "text": "Need an 8-ball break without ads or downloads?\n\nBuilt full spin mechanics, called pockets, & 3 AI tiers in pure vanilla JS—loads in 0.1s in your browser:\n\nhttps://kreeda.games/break-room/index.html\n\n#webdev #gamedev #indiedev",
+      "headline": "Full 8-ball physics in pure vanilla JS with zero ads",
+      "text": "Full 8-ball physics with realistic cue spin, cushion deflection, and called pockets—built in a single HTML file.\n\nNo downloads. Zero ads. Instant 0.1s load.\n\nRack 'em up: https://kreeda.games/break-room/index.html\n\n#gamedev #webdev #indiegame",
       "hashtags": [
-        "#webdev",
         "#gamedev",
-        "#indiedev"
+        "#webdev",
+        "#indiegame"
       ],
-      "mediaSuggestion": "A 5-second looping video/GIF demonstrating a clean cue ball backspin (draw shot) hitting an object ball into the corner and rolling back smoothly."
+      "mediaSuggestion": "A 5-second seamless looping GIF/clip showing a smooth draw-shot (backspin) on the cue ball banking off a cushion and sinking the 8-ball into a called pocket."
     },
-    "createdAt": "2026-09-01T13:54:09.116Z",
+    "createdAt": "2026-09-04T03:17:05.155Z",
     "publishedAt": null,
     "publishResult": null
   },
   {
-    "id": "post-1788441202867-giw2",
-    "status": "draft_published",
+    "id": "post-1788491923184-2zmb",
+    "status": "published",
     "channel": "twitter",
     "gameId": "windows",
-    "scheduledDate": "2026-09-03",
+    "scheduledDate": "2026-09-04",
     "content": {
       "kind": "together-video",
-      "text": "Find out what the person sitting next to you sees that you completely miss about yourself. A quiet 5-minute reveal for couples and close friends: https://kreeda.games/windows/index.html",
-      "altText": "Two people take turns selecting personality traits on a shared phone screen until a four-pane Johari Window reveals their hidden traits and blind spots.",
-      "videoPath": "/home/runner/work/browser-games/browser-games/marketing/artifacts/videos/windows-together-1788441165763.mp4",
-      "squarePath": "/home/runner/work/browser-games/browser-games/marketing/artifacts/videos/windows-together-1788441165763-square.mp4"
+      "text": "Find out your blind spots from the one person who actually sees them. A gentle 5-minute reveal to try with your partner or best friend tonight: https://kreeda.games/windows/index.html",
+      "altText": "Two people sitting together select descriptive personality words on a shared phone screen, which then reveals a color-coded Johari Window grid comparing their perceptions.",
+      "videoPath": "/Users/sudhir/Projects/browser-games/marketing/artifacts/videos/windows-together-1788491884874.mp4",
+      "squarePath": "/Users/sudhir/Projects/browser-games/marketing/artifacts/videos/windows-together-1788491884874-square.mp4"
     },
-    "createdAt": "2026-09-03T13:13:22.867Z",
-    "publishedAt": "2026-09-03T13:13:22.867Z",
+    "createdAt": "2026-09-04T03:18:43.184Z",
+    "publishedAt": "2026-09-04T03:18:43.182Z",
     "publishResult": {
       "success": true,
       "channel": "twitter",
-      "mode": "draft",
-      "postId": "sim-tweet-1788441202867",
-      "url": "https://twitter.com/intent/tweet?text=Find%20out%20what%20the%20person%20sitting%20next%20to%20you%20sees%20that%20you%20completely%20miss%20about%20yourself.%20A%20quiet%205-minute%20reveal%20for%20couples%20and%20close%20friends%3A%20https%3A%2F%2Fkreeda.games%2Fwindows%2Findex.html",
-      "publishedAt": "2026-09-03T13:13:22.867Z"
+      "mode": "live",
+      "postId": "2095713136997519687",
+      "url": "https://twitter.com/i/web/status/2095713136997519687",
+      "publishedAt": "2026-09-04T03:18:43.182Z"
     }
   }
 ]

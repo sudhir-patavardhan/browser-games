@@ -35,6 +35,11 @@ Two events per game, at minimum:
 `outcome` is why it ended (`win`, `loss`, `draw`, `quit`, `complete`, `bust`, `timeout`) — the field
 that turns a play count into something you can act on.
 
+**One event `analytics.js` sends on its own: `played_30s`.** It fires once per game page when the visitor's
+active, visible play crosses thirty seconds, on the same clock that produces `game_time`, and it goes to GA4
+and to the X pixel together. It is the marketing system's definition of a player — mark it as a key event in
+GA4. Games never send it themselves.
+
 **Games that already report keep the names they have.** Drift sends `run_start` / `run_end` /
 `shop_buy` / `badge_earned`; the grids send `grid_start` / `grid_end`. Renaming those would orphan the
 history already collected, which is worth more than a tidy taxonomy. New instrumentation uses

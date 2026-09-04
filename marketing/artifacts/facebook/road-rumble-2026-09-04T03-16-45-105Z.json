@@ -1,0 +1,10 @@
+{
+  "headline": "Rebuilding 90s Road Rash in pure Vanilla JS",
+  "text": "We rebuilt 90s Road Rash in a single vanilla JS file using pseudo-3D raster projection.\n\nPin the throttle, punch rivals into oncoming traffic, zero downloads:\nhttps://kreeda.games/road-rumble/index.html\n\n#gamedev #webdev #indiedev",
+  "hashtags": [
+    "#gamedev",
+    "#webdev",
+    "#indiedev"
+  ],
+  "mediaSuggestion": "A 5-second 60fps looping gameplay GIF showing the player swinging a club at a rival biker, sending them crashing into an oncoming civilian truck over a crest hill."
+}

@@ -1,8 +1,8 @@
 # 🎯 Kreeda Autonomous Marketing Agent
 
-An autonomous AI marketing and community growth agent designed to continuously expand the user base of **Kreeda** (`https://kreeda.games`) and its 12 single-file browser games.
+An autonomous AI marketing agent designed to continuously expand the user base of **Kreeda** (`https://kreeda.games`) and its 12 single-file browser games.
 
-The agent handles **content generation, visual social card creation, community opportunity scouting, multi-channel scheduling, and automated or human-in-the-loop publishing**.
+The agent handles **Twitter content generation, visual social card creation, community opportunity scouting, scheduling, and automated or human-in-the-loop publishing**.
 
 ---
 
@@ -38,10 +38,10 @@ node marketing/cli.js dashboard
 
 ## 🔑 Account Access & Credentials Guide
 
-To enable automated posting across different platforms, create a `.env` file in the `marketing/` directory (see [`marketing/.env.example`](.env.example)) and add your API keys:
+To enable automated posting on Twitter, create a `.env` file in the `marketing/` directory (see [`marketing/.env.example`](.env.example)) and add your API keys:
 
-### 1. Google Gemini API (Required for Autonomous Content & Lead Analysis)
-- **Why**: Powers the copy generation, tone tailoring, viral hook drafting, and community query analysis.
+### 1. Google Gemini API (Required for Autonomous Content Generation)
+- **Why**: Powers copy generation, tone tailoring, and viral hook drafting.
 - **How to get**:
   1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey).
   2. Click **Create API Key**.
@@ -50,7 +50,7 @@ To enable automated posting across different platforms, create a `.env` file in 
 
 ---
 
-### 2. Twitter / X API (For Tweets, Feature Threads & Daily Challenges)
+### 2. Twitter / X API (For Tweets & Threads)
 - **Why**: Posts promotional tweets, dev log threads, and daily drift challenges directly to your X account.
 - **How to get**:
   1. Sign up / log in at the [X Developer Portal](https://developer.x.com/).
@@ -68,56 +68,16 @@ To enable automated posting across different platforms, create a `.env` file in 
 
 ---
 
-### 3. Reddit API (For r/webgames, r/indiegames, r/javascript)
-- **Why**: Submits value-first showcases and technical post-mortems to relevant gaming subreddits.
+### 3. Facebook Graph API (For Personal Account Promotion)
+- **Why**: Posts promotional content to your personal Facebook account and pages.
 - **How to get**:
-  1. Log into Reddit and navigate to [reddit.com/prefs/apps](https://www.reddit.com/prefs/apps).
-  2. Click **create another app...** (at the bottom).
-  3. Choose **script** (for personal use script).
-  4. Name it `KreedaGrowthAgent`, set redirect URI to `http://localhost:8080`.
-  5. Copy the **Client ID** (string under the app name) and **Client Secret**.
-  6. Add to `marketing/.env`:
+  1. Go to [Facebook Developers](https://developers.facebook.com/).
+  2. Create an app and navigate to the **Graph API Explorer**.
+  3. Generate a **User Access Token** with `pages_manage_posts` and `pages_read_engagement` permissions.
+  4. Add to `marketing/.env`:
      ```env
-     REDDIT_CLIENT_ID=...
-     REDDIT_CLIENT_SECRET=...
-     REDDIT_USERNAME=...
-     REDDIT_PASSWORD=...
-     REDDIT_USER_AGENT=KreedaGrowthAgent/1.0 by your_username
-     ```
-
----
-
-### 4. Discord Webhooks (For Community Announcements & Team Alerts)
-- **Why**: Broadcasts new game releases, daily drift records, or campaign notifications into your Discord server.
-- **How to get**:
-  1. In your Discord server, go to **Server Settings** ➔ **Integrations** ➔ **Webhooks**.
-  2. Click **New Webhook**, select the target channel, and click **Copy Webhook URL**.
-  3. Add to `marketing/.env`:
-     ```env
-     DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
-     ```
-
----
-
-### 5. Dev.to / Hashnode (For Technical Engineering Devlogs)
-- **Why**: Publishes deep-dive engineering articles explaining how single-file 0-dependency games and WebAudio synthesizers are built.
-- **How to get**:
-  1. Log into [Dev.to](https://dev.to/settings/extensions).
-  2. Scroll down to **DEV Community API Keys**, generate a new key, and copy it.
-  3. Add to `marketing/.env`:
-     ```env
-     DEVTO_API_KEY=...
-     ```
-
----
-
-### 6. Universal Webhook (Buffer, Make.com, Zapier, n8n)
-- **Why**: Connects to Instagram, TikTok, LinkedIn, or Mastodon via multi-platform schedulers like Buffer or Make.
-- **How to get**:
-  1. Create a Webhook trigger in Make / Zapier / n8n or grab a Buffer Access Token.
-  2. Add to `marketing/.env`:
-     ```env
-     GENERIC_WEBHOOK_URL=https://hook.eu1.make.com/...
+     FACEBOOK_ACCESS_TOKEN=...
+     FACEBOOK_PAGE_ID=...
      ```
 
 ---
@@ -128,8 +88,8 @@ To enable automated posting across different platforms, create a `.env` file in 
 | :--- | :--- |
 | `node marketing/cli.js status` | Inspects platform connection and credential status |
 | `node marketing/cli.js plan` | Generates a 7-day marketing schedule with diverse game spotlights |
-| `node marketing/cli.js generate --game <id> --channel <ch>` | Generates targeted copy for a single game and channel (e.g. `twitter`, `reddit`, `hackernews`, `shorts`, `devto`) |
-| `node marketing/cli.js campaign --game <id>` | Generates a full 360° launch campaign across all channels |
+| `node marketing/cli.js generate --game <id>` | Generates Twitter copy for a single game |
+| `node marketing/cli.js campaign --game <id>` | Generates a Twitter launch campaign (single + thread) |
 | `node marketing/cli.js studio` | Generates 1200x630 SVG social preview cards for all 12 games |
 | `node marketing/cli.js scout` | Scans community discussion topics and drafts high-relevance replies |
 | `node marketing/cli.js queue` | Displays all pending, scheduled, and approved campaign posts |

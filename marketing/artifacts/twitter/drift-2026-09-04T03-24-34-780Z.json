@@ -1,0 +1,10 @@
+{
+  "headline": "Single-file EV drift racer with battery survival physics",
+  "text": "We built a drifting game in a single HTML file where your EV battery is your health bar.\n\nReal weight-transfer physics + zero install. Beat my score on today's Daily Road:\n\nhttps://kreeda.games/drift/index.html\n\n#gamedev #indiedev #webdev",
+  "hashtags": [
+    "#gamedev",
+    "#indiedev",
+    "#webdev"
+  ],
+  "mediaSuggestion": "A 5-second looping 60fps gameplay clip showing a tight Scandinavian flick drift around a bend, cutting to regen braking while passing a ghost car."
+}

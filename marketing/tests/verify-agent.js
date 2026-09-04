@@ -62,9 +62,9 @@ async function runTests() {
   });
 
   // 2. Content Generator
-  await asyncTest('Content Generator produces valid outputs for all channels', async () => {
+  await asyncTest('Content Generator produces valid outputs for Twitter and Facebook', async () => {
     const gen = new ContentGenerator();
-    
+
     // Twitter Single
     const tw = await gen.generate('drift', 'twitter', { isThread: false });
     assert.ok(tw.content);
@@ -74,21 +74,9 @@ async function runTests() {
     const th = await gen.generate('carrom', 'twitter', { isThread: true });
     assert.ok(th.content);
 
-    // Reddit
-    const rd = await gen.generate('break-room', 'reddit', { subreddit: 'r/webgames' });
-    assert.ok(rd.content);
-
-    // Hacker News
-    const hn = await gen.generate('ennead', 'hackernews');
-    assert.ok(hn.content);
-
-    // Shorts
-    const sh = await gen.generate('road-rumble', 'shorts');
-    assert.ok(sh.content);
-
-    // Dev.to
-    const dt = await gen.generate('apogee', 'devto');
-    assert.ok(dt.content);
+    // Facebook
+    const fb = await gen.generate('break-room', 'facebook');
+    assert.ok(fb.content);
   });
 
   // 3. Campaign Planner

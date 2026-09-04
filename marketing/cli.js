@@ -71,15 +71,12 @@ async function main() {
       console.log(`Base URL:        ${config.general.baseUrl}`);
       console.log(`Mode:            ${config.general.mode.toUpperCase()}`);
       console.log(`AI Engine:       ${config.ai.geminiModel} (${config.ai.geminiApiKey ? '✅ Key Present' : '⚠️ Fallback Engine'})`);
-      
+
       const pub = new UniversalPublisher();
       const st = pub.getStatus();
       console.log(`\n--- Configured Channels ---`);
       console.log(`Twitter/X API:   ${st.twitter ? '✅ Connected' : '❌ Missing Credentials'}`);
-      console.log(`Reddit API:      ${st.reddit ? '✅ Connected' : '❌ Missing Credentials'}`);
-      console.log(`Discord Webhook: ${st.discord ? '✅ Connected' : '❌ Missing Credentials'}`);
-      console.log(`Dev.to API:      ${st.devto ? '✅ Connected' : '❌ Missing Credentials'}`);
-      console.log(`Universal Hook:  ${st.webhook ? '✅ Connected' : '❌ Missing Credentials'}`);
+      console.log(`Facebook API:    ${st.facebook ? '✅ Connected' : '❌ Missing Credentials'}`);
       console.log(`======================================================\n`);
       break;
     }
@@ -107,7 +104,7 @@ async function main() {
 
       console.log(`\n✨ Generating ${channel.toUpperCase()} content for "${gameId}"...`);
       const gen = new ContentGenerator();
-      const result = await gen.generate(gameId, channel, { isThread, subreddit: flags.subreddit, angle: flags.angle });
+      const result = await gen.generate(gameId, channel, { isThread, angle: flags.angle });
 
       console.log(`\n================ GENERATED CONTENT ================`);
       console.log(JSON.stringify(result.content, null, 2));
@@ -130,10 +127,10 @@ async function main() {
     case 'campaign':
     case 'generate-campaign': {
       const gameId = flags.game || 'drift';
-      console.log(`\n🚀 Generating 360° launch campaign for "${gameId}"...`);
+      console.log(`\n🚀 Generating social campaign for "${gameId}"...`);
       const gen = new ContentGenerator();
       const campaign = await gen.generateFullCampaign(gameId);
-      console.log(`\n✅ Generated all deliverables (Twitter thread, Reddit posts, Show HN, Video script, Dev.to article).`);
+      console.log(`\n✅ Generated all deliverables (Twitter single, Twitter thread, Facebook post).`);
       break;
     }
 
@@ -445,8 +442,8 @@ Commands:
   status                     Check status of API credentials & channel connectivity
   plan                       Generate a complete 7-day marketing campaign plan
   generate                   Generate content for a specific game and channel
-                             Options: --game <id> --channel <twitter|reddit|hackernews|shorts|devto> [--thread] [--queue]
-  campaign                   Generate a full 360° cross-platform launch campaign for a game
+                             Options: --game <id> --channel <twitter|facebook> [--thread] [--queue]
+  campaign                   Generate a full social campaign (Twitter + Facebook) for a game
                              Options: --game <id>
   scout                      Scout community queries & draft authentic contextual replies
   studio                     Generate high-res SVG social cards & banners for all 12 games
