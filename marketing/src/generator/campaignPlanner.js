@@ -1,5 +1,6 @@
 import { GAME_CATALOG } from '../knowledge/catalog.js';
 import { ContentGenerator } from './contentGenerator.js';
+import { X } from '../knowledge/channels.js';
 
 export class CampaignPlanner {
   constructor(generator = new ContentGenerator()) {
@@ -18,7 +19,7 @@ export class CampaignPlanner {
       {
         day: 'Monday',
         theme: 'Spotlight Showcase',
-        channel: 'twitter',
+        channel: X,
         focusGame: 'drift',
         options: { isThread: true, angle: 'gameplay mechanics' },
         description: 'Deep-dive into core game mechanics with a video/GIF'
@@ -34,7 +35,7 @@ export class CampaignPlanner {
       {
         day: 'Wednesday',
         theme: 'Classic Board Game Revived',
-        channel: 'twitter',
+        channel: X,
         focusGame: 'carrom',
         options: { context: 'Carrom physics and AI cushion bank calculations, for web gamers' },
         description: 'Introduce Carrom physics and AI cushion bank calculations to web gamers'
@@ -50,7 +51,7 @@ export class CampaignPlanner {
       {
         day: 'Friday',
         theme: 'Community Weekend Challenge',
-        channel: 'twitter',
+        channel: X,
         focusGame: 'drift',
         options: { context: 'Friday Daily Road Drift Challenge — Beat the developer ghost score!' },
         description: 'Call out players to race today’s daily seed and share scores'
@@ -66,7 +67,7 @@ export class CampaignPlanner {
       {
         day: 'Sunday',
         theme: 'Relax & Chill Arcade',
-        channel: 'twitter',
+        channel: X,
         focusGame: 'break-room',
         options: { context: 'Sunday pool practice — relaxing 8-ball with real cue ball spin' },
         description: 'Highlight casual distraction-free 8-ball pool'

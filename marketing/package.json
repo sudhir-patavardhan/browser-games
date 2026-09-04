@@ -1,31 +1,21 @@
 {
-  "name": "kreeda-marketing-agent",
+  "name": "kreeda-marketing",
   "version": "1.0.0",
-  "description": "Autonomous AI marketing agent for Kreeda browser games",
+  "description": "Kreeda's marketing system: the Producer, and the Agents that propose to it",
   "main": "cli.js",
   "type": "module",
   "scripts": {
-    "start": "node cli.js",
-    "cli": "node cli.js",
-    "plan": "node cli.js plan",
-    "generate": "node cli.js generate",
-    "scout": "node cli.js scout",
-    "publish": "node cli.js publish",
-    "studio": "node cli.js studio",
-    "dashboard": "node cli.js dashboard",
-    "autonomous": "node cli.js run-autonomous",
-    "together": "node cli.js promote-together",
+    "smoke": "node cli.js smoke",
+    "state": "node cli.js state init",
+    "status": "node cli.js status",
+    "queue": "node cli.js queue",
     "metrics": "node cli.js metrics",
-    "test": "node tests/verify-agent.js && node tests/verify-ads-policy.js && node tests/verify-together.js"
+    "test": "node --test tests/*.test.js"
   },
   "keywords": [
-    "marketing-agent",
-    "ai",
-    "gemini",
-    "autonomous",
-    "growth",
-    "browser-games",
-    "kreeda"
+    "kreeda",
+    "marketing",
+    "browser-games"
   ],
   "author": "Kreeda",
   "license": "MIT",

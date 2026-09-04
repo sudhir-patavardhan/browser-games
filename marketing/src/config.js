@@ -36,12 +36,10 @@ export const config = {
     data: path.join(MARKETING_DIR, 'data'),
     artifacts: path.join(MARKETING_DIR, 'artifacts'),
     queueFile: path.join(MARKETING_DIR, 'data', 'queue.json'),
-    opportunitiesFile: path.join(MARKETING_DIR, 'data', 'opportunities.json'),
-    telemetryFile: path.join(MARKETING_DIR, 'data', 'telemetry.json'),
     postMetricsFile: path.join(MARKETING_DIR, 'data', 'post-metrics.json'),
     lastCycleFile: path.join(MARKETING_DIR, 'data', 'last-cycle.json'),
-    reports: path.join(MARKETING_DIR, 'artifacts', 'reports'),
-    dashboard: path.join(MARKETING_DIR, 'dashboard')
+    // The Run log and the Briefing are state: they live on marketing-state.
+    reports: path.join(MARKETING_DIR, 'data', 'artifacts', 'reports'),
   },
   general: {
     baseUrl: process.env.BASE_URL || 'https://kreeda.games',
@@ -64,10 +62,17 @@ export const config = {
       accessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET || '',
       bearerToken: process.env.TWITTER_BEARER_TOKEN || ''
     },
+    // A long-lived Page token, not a user token: it does not expire while the
+    // CMO is an admin of the Page. `node cli.js fb token` mints one (§11).
     facebook: {
-      enabled: Boolean(process.env.FACEBOOK_ACCESS_TOKEN && process.env.FACEBOOK_PAGE_ID),
-      accessToken: process.env.FACEBOOK_ACCESS_TOKEN || '',
-      pageId: process.env.FACEBOOK_PAGE_ID || ''
+      enabled: Boolean(process.env.FACEBOOK_PAGE_TOKEN && process.env.FACEBOOK_PAGE_ID),
+      pageToken: process.env.FACEBOOK_PAGE_TOKEN || '',
+      pageId: process.env.FACEBOOK_PAGE_ID || '',
+      // Only `fb token` and the preflight need these: minting a long-lived
+      // Page token and inspecting one both have to prove they are the app.
+      // Publishing a Post does not.
+      appId: process.env.FACEBOOK_APP_ID || '',
+      appSecret: process.env.FACEBOOK_APP_SECRET || ''
     }
   },
   // Play-together video posts: film one storyboarded game and post it, on a
@@ -98,16 +103,18 @@ export const config = {
     usdToLocalRate: Number(process.env.X_ADS_USD_TO_LOCAL_RATE) || 1,
     maxDailyPerCampaignUsd: Math.min(Number(process.env.X_ADS_MAX_DAILY_PER_CAMPAIGN_USD) || 10, 10),
     maxTotalDailyUsd: Math.min(Number(process.env.X_ADS_MAX_TOTAL_DAILY_USD) || 25, 25),
-    trialDays: Number(process.env.X_ADS_TRIAL_DAYS) || 2,
+    // ADR 0004: every Campaign is a fixed three-day Trial.
+    trialDays: Number(process.env.X_ADS_TRIAL_DAYS) || 3,
     maxActiveCampaigns: Number(process.env.X_ADS_MAX_ACTIVE_CAMPAIGNS) || 2,
     ledgerFile: path.join(MARKETING_DIR, 'data', 'ads-campaigns.json'),
     learningsFile: path.join(MARKETING_DIR, 'data', 'ads-learnings.json')
   }
 };
 
-// Ensure directories exist
-for (const p of [config.paths.data, config.paths.artifacts]) {
-  if (!fs.existsSync(p)) {
-    fs.mkdirSync(p, { recursive: true });
-  }
+// marketing/data is never created here: it is the marketing-state worktree
+// (ADR 0001), and silently recreating it as a plain directory is how state
+// ends up on a code branch. `node cli.js state init` checks it out; the
+// Producer fails loudly when it is missing.
+if (!fs.existsSync(config.paths.artifacts)) {
+  fs.mkdirSync(config.paths.artifacts, { recursive: true });
 }

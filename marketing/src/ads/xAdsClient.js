@@ -19,6 +19,18 @@ export class AdsApiAccessError extends Error {
  * Budgets and charges are "local micro" units of the account currency
  * (1 unit = 1,000,000 micro). Callers convert from USD via adsPolicy.
  */
+/**
+ * The 403 codes that mean "these credentials may not do this", as opposed to a
+ * 403 about the request itself. All of them become AdsApiAccessError.
+ */
+const AUTH_ERROR_CODES = new Set([
+  'UNAUTHORIZED_ACCESS',
+  'UNAUTHORIZED_CLIENT_APPLICATION',
+  'INSUFFICIENT_USER_AUTHORIZED_PERMISSION',
+  'OAUTH_ACCESS_TOKEN_INVALID',
+  'ACCOUNT_ACCESS_FORBIDDEN'
+]);
+
 export class XAdsClient {
   constructor(cfg = config.platforms.twitter, ads = config.ads) {
     this.cfg = cfg;
@@ -65,8 +77,17 @@ export class XAdsClient {
     if (!res.ok) {
       const code = json?.errors?.[0]?.code;
       const message = json?.errors?.[0]?.message || text;
+      // Every auth-family failure is an access problem, not a launch failure:
+      // the Cycle must report `blocked` so the Run log says the account needs
+      // attention, rather than a Campaign that looks broken (§8.2).
       if (code === 'UNAUTHORIZED_CLIENT_APPLICATION') {
         throw new AdsApiAccessError('This developer app is not approved for the X Ads API yet (UNAUTHORIZED_CLIENT_APPLICATION). Request access at https://docs.x.com/forms/ads-api-access, then regenerate the access token.');
+      }
+      if (code === 'INSUFFICIENT_USER_AUTHORIZED_PERMISSION') {
+        throw new AdsApiAccessError('The access token predates the Ads API approval (INSUFFICIENT_USER_AUTHORIZED_PERMISSION). Regenerate TWITTER_ACCESS_TOKEN and TWITTER_ACCESS_TOKEN_SECRET with Read+Write, then re-run `ads-preflight`.');
+      }
+      if (res.status === 403 && AUTH_ERROR_CODES.has(code)) {
+        throw new AdsApiAccessError(`The Ads API refused this account's credentials (${code}): ${message}`);
       }
       throw new Error(`Ads API ${upper} ${path} failed [${res.status}] ${code || ''}: ${message}`);
     }
@@ -168,6 +189,11 @@ export class XAdsClient {
 
   async setCampaignStatus(campaignId, status) {
     const res = await this.request('PUT', `/accounts/${this.accountId}/campaigns/${campaignId}`, { entity_status: status });
+    return res.data;
+  }
+
+  async setLineItemStatus(lineItemId, status) {
+    const res = await this.request('PUT', `/accounts/${this.accountId}/line_items/${lineItemId}`, { entity_status: status });
     return res.data;
   }
 

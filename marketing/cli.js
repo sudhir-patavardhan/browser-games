@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,7 +8,6 @@ import { config } from './src/config.js';
 import { GAME_CATALOG } from './src/knowledge/catalog.js';
 import { ContentGenerator } from './src/generator/contentGenerator.js';
 import { CampaignPlanner } from './src/generator/campaignPlanner.js';
-import { OpportunityScout } from './src/scout/opportunityScout.js';
 import { VisualStudio } from './src/studio/visualStudio.js';
 import { VideoStudio } from './src/studio/videoStudio.js';
 import { QueueManager } from './src/scheduler/queueManager.js';
@@ -21,6 +19,12 @@ import { ConversionApiClient } from './src/ads/conversionApi.js';
 import { TogetherDirector } from './src/studio/togetherDirector.js';
 import { TogetherPromoter } from './src/generator/togetherPromoter.js';
 import { XMetrics } from './src/insights/xMetrics.js';
+import { X, CHANNELS, CHANNEL_NAMES, toChannel } from './src/knowledge/channels.js';
+import { runSmoke } from './src/producer/smoke.js';
+import { initState } from './src/producer/state.js';
+import { mintPageToken, facebookPreflight, MissingPermissionsError } from './src/publishers/facebookAccess.js';
+import { FbMetrics } from './src/insights/fbMetrics.js';
+import { xPreflight } from './src/publishers/xAccess.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,27 +61,162 @@ async function main() {
       break;
     }
 
-    case 'secrets':
-    case 'github-secrets': {
-      printGitHubSecretsGuide();
+    // The smoke routine (AGENTS_SPEC.md §3). Nothing else is built until it is green.
+    case 'smoke': {
+      const report = await runSmoke();
+      console.log(report.render());
+      if (report.blocked) process.exit(1);
       break;
     }
 
-    case 'status': {
-      console.log(`\n======================================================`);
-      console.log(`🎯 KREEDA MARKETING AGENT — PLATFORM STATUS`);
-      console.log(`======================================================`);
-      console.log(`Brand:           ${config.general.brandName}`);
-      console.log(`Base URL:        ${config.general.baseUrl}`);
-      console.log(`Mode:            ${config.general.mode.toUpperCase()}`);
-      console.log(`AI Engine:       ${config.ai.geminiModel} (${config.ai.geminiApiKey ? '✅ Key Present' : '⚠️ Fallback Engine'})`);
+    // ADR 0001 — every state file lives on the marketing-state branch.
+    case 'state': {
+      const sub = args[1] || 'init';
+      if (sub !== 'init') {
+        console.error(`Unknown state command: ${sub} (only "init" exists — it is idempotent, so it doubles as a status check)`);
+        process.exit(1);
+      }
+      const stateReport = await initState({ push: !flags['no-push'] });
+      console.log(stateReport.render());
+      if (stateReport.blocked) process.exit(1);
+      break;
+    }
 
+    // Whether the Producer can publish a Post on X, and read what it earned.
+    case 'x': {
+      if (args[1] !== 'preflight') {
+        console.error('Unknown x command. There is one: preflight.');
+        process.exit(1);
+      }
+      const report = await xPreflight();
+      console.log(report.render());
+      if (report.blocked) process.exit(1);
+      break;
+    }
+
+    // The Facebook lane (AGENTS_SPEC.md §11).
+    case 'fb': {
+      const sub = args[1];
+
+      if (sub === 'preflight') {
+        const report = await facebookPreflight();
+        console.log(report.render());
+        if (report.blocked) process.exit(1);
+        break;
+      }
+
+      if (sub === 'token') {
+        const userToken = flags['user-token'] || flags.token;
+        const { appId, appSecret } = config.platforms.facebook;
+
+        // Everything that can be checked without the token is checked first:
+        // the short-lived token the CMO pastes in lasts about an hour, and
+        // failing on a missing app secret after they fetched one wastes it.
+        const problems = [];
+        if (!userToken) problems.push('--user-token is missing');
+        if (!appId) problems.push('FACEBOOK_APP_ID is not set');
+        if (!appSecret) problems.push('FACEBOOK_APP_SECRET is not set');
+
+        if (problems.length) {
+          console.error(`
+Cannot mint a Page token: ${problems.join('; ')}.
+
+  node cli.js fb token --user-token <short-lived user token>
+
+Mints the long-lived Page token the Producer publishes with. You do this
+once: a Page token derived from a long-lived user token has no expiry while
+you administer the Page.
+
+  1. developers.facebook.com -> your app -> Settings -> Basic
+     Copy the App ID and App Secret into marketing/.env as
+     FACEBOOK_APP_ID and FACEBOOK_APP_SECRET. Only the app itself can
+     exchange a short-lived token for a long-lived one, which is the step
+     that makes the Page token permanent.
+
+  2. Tools -> Graph API Explorer -> pick that same app -> Generate access
+     token, granting pages_manage_posts, pages_read_engagement and
+     pages_show_list (add publish_video for video Posts).
+
+  3. Paste that token into the command above. It lasts about an hour, which
+     is long enough, and it is not what you keep.
+`);
+          process.exit(1);
+        }
+
+        let minted;
+        try {
+          minted = await mintPageToken({ userToken, appId, appSecret });
+        } catch (err) {
+          if (err instanceof MissingPermissionsError) {
+            // Nothing was spent: the check runs before the exchange. What is
+            // needed is a new token, granted properly.
+            console.error(`\nThis token cannot publish a Post.\n`);
+            console.error(`  granted: ${err.granted.join(', ') || 'nothing'}`);
+            console.error(`  missing: ${err.missing.join(', ')}\n`);
+            console.error('Graph API Explorer makes this easy to get wrong twice over:\n');
+            console.error('  1. Typing a permission into "Add a Permission" does not select it.');
+            console.error('     Pick it from the dropdown, and check the list above shows it with');
+            console.error('     an x beside it and the counter has gone up.');
+            console.error('  2. When the login dialog offers to "continue with your previous');
+            console.error('     settings", Continue re-grants only what you had before. Click');
+            console.error('     Edit settings instead, tick the Page, and approve the new');
+            console.error('     permission there.\n');
+            console.error('Then generate a fresh token and run this again.\n');
+            process.exit(1);
+          }
+          // Any other failed exchange is almost always one of four things, and
+          // the Graph message alone does not say which.
+          console.error(`\nCould not mint the Page token: ${err.message}\n`);
+          console.error('The usual causes:');
+          console.error('  · the short-lived token expired — they last about an hour, so fetch a fresh one');
+          console.error('  · the token came from a different app than FACEBOOK_APP_ID');
+          console.error('  · the token is a Page token; the exchange needs a User token');
+          console.error(`  · you do not administer Page ${config.platforms.facebook.pageId || '(FACEBOOK_PAGE_ID is unset)'}\n`);
+          process.exit(1);
+        }
+
+        console.log(`\nPage: ${minted.pageName} (${minted.pageId})`);
+        console.log(`Permissions: ${minted.scopes.join(', ') || 'none reported'}`);
+        if (minted.neverExpires) {
+          console.log('Expiry: none. Facebook reports no expiry while you administer the Page,');
+          console.log('        so this is the last time you need to do this.');
+        } else {
+          console.log('Expiry: THIS TOKEN STILL EXPIRES, which means the exchange did not take.');
+          console.log('        Check that FACEBOOK_APP_ID is the app that issued the user token.');
+        }
+        console.log(`\nAdd this to the cloud environment (and marketing/.env to publish locally):\n`);
+        console.log(`FACEBOOK_PAGE_TOKEN=${minted.pageToken}`);
+        console.log(`FACEBOOK_PAGE_ID=${minted.pageId}\n`);
+        console.log('Then check it with: node cli.js fb preflight\n');
+        break;
+      }
+
+      if (sub === 'metrics') {
+        const queue = new QueueManager();
+        const result = await new FbMetrics().refresh(queue.getAll());
+        console.log(`\nFacebook: refreshed ${result.fetched} Post(s)${result.failed ? `, ${result.failed} unreadable` : ''}`);
+        for (const [gameId, m] of Object.entries(new FbMetrics().summarizeByGame(result.store))) {
+          console.log(`   ${gameId.padEnd(14)} ${String(m.posts).padStart(2)} Post(s) · ${m.impressions} impressions · ${m.reach} reach · ${m.clicks} clicks · ${m.clickRatePercent}%`);
+        }
+        console.log();
+        break;
+      }
+
+      console.error('Unknown fb command. There are three: token, preflight, metrics.');
+      process.exit(1);
+    }
+
+    case 'status': {
       const pub = new UniversalPublisher();
-      const st = pub.getStatus();
-      console.log(`\n--- Configured Channels ---`);
-      console.log(`Twitter/X API:   ${st.twitter ? '✅ Connected' : '❌ Missing Credentials'}`);
-      console.log(`Facebook API:    ${st.facebook ? '✅ Connected' : '❌ Missing Credentials'}`);
-      console.log(`======================================================\n`);
+      const reachable = pub.getStatus();
+      console.log(`\nKREEDA MARKETING — ${config.general.mode.toUpperCase()} mode`);
+      console.log(`  ${config.general.baseUrl} · the Creative writes with ${config.ai.geminiModel}` +
+        `${config.ai.geminiApiKey ? '' : ' (no GEMINI_API_KEY — it cannot run)'}`);
+      console.log(`\nChannels`);
+      for (const channel of CHANNELS) {
+        console.log(`  ${CHANNEL_NAMES[channel].padEnd(9)} ${reachable[channel] ? 'the Producer holds credentials' : 'no credentials — run `node cli.js smoke`'}`);
+      }
+      console.log();
       break;
     }
 
@@ -99,7 +238,7 @@ async function main() {
 
     case 'generate': {
       const gameId = flags.game || 'drift';
-      const channel = flags.channel || 'twitter';
+      const channel = toChannel(flags.channel || 'x');
       const isThread = Boolean(flags.thread);
 
       console.log(`\n✨ Generating ${channel.toUpperCase()} content for "${gameId}"...`);
@@ -109,7 +248,6 @@ async function main() {
       console.log(`\n================ GENERATED CONTENT ================`);
       console.log(JSON.stringify(result.content, null, 2));
       console.log(`===================================================`);
-      console.log(`💾 Saved to artifact: ${result.artifactPath}\n`);
 
       if (flags.queue) {
         const queue = new QueueManager();
@@ -121,31 +259,6 @@ async function main() {
         });
         console.log(`📥 Added to review queue as draft.`);
       }
-      break;
-    }
-
-    case 'campaign':
-    case 'generate-campaign': {
-      const gameId = flags.game || 'drift';
-      console.log(`\n🚀 Generating social campaign for "${gameId}"...`);
-      const gen = new ContentGenerator();
-      const campaign = await gen.generateFullCampaign(gameId);
-      console.log(`\n✅ Generated all deliverables (Twitter single, Twitter thread, Facebook post).`);
-      break;
-    }
-
-    case 'scout': {
-      console.log(`\n🔍 Opportunity Scout running on community topics...`);
-      const scout = new OpportunityScout();
-      const leads = await scout.scanSimulatedFeeds();
-      console.log(`\n================ OPPORTUNITY LEADS (${leads.length}) ================`);
-      leads.forEach(lead => {
-        console.log(`\n[Score: ${lead.relevanceScore}/100] [${lead.platform}] by ${lead.author}`);
-        console.log(`Query: "${lead.queryContent}"`);
-        console.log(`Recommended Game: ${lead.recommendedGame}`);
-        console.log(`Draft Reply:\n"${lead.draftReply}"`);
-      });
-      console.log(`\n====================================================\n`);
       break;
     }
 
@@ -224,13 +337,13 @@ async function main() {
 
       console.log(`\n✨ Generating tweet copy for "${gameId}"...`);
       const gen = new ContentGenerator();
-      const result = await gen.generate(gameId, 'twitter', {});
+      const result = await gen.generate(gameId, X, {});
       const text = result.content.text || result.content.headline || '';
       console.log(`Tweet: "${text}"`);
 
       const pub = new UniversalPublisher();
       console.log(`\n📡 Publishing (${dryRun ? 'DRY-RUN' : 'LIVE'})...`);
-      const publishResult = await pub.publish('twitter', { text, videoPath }, dryRun);
+      const publishResult = await pub.publish(X, { text, videoPath }, dryRun);
       console.log(`\nPublish Result:`, JSON.stringify(publishResult, null, 2));
       break;
     }
@@ -366,17 +479,7 @@ async function main() {
     case 'run-autonomous':
     case 'auto': {
       const runner = new AutonomousRunner();
-      if (flags.daemon) {
-        const interval = Number(flags.interval) || 60;
-        runner.startDaemon(interval);
-      } else {
-        await runner.runCycle({ dryRun: !flags.live });
-      }
-      break;
-    }
-
-    case 'dashboard': {
-      startDashboardServer(Number(flags.port) || 3030);
+      await runner.runCycle({ dryRun: !flags.live });
       break;
     }
 
@@ -387,168 +490,66 @@ async function main() {
   }
 }
 
-function printGitHubSecretsGuide() {
-  console.log(`
-======================================================
-🔑 GITHUB REPOSITORY SECRETS GUIDE
-======================================================
-To run the marketing agent autonomously in GitHub Actions:
-
-1. Go to your repository on GitHub:
-   https://github.com/sudhir-patavardhan/browser-games/settings/secrets/actions
-
-2. Click "New repository secret" and add the following keys as needed:
-
-  • GEMINI_API_KEY               (Google AI Studio key — Essential)
-  • GEMINI_MODEL                 (Default: gemini-3.7-flash)
-  • MARKETING_MODE               (Set to 'draft' or 'live')
-
-  [Twitter / X API]
-  • TWITTER_API_KEY              (App Consumer Key)
-  • TWITTER_API_SECRET           (App Consumer Secret)
-  • TWITTER_ACCESS_TOKEN         (User Access Token with Read+Write)
-  • TWITTER_ACCESS_TOKEN_SECRET  (User Access Token Secret)
-  • TWITTER_BEARER_TOKEN         (App Bearer Token)
-
-  [Reddit API]
-  • REDDIT_CLIENT_ID             (Reddit Script App Client ID)
-  • REDDIT_CLIENT_SECRET         (Reddit Script App Secret)
-  • REDDIT_USERNAME              (Reddit Username)
-  • REDDIT_PASSWORD              (Reddit Password)
-
-  [Discord Webhook]
-  • DISCORD_WEBHOOK_URL          (Discord Webhook URL for announcements)
-
-  [Dev.to / Technical Blog]
-  • DEVTO_API_KEY                (Dev.to API Key for technical posts)
-
-  [Universal Webhook / Buffer]
-  • GENERIC_WEBHOOK_URL          (Make.com / Zapier / Buffer Webhook URL)
-
-3. Once added, the workflow will automatically execute daily at 9:00 AM UTC
-   via .github/workflows/marketing-agent.yml, or manually from the "Actions" tab.
-======================================================
-`);
-}
-
 function printHelp() {
   console.log(`
 ======================================================
-🎮 KREEDA AUTONOMOUS MARKETING AGENT (CLI)
+KREEDA MARKETING
 ======================================================
 Usage: node cli.js <command> [options]
 
-Commands:
-  status                     Check status of API credentials & channel connectivity
-  plan                       Generate a complete 7-day marketing campaign plan
-  generate                   Generate content for a specific game and channel
-                             Options: --game <id> --channel <twitter|facebook> [--thread] [--queue]
-  campaign                   Generate a full social campaign (Twitter + Facebook) for a game
-                             Options: --game <id>
-  scout                      Scout community queries & draft authentic contextual replies
-  studio                     Generate high-res SVG social cards & banners for all 12 games
-  video                      Record a gameplay clip and convert to MP4 (Play-together games are
-                             filmed from their storyboard: 1080x1920 + a square variant)
-                             Options: --game <id> [--duration <seconds>] [--generic]
-  promote-video              Record gameplay, generate tweet copy, and post the video to Twitter
-                             Options: --game <id> [--duration <seconds>] [--live]
-  promote-together           Film the next Play-together game in rotation and post the video
-                             Options: [--game sync|windows] [--live] [--no-video]
-  metrics                    Pull impressions / link clicks for the tweets the agent posted live
-  report                     Print the latest cycle report (the auto-update PR body)
-  ads-preflight              Readiness checklist for going live with X Ads (keys, approval, funding, video)
-  ads-status                 Show X Ads spend policy, active/paused campaigns, and API access
-  ads-launch                 Launch one paid campaign (≤ $10/day; ≤ $25/day across all)
-                             Options: --game <id> [--daily <usd>] [--tweet <id>] [--text "..."] [--age AGE_21_TO_34]
-                                      [--interests "Gaming,Relationships"] [--keywords "a,b"] [--live]
-  ads-review                 Pull analytics for active campaigns; pause any that failed the 2-day trial [--live]
-  ads-cycle                  review → learn → plan+launch the next campaign [--live]
-  ads-conversion-test        Send a test event via the X Conversion API (dry-run unless --live)
-                             Options: --event <tw-<pixel>-xxxxx> [--url <page>] [--live]
-                                      [--twclid <id> | --ip <ip> [--ua <agent>] | --email <sha256> | --phone <sha256>]
-                                      (defaults to a placeholder IP+UA identifier if none given — the API requires one)
-  queue                      View items in the campaign queue
-                             Options: [--status draft|scheduled|approved|published]
-  approve <id>               Approve a queued post for publication
-  publish <id>               Publish a post immediately (use --live for actual API post)
-  process-due                Publish all approved posts scheduled for today or earlier
-  run-autonomous             Run one full autonomous marketing cycle (or --daemon --interval 60)
-  dashboard                  Launch local interactive marketing dashboard (default port 3030)
+The Producer. Agents propose, the Producer executes; nothing is published or
+launched without a merged Review. Terms below are defined in CONTEXT.md.
+
+Setup
+  smoke                      Prove this machine can run a Cycle: secrets, reachability,
+                             a rendered Asset, and a push to marketing-state (§3)
+  state init                 Open the marketing-state branch and check it out at
+                             marketing/data/ (idempotent; ADR 0001)             [--no-push]
+  status                     Which Channels the Producer can reach
+  x preflight                Whether the Producer can publish a Post on X and read metrics
+  fb token                   Mint the long-lived Facebook Page token (§11)
+                             --user-token <short-lived token from Graph API Explorer>
+  fb preflight               Whether the Producer can publish a Post on the Page
+  fb metrics                 Pull Page insights for every live Facebook Post
+
+Content
+  generate                   Draft a Post for one Game and Channel
+                             --game <id> --channel <x|facebook> [--thread] [--queue]
+  studio                     Render an SVG card Asset for every Game
+  video                      Film a Game: a storyboarded Play-together Game is filmed from
+                             its storyboard (1080x1920 + a square variant), any other is
+                             recorded live
+                             --game <id> [--duration <seconds>] [--generic]
+  promote-video              Film a Game, write the copy, and post the video to X
+                             --game <id> [--duration <seconds>] [--live]
+  promote-together           Film the next Play-together Game and post the video
+                             [--game sync|windows] [--live] [--no-video]
+
+Queue and publishing
+  queue                      The Posts awaiting a decision  [--status draft|approved|published]
+  approve <id>               Approve one Post
+  publish <id>               Publish one Post now                                  [--live]
+  process-due                Publish every approved Post whose Slot has arrived
+  plan                       Draft next week's Plan (replaced by the Strategist in Phase 3)
+  run-autonomous             Run one Cycle                                         [--live]
+  metrics                    Pull impressions and link clicks for every live Post on X
+  report                     Print the last Run log
+
+Paid — every Campaign is a fixed Trial under the Caps ($10/day each, $25/day total)
+  ads-preflight              Whether a Campaign can go live: keys, approval, funding, Asset
+  ads-status                 The Caps, the active and paused Campaigns, and API access
+  ads-launch                 Launch one Campaign
+                             --game <id> [--daily <usd>] [--tweet <id>] [--text "..."]
+                             [--age AGE_21_TO_34] [--interests "a,b"] [--keywords "a,b"] [--live]
+  ads-review                 Apply the kill rules to every active Campaign            [--live]
+  ads-cycle                  review -> learn -> propose and launch the next Campaign  [--live]
+  ads-conversion-test        Send one test event through the X Conversion API
+                             --event <tw-<pixel>-xxxxx> [--url <page>] [--live]
+                             [--twclid <id> | --ip <ip> [--ua <agent>] | --email <sha256>]
 ======================================================
 `);
 }
 
-function startDashboardServer(port = 3030) {
-  const dashboardDir = path.join(__dirname, 'dashboard');
-  const server = http.createServer((req, res) => {
-    let reqPath = req.url.split('?')[0];
-
-    // API routes for Dashboard
-    if (reqPath === '/api/queue') {
-      const queue = new QueueManager();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(queue.getAll()));
-      return;
-    }
-
-    if (reqPath === '/api/opportunities') {
-      let opps = [];
-      if (fs.existsSync(config.paths.opportunitiesFile)) {
-        try { opps = JSON.parse(fs.readFileSync(config.paths.opportunitiesFile, 'utf8')); } catch(e){}
-      }
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(opps));
-      return;
-    }
-
-    if (reqPath === '/api/catalog') {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(GAME_CATALOG));
-      return;
-    }
-
-    if (reqPath === '/api/status') {
-      const pub = new UniversalPublisher();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ config: config.general, channels: pub.getStatus() }));
-      return;
-    }
-
-    // Static file serving
-    if (reqPath === '/' || reqPath === '/index.html') reqPath = '/index.html';
-    
-    let filePath = path.join(dashboardDir, reqPath);
-    if (!fs.existsSync(filePath) && reqPath.startsWith('/artifacts/')) {
-      filePath = path.join(config.paths.marketing, reqPath);
-    }
-
-    if (!fs.existsSync(filePath)) {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('404 Not Found');
-      return;
-    }
-
-    const ext = path.extname(filePath).toLowerCase();
-    const mimeTypes = {
-      '.html': 'text/html',
-      '.js': 'application/javascript',
-      '.css': 'text/css',
-      '.json': 'application/json',
-      '.svg': 'image/svg+xml',
-      '.png': 'image/png'
-    };
-
-    res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'application/octet-stream' });
-    fs.createReadStream(filePath).pipe(res);
-  });
-
-  server.listen(port, () => {
-    console.log(`\n✨ ========================================================`);
-    console.log(`✨ KREEDA MARKETING DASHBOARD RUNNING`);
-    console.log(`👉 Open in browser: http://localhost:${port}`);
-    console.log(`✨ ========================================================\n`);
-  });
-}
 
 main().catch(err => {
   console.error('Fatal error in CLI:', err);

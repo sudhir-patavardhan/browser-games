@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { config } from '../config.js';
 import { buildOAuth1Header } from '../ads/oauth1.js';
+import { X } from '../knowledge/channels.js';
 
 // Twitter's POST /2/tweets requires OAuth 1.0a or OAuth2 user-context auth —
 // a bare app-only bearer token cannot post on behalf of a user account. The
@@ -119,7 +120,7 @@ export class TwitterPublisher {
       console.log(`[DRY-RUN / DRAFT] Twitter Post: "${text.slice(0, 100)}..."${videoPath ? ` (+ video: ${videoPath})` : ''}`);
       return {
         success: true,
-        channel: 'twitter',
+        channel: X,
         mode: 'draft',
         postId: `sim-tweet-${Date.now()}`,
         url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`,
@@ -158,7 +159,7 @@ export class TwitterPublisher {
       const data = await res.json();
       return {
         success: true,
-        channel: 'twitter',
+        channel: X,
         mode: 'live',
         postId: data.data?.id,
         url: `https://twitter.com/i/web/status/${data.data?.id}`,
@@ -168,7 +169,7 @@ export class TwitterPublisher {
       console.error('Twitter publish failed:', err.message);
       return {
         success: false,
-        channel: 'twitter',
+        channel: X,
         error: err.message,
         publishedAt: new Date().toISOString()
       };
@@ -187,7 +188,7 @@ export class TwitterPublisher {
     if (texts.length === 0) {
       return {
         success: false,
-        channel: 'twitter',
+        channel: X,
         error: 'Thread has no tweet text',
         publishedAt: new Date().toISOString()
       };
@@ -197,7 +198,7 @@ export class TwitterPublisher {
       console.log(`[DRY-RUN / DRAFT] Twitter Thread (${texts.length} tweets): "${texts[0].slice(0, 100)}..."`);
       return {
         success: true,
-        channel: 'twitter',
+        channel: X,
         mode: 'draft',
         postId: `sim-thread-${Date.now()}`,
         url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(texts[0])}`,
@@ -236,7 +237,7 @@ export class TwitterPublisher {
 
       return {
         success: true,
-        channel: 'twitter',
+        channel: X,
         mode: 'live',
         postId: postedIds[0],
         url: `https://twitter.com/i/web/status/${postedIds[0]}`,
@@ -247,7 +248,7 @@ export class TwitterPublisher {
       console.error('Twitter thread publish failed:', err.message);
       return {
         success: false,
-        channel: 'twitter',
+        channel: X,
         error: err.message,
         threadIds: postedIds,
         publishedAt: new Date().toISOString()

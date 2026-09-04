@@ -1,14 +1,18 @@
 import fs from 'node:fs';
 import { config } from '../config.js';
-import { GAME_CATALOG } from '../knowledge/catalog.js';
+import { GAME_CATALOG, GAMES } from '../knowledge/catalog.js';
+
+/** Brand rule 1 lives on this Category: lead with the relationship, not the phone. */
+const PLAY_TOGETHER = 'Play together';
 import { GeminiClient } from '../ai/geminiClient.js';
 import { SYSTEM_PROMPTS, PROMPT_TEMPLATES } from '../ai/prompts.js';
 import { UniversalPublisher } from '../publishers/index.js';
 import { QueueManager } from '../scheduler/queueManager.js';
 import { VideoStudio } from '../studio/videoStudio.js';
 import { TogetherDirector } from '../studio/togetherDirector.js';
+import { X } from '../knowledge/channels.js';
 
-export const TOGETHER_GAMES = Object.values(GAME_CATALOG).filter(g => g.category === 'together').map(g => g.id);
+export const TOGETHER_GAMES = Object.values(GAMES).filter(g => g.category === PLAY_TOGETHER).map(g => g.id);
 
 /**
  * Copy the agent can post without an AI key. Every line leads with what the
@@ -137,11 +141,11 @@ export class TogetherPromoter {
 
     const copy = await this.copyFor(id);
     console.log(`📝 ${copy.text}`);
-    const publishResult = await this.publisher.publish('twitter', { text: copy.text, videoPath }, dryRun);
+    const publishResult = await this.publisher.publish(X, { text: copy.text, videoPath }, dryRun);
 
     const now = new Date().toISOString();
     const [entry] = this.queue.add({
-      channel: 'twitter',
+      channel: X,
       gameId: id,
       status: publishResult.success ? (publishResult.mode === 'draft' ? 'draft_published' : 'published') : 'failed',
       scheduledDate: now.slice(0, 10),

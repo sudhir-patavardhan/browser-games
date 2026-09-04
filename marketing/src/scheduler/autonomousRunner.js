@@ -2,7 +2,6 @@ import path from 'node:path';
 import { ContentGenerator } from '../generator/contentGenerator.js';
 import { CampaignPlanner } from '../generator/campaignPlanner.js';
 import { TogetherPromoter } from '../generator/togetherPromoter.js';
-import { OpportunityScout } from '../scout/opportunityScout.js';
 import { QueueManager } from './queueManager.js';
 import { VisualStudio } from '../studio/visualStudio.js';
 import { CampaignManager } from '../ads/campaignManager.js';
@@ -14,7 +13,6 @@ export class AutonomousRunner {
   constructor() {
     this.generator = new ContentGenerator();
     this.planner = new CampaignPlanner(this.generator);
-    this.scout = new OpportunityScout();
     this.queue = new QueueManager();
     this.studio = new VisualStudio();
   }
@@ -50,11 +48,6 @@ export class AutonomousRunner {
       console.log(`✅ Queue has sufficient buffer.`);
     }
 
-    // 2. Scout new community opportunities & draft responses
-    console.log(`\n🔍 Running Opportunity Scout on community topics...`);
-    const scoutLeads = await this.scout.scanSimulatedFeeds();
-    summary.actions.scoutedLeads = scoutLeads.length;
-    console.log(`✅ Found and evaluated ${scoutLeads.length} leads.`);
 
     // 3. Process due posts
     console.log(`\n📡 Processing due posts in queue...`);
