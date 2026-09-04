@@ -1,7 +1,7 @@
-**Publish Cycle** · 2026-09-04 14:09 UTC · 4 done, 4 skipped
+**Publish Cycle** · 2026-09-04 15:10 UTC · 4 done, 4 skipped
 
 **Reviews**
-- _skipped:_ no Review has been merged since the last Cycle
+- Review #84 merged: 2 Post(s) approved, 0 rejected _(the CMO)_
 
 **Expiry**
 - _skipped:_ nothing has been waiting more than three days
@@ -20,6 +20,5 @@
 - state committed and pushed
 
 **Review**
-- marketing-review is one commit ahead of marketing-state at 92a92b6
-- Review #84 opened: 2 Post(s) awaiting a decision — https://github.com/sudhir-patavardhan/browser-games/pull/84
+- _skipped:_ nothing is waiting on the CMO, so no Review was opened
 

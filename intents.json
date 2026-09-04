@@ -1,1 +1,34 @@
-[]
+[
+  {
+    "id": "intent-mtn3fq0k-0zteq",
+    "kind": "publish",
+    "target": "plan-tuesday-1788491792289-1",
+    "channel": "facebook",
+    "at": "2026-09-04T15:13:12.308Z",
+    "result": {
+      "success": true,
+      "channel": "facebook",
+      "mode": "live",
+      "postId": "122097774201470766",
+      "url": "https://facebook.com/122097774201470766",
+      "publishedAt": "2026-09-04T15:13:19.466Z"
+    },
+    "completedAt": "2026-09-04T15:13:12.308Z"
+  },
+  {
+    "id": "intent-mtn3fq0k-1gzv1",
+    "kind": "publish",
+    "target": "plan-wednesday-1788491798840-2",
+    "channel": "x",
+    "at": "2026-09-04T15:13:12.308Z",
+    "result": {
+      "success": true,
+      "channel": "x",
+      "mode": "live",
+      "postId": "2095892990703317424",
+      "url": "https://twitter.com/i/web/status/2095892990703317424",
+      "publishedAt": "2026-09-04T15:13:23.701Z"
+    },
+    "completedAt": "2026-09-04T15:13:12.308Z"
+  }
+]

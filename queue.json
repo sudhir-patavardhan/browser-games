@@ -492,13 +492,13 @@
   },
   {
     "id": "plan-tuesday-1788491792289-1",
-    "status": "approved",
+    "status": "published",
     "channel": "facebook",
     "gameId": "ennead",
     "category": "",
     "slot": {
-      "date": "2026-09-05",
-      "window": "09"
+      "date": "2026-09-04",
+      "window": "13"
     },
     "format": "single",
     "angle": "",
@@ -506,7 +506,7 @@
     "brief": "",
     "successMetric": "",
     "content": {
-      "text": "Most people solve standard 3x3 tic-tac-toe by middle school and never touch it again. Once both players understand optimal lines, every match inevitably ends in an uninteresting draw.\n\nThe solution isn't abandoning the rules, but nesting them. In Ultimate Tic-Tac-Toe, you play across nine linked 3x3 boards. The catch is that whichever square you pick dictates the exact sub-board your opponent is forced to play on next. Winning isn't just about claiming a line; it's about steering where your opponent is allowed to move.\n\nWe built a clean, lightweight version featuring both the nested Ultimate grid and a customizable board that scales from 3x3 up to 9x9 Gomoku. It includes a Minimax AI with alpha-beta pruning for solo play, along with local pass-and-play.\n\nRuns instantly in any browser with zero downloads and no account setup.\n\nhttps://kreeda.games/ennead/",
+      "text": "Most people solve standard 3x3 tic-tac-toe by middle school and never touch it again. Once both players understand optimal lines, every match inevitably ends in an uninteresting draw.\n\nThe solution isn't abandoning the rules, but nesting them. In Ultimate Tic-Tac-Toe, you play across nine linked 3x3 boards. The catch is that whichever square you pick dictates the exact sub-board your opponent is forced to play on next. Winning isn't just about claiming a line; it's about steering where your opponent is allowed to move.\n\nWe built a clean, lightweight version featuring both the nested Ultimate grid and a customizable board that scales from 3x3 up to 9x9 Gomoku. It includes a Minimax AI with alpha-beta pruning for solo play, along with local pass-and-play.\n\nRuns instantly in any browser with zero downloads and no account setup.\n\nhttps://kreeda.games/ennead/?utm_source=facebook&utm_medium=organic&utm_content=plan-tuesday-1788491792289-1",
       "thread": [],
       "altText": "A clean digital interface of an Ultimate Tic-Tac-Toe game showing nine nested 3x3 grids with blue X and red O markers on a dark background."
     },
@@ -516,23 +516,30 @@
         "url": "https://github.com/sudhir-patavardhan/browser-games/releases/download/media/plan-tuesday-1788491792289-1-card.png"
       }
     ],
-    "intentId": null,
-    "publishResult": null,
+    "intentId": "intent-mtn3fq0k-0zteq",
+    "publishResult": {
+      "success": true,
+      "channel": "facebook",
+      "mode": "live",
+      "postId": "122097774201470766",
+      "url": "https://facebook.com/122097774201470766",
+      "publishedAt": "2026-09-04T15:13:19.466Z"
+    },
     "reviewedAt": "2026-09-04T14:13:40Z",
     "rejectReason": null,
     "attempts": 0,
     "createdAt": "2026-09-04T03:16:32.289Z",
-    "updatedAt": "2026-09-04T15:10:49.650Z"
+    "updatedAt": "2026-09-04T15:13:12.308Z"
   },
   {
     "id": "plan-wednesday-1788491798840-2",
-    "status": "approved",
+    "status": "published",
     "channel": "x",
     "gameId": "carrom",
     "category": "",
     "slot": {
-      "date": "2026-09-06",
-      "window": "09"
+      "date": "2026-09-04",
+      "window": "13"
     },
     "format": "single",
     "angle": "",
@@ -540,7 +547,7 @@
     "brief": "",
     "successMetric": "",
     "content": {
-      "text": "Classic Carrom in pure vanilla JS with realistic disc collision physics. Pull back the striker, bank shots off the cushions, and cover the queen before the AI clears the board.\n\nhttps://kreeda.games/carrom/",
+      "text": "Classic Carrom in pure vanilla JS with realistic disc collision physics. Pull back the striker, bank shots off the cushions, and cover the queen before the AI clears the board.\n\nhttps://kreeda.games/carrom/?utm_source=x&utm_medium=organic&utm_content=plan-wednesday-1788491798840-2",
       "thread": [],
       "altText": "A digital Carrom board game interface showing wooden borders, white and black carrommen arranged around the red queen, and an aiming striker."
     },
@@ -550,13 +557,20 @@
         "url": "https://github.com/sudhir-patavardhan/browser-games/releases/download/media/plan-wednesday-1788491798840-2-card.png"
       }
     ],
-    "intentId": null,
-    "publishResult": null,
+    "intentId": "intent-mtn3fq0k-1gzv1",
+    "publishResult": {
+      "success": true,
+      "channel": "x",
+      "mode": "live",
+      "postId": "2095892990703317424",
+      "url": "https://twitter.com/i/web/status/2095892990703317424",
+      "publishedAt": "2026-09-04T15:13:23.701Z"
+    },
     "reviewedAt": "2026-09-04T14:13:40Z",
     "rejectReason": null,
     "attempts": 0,
     "createdAt": "2026-09-04T03:16:38.840Z",
-    "updatedAt": "2026-09-04T15:10:49.650Z"
+    "updatedAt": "2026-09-04T15:13:12.308Z"
   },
   {
     "id": "plan-thursday-1788491805105-3",
