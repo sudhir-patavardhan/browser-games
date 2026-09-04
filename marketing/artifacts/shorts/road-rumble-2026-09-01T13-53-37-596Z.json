@@ -1,0 +1,47 @@
+{
+  "title": "We Rebuilt 90s Road Rash in Vanilla JavaScript",
+  "hookText": "Wait... is that Road Rash in a browser tab?! 🏍️💥",
+  "duration": "27s",
+  "scenes": [
+    {
+      "time": "0-3s",
+      "visual": "Close-up capture of bike rider pulling up next to a rival at 140 MPH, winding up a punch, and SMACKING them directly into an oncoming semi-truck. Screen shake + loud crunch SFX.",
+      "voiceover": "Remember when motorcycle games let you literally punch people off their bikes?",
+      "onScreenText": "90s Road Rash is back... in pure JavaScript 💀"
+    },
+    {
+      "time": "3-10s",
+      "visual": "High-speed pseudo-3D raster road rendering, bike cresting a steep elevation drop, dodging two oncoming yellow sedans by inches, tires smoking on a hairpin turn.",
+      "voiceover": "We rebuilt that chaotic 90s retro brawler physics engine using zero external libraries.",
+      "onScreenText": "Pure Canvas + WebAudio Synth (Zero Downloads)"
+    },
+    {
+      "time": "10-18s",
+      "visual": "Player picks up a roadside club, pulls alongside two aggressive AI riders box-swarming, clubs the left rider (sending bike cartwheeling), kicks the right rider into a guardrail.",
+      "voiceover": "No ads. No $70 price tag. Just 5 ruthless AI riders, elevation drops, and melee combat.",
+      "onScreenText": "Pin the throttle. Throw the punch."
+    },
+    {
+      "time": "18-23s",
+      "visual": "Final corner before the finish line. Rival takes 1st place, player boosts with nitro draft, lands a flying right hook at the line to take 1st as the checkered flag waves.",
+      "voiceover": "Steal 1st place in the final millisecond.",
+      "onScreenText": "1st PLACE 🏁"
+    },
+    {
+      "time": "23-27s",
+      "visual": "Quick zoom out to show it running seamlessly in mobile Safari / Chrome browser, instant restart tap.",
+      "voiceover": "Play Road Rumble right now in your browser at Kreeda.games. Zero install, completely free.",
+      "onScreenText": "Play Free 👉 kreeda.games/road-rumble"
+    }
+  ],
+  "caption": "We rebuilt classic 90s Road Rash arcade brawling in a single lightweight web file. Zero downloads, zero ads, pure nostalgic road rage. 🏍️💨 Play instant at kreeda.games",
+  "hashtags": [
+    "gamedev",
+    "retrogaming",
+    "roadrash",
+    "indiegames",
+    "javascript",
+    "webdev",
+    "arcade"
+  ]
+}
