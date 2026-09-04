@@ -108,6 +108,10 @@ export class TwitterPublisher {
    * @param {boolean} [dryRun]
    */
   async publish(post, dryRun = config.general.mode === 'draft') {
+    if (post && typeof post === 'object' && Array.isArray(post.thread) && post.thread.length > 0) {
+      return await this.publishThread(post.thread, dryRun);
+    }
+
     const text = typeof post === 'string' ? post : (post.text || post.headline || '');
     const videoPath = typeof post === 'object' ? post.videoPath : undefined;
 
@@ -166,6 +170,86 @@ export class TwitterPublisher {
         success: false,
         channel: 'twitter',
         error: err.message,
+        publishedAt: new Date().toISOString()
+      };
+    }
+  }
+
+  /**
+   * Publishes a thread: the first tweet, then each following tweet as a
+   * reply to the one before it.
+   * @param {Array<{text: string}>} tweets
+   * @param {boolean} [dryRun]
+   */
+  async publishThread(tweets, dryRun = config.general.mode === 'draft') {
+    const texts = tweets.map(t => (typeof t === 'string' ? t : t.text || '')).filter(Boolean);
+
+    if (texts.length === 0) {
+      return {
+        success: false,
+        channel: 'twitter',
+        error: 'Thread has no tweet text',
+        publishedAt: new Date().toISOString()
+      };
+    }
+
+    if (dryRun || !this.isConfigured) {
+      console.log(`[DRY-RUN / DRAFT] Twitter Thread (${texts.length} tweets): "${texts[0].slice(0, 100)}..."`);
+      return {
+        success: true,
+        channel: 'twitter',
+        mode: 'draft',
+        postId: `sim-thread-${Date.now()}`,
+        url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(texts[0])}`,
+        threadCount: texts.length,
+        publishedAt: new Date().toISOString()
+      };
+    }
+
+    const endpoint = 'https://api.twitter.com/2/tweets';
+    const postedIds = [];
+
+    try {
+      let previousId;
+      for (const text of texts) {
+        const body = { text };
+        if (previousId) body.reply = { in_reply_to_tweet_id: previousId };
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': this.authHeader('POST', endpoint)
+          },
+          body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Twitter API error [${res.status}]: ${errText}`);
+        }
+
+        const data = await res.json();
+        previousId = data.data?.id;
+        postedIds.push(previousId);
+      }
+
+      return {
+        success: true,
+        channel: 'twitter',
+        mode: 'live',
+        postId: postedIds[0],
+        url: `https://twitter.com/i/web/status/${postedIds[0]}`,
+        threadIds: postedIds,
+        publishedAt: new Date().toISOString()
+      };
+    } catch (err) {
+      console.error('Twitter thread publish failed:', err.message);
+      return {
+        success: false,
+        channel: 'twitter',
+        error: err.message,
+        threadIds: postedIds,
         publishedAt: new Date().toISOString()
       };
     }
