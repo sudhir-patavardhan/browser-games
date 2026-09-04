@@ -1,0 +1,29 @@
+{
+  "thread": [
+    {
+      "tweetNumber": 1,
+      "text": "Most arcade drifting games give you a magic \"press space to drift\" button.\n\nWe built a top-down driving engine where drifting relies entirely on realistic weight-transfer, throttle oversteer, and EV regen braking.\n\nNo handbrake. Pure physics. Runs instantly in your browser 🏎️⚡",
+      "mediaNote": "Crisp 6-8s looping gameplay GIF: EV tapping brakes, swinging into a wide oversteer drift around a snowy bend, kicking up powder, and boosting past oncoming traffic."
+    },
+    {
+      "tweetNumber": 2,
+      "text": "How the physics model works under the hood:\n\n1. Brake before turn-in → dynamic weight shifts to front axle\n2. Unloaded rear breaks traction → initiates oversteer\n3. Throttle balances the yaw angle\n4. Countersteer to catch the snap\n\nMess up the line? Off-road grass drains battery 90x faster.",
+      "mediaNote": "Diagram/split-screen overlay showing weight transfer vector lines and EV battery discharge rates during a turn."
+    },
+    {
+      "tweetNumber": 3,
+      "text": "Even the audio is synthesized in real time via WebAudio API:\n\n• Motor whine pitch = wheel RPM\n• Audio amplitude = instantaneous power (|kW|)\n• Downward pitch-bend on kinetic regen braking\n\nNo MP3 asset files. Just pure procedural frequency synthesis running on the CPU.",
+      "mediaNote": "Short video clip with sound demonstrating the EV motor whine pitch shifting dynamically from heavy acceleration to regenerative braking."
+    },
+    {
+      "tweetNumber": 4,
+      "text": "The wild part? The entire game—physics engine, dual-view rendering, procedural biomes, zombie bounties, and deterministic daily ghost lines—lives inside a single index.html file.\n\n0 npm packages. 0 build steps. Loads in under 0.1 seconds.",
+      "mediaNote": "Screenshot of the single index.html file in VS Code showing clean, unminified vanilla JS and Canvas loops."
+    },
+    {
+      "tweetNumber": 5,
+      "text": "Try to beat today's daily ghost line:\n\n🎮 Play: https://kreeda.games/drift/index.html\n⭐ Source (MIT): https://github.com/sudhir-patavardhan/browser-games",
+      "mediaNote": "Banner graphic showing Kreeda Drift logo with daily run high-score leaderboard."
+    }
+  ]
+}

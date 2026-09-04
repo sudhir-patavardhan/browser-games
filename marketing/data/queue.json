@@ -99,7 +99,7 @@
   },
   {
     "id": "plan-thursday-1788019317743-3",
-    "status": "scheduled",
+    "status": "archived",
     "channel": "shorts",
     "gameId": "road-rumble",
     "scheduledDate": "2026-09-01",
@@ -154,11 +154,12 @@
     },
     "createdAt": "2026-08-29T16:01:57.743Z",
     "publishedAt": null,
-    "publishResult": null
+    "publishResult": null,
+    "updatedAt": "2026-09-04T03:15:24.521Z"
   },
   {
     "id": "plan-friday-1788019324895-4",
-    "status": "scheduled",
+    "status": "published",
     "channel": "twitter",
     "gameId": "drift",
     "scheduledDate": "2026-09-02",
@@ -173,12 +174,20 @@
       "mediaSuggestion": "A 5-second high-frame-rate looping video showing a clean countersteer drift around a tight curve with the ghost car alongside, highlighting the battery regen meter pulsing green."
     },
     "createdAt": "2026-08-29T16:02:04.895Z",
-    "publishedAt": null,
-    "publishResult": null
+    "publishedAt": "2026-09-04T03:17:32.189Z",
+    "publishResult": {
+      "success": true,
+      "channel": "twitter",
+      "mode": "live",
+      "postId": "2095712838916637082",
+      "url": "https://twitter.com/i/web/status/2095712838916637082",
+      "publishedAt": "2026-09-04T03:17:32.189Z"
+    },
+    "updatedAt": "2026-09-04T03:17:32.190Z"
   },
   {
     "id": "plan-saturday-1788019343411-5",
-    "status": "scheduled",
+    "status": "archived",
     "channel": "reddit",
     "gameId": "deadpoint",
     "scheduledDate": "2026-09-03",
@@ -190,11 +199,12 @@
     },
     "createdAt": "2026-08-29T16:02:23.411Z",
     "publishedAt": null,
-    "publishResult": null
+    "publishResult": null,
+    "updatedAt": "2026-09-04T03:15:24.525Z"
   },
   {
     "id": "plan-sunday-1788019353867-6",
-    "status": "scheduled",
+    "status": "published",
     "channel": "twitter",
     "gameId": "break-room",
     "scheduledDate": "2026-09-04",
@@ -209,8 +219,16 @@
       "mediaSuggestion": "A 5-second clean looping GIF/video showing a high-skill draw shot (backspin) using the cue spin pad to sink the 8-ball into a called corner pocket."
     },
     "createdAt": "2026-08-29T16:02:33.867Z",
-    "publishedAt": null,
-    "publishResult": null
+    "publishedAt": "2026-09-04T03:17:32.641Z",
+    "publishResult": {
+      "success": true,
+      "channel": "twitter",
+      "mode": "live",
+      "postId": "2095712841139720352",
+      "url": "https://twitter.com/i/web/status/2095712841139720352",
+      "publishedAt": "2026-09-04T03:17:32.641Z"
+    },
+    "updatedAt": "2026-09-04T03:17:32.641Z"
   },
   {
     "id": "post-1788019393751-rx0i",
@@ -262,6 +280,203 @@
       "postId": "sim-tweet-1788194448179",
       "url": "https://twitter.com/intent/tweet?text=Find%20out%20where%20you%20and%20your%20partner%20(or%20best%20friend)%20are%20truly%20in%20sync%E2%80%94and%20where%20you%E2%80%99ve%20just%20been%20guessing.%20Ten%20questions%2C%20instant%20reveal%3A%20https%3A%2F%2Fkreeda.games%2Fsync%2Findex.html%20%23couples%20%23gamenight",
       "publishedAt": "2026-08-31T16:40:48.180Z"
+    }
+  },
+  {
+    "id": "plan-monday-1788491784323-0",
+    "status": "published",
+    "channel": "twitter",
+    "gameId": "drift",
+    "scheduledDate": "2026-09-04",
+    "content": {
+      "thread": [
+        {
+          "tweetNumber": 1,
+          "text": "Most web driving games use an arcade \"press Space to drift\" hack.\n\nWe built an endless EV drifter driven by actual weight-transfer physics: brake to load the front axle, pin the throttle to break the rear loose, countersteer to catch the slide.\n\nNo handbrake button. All in 1 HTML file. 🧵👇",
+          "mediaNote": "GIF of a sleek EV initiating a clean pendulum drift around a snow bend into a zombie horde, switching between cockpit HUD and top-down view."
+        },
+        {
+          "tweetNumber": 2,
+          "text": "The tire model runs on pure Newtonian slip curves:\n\n• Braking transfers vehicle mass forward, unloading the rear\n• Instant electric torque overwhelms the unweighted rear tires\n• Countersteering balances slip angle against momentum\n\nCut the throttle mid-slide and dynamic regen kicks in to snap the car straight while recharging your pack.",
+          "mediaNote": "Short video showing dynamic suspension telemetry and tire friction vectors overlaying the car during an entry slide."
+        },
+        {
+          "tweetNumber": 3,
+          "text": "Zero audio samples were used.\n\nThe EV motor whine is synthesized in real time via procedural WebAudio:\n• Pitch modulates with instantaneous wheel RPM\n• Loudness scales with kW power draw\n• Harmonics invert with a downward sweep under regenerative braking\n\nDeterministic daily seeds let you race against exact ghost telemetry lines.",
+          "mediaNote": "Audio clip demonstration isolating the WebAudio procedural motor synth across acceleration, coasting, and hard regen."
+        },
+        {
+          "tweetNumber": 4,
+          "text": "The entire stack—Canvas rendering, tire physics, procedural biomes, weapon systems, and audio engine—lives in a single, zero-dependency HTML file.\n\nNo npm install. No 50MB asset packs. Instant 0.1s load time on mobile and desktop.\n\nThe open web can still feel lightweight and instantaneous.",
+          "mediaNote": "Screenshot of the single index.html file open in a code editor next to the Chrome DevTools network tab showing 0 external asset requests."
+        },
+        {
+          "tweetNumber": 5,
+          "text": "Jump into the cockpit and test your countersteer control:\n\n⚡ Play Drift: https://kreeda.games/drift/index.html\n🛠️ Inspect the source (100% MIT): https://github.com/sudhir-patavardhan/browser-games\n\nDrop your highest daily multiplier below.",
+          "mediaNote": "High-resolution promo card showing the sunny desert biome with ghost line and score HUD."
+        }
+      ]
+    },
+    "createdAt": "2026-09-04T03:16:24.323Z",
+    "publishedAt": "2026-09-04T03:27:58.217Z",
+    "publishResult": {
+      "success": true,
+      "channel": "twitter",
+      "mode": "live",
+      "postId": "2095715454245593363",
+      "url": "https://twitter.com/i/web/status/2095715454245593363",
+      "threadIds": [
+        "2095715454245593363",
+        "2095715456879620546",
+        "2095715459782066440",
+        "2095715462202179658",
+        "2095715464542613657"
+      ],
+      "publishedAt": "2026-09-04T03:27:58.217Z"
+    },
+    "updatedAt": "2026-09-04T03:27:58.217Z"
+  },
+  {
+    "id": "plan-tuesday-1788491792289-1",
+    "status": "scheduled",
+    "channel": "facebook",
+    "gameId": "ennead",
+    "scheduledDate": "2026-09-05",
+    "content": {
+      "headline": "Think Tic-Tac-Toe is solved? Try Ultimate 9x9 nested mind games.",
+      "text": "Think Tic-Tac-Toe is for kids?\n\nTry nested 9x9 Ultimate Mode—every move dictates your opponent's sub-board. Powered by an unbeatable Minimax AI in a single zero-dependency HTML file.\n\nPlay instantly (no ads/signups):\nhttps://kreeda.games/ennead/index.html\n\n#gamedev #indiedev",
+      "hashtags": [
+        "#gamedev",
+        "#indiedev"
+      ],
+      "mediaSuggestion": "A fast 5-second GIF showing a high-stakes move in Ultimate Tic-Tac-Toe triggering a glowing meta-board capture animation, followed by the Minimax AI instantly countering."
+    },
+    "createdAt": "2026-09-04T03:16:32.289Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-wednesday-1788491798840-2",
+    "status": "scheduled",
+    "channel": "twitter",
+    "gameId": "carrom",
+    "scheduledDate": "2026-09-06",
+    "content": {
+      "headline": "Classic Carrom Physics & Bank-Shot AI in Vanilla JS",
+      "text": "Classic Carrom rebuilt in pure vanilla JS.\n\nThe AI calculates restitution-corrected cushion bank shots in real-time in your browser.\n\nZero installs, loads in 0.1s:\nhttps://kreeda.games/carrom/index.html\n\n#gamedev #webdev #indiedev",
+      "hashtags": [
+        "#gamedev",
+        "#webdev",
+        "#indiedev"
+      ],
+      "mediaSuggestion": "A fast 6-second high-framerate video/GIF showing a smooth striker flick, an impossible cushion bank shot by the AI, and the red Queen sinking into the corner pocket with smooth physics."
+    },
+    "createdAt": "2026-09-04T03:16:38.840Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-thursday-1788491805105-3",
+    "status": "scheduled",
+    "channel": "facebook",
+    "gameId": "road-rumble",
+    "scheduledDate": "2026-09-07",
+    "content": {
+      "headline": "Rebuilding 90s Road Rash in pure Vanilla JS",
+      "text": "We rebuilt 90s Road Rash in a single vanilla JS file using pseudo-3D raster projection.\n\nPin the throttle, punch rivals into oncoming traffic, zero downloads:\nhttps://kreeda.games/road-rumble/index.html\n\n#gamedev #webdev #indiedev",
+      "hashtags": [
+        "#gamedev",
+        "#webdev",
+        "#indiedev"
+      ],
+      "mediaSuggestion": "A 5-second 60fps looping gameplay GIF showing the player swinging a club at a rival biker, sending them crashing into an oncoming civilian truck over a crest hill."
+    },
+    "createdAt": "2026-09-04T03:16:45.105Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-friday-1788491811742-4",
+    "status": "scheduled",
+    "channel": "twitter",
+    "gameId": "drift",
+    "scheduledDate": "2026-09-08",
+    "content": {
+      "headline": "Zero-install EV drift game with real weight-transfer physics",
+      "text": "A drifting game in a single HTML file where your EV battery is your health bar.\n\nReal weight-transfer physics + regen braking on slide.\n\nCan you beat the dev ghost on today's Daily Road? ⚡️🏎️\n\nhttps://kreeda.games/drift/index.html #gamedev #webdev #indiedev",
+      "hashtags": [
+        "#gamedev",
+        "#webdev",
+        "#indiedev"
+      ],
+      "mediaSuggestion": "A fast-paced 5-7s looping 60fps clip showing a clean countersteer drift around a snowy bend, battery HUD flashing green with regen, cleanly overtaking the translucent dev ghost."
+    },
+    "createdAt": "2026-09-04T03:16:51.742Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-saturday-1788491818299-5",
+    "status": "scheduled",
+    "channel": "facebook",
+    "gameId": "dasanana",
+    "scheduledDate": "2026-09-09",
+    "content": {
+      "headline": "Sanskrit Rhythm Chanting Meets Mythic Astra Combat",
+      "text": "Rhythm-chant authentic Sanskrit verses to counter divine missiles and clash against Rāvaṇa's 10 heads.\n\nInstant load, 0 downloads, single HTML file.\n\nPlay in browser: https://kreeda.games/dasanana/index.html\n\n#gamedev #indiedev #webdev",
+      "hashtags": [
+        "#gamedev",
+        "#indiedev",
+        "#webdev"
+      ],
+      "mediaSuggestion": "A 6-second looping gameplay GIF showcasing a player rhythm-chanting Āditya-Hṛdayam glyphs, countering Indrajit's darkness projectile with a burst of light astra, and triggering particle FX."
+    },
+    "createdAt": "2026-09-04T03:16:58.299Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "plan-sunday-1788491825155-6",
+    "status": "scheduled",
+    "channel": "twitter",
+    "gameId": "break-room",
+    "scheduledDate": "2026-09-10",
+    "content": {
+      "headline": "Full 8-ball physics in pure vanilla JS with zero ads",
+      "text": "Full 8-ball physics with realistic cue spin, cushion deflection, and called pockets—built in a single HTML file.\n\nNo downloads. Zero ads. Instant 0.1s load.\n\nRack 'em up: https://kreeda.games/break-room/index.html\n\n#gamedev #webdev #indiegame",
+      "hashtags": [
+        "#gamedev",
+        "#webdev",
+        "#indiegame"
+      ],
+      "mediaSuggestion": "A 5-second seamless looping GIF/clip showing a smooth draw-shot (backspin) on the cue ball banking off a cushion and sinking the 8-ball into a called pocket."
+    },
+    "createdAt": "2026-09-04T03:17:05.155Z",
+    "publishedAt": null,
+    "publishResult": null
+  },
+  {
+    "id": "post-1788491923184-2zmb",
+    "status": "published",
+    "channel": "twitter",
+    "gameId": "windows",
+    "scheduledDate": "2026-09-04",
+    "content": {
+      "kind": "together-video",
+      "text": "Find out your blind spots from the one person who actually sees them. A gentle 5-minute reveal to try with your partner or best friend tonight: https://kreeda.games/windows/index.html",
+      "altText": "Two people sitting together select descriptive personality words on a shared phone screen, which then reveals a color-coded Johari Window grid comparing their perceptions.",
+      "videoPath": "/Users/sudhir/Projects/browser-games/marketing/artifacts/videos/windows-together-1788491884874.mp4",
+      "squarePath": "/Users/sudhir/Projects/browser-games/marketing/artifacts/videos/windows-together-1788491884874-square.mp4"
+    },
+    "createdAt": "2026-09-04T03:18:43.184Z",
+    "publishedAt": "2026-09-04T03:18:43.182Z",
+    "publishResult": {
+      "success": true,
+      "channel": "twitter",
+      "mode": "live",
+      "postId": "2095713136997519687",
+      "url": "https://twitter.com/i/web/status/2095713136997519687",
+      "publishedAt": "2026-09-04T03:18:43.182Z"
     }
   }
 ]
