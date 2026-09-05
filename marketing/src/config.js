@@ -72,7 +72,13 @@ export const config = {
       // Page token and inspecting one both have to prove they are the app.
       // Publishing a Post does not.
       appId: process.env.FACEBOOK_APP_ID || '',
-      appSecret: process.env.FACEBOOK_APP_SECRET || ''
+      appSecret: process.env.FACEBOOK_APP_SECRET || '',
+      // Facebook Campaigns (Phase 4). A System User token owned by the
+      // business, so it never expires and no password change revokes it —
+      // unlike the Page token, which is tied to a person's admin rights.
+      adAccountId: process.env.FACEBOOK_AD_ACCOUNT_ID || '',
+      adsToken: process.env.FACEBOOK_ADS_TOKEN || '',
+      adsCurrency: process.env.FACEBOOK_AD_ACCOUNT_CURRENCY || 'USD'
     }
   },
   // Play-together video posts: film one storyboarded game and post it, on a

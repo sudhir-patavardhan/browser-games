@@ -43,6 +43,12 @@ export class XAdsClient {
   }
 
   async request(method, path, params = {}) {
+    // OAuth 1.0a signs the query string, so a `?` baked into the path is not
+    // signed and the request fails as UNAUTHORIZED_ACCESS — which reads like a
+    // credentials problem and is not one. Pass params instead.
+    if (path.includes('?')) {
+      throw new Error(`Put query parameters in the params argument, not the path: ${path}`);
+    }
     const url = `${BASE}${path}`;
     const upper = method.toUpperCase();
     const hasBody = upper === 'POST' || upper === 'PUT';
