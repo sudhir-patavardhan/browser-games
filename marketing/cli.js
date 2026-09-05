@@ -394,7 +394,7 @@ you administer the Page.
       console.log(`\n💸 PAID — POLICY & STATE (both Channels share the Caps)`);
       console.log(`  Per-campaign cap: $${st.policy.maxDailyPerCampaignUsd}/day · total cap: $${st.policy.maxTotalDailyUsd}/day · trial: ${st.policy.trialDays} days · max active: ${st.policy.maxActiveCampaigns}`);
       console.log(`  Account currency: ${st.policy.currency} (1 USD = ${st.policy.usdToLocalRate} ${st.policy.currency})`);
-      console.log(`  Active: ${st.active.length} (committing $${st.committedDailyUsd}/day) · paused: ${st.paused} · simulated: ${st.simulated}`);
+      console.log(`  Active: ${st.active.length} (committing $${st.committedDailyUsd}/day) · paused: ${st.paused} · ended: ${st.ended} · simulated: ${st.simulated}`);
       st.active.forEach(c => console.log(`   • [${CHANNEL_NAMES[c.channel] || 'X'}] ${c.name} — $${c.dailyBudgetUsd}/day since ${c.launchedAt.slice(0, 10)}${c.lastStats ? ` · ${c.lastStats.clicks} clicks, CTR ${c.lastStats.ctrPercent}%` : ''}`));
       const client = new XAdsClient();
       if (!client.isConfigured) {

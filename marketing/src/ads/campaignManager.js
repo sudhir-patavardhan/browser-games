@@ -6,7 +6,7 @@ import { GeminiClient } from '../ai/geminiClient.js';
 import { SYSTEM_PROMPTS, PROMPT_TEMPLATES } from '../ai/prompts.js';
 import { TwitterPublisher } from '../publishers/twitterPublisher.js';
 import { XAdsClient, AdsApiAccessError } from './xAdsClient.js';
-import { ADS_POLICY, evaluateLaunchBudget, judgeCampaign, usdToLocalMicro, localToUsd } from './adsPolicy.js';
+import { ADS_POLICY, trialIsOver, endTrial, evaluateLaunchBudget, judgeCampaign, usdToLocalMicro, localToUsd } from './adsPolicy.js';
 import { MetaCampaignManager } from './metaCampaign.js';
 import { MetaAdsAccessError } from './metaAdsClient.js';
 import { XMetrics } from '../insights/xMetrics.js';
@@ -100,6 +100,7 @@ export class CampaignManager {
       active: active.map(c => ({ id: c.id, name: c.name, channel: c.channel || X, gameId: c.gameId, angle: c.angle, dailyBudgetUsd: c.dailyBudgetUsd, launchedAt: c.launchedAt, lastStats: c.lastStats || null })),
       committedDailyUsd: active.reduce((s, c) => s + c.dailyBudgetUsd, 0),
       paused: ledger.filter(c => c.status === 'paused').length,
+      ended: ledger.filter(c => c.status === 'ended').length,
       simulated: ledger.filter(c => c.status === 'simulated').length
     };
   }
@@ -287,6 +288,7 @@ export class CampaignManager {
 
   async review({ dryRun = true } = {}) {
     const ledger = this.loadLedger();
+    const now = new Date();
     const active = this.activeXCampaigns(ledger);
     const results = [];
     if (active.length === 0) {
@@ -294,7 +296,6 @@ export class CampaignManager {
       return results;
     }
 
-    const now = new Date();
     const stats = await this.ads.getCampaignStats(
       active.map(c => c.campaignId),
       new Date(Math.min(...active.map(c => new Date(c.launchedAt).getTime()))),
@@ -310,6 +311,15 @@ export class CampaignManager {
       campaign.history.push({ at: now.toISOString(), ...judgement.metrics, killed: judgement.kill });
 
       console.log(`📊 ${campaign.name}: ${judgement.metrics.impressions} imp · ${judgement.metrics.clicks} clicks · $${judgement.metrics.spendUsd} · CTR ${judgement.metrics.ctrPercent}% → ${judgement.kill ? 'Paused' : 'running'} (${judgement.reason})`);
+
+      // The Verdict comes after the reading, so the Post-mortem has the
+      // numbers the Campaign finished on. A Trial that ran its course is
+      // Ended, never Paused: the kill rules exist to stop one early.
+      if (trialIsOver(campaign, now)) {
+        results.push(endTrial(campaign, now));
+        console.log(`  🏁 Ended — its ${ADS_POLICY.trialDays}-day Trial ran its course; $${campaign.dailyBudgetUsd}/day is headroom again.`);
+        continue;
+      }
 
       if (judgement.kill) {
         // A dry run pauses nothing on the Channel, so it must not write the
@@ -352,7 +362,9 @@ export class CampaignManager {
         interests: c.targeting?.interests ?? [], keywords: c.targeting?.keywords ?? [],
         spendUsd: c.lastStats.spendUsd, impressions: c.lastStats.impressions, clicks: c.lastStats.clicks,
         ctrPercent: c.lastStats.ctrPercent, cpcUsd: c.lastStats.cpcUsd,
-        outcome: c.status === 'paused' ? `paused: ${c.pausedReason}` : 'kept running'
+        outcome: c.status === 'paused' ? `Paused: ${c.pausedReason}`
+          : c.status === 'ended' ? 'Ended: it ran its Trial out'
+          : 'still in Trial'
       }));
 
     const byGame = {};

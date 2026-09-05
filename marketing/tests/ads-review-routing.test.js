@@ -188,3 +188,103 @@ test('a Facebook Campaign with stats does not break the learnings', async () => 
   assert.equal(fb.ageBucket, null);
   assert.deepEqual(fb.interests, []);
 });
+
+// --- the Ended Verdict (§5.2, ADR 0004) ------------------------------------
+
+const DAYS_AGO = n => new Date(Date.now() - n * 86_400_000).toISOString();
+
+/** Both Campaigns launched four days ago, so both Trials are a day past over. */
+const finishedLedger = () => mixedLedger().map(c => ({
+  ...c, launchedAt: DAYS_AGO(4), endsAt: DAYS_AGO(1)
+}));
+
+test('a Trial that has run its course is Ended, and stops consuming the Caps', async () => {
+  for (const [label, id, build] of [
+    ['Facebook', 'ads-fb-1', f => new MetaCampaignManager({ ads: stubMetaAds(), ledgerFile: f })],
+    ['X', 'ads-x-1', f => new CampaignManager({ ads: stubXAds(), ledgerFile: f })]
+  ]) {
+    const ledgerFile = tempStateFile('ads-campaigns.json', finishedLedger());
+    const mgr = build(ledgerFile);
+
+    const before = mgr.activeCampaigns().reduce((s, c) => s + c.dailyBudgetUsd, 0);
+    assert.equal(before, 10, `${label}: both Campaigns still commit budget`);
+
+    const results = await mgr.review({ dryRun: true });
+
+    const verdict = results.find(r => r.id === id);
+    assert.ok(verdict?.ended, `${label}: the Trial ran its course`);
+    assert.equal(verdict.kill, false, `${label}: Ended is not Paused — no kill rule fired`);
+
+    const campaign = record(ledgerFile, id);
+    assert.equal(campaign.status, 'ended', `${label}: the Verdict is in the ledger`);
+    assert.ok(campaign.endedAt, `${label}: endedAt is what the Post-mortem looks for`);
+    assert.equal(mgr.activeCampaigns().reduce((s, c) => s + c.dailyBudgetUsd, 0), before - 5,
+      `${label}: its $5/day is headroom again`);
+  }
+});
+
+test('a Trial gets one last reading before its Verdict, and Ending asks nothing of the Channel', async () => {
+  const ledgerFile = tempStateFile('ads-campaigns.json', finishedLedger());
+  const ads = stubMetaAds({ impressions: 5000, urlClicks: 40, spendUsd: 15 });
+  const mgr = new MetaCampaignManager({ ads, ledgerFile });
+
+  await mgr.review({ dryRun: true });
+
+  const fb = record(ledgerFile, 'ads-fb-1');
+  assert.equal(fb.status, 'ended');
+  // Without this reading the Post-mortem has nothing to compare against what
+  // the Campaign promised.
+  assert.deepEqual(ads.asked, ['120251354339310458'], 'the final numbers were read');
+  assert.equal(fb.lastStats.clicks, 40, 'and recorded');
+  assert.equal(fb.lastStats.spendUsd, 15);
+  assert.deepEqual(ads.paused, [], 'Meta already stopped it at its end_time');
+});
+
+test('a finished Trial is Ended, not Paused, even when it failed a kill rule', async () => {
+  // The kill rules exist to stop a Campaign early. Once the Trial is over
+  // there is nothing left to stop, and the Verdict is how it finished.
+  const ledgerFile = tempStateFile('ads-campaigns.json', finishedLedger());
+  const ads = stubMetaAds({ impressions: 4000, urlClicks: 1, spendUsd: 15 });
+
+  const results = await new MetaCampaignManager({ ads, ledgerFile }).review({ dryRun: false });
+
+  const verdict = results.find(r => r.id === 'ads-fb-1');
+  assert.equal(verdict.ended, true);
+  assert.equal(verdict.kill, false);
+  assert.equal(record(ledgerFile, 'ads-fb-1').status, 'ended');
+  assert.equal(record(ledgerFile, 'ads-fb-1').pausedReason, undefined);
+  assert.deepEqual(ads.paused, [], 'nothing to pause: the Trial is already over');
+});
+
+test('a Campaign still inside its Trial is left running', async () => {
+  const ledgerFile = tempStateFile('ads-campaigns.json', mixedLedger());
+  const mgr = new MetaCampaignManager({ ads: stubMetaAds(), ledgerFile });
+
+  const results = await mgr.review({ dryRun: true });
+
+  assert.equal(results.some(r => r.ended), false);
+  assert.equal(record(ledgerFile, 'ads-fb-1').status, 'active');
+});
+
+test('a record with no endsAt is left alone rather than ended on a guess', async () => {
+  const ledger = finishedLedger().map(({ endsAt, ...rest }) => rest);
+  const ledgerFile = tempStateFile('ads-campaigns.json', ledger);
+  const mgr = new MetaCampaignManager({ ads: stubMetaAds(), ledgerFile });
+
+  await mgr.review({ dryRun: true });
+
+  assert.equal(record(ledgerFile, 'ads-fb-1').status, 'active');
+});
+
+test('an Ended Campaign reads as Ended in the learnings, never as "kept running"', async () => {
+  const ledgerFile = tempStateFile('ads-campaigns.json', finishedLedger());
+  await new MetaCampaignManager({ ads: stubMetaAds(), ledgerFile }).review({ dryRun: true });
+
+  const learnings = await new CampaignManager({
+    ads: stubXAds(), ledgerFile, ai: { isConfigured: false },
+    learningsFile: tempStateFile('ads-learnings.json', {})
+  }).learn();
+
+  const fb = learnings.records.find(r => r.channel === 'facebook');
+  assert.match(fb.outcome, /^Ended/);
+});

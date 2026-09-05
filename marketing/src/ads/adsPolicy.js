@@ -1,4 +1,5 @@
 import { config } from '../config.js';
+import { X } from '../knowledge/channels.js';
 
 /**
  * Spend guardrails and kill rules for agent-run X Ads campaigns.
@@ -61,6 +62,52 @@ export function evaluateLaunchBudget(requestedDailyUsd, activeCampaigns = []) {
   }
 
   return { ok: true, dailyUsd, reason: dailyUsd < requestedDailyUsd ? `Clamped from $${requestedDailyUsd} to $${dailyUsd.toFixed(2)}/day by policy.` : 'Within policy.' };
+}
+
+/**
+ * Whether a Campaign's Trial has run its course (§5.2, ADR 0004).
+ *
+ * A Trial is the Campaign's whole life: when it is over the Verdict is Ended,
+ * the Campaign stops consuming headroom under the Caps, and the Performance
+ * Analyst has a Post-mortem to write. `endedAt` is what lets the Morning desk
+ * ask which Campaigns finished since it last ran.
+ *
+ * Unlike Paused, this asks nothing of the Channel — both Channels carry their
+ * own end time, so the Campaign has already stopped delivering — which is why
+ * it is recorded even in a dry run. Ending is an observation, not an action.
+ *
+ * Mutates the Campaigns it ends.
+ *
+ * @returns {Object[]} one Verdict row per Campaign it ended.
+ */
+export function trialIsOver(campaign, now = new Date()) {
+  // A record with no endsAt predates the Trial and is left running rather than
+  // ended on a guess.
+  if (!campaign.endsAt) return false;
+  return new Date(now).getTime() >= new Date(campaign.endsAt).getTime();
+}
+
+/**
+ * Writes the Ended Verdict. Call it only after the Trial's final stats have
+ * been recorded: those numbers are the whole basis of the Post-mortem.
+ *
+ * Mutates the Campaign.
+ *
+ * @returns {Object} the Verdict row.
+ */
+export function endTrial(campaign, now = new Date()) {
+  campaign.status = 'ended';
+  campaign.endedAt = new Date(now).toISOString();
+  return {
+    id: campaign.id,
+    name: campaign.name,
+    channel: campaign.channel || X,
+    judged: true,
+    kill: false,
+    ended: true,
+    reason: `The ${ADS_POLICY.trialDays}-day Trial ran its course.`,
+    metrics: campaign.lastStats || null
+  };
 }
 
 /**

@@ -19,7 +19,7 @@ import fs from 'node:fs';
 import { config } from '../config.js';
 import { FACEBOOK } from '../knowledge/channels.js';
 import { GAME_CATALOG } from '../knowledge/catalog.js';
-import { ADS_POLICY, evaluateLaunchBudget, judgeCampaign } from './adsPolicy.js';
+import { ADS_POLICY, trialIsOver, endTrial, evaluateLaunchBudget, judgeCampaign } from './adsPolicy.js';
 import { MetaAdsClient, MetaAdsAccessError } from './metaAdsClient.js';
 
 export class MetaCampaignManager {
@@ -86,6 +86,15 @@ export class MetaCampaignManager {
       (campaign.history ||= []).push({ at: now.toISOString(), ...judgement.metrics, killed: judgement.kill });
 
       console.log(`📊 ${campaign.name}: ${judgement.metrics.impressions} imp · ${judgement.metrics.clicks} clicks · $${judgement.metrics.spendUsd} · CTR ${judgement.metrics.ctrPercent}% → ${judgement.kill ? 'Paused' : 'running'} (${judgement.reason})`);
+
+      // The Verdict comes after the reading — see the same order on the X
+      // side. Meta's own end_time has already stopped delivery, so Ending asks
+      // nothing of the Channel and a dry run records it too.
+      if (trialIsOver(campaign, now)) {
+        results.push(endTrial(campaign, now));
+        console.log(`  🏁 Ended — its ${ADS_POLICY.trialDays}-day Trial ran its course; $${campaign.dailyBudgetUsd}/day is headroom again.`);
+        continue;
+      }
 
       if (judgement.kill) {
         // A dry run pauses nothing on the Channel, so it must not write the
