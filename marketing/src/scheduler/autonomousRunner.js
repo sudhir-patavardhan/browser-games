@@ -93,7 +93,9 @@ export class AutonomousRunner {
         const ads = await new CampaignManager().runCycle({ dryRun });
         summary.actions.ads = {
           reviewed: ads.reviewed.length,
-          paused: ads.reviewed.filter(r => r.verdict === 'pause').length,
+          // review() reports a fired kill rule as `kill`; there is no `verdict`
+          // field, so the old test here counted zero however many were paused.
+          paused: ads.reviewed.filter(r => r.kill).length,
           launched: Boolean(ads.planned?.launched),
           plannedBrief: ads.planned?.campaign
             ? { gameId: ads.planned.campaign.gameId, angle: ads.planned.campaign.angle, videoPath: ads.planned.campaign.videoPath || null, dryRun: Boolean(ads.planned.dryRun) }

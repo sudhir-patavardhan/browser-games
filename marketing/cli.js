@@ -14,6 +14,7 @@ import { QueueManager } from './src/scheduler/queueManager.js';
 import { AutonomousRunner } from './src/scheduler/autonomousRunner.js';
 import { UniversalPublisher } from './src/publishers/index.js';
 import { CampaignManager } from './src/ads/campaignManager.js';
+import { MetaCampaignManager } from './src/ads/metaCampaign.js';
 import { XAdsClient } from './src/ads/xAdsClient.js';
 import { ConversionApiClient } from './src/ads/conversionApi.js';
 import { TogetherDirector } from './src/studio/togetherDirector.js';
@@ -390,17 +391,17 @@ you administer the Page.
     case 'ads-status': {
       const mgr = new CampaignManager();
       const st = mgr.status();
-      console.log(`\n💸 X ADS — POLICY & STATE`);
+      console.log(`\n💸 PAID — POLICY & STATE (both Channels share the Caps)`);
       console.log(`  Per-campaign cap: $${st.policy.maxDailyPerCampaignUsd}/day · total cap: $${st.policy.maxTotalDailyUsd}/day · trial: ${st.policy.trialDays} days · max active: ${st.policy.maxActiveCampaigns}`);
       console.log(`  Account currency: ${st.policy.currency} (1 USD = ${st.policy.usdToLocalRate} ${st.policy.currency})`);
       console.log(`  Active: ${st.active.length} (committing $${st.committedDailyUsd}/day) · paused: ${st.paused} · simulated: ${st.simulated}`);
-      st.active.forEach(c => console.log(`   • ${c.name} — $${c.dailyBudgetUsd}/day since ${c.launchedAt.slice(0, 10)}${c.lastStats ? ` · ${c.lastStats.clicks} clicks, CTR ${c.lastStats.ctrPercent}%` : ''}`));
+      st.active.forEach(c => console.log(`   • [${CHANNEL_NAMES[c.channel] || 'X'}] ${c.name} — $${c.dailyBudgetUsd}/day since ${c.launchedAt.slice(0, 10)}${c.lastStats ? ` · ${c.lastStats.clicks} clicks, CTR ${c.lastStats.ctrPercent}%` : ''}`));
       const client = new XAdsClient();
       if (!client.isConfigured) {
         console.log(`  API: not configured (need Twitter OAuth1 keys + X_ADS_ACCOUNT_ID)\n`);
       } else {
         const probe = await client.probeAccess();
-        console.log(`  API access: ${probe.authorized ? `✅ authorized (${probe.accounts.length} account(s))` : `❌ ${probe.error}`}\n`);
+        console.log(`  X API access: ${probe.authorized ? `✅ authorized (${probe.accounts.length} account(s))` : `❌ ${probe.error}`}\n`);
       }
       break;
     }
@@ -426,8 +427,17 @@ you administer the Page.
     }
 
     case 'ads-review': {
-      const mgr = new CampaignManager();
-      const res = await mgr.review({ dryRun: !flags.live });
+      const dryRun = !flags.live;
+      // Each Channel is judged through the API that issued its campaign ids,
+      // and one Channel being unreachable must not hide the other's verdicts.
+      const judge = async (label, run) => {
+        try { return await run(); }
+        catch (err) { console.error(`⚠️ ${label}: ${err.message}`); return { error: err.message }; }
+      };
+      const res = {
+        x: await judge('X', () => new CampaignManager().review({ dryRun })),
+        facebook: await judge('Facebook', () => new MetaCampaignManager().review({ dryRun }))
+      };
       console.log(JSON.stringify(res, null, 2));
       break;
     }
