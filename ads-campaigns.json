@@ -136,8 +136,36 @@
     "launchedAt": "2026-09-05T13:58:17.583Z",
     "endsAt": "2026-09-08T13:58:17.583Z",
     "status": "active",
-    "lastStats": null,
-    "history": [],
+    "lastStats": {
+      "at": "2026-09-05T16:06:25.902Z",
+      "impressions": 471,
+      "urlClicks": 8,
+      "spendUsd": 0.1,
+      "spendLocal": 7.98,
+      "clicks": 8,
+      "ctrPercent": 1.7,
+      "cpcUsd": 0.013
+    },
+    "history": [
+      {
+        "at": "2026-09-05T14:38:50.316Z",
+        "impressions": 0,
+        "clicks": 0,
+        "spendUsd": 0,
+        "ctrPercent": 0,
+        "cpcUsd": null,
+        "killed": false
+      },
+      {
+        "at": "2026-09-05T16:06:25.902Z",
+        "impressions": 471,
+        "clicks": 8,
+        "spendUsd": 0.1,
+        "ctrPercent": 1.7,
+        "cpcUsd": 0.013,
+        "killed": false
+      }
+    ],
     "campaignId": "120251354339310458",
     "adSetId": "120251354339550458",
     "creativeId": "1645261106945946",
