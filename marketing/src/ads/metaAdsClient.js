@@ -193,10 +193,13 @@ export class MetaAdsClient {
       ...(imageHash ? { image_hash: imageHash } : {}),
       call_to_action: { type: 'PLAY_GAME', value: { link } }
     };
+    // No degrees_of_freedom_spec: Meta deprecated opting out of standard
+    // enhancements, and sending the field is now rejected outright. Meta may
+    // therefore adjust the creative it shows; that is worth knowing when a
+    // Post-mortem tries to explain what happened.
     return this.request('POST', `/${this.account}/adcreatives`, {
       name,
-      object_story_spec: { page_id: this.pageId, link_data: linkData },
-      degrees_of_freedom_spec: { creative_features_spec: { standard_enhancements: { enroll_status: 'OPT_OUT' } } }
+      object_story_spec: { page_id: this.pageId, link_data: linkData }
     });
   }
 
