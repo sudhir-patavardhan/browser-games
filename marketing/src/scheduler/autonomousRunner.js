@@ -1,6 +1,5 @@
 import path from 'node:path';
 import { ContentGenerator } from '../generator/contentGenerator.js';
-import { CampaignPlanner } from '../generator/campaignPlanner.js';
 import { TogetherPromoter } from '../generator/togetherPromoter.js';
 import { QueueManager } from './queueManager.js';
 import { VisualStudio } from '../studio/visualStudio.js';
@@ -12,7 +11,6 @@ import { config } from '../config.js';
 export class AutonomousRunner {
   constructor() {
     this.generator = new ContentGenerator();
-    this.planner = new CampaignPlanner(this.generator);
     this.queue = new QueueManager();
     this.studio = new VisualStudio();
   }
@@ -37,14 +35,14 @@ export class AutonomousRunner {
     const pending = this.queue.getAll().filter(i => i.status === 'scheduled' || i.status === 'approved');
     console.log(`📊 Queue status: ${pending.length} upcoming scheduled posts.`);
 
+    // The Plan is the Strategist's (§6.2). Nothing here invents one from a
+    // day-of-week rota any more; a thin queue is something to report, not to
+    // fill automatically.
+    summary.actions.plannedPosts = 0;
     if (pending.length < 5) {
-      console.log(`✨ Queue is low. Autonomous planner generating new weekly campaign plan...`);
-      const weeklyPlan = await this.planner.planWeeklyCalendar();
-      this.queue.add(weeklyPlan.items);
-      summary.actions.plannedPosts = weeklyPlan.items.length;
-      console.log(`✅ Added ${weeklyPlan.items.length} new scheduled campaign items to queue.`);
+      console.log(`✨ Queue is low — run the Planning Cycle so the Strategist writes next week's Plan.`);
+      summary.actions.queueLow = true;
     } else {
-      summary.actions.plannedPosts = 0;
       console.log(`✅ Queue has sufficient buffer.`);
     }
 

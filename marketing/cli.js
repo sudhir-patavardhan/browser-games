@@ -7,7 +7,6 @@ import { fileURLToPath } from 'node:url';
 import { config } from './src/config.js';
 import { GAME_CATALOG } from './src/knowledge/catalog.js';
 import { ContentGenerator } from './src/generator/contentGenerator.js';
-import { CampaignPlanner } from './src/generator/campaignPlanner.js';
 import { VisualStudio } from './src/studio/visualStudio.js';
 import { VideoStudio } from './src/studio/videoStudio.js';
 import { QueueManager } from './src/scheduler/queueManager.js';
@@ -15,6 +14,8 @@ import { AutonomousRunner } from './src/scheduler/autonomousRunner.js';
 import { UniversalPublisher } from './src/publishers/index.js';
 import { CampaignManager } from './src/ads/campaignManager.js';
 import { MetaCampaignManager } from './src/ads/metaCampaign.js';
+import { ROLES, prepare as prepareAgent, accept as acceptAgent, ioPaths, RejectedOutput } from './src/agents/index.js';
+import { prepareCycle, renderCycle } from './src/producer/cycles.js';
 import { XAdsClient } from './src/ads/xAdsClient.js';
 import { ConversionApiClient } from './src/ads/conversionApi.js';
 import { TogetherDirector } from './src/studio/togetherDirector.js';
@@ -96,6 +97,13 @@ async function main() {
         console.log(`\n${log.render()}`);
         if (review) console.log(`Review: ${review.html_url}\n`);
         if (log.counts().failed) process.exit(1);
+        break;
+      }
+
+      if (which === 'desk' || which === 'planning') {
+        // ADR 0006: the Producer prepares; the session is the Agent. This
+        // never accepts on the session's behalf.
+        console.log(renderCycle(await prepareCycle(which)));
         break;
       }
 
@@ -261,18 +269,11 @@ you administer the Page.
     }
 
     case 'plan': {
-      console.log(`\n📅 Generating 7-day marketing campaign plan...`);
-      const planner = new CampaignPlanner();
-      const plan = await planner.planWeeklyCalendar();
-      
-      const queue = new QueueManager();
-      queue.add(plan.items);
-      
-      console.log(`\n✅ Weekly plan created with ${plan.items.length} scheduled items and added to queue:`);
-      plan.items.forEach(item => {
-        console.log(`  • [${item.scheduledDate}] ${item.dayOfWeek.padEnd(9)} | ${item.channel.toUpperCase().padEnd(10)} | ${item.gameName} — ${item.theme}`);
-      });
-      console.log(`\nRun "node cli.js queue" to review drafts.\n`);
+      // §6.2: the Mon–Sun rota is gone. A Plan is the Strategist's judgement
+      // about next week, not a table filled in by the calendar.
+      console.log(`\n📅 The Plan is the Strategist's now (§6.2).\n`);
+      console.log(`  node cli.js cycle planning     the whole Sunday Cycle, in order`);
+      console.log(`  node cli.js agent prepare strategist   just the Plan\n`);
       break;
     }
 
@@ -426,6 +427,54 @@ you administer the Page.
       break;
     }
 
+    case 'agent': {
+      // ADR 0006: the Producer gathers the inputs and validates the answer.
+      // The thinking in between is the session's, not the CLI's.
+      const [, action, role] = args;
+      if (action === 'list' || !action) {
+        console.log(`\n🧠 THE AGENTS — each is the routine's own session (ADR 0006)\n`);
+        for (const name of ROLES) console.log(`  ${name.padEnd(20)} prompt: src/agents/${name}/PROMPT.md`);
+        console.log(`\n  node cli.js agent prepare <role> [--full]`);
+        console.log(`  node cli.js agent accept <role> [--file <path>]\n`);
+        break;
+      }
+      if (!ROLES.includes(role)) {
+        console.error(`"${role || ''}" is not an Agent. The roles are: ${ROLES.join(', ')}.`);
+        process.exit(1);
+      }
+
+      if (action === 'prepare') {
+        const res = await prepareAgent(role, { full: Boolean(flags.full), ...(flags.days ? { days: Number(flags.days) } : {}) });
+        console.log(`\n🧠 ${role} — inputs ready`);
+        console.log(`  ${res.summary}`);
+        console.log(`\n  1. read    ${res.prompt}`);
+        console.log(`  2. read    ${res.input}`);
+        console.log(`  3. write   ${res.output}`);
+        console.log(`  4. run     node cli.js agent accept ${role}\n`);
+        break;
+      }
+
+      if (action === 'accept') {
+        try {
+          const res = await acceptAgent(role, { dryRun: Boolean(flags.dry), file: flags.file || null });
+          console.log(`\n✅ ${role} accepted — ${res.summary}`);
+          for (const file of res.wrote) console.log(`   wrote ${file}`);
+          console.log('');
+        } catch (err) {
+          if (!(err instanceof RejectedOutput)) throw err;
+          // §6: malformed output is rejected, never patched. The previous
+          // state file stands, and the Agent gets one chance to fix its own.
+          console.error(`\n❌ ${err.message}\n`);
+          console.error(`   The previous state file stands. Fix ${ioPaths(role).output} and run accept again.\n`);
+          process.exit(1);
+        }
+        break;
+      }
+
+      console.error(`Unknown agent action "${action}". Use prepare, accept or list.`);
+      process.exit(1);
+    }
+
     case 'ads-review': {
       const dryRun = !flags.live;
       // Each Channel is judged through the API that issued its campaign ids,
@@ -561,6 +610,9 @@ The Cycles
   cycle publish              One Publish Cycle: read merged Reviews, expire, fill Drafts,
                              publish what is due, pull metrics, update the Review  [--live]
   cycle creative             Fill every Draft inside the horizon      [--horizon 48h] [--live]
+  cycle desk                 The Morning desk: prepare the Analyst, any Post-mortem due,
+                             and the Media Buyer if there is headroom (§5)
+  cycle planning             Sunday: the Analyst in full, the Strategist, the Briefing
   fb token                   Mint the long-lived Facebook Page token (§11)
                              --user-token <short-lived token from Graph API Explorer>
   fb preflight               Whether the Producer can publish a Post on the Page
@@ -584,10 +636,15 @@ Queue and publishing
   approve <id>               Approve one Post
   publish <id>               Publish one Post now                                  [--live]
   process-due                Publish every approved Post whose Slot has arrived
-  plan                       Draft next week's Plan (replaced by the Strategist in Phase 3)
+  plan                       Where the Plan comes from now (the Strategist, §6.2)
   run-autonomous             Run one Cycle                                         [--live]
   metrics                    Pull impressions and link clicks for every live Post on X
   report                     Print the last Run log
+
+The Agents — the session is the Agent; the CLI prepares and accepts (ADR 0006)
+  agent list                 The five judgment roles and where their prompts live
+  agent prepare <role>       Gather one role's inputs into data/agent-io/       [--full]
+  agent accept <role>        Validate the role's answer and write its state file [--file <path>]
 
 Paid — every Campaign is a fixed Trial under the Caps ($10/day each, $25/day total)
   ads-preflight              Whether a Campaign can go live: keys, approval, funding, Asset

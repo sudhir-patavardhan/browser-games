@@ -70,9 +70,6 @@ export class CampaignManager {
     try { return JSON.parse(fs.readFileSync(this.learningsFile, 'utf8')); } catch { return null; }
   }
 
-  saveLearnings(data) {
-    fs.writeFileSync(this.learningsFile, JSON.stringify(data, null, 2));
-  }
 
   /** Every Campaign still spending, on either Channel: the Caps are shared. */
   activeCampaigns(ledger = this.loadLedger()) {
@@ -389,9 +386,12 @@ export class CampaignManager {
       recommendedNext = analysis.recommendedNext || '';
     }
 
+    // Not written to disk. `ads-learnings.json` is the Performance Analyst's
+    // file and it holds Post-mortems (§6.5); this aggregate exists only to
+    // give the Run log and planNext something to read in the same pass. Two
+    // components writing one state file is the rule §14 sets out to avoid.
     const learnings = { updatedAt: new Date().toISOString(), byGame, records, lessons, recommendedNext };
-    this.saveLearnings(learnings);
-    console.log(`🧠 Learnings updated from ${records.length} campaign(s)${lessons.length ? `: ${lessons[0]}` : ''}`);
+    console.log(`🧠 Read ${records.length} campaign(s)${lessons.length ? `: ${lessons[0]}` : ''}`);
     return learnings;
   }
 
