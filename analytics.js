@@ -89,7 +89,16 @@
     }catch(e){ return gameId(); }
   }
 
+  /* Paths that are pages, not Games. The hub is browsing; /marketing/ explains
+     how the site is promoted; /privacy/ explains what this file measures;
+     /verify/ is a test harness. Each has a game_id because it has a folder,
+     and none of them can ever mint a Player — the marketing system's
+     north-star metric is people who PLAYED. Add a page here the moment you
+     add one, or it quietly inflates the only number that matters. */
+  var NOT_A_GAME={ home:1, marketing:1, privacy:1, verify:1 };
+
   var GAME={ game_id:gameId(), game_name:gameName() };
+  GAME.playable=!NOT_A_GAME[GAME.game_id];
 
   function boot(){
     if(localFile()) return;                                  // rule 2: not a word from a file:// page
@@ -200,8 +209,8 @@
     if(whole<1) return;                                      // nothing worth a hit
     pending-=whole*1000;
     /* Real play just got recorded, so stamp the recency key the hub's "Jump
-       back in" shelf reads. The hub itself (game_id 'home') is browsing, not play. */
-    try{ if(GAME.game_id!=='home') localStorage.setItem('kreeda.played.'+GAME.game_id, String(Date.now())); }catch(e){}
+       back in" shelf reads. A page that is not a Game never writes one. */
+    try{ if(GAME.playable) localStorage.setItem('kreeda.played.'+GAME.game_id, String(Date.now())); }catch(e){}
     window.bgTrack('game_time', {
       active_seconds:whole,
       total_seconds:Math.round(active/1000),
@@ -211,7 +220,7 @@
        moment in GA4 as `played_30s` — the one event the marketing system counts as a player, for every
        visitor and not only the ones an ad brought. Once per page, from the same clock as game_time, so
        neither can be gamed by an open tab. */
-    if(!playedSent && active>=PLAYED_AFTER && GAME.game_id!=='home'){
+    if(!playedSent && active>=PLAYED_AFTER && GAME.playable){
       playedSent=true;
       window.bgTrack('played_30s', { active_seconds:Math.round(active/1000) });
       xConvert('played_30s', { value:Math.round(active/1000) });
@@ -247,7 +256,7 @@
     xpixel:XPIXEL,
     xevents:function(){ var o={}; for(var k in XEVENTS) o[k]=XEVENTS[k]; return o; },
     conversion:xConvert,                                     // e.g. bgAnalytics.conversion('game_start')
-    game:function(){ return { id:GAME.game_id, name:GAME.game_name }; },
+    game:function(){ return { id:GAME.game_id, name:GAME.game_name, playable:GAME.playable }; },
     live:function(){ return live; },
     seconds:function(){ accrue(); return Math.round(active/1000); },   // active time on this page so far
     log:function(){ return LOG.slice(); },
