@@ -1,4 +1,4 @@
-**Publish Cycle** · 2026-09-04 15:13 UTC · 5 done, 4 skipped
+**Publish Cycle** · 2026-09-05 03:27 UTC · 4 done, 4 skipped
 
 **Reviews**
 - _skipped:_ no Review has been merged since the last Cycle
@@ -10,16 +10,16 @@
 - _skipped:_ no Draft is inside the 48-hour horizon
 
 **Publishing**
-- plan-tuesday-1788491792289-1 (Tic Tac Toe, Facebook) published: https://facebook.com/122097774201470766
-- plan-wednesday-1788491798840-2 (Carrom, X) published: https://twitter.com/i/web/status/2095892990703317424
+- _skipped:_ nothing is approved and due at the 09:00 Window
 
 **Metrics**
 - X: refreshed 6 Post(s)
-- Facebook: refreshed 0 Post(s), 1 unreadable
+- Facebook: refreshed 1 Post(s)
 
 **State**
 - state committed and pushed
 
 **Review**
-- _skipped:_ nothing is waiting on the CMO, so no Review was opened
+- marketing-review is one commit ahead of marketing-state at 542f5ce
+- Review #86 opened: 1 Post(s) awaiting a decision — https://github.com/sudhir-patavardhan/browser-games/pull/86
 
