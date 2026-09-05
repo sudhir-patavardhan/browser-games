@@ -78,7 +78,12 @@ export const config = {
       // unlike the Page token, which is tied to a person's admin rights.
       adAccountId: process.env.FACEBOOK_AD_ACCOUNT_ID || '',
       adsToken: process.env.FACEBOOK_ADS_TOKEN || '',
-      adsCurrency: process.env.FACEBOOK_AD_ACCOUNT_CURRENCY || 'USD'
+      adsCurrency: process.env.FACEBOOK_AD_ACCOUNT_CURRENCY || 'USD',
+      // The Facebook account's own rate. It falls back to X's only because
+      // both accounts happen to bill in INR today; usdToMinorUnits refuses the
+      // pairing where borrowing that rate would multiply every budget.
+      adsUsdToLocalRate: Number(process.env.FACEBOOK_AD_ACCOUNT_USD_TO_LOCAL_RATE)
+        || Number(process.env.X_ADS_USD_TO_LOCAL_RATE) || 1
     }
   },
   // Play-together video posts: film one storyboarded game and post it, on a

@@ -40,7 +40,7 @@ export class MetaAdsClient {
     accountId = config.platforms.facebook.adAccountId,
     pageId = config.platforms.facebook.pageId,
     currency = config.platforms.facebook.adsCurrency,
-    usdToLocalRate = config.ads.usdToLocalRate
+    usdToLocalRate = config.platforms.facebook.adsUsdToLocalRate
   } = {}) {
     this.token = token;
     this.accountId = String(accountId || '').replace(/^act_/, '');
@@ -64,6 +64,12 @@ export class MetaAdsClient {
   usdToMinorUnits(usd) {
     if (this.currency !== 'USD' && this.usdToLocalRate === 1) {
       throw new Error(`The ad account bills in ${this.currency} but no conversion rate is set — refusing to guess what a dollar is worth.`);
+    }
+    // A USD account with a non-1 rate means the rate belongs to some other
+    // account's currency. Silently borrowing it would multiply every budget by
+    // that rate — $5/day becomes $420/day at 84 — so refuse instead.
+    if (this.currency === 'USD' && this.usdToLocalRate !== 1) {
+      throw new Error(`The ad account bills in USD but the conversion rate is ${this.usdToLocalRate} — that rate belongs to another account's currency. Set FACEBOOK_AD_ACCOUNT_USD_TO_LOCAL_RATE=1.`);
     }
     return Math.round(usd * this.usdToLocalRate * 100);
   }
@@ -150,9 +156,12 @@ export class MetaAdsClient {
   }
 
   /**
-   * An Ad Set: the money, the audience and the clock. `lifetime_budget` with an
-   * end time is what makes a Trial a Trial — Meta stops it on its own when
-   * either runs out, so a Cycle that never runs cannot leave one spending.
+   * An Ad Set: the money, the audience and the clock. `daily_budget` paces the
+   * spend and `end_time` is what makes a Trial a Trial — Meta stops it on its
+   * own when the end time is reached, so a Cycle that never runs cannot leave
+   * one spending. Note there is no cumulative cap: `end_time` alone bounds the
+   * Trial, and the ledger's totalBudgetUsd is what daily × trialDays should
+   * come to under normal pacing, not a ceiling Meta enforces.
    */
   async createAdSet({
     campaignId, name, dailyUsd, endTime, countries = ['IN'], ageMin = 18, ageMax = 65,

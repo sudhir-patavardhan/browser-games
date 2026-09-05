@@ -1,16 +1,22 @@
 import fs from 'node:fs';
 import { config } from '../config.js';
 import { GAME_CATALOG } from '../knowledge/catalog.js';
+import { X } from '../knowledge/channels.js';
 import { GeminiClient } from '../ai/geminiClient.js';
 import { SYSTEM_PROMPTS, PROMPT_TEMPLATES } from '../ai/prompts.js';
 import { TwitterPublisher } from '../publishers/twitterPublisher.js';
 import { XAdsClient, AdsApiAccessError } from './xAdsClient.js';
 import { ADS_POLICY, evaluateLaunchBudget, judgeCampaign, usdToLocalMicro, localToUsd } from './adsPolicy.js';
+import { MetaCampaignManager } from './metaCampaign.js';
+import { MetaAdsAccessError } from './metaAdsClient.js';
 import { XMetrics } from '../insights/xMetrics.js';
 import { VideoStudio } from '../studio/videoStudio.js';
 import { TogetherDirector } from '../studio/togetherDirector.js';
 
 const DEFAULT_COUNTRIES = ['US', 'GB', 'CA', 'AU', 'IN'];
+
+/** Either Channel refusing our credentials is a blocked Cycle, not a crash. */
+const isAccessError = err => err instanceof AdsApiAccessError || err instanceof MetaAdsAccessError;
 const AGE_BUCKETS = new Set(['AGE_18_PLUS', 'AGE_21_TO_34', 'AGE_25_TO_34', 'AGE_35_TO_49', 'AGE_13_TO_24', 'AGE_50_PLUS']);
 
 /**
@@ -18,8 +24,10 @@ const AGE_BUCKETS = new Set(['AGE_18_PLUS', 'AGE_21_TO_34', 'AGE_25_TO_34', 'AGE
  *
  *   launch  → post the ad tweet, create campaign + line item + targeting,
  *             promote the tweet (≤ $10/day each, ≤ $25/day in total)
- *   review  → pull analytics for every active campaign, pause anything that
- *             failed its 2-day trial
+ *   review  → pull analytics for every active X Campaign and pause anything
+ *             that failed its trial. Only X Campaigns: a campaign id is only
+ *             meaningful to the API that issued it (see activeXCampaigns).
+ *             runCycle asks the Facebook manager to judge its own.
  *   learn   → fold results into data/ads-learnings.json (aggregates + AI lessons)
  *   plan    → ask Gemini for the next brief given the learnings, then launch it
  *
@@ -31,12 +39,14 @@ export class CampaignManager {
     ads = new XAdsClient(),
     twitter = new TwitterPublisher(),
     ai = new GeminiClient(),
+    meta = new MetaCampaignManager(),
     ledgerFile = config.ads.ledgerFile,
     learningsFile = config.ads.learningsFile
   } = {}) {
     this.ads = ads;
     this.twitter = twitter;
     this.ai = ai;
+    this.meta = meta;
     this.ledgerFile = ledgerFile;
     this.learningsFile = learningsFile;
   }
@@ -49,7 +59,10 @@ export class CampaignManager {
   }
 
   saveLedger(items) {
-    fs.writeFileSync(this.ledgerFile, JSON.stringify(items, null, 2));
+    // The trailing newline matches MetaCampaignManager's writer. Both write
+    // this file in one Cycle, so a disagreement here is a one-byte diff on
+    // marketing-state every single run.
+    fs.writeFileSync(this.ledgerFile, `${JSON.stringify(items, null, 2)}\n`);
   }
 
   loadLearnings() {
@@ -61,8 +74,22 @@ export class CampaignManager {
     fs.writeFileSync(this.learningsFile, JSON.stringify(data, null, 2));
   }
 
+  /** Every Campaign still spending, on either Channel: the Caps are shared. */
   activeCampaigns(ledger = this.loadLedger()) {
     return ledger.filter(c => c.status === 'active');
+  }
+
+  /**
+   * The active Campaigns this manager may actually talk to.
+   *
+   * The Caps are shared across Channels, but a campaign id is only meaningful
+   * to the API that issued it: handing a Facebook id to the X Ads stats
+   * endpoint fails the whole pass, so no X Campaign gets judged either. A
+   * record written before Facebook existed carries no `channel` and is an X
+   * Campaign.
+   */
+  activeXCampaigns(ledger = this.loadLedger()) {
+    return this.activeCampaigns(ledger).filter(c => (c.channel || X) === X);
   }
 
   status() {
@@ -70,7 +97,7 @@ export class CampaignManager {
     const active = this.activeCampaigns(ledger);
     return {
       policy: { ...ADS_POLICY, maxActiveCampaigns: config.ads.maxActiveCampaigns, currency: config.ads.currency, usdToLocalRate: config.ads.usdToLocalRate },
-      active: active.map(c => ({ id: c.id, name: c.name, gameId: c.gameId, angle: c.angle, dailyBudgetUsd: c.dailyBudgetUsd, launchedAt: c.launchedAt, lastStats: c.lastStats || null })),
+      active: active.map(c => ({ id: c.id, name: c.name, channel: c.channel || X, gameId: c.gameId, angle: c.angle, dailyBudgetUsd: c.dailyBudgetUsd, launchedAt: c.launchedAt, lastStats: c.lastStats || null })),
       committedDailyUsd: active.reduce((s, c) => s + c.dailyBudgetUsd, 0),
       paused: ledger.filter(c => c.status === 'paused').length,
       simulated: ledger.filter(c => c.status === 'simulated').length
@@ -260,10 +287,10 @@ export class CampaignManager {
 
   async review({ dryRun = true } = {}) {
     const ledger = this.loadLedger();
-    const active = this.activeCampaigns(ledger);
+    const active = this.activeXCampaigns(ledger);
     const results = [];
     if (active.length === 0) {
-      console.log('📊 No active campaigns to review.');
+      console.log('📊 No active X Campaign to review.');
       return results;
     }
 
@@ -285,10 +312,16 @@ export class CampaignManager {
       console.log(`📊 ${campaign.name}: ${judgement.metrics.impressions} imp · ${judgement.metrics.clicks} clicks · $${judgement.metrics.spendUsd} · CTR ${judgement.metrics.ctrPercent}% → ${judgement.kill ? 'Paused' : 'running'} (${judgement.reason})`);
 
       if (judgement.kill) {
-        if (!dryRun) await this.ads.setCampaignStatus(campaign.campaignId, 'PAUSED');
-        campaign.status = 'paused';
-        campaign.pausedAt = now.toISOString();
-        campaign.pausedReason = judgement.reason;
+        // A dry run pauses nothing on the Channel, so it must not write the
+        // Verdict either: a ledger that says Paused while the Campaign is
+        // still delivering drops it from every later review, and it spends on
+        // unwatched until the Trial's own end time.
+        if (!dryRun) {
+          await this.ads.setCampaignStatus(campaign.campaignId, 'PAUSED');
+          campaign.status = 'paused';
+          campaign.pausedAt = now.toISOString();
+          campaign.pausedReason = judgement.reason;
+        }
         console.log(`  ⏸ ${dryRun ? '[DRY-RUN] would pause' : 'paused'} — ${judgement.reason}`);
       }
       results.push({ id: campaign.id, name: campaign.name, ...judgement });
@@ -312,8 +345,11 @@ export class CampaignManager {
       .sort((a, b) => new Date(b.launchedAt) - new Date(a.launchedAt))
       .slice(0, 20)
       .map(c => ({
-        game: c.gameId, angle: c.angle, ageBucket: c.targeting.ageBucket,
-        interests: c.targeting.interests, keywords: c.targeting.keywords,
+        game: c.gameId, angle: c.angle, channel: c.channel || X,
+        // A Facebook Campaign is targeted by country and age on the Ad Set, so
+        // it carries none of X's targeting fields.
+        ageBucket: c.targeting?.ageBucket ?? null,
+        interests: c.targeting?.interests ?? [], keywords: c.targeting?.keywords ?? [],
         spendUsd: c.lastStats.spendUsd, impressions: c.lastStats.impressions, clicks: c.lastStats.clicks,
         ctrPercent: c.lastStats.ctrPercent, cpcUsd: c.lastStats.cpcUsd,
         outcome: c.status === 'paused' ? `paused: ${c.pausedReason}` : 'kept running'
@@ -461,11 +497,23 @@ export class CampaignManager {
     console.log(`\n💸 ADS CYCLE (${dryRun ? 'DRY-RUN' : 'LIVE'}) — policy: ≤ $${ADS_POLICY.maxDailyPerCampaignUsd}/day per campaign, ≤ $${ADS_POLICY.maxTotalDailyUsd}/day total, ${ADS_POLICY.trialDays}-day trial`);
     const summary = { reviewed: [], learned: null, planned: null, blocked: null, status: null };
     try {
-      summary.reviewed = await this.review({ dryRun });
+      // Every Campaign spending under the shared Caps gets judged, whichever
+      // Channel it runs on; each manager talks only to its own API. One
+      // Channel's credentials failing must not throw away the other's
+      // verdicts, so each is judged behind its own guard.
+      for (const [channel, judge] of [['X', () => this.review({ dryRun })], ['Facebook', () => this.meta.review({ dryRun })]]) {
+        try {
+          summary.reviewed.push(...await judge());
+        } catch (err) {
+          if (!isAccessError(err)) throw err;
+          console.warn(`⚠️ ${channel}: ${err.message}`);
+          summary.blocked = [summary.blocked, `${channel}: ${err.message}`].filter(Boolean).join(' · ');
+        }
+      }
       summary.learned = await this.learn();
       summary.planned = await this.planNext({ dryRun, video });
     } catch (err) {
-      if (err instanceof AdsApiAccessError) {
+      if (isAccessError(err)) {
         console.warn(`⚠️ ${err.message}`);
         summary.blocked = err.message;
       } else {

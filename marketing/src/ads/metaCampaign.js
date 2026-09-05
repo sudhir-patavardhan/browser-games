@@ -19,7 +19,7 @@ import fs from 'node:fs';
 import { config } from '../config.js';
 import { FACEBOOK } from '../knowledge/channels.js';
 import { GAME_CATALOG } from '../knowledge/catalog.js';
-import { ADS_POLICY, evaluateLaunchBudget } from './adsPolicy.js';
+import { ADS_POLICY, evaluateLaunchBudget, judgeCampaign } from './adsPolicy.js';
 import { MetaAdsClient, MetaAdsAccessError } from './metaAdsClient.js';
 
 export class MetaCampaignManager {
@@ -40,6 +40,70 @@ export class MetaCampaignManager {
   /** Every Campaign still spending, on either Channel: the Caps are shared. */
   activeCampaigns(ledger = this.loadLedger()) {
     return ledger.filter(c => c.status === 'active');
+  }
+
+  /**
+   * The active Facebook Campaigns — the only ones whose ids the Marketing API
+   * can resolve. The Caps are counted across both Channels; the stats are not.
+   */
+  activeFacebookCampaigns(ledger = this.loadLedger()) {
+    return this.activeCampaigns(ledger).filter(c => c.channel === FACEBOOK);
+  }
+
+  /**
+   * Applies the kill rules to every active Facebook Campaign (§8.2).
+   *
+   * The same policy as X, read through Meta's insights: a Campaign that is not
+   * working stops paying for the rest of its Trial. Meta's own `end_time` on
+   * the Ad Set still ends the Trial if no Cycle ever runs again; this only ever
+   * ends one earlier.
+   *
+   * @returns {Promise<Object[]>} one judgement per Campaign.
+   */
+  async review({ dryRun = true } = {}) {
+    const ledger = this.loadLedger();
+    const active = this.activeFacebookCampaigns(ledger);
+    const results = [];
+    if (active.length === 0) {
+      console.log('📊 No active Facebook Campaign to review.');
+      return results;
+    }
+
+    const now = new Date();
+    const day = d => new Date(d).toISOString().slice(0, 10);
+
+    for (const campaign of active) {
+      const raw = await this.ads.campaignStats(campaign.campaignId, {
+        since: day(campaign.launchedAt),
+        until: day(now)
+      });
+      // Meta reports spend in the account's own currency and the client has
+      // already converted it; unlike X, there is nothing left to convert.
+      const normalized = { ...raw, spendUsd: Number((raw.spendUsd || 0).toFixed(2)) };
+      const judgement = judgeCampaign(campaign, normalized);
+
+      campaign.lastStats = { at: now.toISOString(), ...normalized, ...judgement.metrics };
+      (campaign.history ||= []).push({ at: now.toISOString(), ...judgement.metrics, killed: judgement.kill });
+
+      console.log(`📊 ${campaign.name}: ${judgement.metrics.impressions} imp · ${judgement.metrics.clicks} clicks · $${judgement.metrics.spendUsd} · CTR ${judgement.metrics.ctrPercent}% → ${judgement.kill ? 'Paused' : 'running'} (${judgement.reason})`);
+
+      if (judgement.kill) {
+        // A dry run pauses nothing on the Channel, so it must not write the
+        // Verdict either — see the same guard on the X side. Pausing the
+        // Campaign stops the Ad Set and the Ad under it.
+        if (!dryRun) {
+          await this.ads.setStatus(campaign.campaignId, 'PAUSED');
+          campaign.status = 'paused';
+          campaign.pausedAt = now.toISOString();
+          campaign.pausedReason = judgement.reason;
+        }
+        console.log(`  ⏸ ${dryRun ? '[DRY-RUN] would pause' : 'paused'} — ${judgement.reason}`);
+      }
+      results.push({ id: campaign.id, name: campaign.name, channel: FACEBOOK, ...judgement });
+    }
+
+    this.saveLedger(ledger);
+    return results;
   }
 
   /**

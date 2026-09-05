@@ -127,7 +127,7 @@
         Math.abs(summed - shown)<=BEAT+1,
         "sum(active_seconds)="+summed+" total_seconds="+beats[beats.length-1].params.total_seconds+
         " seconds()="+shown+" over "+beats.length+" reports");
-    if(A.game().id!=='home'){
+    if(A.game().playable){
       const again=sent('played_30s');
       rec("...and played_30s fires once per page, not once per beat", again.length===1,
           again.length+" played_30s event(s) after "+beats.length+" beats");
