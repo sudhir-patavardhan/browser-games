@@ -1,11 +1,264 @@
 {
-  "generatedAt": null,
-  "window": null,
-  "games": [],
-  "categories": [],
-  "windows": [],
-  "topAngles": [],
-  "anomalies": [],
-  "recommendations": [],
-  "paidReadiness": null
+  "window": {
+    "days": 7,
+    "from": "2026-08-29T17:09:00.001Z",
+    "to": "2026-09-05T17:09:00.001Z"
+  },
+  "games": [
+    {
+      "gameId": "road-rumble",
+      "category": "Fast action",
+      "impressions": 0,
+      "linkClicks": 0,
+      "sessions": 454,
+      "gameStarts": 1,
+      "players": 7,
+      "ctrPercent": null,
+      "playRate": 1.5,
+      "note": "The most-visited page on the site and the worst converting: 454 sessions produced 1 game_start and 7 Players. No Post of ours sent this traffic, so the arrivals are coming from somewhere we are not measuring."
+    },
+    {
+      "gameId": "drift",
+      "category": "Fast action",
+      "impressions": 1630,
+      "linkClicks": 105,
+      "sessions": 294,
+      "gameStarts": 0,
+      "players": 31,
+      "ctrPercent": 6.44,
+      "playRate": 10.5,
+      "note": "Almost all of this is the paid Facebook Trial: 1,587 of the 1,630 impressions and 105 of the 105 clicks. Best play rate of any Game with real traffic."
+    },
+    {
+      "gameId": "carrom",
+      "category": "Head-to-head",
+      "impressions": 16,
+      "linkClicks": 1,
+      "sessions": 18,
+      "gameStarts": 16,
+      "players": 29,
+      "ctrPercent": null,
+      "playRate": null,
+      "note": "No signal from the Post (16 impressions). GA4 reports 29 Players against 18 sessions, which is not a rate — see the tracking anomaly."
+    },
+    {
+      "gameId": "ennead",
+      "category": "Head-to-head",
+      "impressions": null,
+      "linkClicks": 0,
+      "sessions": 12,
+      "gameStarts": 1,
+      "players": 10,
+      "ctrPercent": null,
+      "playRate": null,
+      "note": "The only Facebook Post. Page insights have never returned impressions for it, so its reach is unknown, not zero."
+    },
+    {
+      "gameId": "break-room",
+      "category": "Head-to-head",
+      "impressions": 58,
+      "linkClicks": 0,
+      "sessions": 10,
+      "gameStarts": 4,
+      "players": 0,
+      "ctrPercent": 0,
+      "playRate": 0,
+      "note": "No signal (58 impressions)."
+    },
+    {
+      "gameId": "windows",
+      "category": "Play together",
+      "impressions": 7,
+      "linkClicks": 0,
+      "sessions": 15,
+      "gameStarts": 12,
+      "players": 0,
+      "ctrPercent": 0,
+      "playRate": 0,
+      "note": "No signal (7 impressions). 12 game_starts and 0 Players: people begin and leave before thirty seconds."
+    },
+    {
+      "gameId": "sync",
+      "category": "Play together",
+      "impressions": 0,
+      "linkClicks": 0,
+      "sessions": 11,
+      "gameStarts": 15,
+      "players": 0,
+      "ctrPercent": null,
+      "playRate": 0,
+      "note": "15 game_starts, 49 minutes played, 0 Players. The Play-together games start more often than they are visited and still never reach the thirty-second mark."
+    }
+  ],
+  "categories": [
+    {
+      "category": "Fast action",
+      "impressions": 1630,
+      "linkClicks": 105,
+      "sessions": 750,
+      "players": 38,
+      "ctrPercent": 6.44,
+      "playRate": 5.1
+    },
+    {
+      "category": "Head-to-head",
+      "impressions": 74,
+      "linkClicks": 1,
+      "sessions": 40,
+      "players": 39,
+      "ctrPercent": 1.35,
+      "playRate": null
+    },
+    {
+      "category": "Play together",
+      "impressions": 7,
+      "linkClicks": 0,
+      "sessions": 40,
+      "players": 0,
+      "ctrPercent": 0,
+      "playRate": 0
+    },
+    {
+      "category": "Friends circle",
+      "impressions": 0,
+      "linkClicks": 0,
+      "sessions": 14,
+      "players": 0,
+      "ctrPercent": null,
+      "playRate": 0
+    },
+    {
+      "category": "Daily study grids",
+      "impressions": 0,
+      "linkClicks": 0,
+      "sessions": 10,
+      "players": 0,
+      "ctrPercent": null,
+      "playRate": 0
+    },
+    {
+      "category": "Solo arcade",
+      "impressions": 0,
+      "linkClicks": 0,
+      "sessions": 9,
+      "players": 0,
+      "ctrPercent": null,
+      "playRate": 0
+    },
+    {
+      "category": "Sports and racing",
+      "impressions": 0,
+      "linkClicks": 0,
+      "sessions": 1,
+      "players": 0,
+      "ctrPercent": null,
+      "playRate": 0
+    }
+  ],
+  "windows": [
+    {
+      "window": "09",
+      "posts": 4,
+      "impressions": 108,
+      "linkClicks": 0,
+      "players": 1,
+      "ctrPercent": 0
+    },
+    {
+      "window": "13",
+      "posts": 2,
+      "impressions": 16,
+      "linkClicks": 1,
+      "players": 2,
+      "ctrPercent": 6.25
+    },
+    {
+      "window": "17",
+      "posts": 0,
+      "impressions": 0,
+      "linkClicks": 0,
+      "players": 1,
+      "ctrPercent": null
+    }
+  ],
+  "topAngles": [
+    {
+      "angle": "the battery is the health bar",
+      "gameId": "drift",
+      "channel": "facebook",
+      "evidence": "1,587 impressions, 105 link clicks, 6.62% CTR at $0.005 per click in under a day. Every other angle this week is below 100 impressions and unreadable."
+    }
+  ],
+  "anomalies": [
+    {
+      "what": "105 paid link clicks became 10 sessions",
+      "evidence": "The Facebook Campaign reports 105 inline_link_clicks; GA4 attributes 10 sessions and 3 Players to utm_content=fb-ad-1. Nine out of ten paid clicks never became a measured visit.",
+      "kind": "tracking"
+    },
+    {
+      "what": "road-rumble takes 454 sessions and produces 1 game_start",
+      "evidence": "454 sessions, 1 game_start, 7 Players, playRate 1.5% — the largest traffic source on the site and the lowest conversion. No Post of ours sent it.",
+      "kind": "landing"
+    },
+    {
+      "what": "Players exceed sessions on three pages",
+      "evidence": "carrom 29 Players / 18 sessions (161%), post plan-wednesday 22 Players / 11 sessions (200%), ennead 10 / 12 (83%). played_30s is counted as eventCount against session-scoped dimensions, so playRate above 100% is an artefact, not a result.",
+      "kind": "tracking"
+    },
+    {
+      "what": "game_start disagrees with played_30s in both directions",
+      "evidence": "drift: 0 game_starts but 31 Players. sync: 15 game_starts but 0 Players and 11 sessions. The event cannot be used as a funnel step until it agrees with the other two.",
+      "kind": "tracking"
+    },
+    {
+      "what": "Organic reach on X has collapsed",
+      "evidence": "5 Posts, 124 impressions in total, 1 link click. The best single Post reached 58 people. Nothing organic cleared the 100-impression signal floor.",
+      "kind": "marketing"
+    },
+    {
+      "what": "The Facebook Post's impressions have never been read",
+      "evidence": "fb-metrics.json records the ennead Post with impressions null and an insights error; every Facebook reach number is currently unknown rather than zero.",
+      "kind": "tracking"
+    }
+  ],
+  "recommendations": [
+    {
+      "do": "Treat the click-to-session gap on the Facebook Campaign as the first thing to fix, before spending more.",
+      "because": "105 clicks produced 10 sessions and 3 Players. At $0.005 per click the Campaign looks like the cheapest traffic we have ever bought, but the measured cost per Player is $0.17 and 90% of what we paid for is unaccounted. Either the landing is dropping people or the utm is being stripped; until we know which, every paid decision rests on a number we cannot trust.",
+      "confidence": "high"
+    },
+    {
+      "do": "Move the publishing Windows to 19:00-21:00 UTC.",
+      "because": "Players by hour peak at 21:00 UTC with 28, then 23:00 with 11, and 19:00 and 20:00 with 9 each. The three Windows we actually publish in — 09, 13 and 17 UTC — collected 1, 2 and 1 Players respectively. We are publishing into the four quietest hours of the day.",
+      "confidence": "high"
+    },
+    {
+      "do": "Investigate road-rumble's landing page before promoting it.",
+      "because": "454 sessions — more than every other Game combined — turned into 1 game_start and 7 Players. Whatever is sending that traffic, the page is not converting it, and paying to send more would be the most expensive mistake available.",
+      "confidence": "high"
+    },
+    {
+      "do": "Give the paid slot to drift and let its Trial finish.",
+      "because": "drift is the only Game with both real traffic and a real play rate: 294 sessions, 31 Players, 10.5%. Its Campaign is running at 6.62% CTR, 26 times the 0.25% kill threshold, on $0.52 spent so far.",
+      "confidence": "medium"
+    },
+    {
+      "do": "Stop counting playRate as a percentage until played_30s and sessions are reconciled.",
+      "because": "Three pages report over 100%, one at 200%. Any ranking built on this number today can invert once it is fixed.",
+      "confidence": "high"
+    },
+    {
+      "do": "Do not read anything into this week's organic Posts.",
+      "because": "Every one of the five X Posts is under the 100-impression floor (58, 33, 16, 10, 7). There is no signal to act on, and treating the carrom Post's 6.25% CTR as a result would be reading one click.",
+      "confidence": "high"
+    }
+  ],
+  "paidReadiness": {
+    "gameId": "drift",
+    "category": "Fast action",
+    "angle": "the battery is the health bar",
+    "why": "The only Game that both attracts traffic and retains it: 294 sessions, 31 Players, 10.5% play rate, and a live Campaign converting at 6.62% CTR for half a cent a click. carrom's play rate is nominally higher but rests on 18 sessions and a broken ratio; road-rumble has the traffic and does not convert it.",
+    "ready": true
+  },
+  "generatedAt": "2026-09-05T17:12:27.137Z"
 }

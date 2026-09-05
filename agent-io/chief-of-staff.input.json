@@ -1,0 +1,161 @@
+{
+  "role": "chief-of-staff",
+  "preparedAt": "2026-09-05T17:08:10.874Z",
+  "writeYourAnswerTo": "/Users/sudhir/Projects/browser-games/marketing/data/agent-io/chief-of-staff.output.json",
+  "readYourPromptAt": "/Users/sudhir/Projects/browser-games/marketing/src/agents/chief-of-staff/PROMPT.md",
+  "summary": "Week to 2026-09-05: 6 Post(s), $0.52 spent, 1 blocker(s)",
+  "weekEnding": "2026-09-05",
+  "insights": {
+    "generatedAt": null,
+    "window": null,
+    "games": [],
+    "categories": [],
+    "windows": [],
+    "topAngles": [],
+    "anomalies": [],
+    "recommendations": [],
+    "paidReadiness": null
+  },
+  "plan": {
+    "weekOf": null,
+    "strategy": "",
+    "items": [],
+    "adsFocus": null,
+    "experiments": []
+  },
+  "lastBriefing": null,
+  "activity": {
+    "publishedThisWeek": 6,
+    "byChannel": {
+      "x": 5,
+      "facebook": 1
+    },
+    "posts": [
+      {
+        "id": "plan-friday-1788019324895-4",
+        "channel": "x",
+        "gameId": "drift",
+        "angle": "",
+        "gameName": "Drift",
+        "slot": {
+          "date": "2026-09-02",
+          "window": "09"
+        },
+        "url": "https://twitter.com/i/web/status/2095712838916637082"
+      },
+      {
+        "id": "plan-sunday-1788019353867-6",
+        "channel": "x",
+        "gameId": "break-room",
+        "angle": "",
+        "gameName": "8-Ball Pool",
+        "slot": {
+          "date": "2026-09-04",
+          "window": "09"
+        },
+        "url": "https://twitter.com/i/web/status/2095712841139720352"
+      },
+      {
+        "id": "plan-monday-1788491784323-0",
+        "channel": "x",
+        "gameId": "drift",
+        "angle": "",
+        "gameName": "Drift",
+        "slot": {
+          "date": "2026-09-04",
+          "window": "09"
+        },
+        "url": "https://twitter.com/i/web/status/2095715454245593363"
+      },
+      {
+        "id": "plan-tuesday-1788491792289-1",
+        "channel": "facebook",
+        "gameId": "ennead",
+        "angle": "",
+        "gameName": "Tic Tac Toe",
+        "slot": {
+          "date": "2026-09-04",
+          "window": "13"
+        },
+        "url": "https://facebook.com/1282959528235085_122097774225470766"
+      },
+      {
+        "id": "plan-wednesday-1788491798840-2",
+        "channel": "x",
+        "gameId": "carrom",
+        "angle": "",
+        "gameName": "Carrom",
+        "slot": {
+          "date": "2026-09-04",
+          "window": "13"
+        },
+        "url": "https://twitter.com/i/web/status/2095892990703317424"
+      },
+      {
+        "id": "post-1788491923184-2zmb",
+        "channel": "x",
+        "gameId": "windows",
+        "angle": "",
+        "gameName": "Blind Spots",
+        "slot": {
+          "date": "2026-09-04",
+          "window": "09"
+        },
+        "url": "https://twitter.com/i/web/status/2095713136997519687"
+      }
+    ],
+    "awaitingDecision": 4,
+    "expiredThisWeek": 6
+  },
+  "paid": {
+    "spentThisWeekUsd": 0.52,
+    "campaigns": [
+      {
+        "id": "ads-fb-1788582530493-44ds",
+        "gameId": "drift",
+        "angle": "the battery is the health bar",
+        "channel": "facebook",
+        "status": "cleaned_up",
+        "dailyBudgetUsd": 5,
+        "lastStats": null
+      },
+      {
+        "id": "ads-fb-1788582613440-qk7q",
+        "gameId": "drift",
+        "angle": "the battery is the health bar",
+        "channel": "facebook",
+        "status": "cleaned_up",
+        "dailyBudgetUsd": 5,
+        "lastStats": null
+      },
+      {
+        "id": "ads-fb-1788616697587-0apo",
+        "gameId": "drift",
+        "angle": "the battery is the health bar",
+        "channel": "facebook",
+        "status": "active",
+        "dailyBudgetUsd": 5,
+        "lastStats": {
+          "at": "2026-09-05T16:43:51.676Z",
+          "impressions": 1587,
+          "urlClicks": 105,
+          "spendUsd": 0.52,
+          "spendLocal": 44.03,
+          "clicks": 105,
+          "ctrPercent": 6.62,
+          "cpcUsd": 0.005
+        }
+      }
+    ],
+    "postMortems": [],
+    "openProposals": []
+  },
+  "decisionsNeeded": {
+    "blockers": [
+      "The X Ads account has no funding instrument on file, so no X Campaign can leave dry-run."
+    ],
+    "postsAwaitingTick": 1,
+    "proposalsAwaitingTick": 0,
+    "tokenWarningDays": 14
+  }
+}

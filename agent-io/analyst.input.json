@@ -1,0 +1,641 @@
+{
+  "role": "analyst",
+  "preparedAt": "2026-09-05T17:09:00.001Z",
+  "writeYourAnswerTo": "/Users/sudhir/Projects/browser-games/marketing/data/agent-io/analyst.output.json",
+  "readYourPromptAt": "/Users/sudhir/Projects/browser-games/marketing/src/agents/analyst/PROMPT.md",
+  "summary": "6 published Post(s) over 7 days (0 with enough impressions to read), 3 Campaign(s), Players from GA4",
+  "window": {
+    "days": 7,
+    "from": "2026-08-29T17:09:00.001Z",
+    "to": "2026-09-05T17:09:00.001Z",
+    "full": false
+  },
+  "catalog": {
+    "categories": [
+      "Fast action",
+      "Play together",
+      "Friends circle",
+      "Daily study grids",
+      "Head-to-head",
+      "Solo arcade",
+      "Sports and racing"
+    ],
+    "games": [
+      {
+        "id": "road-rumble",
+        "name": "Road Rumble",
+        "category": "Fast action"
+      },
+      {
+        "id": "dasanana",
+        "name": "Astra Duel",
+        "category": "Fast action"
+      },
+      {
+        "id": "chroma-blocks",
+        "name": "Falling Blocks",
+        "category": "Fast action"
+      },
+      {
+        "id": "sync",
+        "name": "Duo Quiz",
+        "category": "Play together"
+      },
+      {
+        "id": "windows",
+        "name": "Blind Spots",
+        "category": "Play together"
+      },
+      {
+        "id": "auction",
+        "name": "Life Auction",
+        "category": "Play together"
+      },
+      {
+        "id": "fathom",
+        "name": "Deep Talk",
+        "category": "Play together"
+      },
+      {
+        "id": "split",
+        "name": "Share or Take",
+        "category": "Play together"
+      },
+      {
+        "id": "circle",
+        "name": "Circle Quiz",
+        "category": "Friends circle"
+      },
+      {
+        "id": "prism",
+        "name": "Group Blind Spots",
+        "category": "Friends circle"
+      },
+      {
+        "id": "alibi",
+        "name": "Who Said That",
+        "category": "Friends circle"
+      },
+      {
+        "id": "herd",
+        "name": "Herd Mind",
+        "category": "Friends circle"
+      },
+      {
+        "id": "alter",
+        "name": "Impressions",
+        "category": "Friends circle"
+      },
+      {
+        "id": "lore",
+        "name": "Memory Lane",
+        "category": "Friends circle"
+      },
+      {
+        "id": "capsule",
+        "name": "Time Capsule",
+        "category": "Friends circle"
+      },
+      {
+        "id": "valence",
+        "name": "Chemistry Grid",
+        "category": "Daily study grids"
+      },
+      {
+        "id": "quanta",
+        "name": "Physics Grid",
+        "category": "Daily study grids"
+      },
+      {
+        "id": "radian",
+        "name": "Trigonometry Grid",
+        "category": "Daily study grids"
+      },
+      {
+        "id": "isomer",
+        "name": "Organic Chemistry Grid",
+        "category": "Daily study grids"
+      },
+      {
+        "id": "wattage",
+        "name": "Energy Grid",
+        "category": "Daily study grids"
+      },
+      {
+        "id": "carrom",
+        "name": "Carrom",
+        "category": "Head-to-head"
+      },
+      {
+        "id": "break-room",
+        "name": "8-Ball Pool",
+        "category": "Head-to-head"
+      },
+      {
+        "id": "ennead",
+        "name": "Tic Tac Toe",
+        "category": "Head-to-head"
+      },
+      {
+        "id": "apogee",
+        "name": "Rocket Builder",
+        "category": "Solo arcade"
+      },
+      {
+        "id": "garage",
+        "name": "Car Builder",
+        "category": "Solo arcade"
+      },
+      {
+        "id": "blackjack",
+        "name": "Blackjack",
+        "category": "Solo arcade"
+      },
+      {
+        "id": "last-16",
+        "name": "Knockout Football",
+        "category": "Sports and racing"
+      },
+      {
+        "id": "fairway-four",
+        "name": "Golf",
+        "category": "Sports and racing"
+      },
+      {
+        "id": "drift",
+        "name": "Drift",
+        "category": "Fast action"
+      }
+    ]
+  },
+  "windows": [
+    "09",
+    "13",
+    "17"
+  ],
+  "posts": [
+    {
+      "postId": "plan-friday-1788019324895-4",
+      "channelPostId": "2095712838916637082",
+      "channel": "x",
+      "gameId": "drift",
+      "category": "Fast action",
+      "angle": null,
+      "format": "single",
+      "slot": {
+        "date": "2026-09-02",
+        "window": "09"
+      },
+      "publishedAt": "2026-09-04T03:17:32.189Z",
+      "impressions": 33,
+      "linkClicks": 0,
+      "likes": 1,
+      "ctrPercent": 0,
+      "signal": "no signal"
+    },
+    {
+      "postId": "plan-sunday-1788019353867-6",
+      "channelPostId": "2095712841139720352",
+      "channel": "x",
+      "gameId": "break-room",
+      "category": "Head-to-head",
+      "angle": null,
+      "format": "single",
+      "slot": {
+        "date": "2026-09-04",
+        "window": "09"
+      },
+      "publishedAt": "2026-09-04T03:17:32.641Z",
+      "impressions": 58,
+      "linkClicks": 0,
+      "likes": 3,
+      "ctrPercent": 0,
+      "signal": "no signal"
+    },
+    {
+      "postId": "plan-monday-1788491784323-0",
+      "channelPostId": "2095715454245593363",
+      "channel": "x",
+      "gameId": "drift",
+      "category": "Fast action",
+      "angle": null,
+      "format": "single",
+      "slot": {
+        "date": "2026-09-04",
+        "window": "09"
+      },
+      "publishedAt": "2026-09-04T03:27:58.217Z",
+      "impressions": 10,
+      "linkClicks": 0,
+      "likes": 0,
+      "ctrPercent": 0,
+      "signal": "no signal"
+    },
+    {
+      "postId": "plan-tuesday-1788491792289-1",
+      "channelPostId": "1282959528235085_122097774225470766",
+      "channel": "facebook",
+      "gameId": "ennead",
+      "category": "Head-to-head",
+      "angle": null,
+      "format": "single",
+      "slot": {
+        "date": "2026-09-04",
+        "window": "13"
+      },
+      "publishedAt": "2026-09-04T15:13:19.466Z",
+      "impressions": null,
+      "linkClicks": 0,
+      "likes": 0,
+      "ctrPercent": null,
+      "signal": "not read yet"
+    },
+    {
+      "postId": "plan-wednesday-1788491798840-2",
+      "channelPostId": "2095892990703317424",
+      "channel": "x",
+      "gameId": "carrom",
+      "category": "Head-to-head",
+      "angle": null,
+      "format": "single",
+      "slot": {
+        "date": "2026-09-04",
+        "window": "13"
+      },
+      "publishedAt": "2026-09-04T15:13:23.701Z",
+      "impressions": 16,
+      "linkClicks": 1,
+      "likes": 4,
+      "ctrPercent": 6.25,
+      "signal": "no signal"
+    },
+    {
+      "postId": "post-1788491923184-2zmb",
+      "channelPostId": "2095713136997519687",
+      "channel": "x",
+      "gameId": "windows",
+      "category": "Play together",
+      "angle": null,
+      "format": "single",
+      "slot": {
+        "date": "2026-09-04",
+        "window": "09"
+      },
+      "publishedAt": "2026-09-04T03:18:43.182Z",
+      "impressions": 7,
+      "linkClicks": 0,
+      "likes": 0,
+      "ctrPercent": 0,
+      "signal": "no signal"
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "ads-fb-1788582530493-44ds",
+      "channel": "facebook",
+      "gameId": "drift",
+      "angle": "the battery is the health bar",
+      "status": "cleaned_up",
+      "dailyBudgetUsd": 5,
+      "launchedAt": "2026-09-05T04:28:50.493Z",
+      "endsAt": "2026-09-08T04:28:50.493Z",
+      "endedAt": null,
+      "pausedReason": null,
+      "lastStats": null
+    },
+    {
+      "id": "ads-fb-1788582613440-qk7q",
+      "channel": "facebook",
+      "gameId": "drift",
+      "angle": "the battery is the health bar",
+      "status": "cleaned_up",
+      "dailyBudgetUsd": 5,
+      "launchedAt": "2026-09-05T04:30:13.436Z",
+      "endsAt": "2026-09-08T04:30:13.436Z",
+      "endedAt": null,
+      "pausedReason": null,
+      "lastStats": null
+    },
+    {
+      "id": "ads-fb-1788616697587-0apo",
+      "channel": "facebook",
+      "gameId": "drift",
+      "angle": "the battery is the health bar",
+      "status": "active",
+      "dailyBudgetUsd": 5,
+      "launchedAt": "2026-09-05T13:58:17.583Z",
+      "endsAt": "2026-09-08T13:58:17.583Z",
+      "endedAt": null,
+      "pausedReason": null,
+      "lastStats": {
+        "at": "2026-09-05T16:43:51.676Z",
+        "impressions": 1587,
+        "urlClicks": 105,
+        "spendUsd": 0.52,
+        "spendLocal": 44.03,
+        "clicks": 105,
+        "ctrPercent": 6.62,
+        "cpcUsd": 0.005
+      }
+    }
+  ],
+  "postMortems": [],
+  "players": {
+    "available": true,
+    "byGame": {
+      "road-rumble": {
+        "gameId": "road-rumble",
+        "sessions": 454,
+        "players": 7,
+        "gameStarts": 1,
+        "activeSeconds": 20940,
+        "playRate": 1.5,
+        "minutesPlayed": 349
+      },
+      "drift": {
+        "gameId": "drift",
+        "sessions": 294,
+        "players": 31,
+        "gameStarts": 0,
+        "activeSeconds": 9990,
+        "playRate": 10.5,
+        "minutesPlayed": 167
+      },
+      "carrom": {
+        "gameId": "carrom",
+        "sessions": 18,
+        "players": 29,
+        "gameStarts": 16,
+        "activeSeconds": 2880,
+        "playRate": 161.1,
+        "minutesPlayed": 48
+      },
+      "ennead": {
+        "gameId": "ennead",
+        "sessions": 12,
+        "players": 10,
+        "gameStarts": 1,
+        "activeSeconds": 60,
+        "playRate": 83.3,
+        "minutesPlayed": 1
+      },
+      "windows": {
+        "gameId": "windows",
+        "sessions": 15,
+        "players": 0,
+        "gameStarts": 12,
+        "activeSeconds": 2160,
+        "playRate": 0,
+        "minutesPlayed": 36
+      },
+      "break-room": {
+        "gameId": "break-room",
+        "sessions": 10,
+        "players": 0,
+        "gameStarts": 4,
+        "activeSeconds": 570,
+        "playRate": 0,
+        "minutesPlayed": 10
+      },
+      "sync": {
+        "gameId": "sync",
+        "sessions": 11,
+        "players": 0,
+        "gameStarts": 15,
+        "activeSeconds": 2910,
+        "playRate": 0,
+        "minutesPlayed": 49
+      },
+      "apogee": {
+        "gameId": "apogee",
+        "sessions": 6,
+        "players": 0,
+        "gameStarts": 2,
+        "activeSeconds": 300,
+        "playRate": 0,
+        "minutesPlayed": 5
+      },
+      "circle": {
+        "gameId": "circle",
+        "sessions": 4,
+        "players": 0,
+        "gameStarts": 3,
+        "activeSeconds": 1800,
+        "playRate": 0,
+        "minutesPlayed": 30
+      },
+      "alibi": {
+        "gameId": "alibi",
+        "sessions": 3,
+        "players": 0,
+        "gameStarts": 1,
+        "activeSeconds": 180,
+        "playRate": 0,
+        "minutesPlayed": 3
+      },
+      "prism": {
+        "gameId": "prism",
+        "sessions": 3,
+        "players": 0,
+        "gameStarts": 1,
+        "activeSeconds": 150,
+        "playRate": 0,
+        "minutesPlayed": 3
+      },
+      "valence": {
+        "gameId": "valence",
+        "sessions": 3,
+        "players": 0,
+        "gameStarts": 0,
+        "activeSeconds": 60,
+        "playRate": 0,
+        "minutesPlayed": 1
+      },
+      "auction": {
+        "gameId": "auction",
+        "sessions": 3,
+        "players": 0,
+        "gameStarts": 1,
+        "activeSeconds": 60,
+        "playRate": 0,
+        "minutesPlayed": 1
+      },
+      "capsule": {
+        "gameId": "capsule",
+        "sessions": 2,
+        "players": 0,
+        "gameStarts": 0,
+        "activeSeconds": 30,
+        "playRate": 0,
+        "minutesPlayed": 1
+      },
+      "dasanana": {
+        "gameId": "dasanana",
+        "sessions": 2,
+        "players": 0,
+        "gameStarts": 2,
+        "activeSeconds": 90,
+        "playRate": 0,
+        "minutesPlayed": 2
+      },
+      "garage": {
+        "gameId": "garage",
+        "sessions": 2,
+        "players": 0,
+        "gameStarts": 0,
+        "activeSeconds": 60,
+        "playRate": 0,
+        "minutesPlayed": 1
+      },
+      "herd": {
+        "gameId": "herd",
+        "sessions": 2,
+        "players": 0,
+        "gameStarts": 0,
+        "activeSeconds": 60,
+        "playRate": 0,
+        "minutesPlayed": 1
+      },
+      "isomer": {
+        "gameId": "isomer",
+        "sessions": 2,
+        "players": 0,
+        "gameStarts": 0,
+        "activeSeconds": 30,
+        "playRate": 0,
+        "minutesPlayed": 1
+      },
+      "quanta": {
+        "gameId": "quanta",
+        "sessions": 2,
+        "players": 0,
+        "gameStarts": 0,
+        "activeSeconds": 240,
+        "playRate": 0,
+        "minutesPlayed": 4
+      },
+      "wattage": {
+        "gameId": "wattage",
+        "sessions": 2,
+        "players": 0,
+        "gameStarts": 0,
+        "activeSeconds": 150,
+        "playRate": 0,
+        "minutesPlayed": 3
+      },
+      "alter": {
+        "gameId": "alter",
+        "sessions": 1,
+        "players": 0,
+        "gameStarts": 0,
+        "activeSeconds": 0,
+        "playRate": 0,
+        "minutesPlayed": 0
+      },
+      "blackjack": {
+        "gameId": "blackjack",
+        "sessions": 1,
+        "players": 0,
+        "gameStarts": 1,
+        "activeSeconds": 30,
+        "playRate": 0,
+        "minutesPlayed": 1
+      },
+      "fathom": {
+        "gameId": "fathom",
+        "sessions": 2,
+        "players": 0,
+        "gameStarts": 0,
+        "activeSeconds": 30,
+        "playRate": 0,
+        "minutesPlayed": 1
+      },
+      "last-16": {
+        "gameId": "last-16",
+        "sessions": 1,
+        "players": 0,
+        "gameStarts": 1,
+        "activeSeconds": 30,
+        "playRate": 0,
+        "minutesPlayed": 1
+      },
+      "lore": {
+        "gameId": "lore",
+        "sessions": 1,
+        "players": 0,
+        "gameStarts": 0,
+        "activeSeconds": 0,
+        "playRate": 0,
+        "minutesPlayed": 0
+      },
+      "radian": {
+        "gameId": "radian",
+        "sessions": 1,
+        "players": 0,
+        "gameStarts": 0,
+        "activeSeconds": 30,
+        "playRate": 0,
+        "minutesPlayed": 1
+      },
+      "split": {
+        "gameId": "split",
+        "sessions": 1,
+        "players": 0,
+        "gameStarts": 0,
+        "activeSeconds": 0,
+        "playRate": 0,
+        "minutesPlayed": 0
+      }
+    },
+    "byPost": {
+      "plan-wednesday-1788491798840-2": {
+        "key": "plan-wednesday-1788491798840-2",
+        "sessions": 11,
+        "players": 22,
+        "playRate": 200
+      },
+      "fb-ad-1": {
+        "key": "fb-ad-1",
+        "sessions": 10,
+        "players": 3,
+        "playRate": 30
+      },
+      "plan-tuesday-1788491792289-1": {
+        "key": "plan-tuesday-1788491792289-1",
+        "sessions": 4,
+        "players": 1,
+        "playRate": 25
+      }
+    },
+    "byCampaign": {
+      "fb-drift-trial-1": {
+        "key": "fb-drift-trial-1",
+        "sessions": 11,
+        "players": 3,
+        "playRate": 27.3
+      }
+    },
+    "byHour": {
+      "0": 4,
+      "4": 2,
+      "8": 5,
+      "9": 1,
+      "11": 1,
+      "13": 2,
+      "14": 8,
+      "15": 3,
+      "17": 1,
+      "18": 2,
+      "19": 9,
+      "20": 9,
+      "21": 28,
+      "22": 4,
+      "23": 11
+    }
+  },
+  "queueDepth": {
+    "draft": 3,
+    "inReview": 1,
+    "approved": 0
+  }
+}

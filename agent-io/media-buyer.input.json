@@ -1,0 +1,322 @@
+{
+  "role": "media-buyer",
+  "preparedAt": "2026-09-05T17:09:00.001Z",
+  "writeYourAnswerTo": "/Users/sudhir/Projects/browser-games/marketing/data/agent-io/media-buyer.output.json",
+  "readYourPromptAt": "/Users/sudhir/Projects/browser-games/marketing/src/agents/media-buyer/PROMPT.md",
+  "summary": "$20.00/day headroom, 1/2 Campaigns active, 0 judged X Trial(s), 0 Post-mortem(s)",
+  "caps": {
+    "maxDailyPerCampaignUsd": 10,
+    "maxTotalDailyUsd": 25,
+    "trialDays": 3,
+    "maxActiveCampaigns": 2,
+    "committedDailyUsd": 5,
+    "headroomDailyUsd": 20,
+    "mayLaunch": true,
+    "whyNot": null
+  },
+  "channels": {
+    "x": {
+      "open": true
+    },
+    "facebook": {
+      "open": false,
+      "judgedXTrials": 0,
+      "needs": 4,
+      "why": "Facebook Campaigns are out of scope until X has four judged Trials."
+    }
+  },
+  "insights": {
+    "generatedAt": null,
+    "window": null,
+    "games": [],
+    "categories": [],
+    "windows": [],
+    "topAngles": [],
+    "anomalies": [],
+    "recommendations": [],
+    "paidReadiness": null
+  },
+  "adsFocus": null,
+  "activeCampaigns": [
+    {
+      "id": "ads-fb-1788616697587-0apo",
+      "gameId": "drift",
+      "angle": "the battery is the health bar",
+      "channel": "facebook",
+      "dailyBudgetUsd": 5,
+      "endsAt": "2026-09-08T13:58:17.583Z"
+    }
+  ],
+  "postMortems": [],
+  "historyByGame": {},
+  "openProposals": [],
+  "games": [
+    {
+      "id": "road-rumble",
+      "name": "Road Rumble",
+      "category": "Fast action",
+      "url": "https://kreeda.games/road-rumble/",
+      "tagline": "Pin the throttle. Throw the punch.",
+      "pitch": "A Road Rash / OutRun style racing brawler on a pseudo-3D highway. Sprint against 5 rival riders over elevation crests and tight turns, dodge oncoming traffic, and throw punches or swing roadside clubs to stay on your bike and finish first.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "dasanana",
+      "name": "Astra Duel",
+      "category": "Fast action",
+      "url": "https://kreeda.games/dasanana/",
+      "tagline": "Counter divine astras. Chant for tejas. Loose the Brahmāstra.",
+      "pitch": "A Rāmāyaṇa epic astra-duel. Counter Rāvaṇa's divine missiles with the true cosmic element before they collide, rhythm-chant authentic Āditya-Hṛdayam Sanskrit ślokas to restore your solar energy, survive the Śakti spear, and loose your Brahmāstra.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "chroma-blocks",
+      "name": "Falling Blocks",
+      "category": "Fast action",
+      "url": "https://kreeda.games/chroma-blocks/",
+      "tagline": "Vibrant neon, pure flow state.",
+      "pitch": "A neon falling-blocks puzzle in the spirit of modern Tetris. Features a 7-bag randomizer, hold slot, 3-piece next queue, ghost piece guide, SRS wall kicks, combo multipliers, and satisfying particle bursts.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "sync",
+      "name": "Duo Quiz",
+      "category": "Play together",
+      "url": "https://kreeda.games/sync/",
+      "tagline": "How well do you actually know each other?",
+      "pitch": "Two players, one phone. Answer each question for yourself, predict what the other person will say, then reveal together. Ten rounds that show where you are in sync — and where you have been guessing. Packs for new pairs, couples, friends, family and coworkers.",
+      "hasStoryboard": true
+    },
+    {
+      "id": "windows",
+      "name": "Blind Spots",
+      "category": "Play together",
+      "url": "https://kreeda.games/windows/",
+      "tagline": "How you see yourself vs how they see you.",
+      "pitch": "A playable Johari Window for two people on one phone. Each of you picks six words for yourself and six for the other — then the panes fill in: what you both see, what only you see, and the blind spots they see in you.",
+      "hasStoryboard": true
+    },
+    {
+      "id": "auction",
+      "name": "Life Auction",
+      "category": "Play together",
+      "url": "https://kreeda.games/auction/",
+      "tagline": "100 coins. Ten things people want from life. You can't fund them all.",
+      "pitch": "A pass-the-phone game about what you value. Each player gets 100 coins to bid, in private, on ten things people want from life — then you reveal together and see where your priorities line up and where they collide.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "fathom",
+      "name": "Deep Talk",
+      "category": "Play together",
+      "url": "https://kreeda.games/fathom/",
+      "tagline": "36 questions deep — a guided dive for two.",
+      "pitch": "Two people, one phone, a guided dive through three depths of conversation based on the 36 questions. Includes a real before-and-after closeness check-in so you can see what the conversation changed.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "split",
+      "name": "Share or Take",
+      "category": "Play together",
+      "url": "https://kreeda.games/split/",
+      "tagline": "Share or Take. The score says who won — the pattern says who you are.",
+      "pitch": "Ten rounds of Share or Take between two people on one phone. Both share and everyone wins; one takes and burns the other; both take and it is mutual ruin. Round 4 pays double, round 7 is sealed, round 10 pays triple — and the pattern of your choices says more than the score.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "circle",
+      "name": "Circle Quiz",
+      "category": "Friends circle",
+      "url": "https://kreeda.games/circle/",
+      "tagline": "Find out who in the circle actually knows you.",
+      "pitch": "One friend takes the spotlight and secretly answers two questions about themselves while everyone else predicts what they said. The reveal is a knowledge map across the whole group — who reads whom accurately, and who has been guessing for years.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "prism",
+      "name": "Group Blind Spots",
+      "category": "Friends circle",
+      "url": "https://kreeda.games/prism/",
+      "tagline": "One friend calling you stubborn is an opinion. Five choosing it is a portrait.",
+      "pitch": "One friend steps into the mirror and picks six words for themselves; every other friend independently picks six for them. Where the choices agree and where they miss becomes a consensus Johari window — the things the room sees that you do not.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "alibi",
+      "name": "Who Said That",
+      "category": "Friends circle",
+      "url": "https://kreeda.games/alibi/",
+      "tagline": "Everyone answers honestly. Then the room works out who said what.",
+      "pitch": "Everyone secretly answers the same prompt, the answers come back shuffled, and the circle pins each one on its author. Reading the room correctly scores detective points; every friend you fool scores you chameleon points — so honesty costs nothing and being unreadable pays.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "herd",
+      "name": "Herd Mind",
+      "category": "Friends circle",
+      "url": "https://kreeda.games/herd/",
+      "tagline": "Think like the room, or wear the black sheep.",
+      "pitch": "Everyone secretly answers the same prompt trying to match what most of the group will say. The biggest cluster scores and the lone answer wears the black sheep. Nothing personal is revealed, which makes it the round that gets a quiet group talking before anything riskier.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "alter",
+      "name": "Impressions",
+      "category": "Friends circle",
+      "url": "https://kreeda.games/alter/",
+      "tagline": "Answer as your friend. Then watch them answer for real.",
+      "pitch": "Everyone plays the next person around the circle for three questions, then the real person answers the same three. The room sees the impression against the reality, arrow by arrow — how someone comes across against how they would put it themselves.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "lore",
+      "name": "Memory Lane",
+      "category": "Friends circle",
+      "url": "https://kreeda.games/lore/",
+      "tagline": "The only quiz your group can play, because you wrote it about yourselves.",
+      "pitch": "Each friend secretly writes one question about the group's shared history, hiding the real answer among two decoys they invent, and then everyone plays the finished quiz. It sorts the people who remember the holiday from the people who have been improvising it for years.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "capsule",
+      "name": "Time Capsule",
+      "category": "Friends circle",
+      "url": "https://kreeda.games/capsule/",
+      "tagline": "Seal tonight's predictions. Find out at the reunion who called it.",
+      "pitch": "The group seals predictions about each other — who moves abroad, who goes viral, who is late to the reunion — and opens them together months later. It plays twice: once for the argument about what to write, and once when the answers actually arrive.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "valence",
+      "name": "Chemistry Grid",
+      "category": "Daily study grids",
+      "url": "https://kreeda.games/valence/",
+      "tagline": "A daily chemistry grid — name an element for every square.",
+      "pitch": "Three criteria down, three across, nine cells, nine guesses — name a chemical element for every square before the guesses run out. Built for high-school chemistry.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "quanta",
+      "name": "Physics Grid",
+      "category": "Daily study grids",
+      "url": "https://kreeda.games/quanta/",
+      "tagline": "A daily physics grid: nine cells, nine guesses.",
+      "pitch": "Three criteria down, three across, nine cells — name a physical quantity for every square. Vectors, SI units, dimensional formulae, and every answer revealed at the end.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "radian",
+      "name": "Trigonometry Grid",
+      "category": "Daily study grids",
+      "url": "https://kreeda.games/radian/",
+      "tagline": "A daily trigonometry grid on the unit circle.",
+      "pitch": "Three criteria down, three across, nine cells — name an angle on the unit circle for every square, in degrees or radians.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "isomer",
+      "name": "Organic Chemistry Grid",
+      "category": "Daily study grids",
+      "url": "https://kreeda.games/isomer/",
+      "tagline": "Nine cells, nine guesses, one organic compound each.",
+      "pitch": "A daily organic chemistry grid: three criteria down, three across, and every cell wants a compound that satisfies both — alkane or acid, gas or solid, fuel or household product. When the guesses run out the reveal lists every compound that would have worked, which is where most of the learning is.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "wattage",
+      "name": "Energy Grid",
+      "category": "Daily study grids",
+      "url": "https://kreeda.games/wattage/",
+      "tagline": "Nine cells, nine guesses, one energy source each.",
+      "pitch": "A daily energy-sources grid: three criteria down, three across, and every cell wants a source that satisfies both — renewable or not, burned or not, mined or drilled. When the guesses run out the reveal lists every source that would have worked.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "carrom",
+      "name": "Carrom",
+      "category": "Head-to-head",
+      "url": "https://kreeda.games/carrom/",
+      "tagline": "Flick the striker, pocket the queen.",
+      "pitch": "A polished arcade take on the classic Indian board game. Position your striker, aim with slingshot controls, and pocket your 9 carrommen and the red queen with realistic rigid-disc collision physics and a 3-difficulty AI.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "break-room",
+      "name": "8-Ball Pool",
+      "category": "Head-to-head",
+      "url": "https://kreeda.games/break-room/",
+      "tagline": "Real spin, called pockets, zero downloads.",
+      "pitch": "Physics-driven 8-ball pool with full official rules, draggable spin control (topspin, backspin/draw, english), customizable felt themes, practice mode, 2P pass-and-play, and a smart AI opponent.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "ennead",
+      "name": "Tic Tac Toe",
+      "category": "Head-to-head",
+      "url": "https://kreeda.games/ennead/",
+      "tagline": "From 3x3 to nested 9x9 mind games.",
+      "pitch": "Configurable strategy board game with two modes sharing one engine. Classic mode lets you play any N×N board (3x3 up to 9x9) with customizable win length k (Gomoku). Ultimate mode features a nested 9x9 grid where every move sends your opponent to a specific sub-board.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "apogee",
+      "name": "Rocket Builder",
+      "category": "Solo arcade",
+      "url": "https://kreeda.games/apogee/",
+      "tagline": "Build a rocket from real parts, then see how high it flies.",
+      "pitch": "Assemble a rocket from real parts — payload, tanks, engines, fins, avionics, boosters — learn what each one does, then launch and see how high your design flies. Cross the Kármán line to reach space.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "garage",
+      "name": "Car Builder",
+      "category": "Solo arcade",
+      "url": "https://kreeda.games/garage/",
+      "tagline": "Build a car from 19 real parts and learn what every one of them does.",
+      "pitch": "Build a car from 19 real parts — chassis, carburetor, alternator, driveshaft — and learn what every one of them does along the way.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "blackjack",
+      "name": "Blackjack",
+      "category": "Solo arcade",
+      "url": "https://kreeda.games/blackjack/",
+      "tagline": "Classic felt. 3:2 payout. Dealer stands on 17.",
+      "pitch": "A polished, distraction-free Blackjack game with casino-accurate rules, chip betting ($5–$500), persistent bankroll, double down, and smooth 3D card flips.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "last-16",
+      "name": "Knockout Football",
+      "category": "Sports and racing",
+      "url": "https://kreeda.games/last-16/",
+      "tagline": "16 nations. 4 real stars each. Lift the trophy.",
+      "pitch": "Arcade soccer set at the World Cup 2026 knockout stage. Choose from 16 real nations and authentic star players, control them directly with smart AI teammates, manage sprint stamina, curl charged shots into the top corner, and win the tournament.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "fairway-four",
+      "name": "Golf",
+      "category": "Sports and racing",
+      "url": "https://kreeda.games/fairway-four/",
+      "tagline": "4 pristine holes. Wind, Magnus lift, flowing greens.",
+      "pitch": "Full-3D golf over four authored holes rendered with Three.js. Features cinematic camera swoops, a 3-click swing meter with draw/fade timing, wind and Magnus-lift ball aerodynamics, sand traps, water hazards, and sloped putting greens with flowing break particle grids.",
+      "hasStoryboard": false
+    },
+    {
+      "id": "drift",
+      "name": "Drift",
+      "category": "Fast action",
+      "url": "https://kreeda.games/drift/",
+      "tagline": "Grip is a budget. The battery is your life.",
+      "pitch": "A bright, sunny endless drifting game with real weight-transfer and throttle dynamics — no handbrake. Drive a high-end EV across 4 procedural biomes, harvest zombie horde bounties, auto-park at EV fast chargers, and race daily seeded ghost lines.",
+      "hasStoryboard": false
+    }
+  ],
+  "copyRules": [
+    "No hashtags and no @mentions in ad copy.",
+    "Use the bare catalog URL — the Producer decorates it with attribution.",
+    "At most 240 characters.",
+    "Honest copy only: no invented quotes, player counts, or awards."
+  ]
+}

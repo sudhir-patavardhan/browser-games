@@ -137,14 +137,14 @@
     "endsAt": "2026-09-08T13:58:17.583Z",
     "status": "active",
     "lastStats": {
-      "at": "2026-09-05T16:06:25.902Z",
-      "impressions": 471,
-      "urlClicks": 8,
-      "spendUsd": 0.1,
-      "spendLocal": 7.98,
-      "clicks": 8,
-      "ctrPercent": 1.7,
-      "cpcUsd": 0.013
+      "at": "2026-09-05T16:43:51.676Z",
+      "impressions": 1587,
+      "urlClicks": 105,
+      "spendUsd": 0.52,
+      "spendLocal": 44.03,
+      "clicks": 105,
+      "ctrPercent": 6.62,
+      "cpcUsd": 0.005
     },
     "history": [
       {
@@ -163,6 +163,15 @@
         "spendUsd": 0.1,
         "ctrPercent": 1.7,
         "cpcUsd": 0.013,
+        "killed": false
+      },
+      {
+        "at": "2026-09-05T16:43:51.676Z",
+        "impressions": 1587,
+        "clicks": 105,
+        "spendUsd": 0.52,
+        "ctrPercent": 6.62,
+        "cpcUsd": 0.005,
         "killed": false
       }
     ],

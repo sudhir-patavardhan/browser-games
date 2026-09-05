@@ -1,0 +1,9 @@
+{
+  "role": "performance-analyst",
+  "preparedAt": "2026-09-05T17:07:02.746Z",
+  "writeYourAnswerTo": "/Users/sudhir/Projects/browser-games/marketing/data/agent-io/performance-analyst.output.json",
+  "readYourPromptAt": "/Users/sudhir/Projects/browser-games/marketing/src/agents/performance-analyst/PROMPT.md",
+  "summary": "No Campaign has finished without a Post-mortem — nothing to write.",
+  "campaign": null,
+  "remaining": 0
+}
