@@ -22,6 +22,7 @@ const urls = [
   })),
   // Pages that are not games and so have no card on the hub to scrape.
   { loc: 'https://kreeda.games/marketing/', changefreq: 'yearly', priority: '0.3' },
+  { loc: 'https://kreeda.games/privacy/', changefreq: 'yearly', priority: '0.3' },
 ];
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>

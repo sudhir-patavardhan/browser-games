@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Privacy — Kreeda</title>
+<meta name="description" content="What Kreeda measures, what stays on your device, and what we never collect. Written from the code, not from a template.">
+<link rel="canonical" href="https://kreeda.games/privacy/">
+<meta name="theme-color" content="#07070d">
+<meta name="color-scheme" content="dark">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Kreeda">
+<meta property="og:url" content="https://kreeda.games/privacy/">
+<meta property="og:title" content="Privacy — Kreeda">
+<meta property="og:description" content="What Kreeda measures, what stays on your device, and what we never collect.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="any">
+
+<style>
+  *{ box-sizing:border-box; }
+  :root{
+    --bg:#07070d; --surface:#12121c; --surface-2:#191926;
+    --line:rgba(255,255,255,.10); --line-strong:rgba(255,255,255,.22);
+    --ink:#f4f4f8; --ink-dim:#a6a6b8; --ink-faint:#75758a;
+    --accent:#5CFF6E; --warm:#ffd166;
+    --radius:18px; --pad: max(16px, env(safe-area-inset-left));
+  }
+  html{ -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
+  @media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto; } *{ animation:none !important; transition:none !important; } }
+  body{
+    margin:0; min-height:100%;
+    background:
+      radial-gradient(900px 600px at 12% -10%, #1d1440 0%, transparent 60%),
+      radial-gradient(700px 500px at 95% 0%, #08303a 0%, transparent 55%),
+      var(--bg);
+    background-repeat:no-repeat;
+    color:var(--ink);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden; line-height:1.62;
+  }
+  a{ color:inherit; }
+  .bar{
+    position:sticky; top:0; z-index:20;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:10px var(--pad); padding-top:max(10px, env(safe-area-inset-top));
+    background:rgba(7,7,13,.86); border-bottom:1px solid var(--line); backdrop-filter:blur(10px);
+  }
+  .brand{ display:flex; align-items:center; gap:9px; font-weight:800; font-size:17px; text-decoration:none; }
+  .brand .dot{ color:var(--accent); }
+  .bar .ghost{
+    font-size:13px; color:var(--ink-dim); padding:8px 12px; border-radius:999px;
+    border:1px solid var(--line); white-space:nowrap; text-decoration:none;
+  }
+  .bar .ghost:hover{ color:var(--ink); border-color:var(--line-strong); }
+
+  .wrap{ max-width:800px; margin:0 auto; padding:0 var(--pad) 56px; }
+  header.hero{ padding:44px 0 4px; }
+  header.hero h1{ font-size:clamp(30px,6vw,44px); line-height:1.1; letter-spacing:-1px; margin:0 0 14px; font-weight:850; }
+  .kicker{ font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:700; margin:0 0 12px; }
+  .updated{ font-size:13px; color:var(--ink-faint); margin:0; }
+
+  h2{ font-size:clamp(20px,3.2vw,25px); letter-spacing:-.4px; margin:48px 0 6px; font-weight:800; scroll-margin-top:70px; }
+  h3{ font-size:16.5px; margin:26px 0 2px; font-weight:750; }
+  p{ margin:12px 0; color:var(--ink-dim); }
+  p strong, li strong{ color:var(--ink); font-weight:650; }
+  ul{ color:var(--ink-dim); padding-left:20px; }
+  li{ margin:7px 0; }
+
+  code{
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:.87em; background:var(--surface-2); border:1px solid var(--line);
+    padding:1px 6px; border-radius:6px; color:#7cc4ff;
+  }
+
+  .lede{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px 24px; margin:26px 0;
+  }
+  .lede p{ color:var(--ink); margin:8px 0; font-size:16.5px; }
+  .lede p:first-child{ margin-top:0; }
+  .lede p:last-child{ margin-bottom:0; }
+
+  .note{
+    border-left:3px solid var(--warm); background:rgba(255,209,102,.06);
+    padding:14px 18px; border-radius:0 12px 12px 0; margin:22px 0;
+  }
+  .note p{ margin:0; color:var(--ink); }
+  .note p + p{ margin-top:8px; color:var(--ink-dim); }
+
+  .scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table{ border-collapse:collapse; width:100%; min-width:540px; font-size:14.5px; margin:8px 0; }
+  th, td{ text-align:left; padding:11px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th{ color:var(--ink); font-weight:700; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; }
+  td{ color:var(--ink-dim); }
+  td:first-child{ color:var(--ink); font-weight:600; }
+
+  footer{
+    max-width:800px; margin:0 auto; padding:22px var(--pad) 40px;
+    border-top:1px solid var(--line);
+    display:flex; flex-wrap:wrap; gap:10px 20px; align-items:center;
+    font-size:13px; color:var(--ink-faint);
+  }
+  footer a{ color:var(--ink-dim); }
+  footer .spacer{ flex:1 1 auto; }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <a class="brand" href="../">Kreeda<span class="dot">.</span></a>
+  <a class="ghost" href="https://github.com/sudhir-patavardhan/browser-games/blob/main/analytics.js">Read the code</a>
+</div>
+
+<div class="wrap">
+
+<header class="hero">
+  <p class="kicker">Privacy</p>
+  <h1>What we measure, and what we don't</h1>
+  <p class="updated">Last updated 5 September 2026</p>
+</header>
+
+<div class="lede">
+  <p><strong>You never give us anything.</strong> There is no account, no sign-up, no email box, no password and no payment. We could not identify you if we wanted to.</p>
+  <p><strong>Your game progress stays in your browser.</strong> Best scores, badges, settings — they are written to your device and never sent anywhere.</p>
+  <p><strong>We do count how many people play, and for how long.</strong> That goes to Google Analytics, and it is the only thing we collect.</p>
+</div>
+
+<p>
+  This page is written from the code rather than from a template, so it is specific
+  about what actually happens. Everything below is checkable — the file that does
+  the measuring is <a href="https://github.com/sudhir-patavardhan/browser-games/blob/main/analytics.js"><code>analytics.js</code></a>,
+  it is about three hundred lines, and it is the only place in this site that talks
+  to anyone.
+</p>
+
+<h2 id="device">What stays on your device</h2>
+
+<p>
+  Every game saves your progress with <strong>your browser's local storage</strong>. Best
+  lap, badges earned, sound on or off, which view you prefer, how far through a puzzle you
+  are. Thirty of the pages here use it.
+</p>
+
+<p>
+  <strong>None of it is ever transmitted.</strong> It sits on the device you played on, it
+  does not follow you to another browser, and we cannot read it. Clearing your browser's
+  site data deletes it, and the only thing you lose is your own progress.
+</p>
+
+<p>
+  One more key is written the same way: <code>kreeda.played.&lt;game&gt;</code>, a timestamp
+  of the last time you really played each game. It is what fills the "Jump back in" shelf on
+  the home page. That shelf is assembled in your browser, from your device, and the list of
+  what you have played is never sent to us.
+</p>
+
+<div class="note">
+  <p><strong>The games where people type things about each other.</strong></p>
+  <p>Circle Quiz, Group Blind Spots, Who Said That, Herd Mind, Impressions, Memory Lane,
+  Time Capsule, Duo Quiz, Blind Spots, Share or Take, Life Auction and Deep Talk all ask
+  players to type names, answers and predictions about their friends.</p>
+  <p><strong>Not one of those twelve games makes a single network request.</strong> The
+  names and the answers exist in the page you are looking at and nowhere else. We have never
+  seen any of them, and there is no code that could send them.</p>
+</div>
+
+<h2 id="measure">What we do collect</h2>
+
+<p>
+  Two things measure this site, and both run on every page.
+</p>
+
+<h3>Google Analytics</h3>
+
+<p>
+  Standard web analytics: a page view when you open a game, plus the session and engagement
+  events Google records itself. Alongside those, this site sends a few of its own:
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>What it records</th><th>What it means</th></tr></thead>
+  <tbody>
+    <tr><td><code>game_time</code></td><td>How many seconds of <em>active</em> play, reported every thirty. The clock only runs while the page is visible and you have touched something in the last few minutes — a tab left open on a second monitor overnight counts as almost nothing.</td></tr>
+    <tr><td><code>played_30s</code></td><td>Once per page, when active play passes thirty seconds. This is the one number the whole site is judged on: did someone actually play, rather than merely arrive.</td></tr>
+    <tr><td><code>game_start</code>, <code>game_end</code></td><td>A round began or finished, sometimes with its length or outcome.</td></tr>
+    <tr><td><code>game_click</code></td><td>Which card you tapped on the home page.</td></tr>
+    <tr><td>Per-game events</td><td>A handful of small ones — a race started, a badge earned, a puzzle completed with its score. Numbers and short labels only.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  Every one of those carries the game's folder name and its title, so we can tell Drift from
+  Carrom. <strong>No event carries anything you typed.</strong> The most personal thing in
+  any of them is a score.
+</p>
+
+<p>
+  Google itself also receives what it receives from any site using Analytics: your approximate
+  location from your IP address, your device and browser, the page you arrived from, and a
+  random identifier stored in a cookie so that two page views can be recognised as one visit.
+  We see this only as aggregate numbers.
+</p>
+
+<h3>The X advertising pixel</h3>
+
+<p>
+  We advertise Kreeda on X, and X's pixel — <code>uwt.js</code> — runs on every page so that
+  when we pay for a click, we can tell whether the person who clicked went on to play. It
+  records the page view and, if you play for thirty seconds, that fact. It sets its own
+  cookies, and X receives your IP address and device information as it does on any site
+  carrying it.
+</p>
+
+<p>
+  It exists so we can stop paying for advertising that does not work. If it is blocked, every
+  game still runs perfectly — nothing here depends on it.
+</p>
+
+<h3>Links from our posts</h3>
+
+<p>
+  When we post about a game on X or Facebook, the link carries markers saying which post it
+  came from. That is how we learn that a particular Tuesday post about Carrom brought people
+  who actually played. The markers describe <em>the post</em>, not you.
+</p>
+
+<h2 id="third-parties">Three pages that load a file from somewhere else</h2>
+
+<p>
+  Almost every game here is a single self-contained file that loads nothing from anyone.
+  Three are exceptions, and a request to another company's server always reveals your IP
+  address to them:
+</p>
+
+<ul>
+  <li><strong>Apogee</strong> and <strong>Blackjack</strong> load a font from Google Fonts.</li>
+  <li><strong>Fairway Four</strong> loads the 3D library it is built on from Cloudflare's public CDN.</li>
+</ul>
+
+<p>
+  That is the complete list. No other page contacts anyone but Google Analytics and the X
+  pixel described above.
+</p>
+
+<h2 id="never">What we never do</h2>
+
+<ul>
+  <li><strong>No accounts.</strong> There is nothing to sign up for.</li>
+  <li><strong>No email addresses.</strong> We do not ask for one and there is no form that would take one.</li>
+  <li><strong>No payments.</strong> Everything is free and nothing is for sale.</li>
+  <li><strong>No cookies of our own.</strong> This site sets none. The only cookies here belong to Google Analytics and the X pixel.</li>
+  <li><strong>No selling or sharing.</strong> We do not sell data, and there is no data about you to sell.</li>
+  <li><strong>No advertising inside the games.</strong> No ad network runs on any page.</li>
+  <li><strong>No reading what you type.</strong> Names, answers and predictions never leave your device.</li>
+</ul>
+
+<h2 id="choices">Your choices</h2>
+
+<ul>
+  <li><strong>Block it.</strong> Any content blocker, or a browser with tracking protection on, will stop both Google Analytics and the X pixel. The games are built so that this changes nothing about playing them.</li>
+  <li><strong>Opt out of Google Analytics everywhere</strong> with Google's own browser add-on, at <a href="https://tools.google.com/dlpage/gaoptout">tools.google.com/dlpage/gaoptout</a>.</li>
+  <li><strong>Delete everything we stored.</strong> Clear this site's data in your browser settings. That removes all of it, because all of it is on your device.</li>
+</ul>
+
+<h2 id="children">Children</h2>
+
+<p>
+  Kreeda is a general-audience games site, and some of it — the daily chemistry and energy
+  grids — is written with secondary-school students in mind. It is not directed at children
+  under 13, we do not knowingly collect anything from them, and since we collect no names,
+  no email addresses and no accounts from anyone, there is nothing here that could identify a
+  child. If you are a parent and would like the analytics off, any content blocker will do it.
+</p>
+
+<h2 id="where">Where the data lives</h2>
+
+<p>
+  Kreeda has no server of its own and no database. The site is static files served from
+  GitHub Pages. The measurements described above are held by Google and by X on their own
+  infrastructure under their own policies, and we read them only as totals.
+</p>
+
+<h2 id="contact">Contact</h2>
+
+<p>
+  Questions, or a request to have something removed:
+  <a href="mailto:patavardhan@gmail.com">patavardhan@gmail.com</a>.
+</p>
+
+<p>
+  If this page and the code ever disagree, the code is the truth and this page is the bug —
+  <a href="https://github.com/sudhir-patavardhan/browser-games/blob/main/analytics.js">please tell us</a>.
+</p>
+
+<h2 id="changes">Changes</h2>
+
+<p>
+  If what we measure changes, this page changes with it and the date at the top moves. The
+  whole history of both this page and the code that it describes is public, so you can see
+  exactly what changed and when.
+</p>
+
+</div>
+
+<footer>
+  <span>&copy; Kreeda &middot; Free browser games, no sign-up.</span>
+  <span class="spacer"></span>
+  <a href="../">Play something</a>
+  <a href="../marketing/">How our marketing runs</a>
+</footer>
+
+<script src="../analytics.js"></script>
+</body>
+</html>
