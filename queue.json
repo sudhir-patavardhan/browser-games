@@ -575,7 +575,7 @@
   },
   {
     "id": "plan-thursday-1788491805105-3",
-    "status": "draft",
+    "status": "in_review",
     "channel": "facebook",
     "gameId": "road-rumble",
     "category": "",
@@ -589,25 +589,23 @@
     "brief": "",
     "successMetric": "",
     "content": {
-      "text": "We rebuilt 90s Road Rash in a single vanilla JS file using pseudo-3D raster projection.\n\nPin the throttle, punch rivals into oncoming traffic, zero downloads:\nhttps://kreeda.games/road-rumble/index.html\n\n#gamedev #webdev #indiedev",
+      "text": "Remember the specific tension of 90s arcade racers like Road Rash, where taking a fast corner wasn't just about feathering the throttle, but timing a punch so the rider beside you clipped an oncoming truck?\n\nWe brought that exact loop back to the browser. Road Rumble runs on a classic pseudo-3D raster projection engine written in pure vanilla JavaScript, complete with elevation crests, blind curves, and heavy oncoming traffic.\n\nYou line up against five aggressive rivals down a winding highway. Manage your health and stamina, lean hard through centrifugal turns, and throw punches or swing roadside clubs to clear the lane before the finish line.\n\nNo downloads, no logins, and no ads. It loads instantly on desktop or mobile.\n\nhttps://kreeda.games/road-rumble/",
       "thread": [],
-      "altText": "",
-      "headline": "Rebuilding 90s Road Rash in pure Vanilla JS",
-      "hashtags": [
-        "#gamedev",
-        "#webdev",
-        "#indiedev"
-      ],
-      "mediaSuggestion": "A 5-second 60fps looping gameplay GIF showing the player swinging a club at a rival biker, sending them crashing into an oncoming civilian truck over a crest hill."
+      "altText": "A pseudo-3D retro motorcycle combat race on a curved highway with riders trading punches beside oncoming traffic."
     },
-    "assets": [],
+    "assets": [
+      {
+        "kind": "card",
+        "url": "https://github.com/sudhir-patavardhan/browser-games/releases/download/media/plan-thursday-1788491805105-3-card.png"
+      }
+    ],
     "intentId": null,
     "publishResult": null,
     "reviewedAt": null,
     "rejectReason": null,
     "attempts": 0,
     "createdAt": "2026-09-04T03:16:45.105Z",
-    "updatedAt": "2026-09-04T14:03:56.833Z"
+    "updatedAt": "2026-09-05T03:26:46.328Z"
   },
   {
     "id": "plan-friday-1788491811742-4",
